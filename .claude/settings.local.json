@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(dir /s \"C:\\Users\\ahabg\\OneDrive\\Belgeler\\GitHub\\FIVUCSAS\\practice-and-test\\DeepFacePractice1\\src\")",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(del:*)",
+      "Bash(move /Y fivucsas_er_diagram_fixed.png fivucsas_er_diagram.png:*)",
+      "Bash(move /Y ha_deployment_fixed.png ha_deployment.png:*)",
+      "Bash(move:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
