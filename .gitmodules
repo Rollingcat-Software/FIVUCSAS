@@ -1,0 +1,21 @@
+[submodule "biometric-processor"]
+	path = biometric-processor
+	url = https://github.com/Rollingcat-Software/biometric-processor.git
+[submodule "desktop-app"]
+	path = desktop-app
+	url = https://github.com/Rollingcat-Software/desktop-app.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/Rollingcat-Software/docs.git
+[submodule "identity-core-api"]
+	path = identity-core-api
+	url = https://github.com/Rollingcat-Software/identity-core-api.git
+[submodule "mobile-app"]
+	path = mobile-app
+	url = https://github.com/Rollingcat-Software/mobile-app.git
+[submodule "practice-and-test"]
+	path = practice-and-test
+	url = https://github.com/Rollingcat-Software/practice-and-test.git
+[submodule "web-app"]
+	path = web-app
+	url = https://github.com/Rollingcat-Software/web-app.git
