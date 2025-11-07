@@ -89,8 +89,23 @@ FIVUCSAS/
 
 ## 🚀 Quick Start
 
+### ⚠️ Important: Git Submodules
+
+This repository uses **Git Submodules** to manage component repositories. When cloning:
+
+```bash
+# Clone with submodules (RECOMMENDED)
+git clone --recurse-submodules https://github.com/Rollingcat-Software/FIVUCSAS.git
+
+# Or if already cloned, initialize submodules:
+git submodule update --init --recursive
+```
+
+📖 **See [SUBMODULES_GUIDE.md](./SUBMODULES_GUIDE.md) for complete submodule workflow documentation.**
+
 ### Prerequisites
 
+- **Git** with submodule support
 - **Docker & Docker Compose** (recommended)
 - **Java 21** (for identity-core-api)
 - **Python 3.11+** (for biometric-processor)
@@ -186,9 +201,10 @@ npm run dev
 
 Each repository has comprehensive README documentation:
 
+- **[Git Submodules Guide](./SUBMODULES_GUIDE.md)** ⭐ **START HERE**
 - [Identity Core API Documentation](./identity-core-api/README.md)
 - [Biometric Processor Documentation](./biometric-processor/README.md)
-- [Kotlin Multiplatform Guide](./KOTLIN_MULTIPLATFORM_GUIDE.md) ⭐ **NEW**
+- [Kotlin Multiplatform Guide](./KOTLIN_MULTIPLATFORM_GUIDE.md)
 - [Mobile App Documentation](./mobile-app/README.md)
 - [Web App Documentation](./web-app/README.md)
 - [Desktop App Documentation](./desktop-app/README.md)
