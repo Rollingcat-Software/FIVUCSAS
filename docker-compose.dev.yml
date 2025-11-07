@@ -1,0 +1,28 @@
+version: '3.8'
+
+# FIVUCSAS Development Override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  identity-core-api:
+    build:
+      context: ./identity-core-api
+      dockerfile: Dockerfile.dev
+      args:
+        - GRADLE_OPTS=-Dorg.gradle.daemon=false
+    volumes:
+      - ./identity-core-api/src:/app/src
+      - ./identity-core-api/build:/app/build
+    environment:
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      LOGGING_LEVEL_ROOT: DEBUG
+
+  biometric-processor:
+    build:
+      context: ./biometric-processor
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./biometric-processor/app:/app/app
+    environment:
+      DEBUG: "True"
+      RELOAD: "True"
