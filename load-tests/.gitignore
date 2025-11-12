@@ -1,0 +1,14 @@
+# Test results
+results/
+*.json
+
+# Logs
+*.log
+
+# K6 output
+k6-results/
+summary.html
+
+# Temporary files
+*.tmp
+.DS_Store
