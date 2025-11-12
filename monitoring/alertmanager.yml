@@ -1,0 +1,97 @@
+# Alertmanager Configuration for FIVUCSAS
+
+global:
+  resolve_timeout: 5m
+  smtp_from: 'alerts@fivucsas.com'
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_auth_username: 'alerts@fivucsas.com'
+  smtp_auth_password: 'password'
+  smtp_require_tls: true
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# The root route
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  routes:
+    # Critical alerts go to PagerDuty
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true
+
+    # Warning alerts go to Slack
+    - match:
+        severity: warning
+      receiver: 'slack'
+      continue: true
+
+    # Info alerts go to email only
+    - match:
+        severity: info
+      receiver: 'email'
+
+# Alert receivers
+receivers:
+  # Default receiver (email)
+  - name: 'default'
+    email_configs:
+      - to: 'ops@fivucsas.com'
+        send_resolved: true
+        headers:
+          Subject: '[FIVUCSAS Alert] {{ .GroupLabels.alertname }}'
+
+  # Email receiver
+  - name: 'email'
+    email_configs:
+      - to: 'ops@fivucsas.com'
+        send_resolved: true
+        headers:
+          Subject: '[FIVUCSAS] {{ .GroupLabels.alertname }}'
+
+  # Slack receiver
+  - name: 'slack'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#fivucsas-alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+        send_resolved: true
+
+  # PagerDuty receiver (for critical alerts)
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+        description: '{{ .GroupLabels.alertname }}: {{ .GroupLabels.service }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+        send_resolved: true
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+  # Inhibit service-specific alerts if service is down
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      service: '.*'
+    equal: ['service']

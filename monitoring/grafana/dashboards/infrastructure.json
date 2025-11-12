@@ -1,0 +1,339 @@
+{
+  "dashboard": {
+    "title": "Infrastructure - System Health",
+    "uid": "infrastructure",
+    "tags": ["infrastructure", "system", "health"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Status",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "up{job=\"biometric-processor\"}",
+            "legendFormat": "Biometric Processor",
+            "refId": "A"
+          },
+          {
+            "expr": "up{job=\"identity-core-api\"}",
+            "legendFormat": "Identity Core API",
+            "refId": "B"
+          },
+          {
+            "expr": "redis_up",
+            "legendFormat": "Redis",
+            "refId": "C"
+          },
+          {
+            "expr": "pg_up{job=\"postgres-biometric\"}",
+            "legendFormat": "PostgreSQL (Biometric)",
+            "refId": "D"
+          },
+          {
+            "expr": "pg_up{job=\"postgres-identity\"}",
+            "legendFormat": "PostgreSQL (Identity)",
+            "refId": "E"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 1, "color": "green"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "CPU Usage by Instance",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "CPU %", "max": 100, "min": 0},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [80], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "10m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "High CPU Usage"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Memory Usage by Instance",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+        "targets": [
+          {
+            "expr": "100 - ((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Memory %", "max": 100, "min": 0},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [90], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "High Memory Usage"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Disk Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+        "targets": [
+          {
+            "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100)",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Disk %", "max": 100, "min": 0},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [90], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "Disk Space Low"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Network I/O",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total{device!=\"lo\"}[5m])",
+            "legendFormat": "{{instance}} - RX",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m])",
+            "legendFormat": "{{instance}} - TX",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "Bps", "label": "Bytes/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "PostgreSQL Connections (Biometric DB)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 22},
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends{job=\"postgres-biometric\",datname=\"biometric_db\"}",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "pg_settings_max_connections{job=\"postgres-biometric\"}",
+            "legendFormat": "Max Connections",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Connections"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "PostgreSQL Connections (Identity DB)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 22},
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends{job=\"postgres-identity\",datname=\"identity_db\"}",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "pg_settings_max_connections{job=\"postgres-identity\"}",
+            "legendFormat": "Max Connections",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Connections"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Redis Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 22},
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100",
+            "legendFormat": "Memory Usage %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Memory %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Redis Connected Clients",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 30},
+        "targets": [
+          {
+            "expr": "redis_connected_clients",
+            "legendFormat": "Connected Clients",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Clients"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Redis Commands/sec",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 30},
+        "targets": [
+          {
+            "expr": "rate(redis_commands_processed_total[5m])",
+            "legendFormat": "Commands/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Commands/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Redis Pub/Sub Channels",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 30},
+        "targets": [
+          {
+            "expr": "redis_pubsub_channels",
+            "legendFormat": "Active Channels",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "PostgreSQL Query Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38},
+        "targets": [
+          {
+            "expr": "rate(pg_stat_database_xact_commit{job=\"postgres-biometric\"}[5m])",
+            "legendFormat": "Biometric DB - Commits",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(pg_stat_database_xact_commit{job=\"postgres-identity\"}[5m])",
+            "legendFormat": "Identity DB - Commits",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Transactions/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 13,
+        "title": "PostgreSQL Cache Hit Ratio",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 38},
+        "targets": [
+          {
+            "expr": "rate(pg_stat_database_blks_hit{job=\"postgres-biometric\"}[5m]) / (rate(pg_stat_database_blks_hit{job=\"postgres-biometric\"}[5m]) + rate(pg_stat_database_blks_read{job=\"postgres-biometric\"}[5m])) * 100",
+            "legendFormat": "Biometric DB",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(pg_stat_database_blks_hit{job=\"postgres-identity\"}[5m]) / (rate(pg_stat_database_blks_hit{job=\"postgres-identity\"}[5m]) + rate(pg_stat_database_blks_read{job=\"postgres-identity\"}[5m])) * 100",
+            "legendFormat": "Identity DB",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Cache Hit %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      }
+    ]
+  }
+}

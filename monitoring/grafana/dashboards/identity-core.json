@@ -1,0 +1,323 @@
+{
+  "dashboard": {
+    "title": "Identity Core API - Authentication & Events",
+    "uid": "identity-core",
+    "tags": ["identity", "authentication", "events"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Login Attempts",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_auth_login_attempts_total[5m]))",
+            "legendFormat": "Total Attempts",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(identity_auth_login_failures_total[5m]))",
+            "legendFormat": "Failed Attempts",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Logins/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true}
+      },
+      {
+        "id": 2,
+        "title": "Failed Login Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "(sum(rate(identity_auth_login_failures_total[5m])) / sum(rate(identity_auth_login_attempts_total[5m]))) * 100",
+            "legendFormat": "Failure Rate %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Failure %", "max": 100, "min": 0},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [30], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "10m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Failed Login Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 3,
+        "title": "Account Lockouts",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_auth_lockouts_total[5m]))",
+            "legendFormat": "Lockouts/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Lockouts/sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [5], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "High Account Lockouts"
+        }
+      },
+      {
+        "id": 4,
+        "title": "User Registrations",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_user_registrations_total[5m]))",
+            "legendFormat": "Registrations/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Registrations/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Biometric Enrollment Jobs",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_enrollment_biometric_success_total[5m]))",
+            "legendFormat": "Successful",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(identity_enrollment_biometric_failure_total[5m]))",
+            "legendFormat": "Failed",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Enrollments/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Enrollment Job Success Rate",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "(sum(rate(identity_enrollment_biometric_success_total[5m])) / (sum(rate(identity_enrollment_biometric_success_total[5m])) + sum(rate(identity_enrollment_biometric_failure_total[5m])))) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 80, "color": "yellow"},
+              {"value": 95, "color": "green"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Webhook Processing",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_webhook_received_total[5m]))",
+            "legendFormat": "Webhooks Received",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(identity_webhook_errors_total[5m]))",
+            "legendFormat": "Webhook Errors",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Webhooks/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Webhook Processing Time",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(identity_webhook_processing_duration_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(identity_webhook_processing_duration_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Events Received from Redis",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_events_received_total[5m])) by (event_type)",
+            "legendFormat": "{{event_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "eps", "label": "Events/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Event Processing Errors",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_events_processing_errors_total[5m]))",
+            "legendFormat": "Processing Errors",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "eps", "label": "Errors/sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [1], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "Event Processing Failures"
+        }
+      },
+      {
+        "id": 11,
+        "title": "Login Duration (p95)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 8, "x": 0, "y": 40},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(identity_login_duration_bucket[5m])) by (le))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Enrollment Processing Duration (p95)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 8, "x": 8, "y": 40},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(identity_enrollment_processing_duration_bucket[5m])) by (le))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Event Processing Duration (p95)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 8, "x": 16, "y": 40},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(identity_event_processing_duration_bucket[5m])) by (le))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      }
+    ]
+  }
+}
