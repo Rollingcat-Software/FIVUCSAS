@@ -1,0 +1,218 @@
+# ============================================================================
+# FIVUCSAS - Prometheus Monitoring Configuration
+# ============================================================================
+#
+# Purpose: Collect metrics from all services for performance monitoring
+#
+# Scrape Targets:
+# 1. Identity Core API - Spring Boot Actuator metrics
+# 2. Biometric Processor - FastAPI metrics (3 replicas)
+# 3. PostgreSQL - Database metrics
+# 4. Redis - Cache metrics
+# 5. Nginx - Load balancer metrics
+#
+# Metrics Collected:
+# - HTTP request duration, throughput, error rates
+# - Database connection pool usage
+# - Redis cache hit rates
+# - JVM memory, GC, thread metrics
+# - ML worker queue depth, processing times
+#
+# ============================================================================
+
+global:
+  scrape_interval: 15s      # Scrape targets every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  scrape_timeout: 10s       # Timeout after 10 seconds
+
+  # External labels (added to all metrics)
+  external_labels:
+    cluster: 'fivucsas-dev'
+    environment: 'development'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - alertmanager:9093
+
+# Rule files for alerting
+rule_files:
+  # - "alerts/*.yml"
+
+# ============================================================================
+# Scrape Configurations
+# ============================================================================
+scrape_configs:
+  # ==========================================================================
+  # Prometheus Self-Monitoring
+  # ==========================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ==========================================================================
+  # Identity Core API (Spring Boot Actuator)
+  # ==========================================================================
+  - job_name: 'identity-api'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s  # More frequent scraping for API
+
+    static_configs:
+      - targets: ['identity-api:8080']
+        labels:
+          service: 'identity-api'
+          component: 'backend'
+
+    # Metric relabeling (optional - filter/rename metrics)
+    metric_relabel_configs:
+      # Add custom labels
+      - source_labels: [__name__]
+        regex: 'http_server_requests_seconds.*'
+        target_label: 'metric_type'
+        replacement: 'http_latency'
+
+  # ==========================================================================
+  # Biometric Processor (3 Replicas)
+  # ==========================================================================
+  - job_name: 'biometric-processor'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+    # Docker DNS service discovery
+    # Note: Docker Compose provides DNS for service replicas
+    dns_sd_configs:
+      - names:
+          - 'biometric-processor'
+        type: 'A'
+        port: 8000
+
+    # Alternative: Static configuration (if DNS discovery doesn't work)
+    # static_configs:
+    #   - targets:
+    #       - 'biometric-processor:8000'
+    #     labels:
+    #       service: 'biometric-processor'
+    #       component: 'ml-worker'
+
+    relabel_configs:
+      # Add service label
+      - target_label: 'service'
+        replacement: 'biometric-processor'
+      - target_label: 'component'
+        replacement: 'ml-worker'
+
+  # ==========================================================================
+  # PostgreSQL Exporter (if installed)
+  # ==========================================================================
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgres'
+  #         component: 'database'
+
+  # ==========================================================================
+  # Redis Exporter (if installed)
+  # ==========================================================================
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         component: 'cache'
+
+  # ==========================================================================
+  # Nginx (if nginx-prometheus-exporter is installed)
+  # ==========================================================================
+  # - job_name: 'nginx'
+  #   static_configs:
+  #     - targets: ['nginx-exporter:9113']
+  #       labels:
+  #         service: 'nginx'
+  #         component: 'load-balancer'
+
+  # ==========================================================================
+  # Node Exporter (Host metrics - CPU, memory, disk)
+  # ==========================================================================
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
+  #       labels:
+  #         service: 'node-exporter'
+  #         component: 'infrastructure'
+
+# ============================================================================
+# Key Metrics to Monitor
+# ============================================================================
+#
+# Identity Core API:
+# - http_server_requests_seconds_count - Request throughput
+# - http_server_requests_seconds_sum - Total request time
+# - http_server_requests_seconds_max - Max request duration
+# - hikaricp_connections_active - Active DB connections
+# - hikaricp_connections_idle - Idle DB connections
+# - hikaricp_connections_pending - Pending connection requests
+# - jvm_memory_used_bytes - JVM memory usage
+# - jvm_gc_pause_seconds_count - Garbage collection count
+# - cache_gets_total - Cache get operations
+# - cache_puts_total - Cache put operations
+# - cache_evictions_total - Cache evictions
+#
+# Biometric Processor:
+# - http_requests_total - Total HTTP requests
+# - http_request_duration_seconds - Request duration histogram
+# - ml_enrollment_duration_seconds - Enrollment processing time
+# - ml_verification_duration_seconds - Verification processing time
+# - ml_worker_queue_depth - Number of jobs in queue
+# - ml_worker_active_jobs - Currently processing jobs
+# - ml_model_inference_duration_seconds - Model inference time
+#
+# PostgreSQL:
+# - pg_stat_database_tup_fetched - Rows fetched
+# - pg_stat_database_tup_inserted - Rows inserted
+# - pg_stat_database_tup_updated - Rows updated
+# - pg_stat_database_numbackends - Active connections
+# - pg_stat_database_deadlocks - Deadlock count
+#
+# Redis:
+# - redis_connected_clients - Connected clients
+# - redis_used_memory_bytes - Memory usage
+# - redis_keyspace_hits_total - Cache hits
+# - redis_keyspace_misses_total - Cache misses
+# - redis_commands_processed_total - Commands processed
+#
+# ============================================================================
+
+# ============================================================================
+# Example PromQL Queries (for Grafana dashboards)
+# ============================================================================
+#
+# Request rate (requests per second):
+#   rate(http_server_requests_seconds_count[5m])
+#
+# Average response time:
+#   rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m])
+#
+# p95 response time:
+#   histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))
+#
+# Error rate:
+#   sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))
+#
+# Database connection pool utilization:
+#   hikaricp_connections_active / hikaricp_connections_max
+#
+# Cache hit rate:
+#   rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+#
+# ML worker queue depth:
+#   ml_worker_queue_depth
+#
+# Enrollment throughput:
+#   rate(ml_enrollment_duration_seconds_count[5m])
+#
+# ============================================================================
