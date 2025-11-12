@@ -1,0 +1,173 @@
+# Prometheus Alert Rules for FIVUCSAS
+
+groups:
+  - name: biometric_processor_alerts
+    interval: 30s
+    rules:
+      # High Error Rate
+      - alert: HighEnrollmentErrorRate
+        expr: |
+          (
+            rate(biometric_enrollment_errors_total[5m]) /
+            rate(biometric_enrollment_requests_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: biometric-processor
+        annotations:
+          summary: "High enrollment error rate ({{ $value | humanizePercentage }})"
+          description: "Enrollment error rate is above 10% for the last 5 minutes on tenant {{ $labels.tenant_id }}"
+
+      # Slow Processing
+      - alert: SlowEnrollmentProcessing
+        expr: histogram_quantile(0.95, rate(biometric_enrollment_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: biometric-processor
+        annotations:
+          summary: "Slow enrollment processing (p95: {{ $value }}s)"
+          description: "95th percentile enrollment time exceeds 5 seconds"
+
+      # Low Quality Scores
+      - alert: LowQualityScores
+        expr: histogram_quantile(0.50, rate(biometric_enrollment_quality_score_bucket[10m])) < 0.7
+        for: 15m
+        labels:
+          severity: info
+          service: biometric-processor
+        annotations:
+          summary: "Low quality scores detected (median: {{ $value }})"
+          description: "Median quality score is below threshold of 0.7"
+
+      # Database Connection Pool Exhaustion
+      - alert: DatabaseConnectionsHigh
+        expr: biometric_database_connections_active > 45
+        for: 5m
+        labels:
+          severity: critical
+          service: biometric-processor
+        annotations:
+          summary: "Database connection pool nearly exhausted ({{ $value }}/50)"
+          description: "Active database connections are dangerously high"
+
+      # Webhook Failures
+      - alert: WebhookFailureRate
+        expr: |
+          (
+            rate(biometric_webhook_calls_total{status="failed"}[5m]) /
+            rate(biometric_webhook_calls_total[5m])
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: biometric-processor
+        annotations:
+          summary: "High webhook failure rate ({{ $value | humanizePercentage }})"
+          description: "More than 20% of webhook calls are failing"
+
+  - name: identity_core_alerts
+    interval: 30s
+    rules:
+      # High Failed Login Rate
+      - alert: HighFailedLoginRate
+        expr: |
+          (
+            rate(identity_auth_login_failures_total[5m]) /
+            rate(identity_auth_login_attempts_total[5m])
+          ) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+          service: identity-core-api
+        annotations:
+          summary: "High failed login rate ({{ $value | humanizePercentage }})"
+          description: "Failed login rate exceeds 30% - possible brute force attack"
+
+      # Many Account Lockouts
+      - alert: HighAccountLockouts
+        expr: rate(identity_auth_lockouts_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: identity-core-api
+        annotations:
+          summary: "High account lockout rate ({{ $value }}/sec)"
+          description: "Unusual number of account lockouts detected"
+
+      # Event Processing Failures
+      - alert: EventProcessingFailures
+        expr: rate(identity_events_processing_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: critical
+          service: identity-core-api
+        annotations:
+          summary: "Event processing failures detected"
+          description: "Events from Redis are failing to process"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # Service Down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 1 minute"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }} ({{ $value }}%)"
+          description: "CPU usage is above 80% for 10 minutes"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }} ({{ $value }}% free)"
+          description: "Available memory is below 10%"
+
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been unavailable for more than 1 minute"
+
+      # PostgreSQL Down
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL database {{ $labels.job }} is down"
+          description: "PostgreSQL has been unavailable for more than 1 minute"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }} ({{ $value }}% free)"
+          description: "Available disk space is below 10%"

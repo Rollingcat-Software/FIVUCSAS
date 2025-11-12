@@ -1,0 +1,62 @@
+# Prometheus Configuration for FIVUCSAS
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'fivucsas-prod'
+    env: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Biometric Processor API
+  - job_name: 'biometric-processor'
+    static_configs:
+      - targets: ['biometric-processor:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Identity Core API
+  - job_name: 'identity-core-api'
+    static_configs:
+      - targets: ['identity-core-api:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # PostgreSQL Exporter (Biometric DB)
+  - job_name: 'postgres-biometric'
+    static_configs:
+      - targets: ['postgres-exporter-biometric:9187']
+
+  # PostgreSQL Exporter (Identity DB)
+  - job_name: 'postgres-identity'
+    static_configs:
+      - targets: ['postgres-exporter-identity:9187']
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Node Exporter (System metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

@@ -1,0 +1,366 @@
+{
+  "dashboard": {
+    "title": "FIVUCSAS Platform - Overview",
+    "uid": "fivucsas-overview",
+    "tags": ["overview", "kpis"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Platform Health",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Services Up",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 4, "x": 0, "y": 1},
+        "targets": [
+          {
+            "expr": "sum(up)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 4, "color": "yellow"},
+              {"value": 5, "color": "green"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "max": 7
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Total Enrollments (24h)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 5, "x": 4, "y": 1},
+        "targets": [
+          {
+            "expr": "sum(increase(biometric_enrollment_requests_total{status=\"success\"}[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Total Verifications (24h)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 5, "x": 9, "y": 1},
+        "targets": [
+          {
+            "expr": "sum(increase(biometric_verification_requests_total[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Total Logins (24h)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 5, "x": 14, "y": 1},
+        "targets": [
+          {
+            "expr": "sum(increase(identity_auth_login_attempts_total[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Avg CPU Usage",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 5, "x": 19, "y": 1},
+        "targets": [
+          {
+            "expr": "avg(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 70, "color": "yellow"},
+              {"value": 85, "color": "red"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Biometric Performance",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
+        "collapsed": false
+      },
+      {
+        "id": 8,
+        "title": "Enrollment Success Rate",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "(sum(rate(biometric_enrollment_requests_total{status=\"success\"}[1h])) / sum(rate(biometric_enrollment_requests_total[1h]))) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 90, "color": "yellow"},
+              {"value": 95, "color": "green"}
+            ]
+          },
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Avg Enrollment Time",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(biometric_enrollment_duration_seconds_bucket{status=\"success\"}[1h])) by (le))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 3, "color": "yellow"},
+              {"value": 5, "color": "red"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "max": 10,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Avg Quality Score",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(biometric_enrollment_quality_score_bucket[1h])) by (le))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 0.7, "color": "yellow"},
+              {"value": 0.85, "color": "green"}
+            ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "max": 1,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Authentication & Security",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16},
+        "collapsed": false
+      },
+      {
+        "id": 12,
+        "title": "Login Success Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17},
+        "targets": [
+          {
+            "expr": "(1 - (sum(rate(identity_auth_login_failures_total[5m])) / sum(rate(identity_auth_login_attempts_total[5m])))) * 100",
+            "legendFormat": "Success Rate %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Success %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Account Lockouts (Rate)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 17},
+        "targets": [
+          {
+            "expr": "rate(identity_auth_lockouts_total[5m])",
+            "legendFormat": "Lockouts/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Lockouts/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Integration Health",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25},
+        "collapsed": false
+      },
+      {
+        "id": 15,
+        "title": "Webhook Success Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "(sum(rate(biometric_webhook_calls_total{status=\"success\"}[5m])) / sum(rate(biometric_webhook_calls_total[5m]))) * 100",
+            "legendFormat": "Success Rate %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Success %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Event Publishing Success Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "(sum(rate(biometric_events_published_total{success=\"true\"}[5m])) / sum(rate(biometric_events_published_total[5m]))) * 100",
+            "legendFormat": "Success Rate %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Success %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Request Volume",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+        "collapsed": false
+      },
+      {
+        "id": 18,
+        "title": "Enrollment Requests Over Time",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
+        "targets": [
+          {
+            "expr": "sum(rate(biometric_enrollment_requests_total[5m]))",
+            "legendFormat": "Enrollments/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Login Requests Over Time",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
+        "targets": [
+          {
+            "expr": "sum(rate(identity_auth_login_attempts_total[5m]))",
+            "legendFormat": "Logins/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      }
+    ]
+  }
+}
