@@ -33,3 +33,4 @@ docker-compose.override.yml
 # OS
 Thumbs.db
 .DS_Store
+/_backup_before_submodules
