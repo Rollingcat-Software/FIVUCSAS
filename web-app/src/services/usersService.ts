@@ -104,9 +104,45 @@ class UsersService {
     throw new Error('Backend not implemented')
   }
 
+  async createUser(user: Omit<User, 'id'>): Promise<User> {
+    if (MOCK_MODE) {
+      await this.delay(500)
+      const newUser: User = {
+        ...user,
+        id: Math.max(...MOCK_USERS.map(u => u.id)) + 1,
+      }
+      MOCK_USERS.push(newUser)
+      return newUser
+    }
+
+    // Real API call
+    // const response = await api.post<User>('/users', user)
+    // return response.data
+    throw new Error('Backend not implemented')
+  }
+
+  async updateUser(id: number, user: User): Promise<User> {
+    if (MOCK_MODE) {
+      await this.delay(400)
+      const index = MOCK_USERS.findIndex(u => u.id === id)
+      if (index === -1) throw new Error('User not found')
+      MOCK_USERS[index] = { ...user, id, updatedAt: new Date().toISOString() }
+      return MOCK_USERS[index]
+    }
+
+    // Real API call
+    // const response = await api.put<User>(`/users/${id}`, user)
+    // return response.data
+    throw new Error('Backend not implemented')
+  }
+
   async deleteUser(id: number): Promise<void> {
     if (MOCK_MODE) {
       await this.delay(300)
+      const index = MOCK_USERS.findIndex(u => u.id === id)
+      if (index !== -1) {
+        MOCK_USERS.splice(index, 1)
+      }
       console.log(`Mock: Delete user ${id}`)
       return
     }

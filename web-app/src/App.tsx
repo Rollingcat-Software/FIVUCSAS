@@ -6,6 +6,7 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import UsersListPage from './pages/UsersListPage'
 import UserDetailsPage from './pages/UserDetailsPage'
+import UserFormPage from './pages/UserFormPage'
 import TenantsListPage from './pages/TenantsListPage'
 import EnrollmentsListPage from './pages/EnrollmentsListPage'
 import AuditLogsPage from './pages/AuditLogsPage'
@@ -43,7 +44,9 @@ function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersListPage />} />
+        <Route path="users/create" element={<UserFormPage />} />
         <Route path="users/:id" element={<UserDetailsPage />} />
+        <Route path="users/:id/edit" element={<UserFormPage />} />
         <Route path="tenants" element={<TenantsListPage />} />
         <Route path="enrollments" element={<EnrollmentsListPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
