@@ -12,7 +12,11 @@
       "Bash(where:*)",
       "Bash(nul)",
       "Bash(git submodule:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(.gradlew.bat clean build -x test)",
+      "Bash(powershell -Command \".\\gradlew.bat clean build -x test\")",
+      "Bash(./gradlew bootRun)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
