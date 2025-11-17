@@ -8,7 +8,11 @@
       "Bash(del:*)",
       "Bash(move /Y fivucsas_er_diagram_fixed.png fivucsas_er_diagram.png:*)",
       "Bash(move /Y ha_deployment_fixed.png ha_deployment.png:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(where:*)",
+      "Bash(nul)",
+      "Bash(git submodule:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
