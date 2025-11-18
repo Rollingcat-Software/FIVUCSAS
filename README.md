@@ -1,474 +1,240 @@
-# FIVUCSAS - Face and Identity Verification Using Cloud-based SaaS
+# FIVUCSAS
+
+**Face and Identity Verification Using Cloud-based SaaS**
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-In%20Development-yellow.svg)
 
-## 📋 Overview
+A comprehensive, multi-tenant biometric authentication platform with active liveness detection. Developed as an Engineering Project at **Marmara University's Computer Engineering Department**.
 
-**FIVUCSAS** (Face and Identity Verification Using Cloud-based SaaS) is a comprehensive, multi-tenant biometric authentication platform designed to provide secure identity verification for both physical and digital access control. Developed as an Engineering Project at **Marmara University's Computer Engineering Department**, this platform combines cutting-edge deep learning with modern cloud-native architecture.
+## Key Innovation
 
-### Key Innovation: The Biometric Puzzle
-
-Our unique **active liveness detection algorithm** requires users to perform a random sequence of facial actions (smile, blink, look left/right), making it highly resistant to spoofing attacks using photos, videos, or masks.
+**Active Liveness Detection (Biometric Puzzle)**: Random facial action challenges (smile, blink, look left/right) to prevent spoofing attacks.
 
 ---
 
-## 🏗️ Architecture
-
-### System Components
+## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        FIVUCSAS Platform                      │
-├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐    │
-│  │  Mobile App │  │   Web App    │  │  Desktop App    │    │
-│  │  (Flutter)  │  │   (React)    │  │  (Electron)     │    │
-│  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘    │
-│         │                │                     │              │
-│         └────────────────┼─────────────────────┘              │
-│                          │                                    │
-│                  ┌───────▼────────┐                          │
-│                  │  API Gateway   │                          │
-│                  │    (NGINX)     │                          │
-│                  └───────┬────────┘                          │
-│                          │                                    │
-│         ┌────────────────┴────────────────┐                  │
-│         │                                 │                  │
-│  ┌──────▼──────────┐          ┌──────────▼────────┐         │
-│  │ Identity Core   │◄────────►│  Biometric         │         │
-│  │ API (Spring)    │          │  Processor (FastAPI)│        │
-│  └────────┬────────┘          └──────────┬─────────┘         │
-│           │                              │                   │
-│  ┌────────▼────────┐          ┌──────────▼─────────┐         │
-│  │  PostgreSQL     │          │     Redis           │         │
-│  │  + pgvector     │          │ (Cache & Queue)     │         │
-│  └─────────────────┘          └─────────────────────┘         │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-```
-
-### Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Backend Core** | Spring Boot 3.2+ (Java 21) | Identity & Auth Management |
-| **AI/ML Service** | FastAPI (Python 3.11+) | Biometric Processing |
-| **Mobile App** | Kotlin Multiplatform + Compose | Cross-platform (Android/iOS) |
-| **Web Dashboard** | React 18 + TypeScript | Admin Panel |
-| **Desktop Client** | Kotlin Multiplatform + Compose | Kiosk Mode + Admin Dashboard (90% code shared with mobile) |
-| **Database** | PostgreSQL 16 + pgvector | Data & Vector Storage |
-| **Cache/Queue** | Redis 7 | Session & Messaging |
-| **API Gateway** | NGINX | Routing & Rate Limiting |
-
----
-
-## 📁 Repository Structure
-
-```
-FIVUCSAS/
-├── identity-core-api/       # Spring Boot microservice
-├── biometric-processor/     # FastAPI ML service
-├── mobile-app/              # Kotlin Multiplatform (Android/iOS)
-├── web-app/                 # React admin dashboard
-├── desktop-app/             # Kotlin Multiplatform (Desktop)
-├── docs/                    # Documentation & configs
-│   ├── nginx/               # API Gateway configuration
-│   ├── sql/                 # Database initialization
-│   └── monitoring/          # Prometheus/Grafana configs
-├── docker-compose.yml       # Unified development environment
-├── docker-compose.dev.yml   # Development overrides
-├── docker-compose.prod.yml  # Production configuration
-├── .env.example             # Environment variables template
-└── README.md               # This file
+┌─────────────────────────────────────────────────────┐
+│               FIVUCSAS Platform                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐     │
+│  │ Web App  │  │ Desktop  │  │  Mobile App  │     │
+│  │ (React)  │  │ (Kotlin) │  │   (Kotlin)   │     │
+│  └────┬─────┘  └────┬─────┘  └──────┬───────┘     │
+│       └─────────────┼───────────────┘             │
+│                     │                              │
+│            ┌────────▼────────┐                    │
+│            │   API Gateway   │                    │
+│            │     (NGINX)     │                    │
+│            └────────┬────────┘                    │
+│                     │                              │
+│       ┌─────────────┴─────────────┐              │
+│       │                           │              │
+│  ┌────▼────────┐        ┌────────▼──────┐       │
+│  │identity-api │◄──────►│  biometric-   │       │
+│  │(Spring Boot)│        │  processor    │       │
+│  └──────┬──────┘        │  (FastAPI)    │       │
+│         │               └────────┬──────┘       │
+│  ┌──────▼──────┐        ┌───────▼───────┐       │
+│  │ PostgreSQL  │        │    Redis      │       │
+│  │ + pgvector  │        │ Cache & Queue │       │
+│  └─────────────┘        └───────────────┘       │
+│                                                   │
+└───────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick Start
+## Modules
 
-### ⚠️ Important: Git Submodules
+| Module | Technology | Description | Status |
+|--------|------------|-------------|--------|
+| [identity-core-api](./identity-core-api) | Spring Boot / Java 21 | Authentication & user management | 60% |
+| [web-app](./web-app) | React / TypeScript | Admin dashboard | 100% UI |
+| [biometric-processor](./biometric-processor) | FastAPI / Python | Face recognition & liveness | 0% |
+| [mobile-app](./mobile-app) | Kotlin Multiplatform | Desktop & mobile apps | 96% Desktop |
+| [docs](./docs) | Markdown | API documentation | Basic |
 
-This repository uses **Git Submodules** to manage component repositories. When cloning:
+---
 
-```bash
-# Clone with submodules (RECOMMENDED)
-git clone --recurse-submodules https://github.com/Rollingcat-Software/FIVUCSAS.git
-
-# Or if already cloned, initialize submodules:
-git submodule update --init --recursive
-```
-
-📖 **See [SUBMODULES_GUIDE.md](./SUBMODULES_GUIDE.md) for complete submodule workflow documentation.**
+## Quick Start
 
 ### Prerequisites
 
-- **Git** with submodule support
-- **Docker & Docker Compose** (recommended)
-- **Java 21** (for identity-core-api)
-- **Python 3.11+** (for biometric-processor)
-- **Kotlin 1.9+** (for mobile-app & desktop-app)
-- **Android Studio / IntelliJ IDEA** (for KMP development)
-- **Node.js 18+** (for web-app)
+- Java 21
+- Node.js 20+ (pnpm)
+- Python 3.10+
+- Docker & Docker Compose
 
-### Option 1: Docker Compose (Recommended)
+### 1. Clone Repository
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-org/FIVUCSAS.git
+git clone https://github.com/Rollingcat-Software/FIVUCSAS.git
 cd FIVUCSAS
-
-# 2. Copy and configure environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# 3. Start all services
-docker-compose up -d
-
-# 4. Check service status
-docker-compose ps
-
-# 5. View logs
-docker-compose logs -f
+git submodule update --init --recursive
 ```
 
-**Access Points:**
-- API Gateway: http://localhost:8000
-- Identity Core API: http://localhost:8080
-- Biometric Processor: http://localhost:8001
-- Swagger UI: http://localhost:8080/swagger-ui.html
-
-### Option 2: Manual Setup
-
-#### 1. Start Infrastructure
+### 2. Start Infrastructure
 
 ```bash
-# Start PostgreSQL
-docker run -d --name fivucsas-postgres \
-  -e POSTGRES_DB=identity_core_db \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 \
-  pgvector/pgvector:pg16
-
-# Start Redis
-docker run -d --name fivucsas-redis \
-  -p 6379:6379 \
-  redis:7-alpine
+docker-compose -f config/docker-compose.yml up -d
 ```
 
-#### 2. Run Identity Core API
+### 3. Start Backend
 
 ```bash
 cd identity-core-api
-cp .env.example .env
-./gradlew bootRun
+./mvnw spring-boot:run
 ```
 
-#### 3. Run Biometric Processor
-
-```bash
-cd biometric-processor
-cp .env.example .env
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8001
-```
-
-#### 4. Run Mobile App
-
-```bash
-cd mobile-app
-./gradlew :androidApp:installDebug
-# Or open in Android Studio / IntelliJ IDEA
-```
-
-#### 5. Run Web App
+### 4. Start Frontend
 
 ```bash
 cd web-app
-npm install
-npm run dev
+pnpm install && pnpm dev
+```
+
+Open http://localhost:5173
+
+---
+
+## Repository Structure
+
+```
+FIVUCSAS/
+├── README.md
+├── .env.example
+│
+├── docs/                      # Documentation
+│   ├── architecture/          # System design docs
+│   ├── guides/                # User & developer guides
+│   │   └── deployment/        # Deployment guides
+│   ├── modules/               # Module implementation plans
+│   ├── testing/               # Test documentation
+│   ├── project/               # Project management
+│   └── archive/               # Historical docs
+│
+├── scripts/                   # Automation scripts
+│   ├── setup/                 # Setup & initialization
+│   ├── testing/               # Test scripts
+│   ├── diagnostics/           # Debug & diagnostic tools
+│   └── deployment/            # Deployment scripts
+│
+├── config/                    # Configuration files
+│   ├── docker-compose.yml     # Main compose
+│   ├── docker-compose.dev.yml # Development
+│   └── docker-compose.prod.yml# Production
+│
+├── infrastructure/            # Infrastructure config
+│   ├── nginx/                 # API gateway
+│   ├── monitoring/            # Prometheus/Grafana
+│   └── load-tests/            # k6 load tests
+│
+└── modules (submodules)/      # Git submodules
+    ├── identity-core-api/     # Backend API
+    ├── web-app/               # Admin dashboard
+    ├── biometric-processor/   # ML/AI service
+    ├── mobile-app/            # Desktop & mobile
+    └── docs/                  # API documentation
 ```
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-### Individual Component Documentation
+### Getting Started
+- [Quick Start Guide](./docs/guides/quick-start.md)
+- [Local Development](./docs/guides/local-development.md)
 
-Each repository has comprehensive README documentation:
+### Architecture
+- [System Overview](./docs/architecture/structure.md)
+- [Data Flow](./docs/architecture/data-flow.md)
+- [Security Model](./docs/architecture/security.md)
 
-- **[Git Submodules Guide](./SUBMODULES_GUIDE.md)** ⭐ **START HERE**
-- [Identity Core API Documentation](./identity-core-api/README.md)
-- [Biometric Processor Documentation](./biometric-processor/README.md)
-- [Kotlin Multiplatform Guide](./KOTLIN_MULTIPLATFORM_GUIDE.md)
-- [Mobile App Documentation](./mobile-app/README.md)
-- [Web App Documentation](./web-app/README.md)
-- [Desktop App Documentation](./desktop-app/README.md)
+### Module Implementation Plans
+- [identity-core-api](./docs/modules/identity-core-api.md)
+- [web-app](./docs/modules/web-app.md)
+- [biometric-processor](./docs/modules/biometric-processor.md)
+- [mobile-app](./docs/modules/mobile-app.md)
 
-### API Documentation
+### Deployment
+- [Deployment Guide](./docs/guides/deployment/deployment-guide.md)
+- [Staging Deployment](./docs/guides/deployment/staging.md)
+- [Monitoring](./docs/guides/deployment/monitoring.md)
 
-When services are running:
-- **OpenAPI/Swagger**: http://localhost:8080/swagger-ui.html
-- **FastAPI Docs**: http://localhost:8001/docs
-
-### Database Schema
-
-Database migrations are managed by Flyway. See:
-- `identity-core-api/src/main/resources/db/migration/`
-
-Initial schema includes:
-- `V1` - Tenants table
-- `V2` - Users table
-- `V3` - Roles & permissions
-- `V4` - Biometric data with pgvector
-- `V5` - Audit logs & sessions
+### Testing
+- [Test Report](./docs/testing/test-report.md)
+- [Integration Testing](./docs/testing/integration-testing.md)
+- [Load Testing](./docs/testing/load-testing.md)
 
 ---
 
-## 🛠️ Development
+## Technology Stack
 
-### Environment Setup
+### Backend
+- **Framework**: Spring Boot 3.2+
+- **Language**: Java 21
+- **Database**: PostgreSQL 16 + pgvector
+- **Cache**: Redis 7
+- **Auth**: JWT
 
-1. **Copy environment templates:**
-   ```bash
-   cp .env.example .env
-   cp identity-core-api/.env.example identity-core-api/.env
-   cp biometric-processor/.env.example biometric-processor/.env
-   # ... repeat for other services
-   ```
+### Frontend
+- **Framework**: React 18
+- **Language**: TypeScript 5
+- **Build**: Vite 5
+- **UI**: Material-UI v5
+- **State**: Redux Toolkit
 
-2. **Configure each `.env` file** with your local settings
+### ML/AI
+- **Framework**: FastAPI
+- **Language**: Python 3.10+
+- **ML**: TensorFlow / PyTorch
+- **Queue**: Celery + Redis
 
-### Development with Docker Compose
-
-```bash
-# Start with development overrides
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Rebuild after code changes
-docker-compose up -d --build
-
-# View specific service logs
-docker-compose logs -f identity-core-api
-```
-
-### Running Tests
-
-```bash
-# Identity Core API
-cd identity-core-api
-./gradlew test
-
-# Biometric Processor
-cd biometric-processor
-pytest
-
-# Mobile App
-cd mobile-app
-flutter test
-
-# Web App
-cd web-app
-npm test
-```
+### Desktop/Mobile
+- **Framework**: Kotlin Multiplatform
+- **UI**: Compose Multiplatform
+- **Platforms**: Windows, macOS, Linux, Android, iOS
 
 ---
 
-## 🔐 Security
+## Development Workflow
 
-### Default Credentials (DEVELOPMENT ONLY)
+1. Create feature branch from `develop`
+2. Implement changes following SOLID principles
+3. Write tests (80%+ coverage)
+4. Create pull request
+5. Code review
+6. Merge to `develop`
 
-**Database:**
-- Username: `postgres`
-- Password: `postgres_dev_password`
-
-**System Admin:**
-- Email: `admin@fivucsas.local`
-- Password: `Admin@123`
-
-⚠️ **WARNING**: Change all default passwords before deploying to production!
-
-### Security Features
-
-- ✅ JWT-based authentication with refresh tokens
-- ✅ BCrypt password hashing (work factor 12)
-- ✅ AES-256 encryption for sensitive data
-- ✅ Row-level security for multi-tenancy
-- ✅ Rate limiting on authentication endpoints
-- ✅ CORS configuration
-- ✅ SQL injection prevention (parameterized queries)
-- ✅ XSS protection
-- ✅ KVKK/GDPR compliance features
+See [Project Planning](./docs/project/planning-summary.md) for detailed roadmap.
 
 ---
 
-## 🧪 Testing
+## License
 
-### Test Coverage Goals
-
-- Unit Tests: > 80%
-- Integration Tests: > 70%
-- Overall Coverage: > 75%
-
-### Running All Tests
-
-```bash
-# Run tests for all components
-./scripts/run-all-tests.sh
-```
+MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 
-## 📦 Deployment
-
-### Production Deployment
-
-```bash
-# Build production images
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
-
-# Start in production mode
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-### Environment Variables for Production
-
-Make sure to set secure values for:
-- `JWT_SECRET` - Use a strong 256-bit random key
-- `POSTGRES_PASSWORD` - Strong database password
-- `REDIS_PASSWORD` - Strong Redis password
-- `ENCRYPTION_KEY` - 32-byte AES key
-
----
-
-## 👥 Team
+## Team
 
 **Marmara University - Computer Engineering Department**
 
-**Project Team:**
-- [Your Name] - Project Lead & Backend Developer
-- [Team Member 1] - Mobile App Developer
-- [Team Member 2] - AI/ML & Biometric Systems
-
-**Supervisor:** [Supervisor's Name]
-
-**Course:** CSE4297 Engineering Project 1
+Engineering Project 2024-2025
 
 ---
 
-## 📅 Project Timeline
+## Contributing
 
-### Phase 1: Foundation (Weeks 1-4) ✅
-- [x] Project specification document
-- [x] Repository setup
-- [x] Docker Compose configuration
-- [x] Database schema design
-- [ ] Basic API endpoints
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Create pull request
 
-### Phase 2: Core Features (Weeks 5-8)
-- [ ] User authentication & JWT
-- [ ] Multi-tenant implementation
-- [ ] Face recognition integration
-- [ ] Mobile app camera integration
-- [ ] Biometric Puzzle algorithm
-
-### Phase 3: Integration (Weeks 9-12)
-- [ ] Full API integration
-- [ ] Redis message queue
-- [ ] Admin dashboard
-- [ ] Testing suite
-- [ ] Performance optimization
-
-### Phase 4: Finalization (Weeks 13-16)
-- [ ] Security audit
-- [ ] Documentation completion
-- [ ] Demo preparation
-- [ ] Final report
-
----
-
-## 🤝 Contributing
-
-### Git Workflow
-
-```bash
-# Create feature branch
-git checkout -b feature/your-feature-name
-
-# Make changes and commit
-git add .
-git commit -m "feat: add your feature"
-
-# Push and create PR
-git push origin feature/your-feature-name
-```
-
-### Commit Convention
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `style:` - Code style changes
-- `refactor:` - Code refactoring
-- `test:` - Adding tests
-- `chore:` - Maintenance tasks
-
----
-
-## 📄 License
-
-This project is part of the FIVUCSAS platform developed as an Engineering Project at Marmara University, Faculty of Engineering, Computer Engineering Department.
-
-Copyright © 2025 FIVUCSAS Team. All rights reserved.
-
-Licensed under the MIT License - see individual component LICENSE files for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Marmara University** Computer Engineering Department
-- **Project Supervisor:** [Supervisor's Name]
-- **Open Source Libraries:**
-  - Spring Framework, PostgreSQL, Redis
-  - DeepFace, MediaPipe, TensorFlow
-  - Flutter, React, Electron
-- **Inspiration:** Okta, Auth0, Azure AD
-
----
-
-## 📞 Support & Contact
-
-- **GitHub Issues:** [Repository Issues](https://github.com/your-org/FIVUCSAS/issues)
-- **Email:** [team-email@example.com]
-- **Documentation:** [Project Wiki](https://github.com/your-org/FIVUCSAS/wiki)
-
----
-
-## 🗺️ Roadmap
-
-### MVP (Current Focus)
-- [ ] Basic authentication system
-- [ ] Face recognition & verification
-- [ ] Liveness detection (Biometric Puzzle)
-- [ ] Mobile app for enrollment
-- [ ] Admin dashboard
-
-### Future Enhancements
-- [ ] Additional biometric modalities (fingerprint, voice)
-- [ ] Risk-based adaptive authentication
-- [ ] OAuth2/OpenID Connect provider
-- [ ] Kubernetes deployment
-- [ ] Advanced analytics dashboard
-- [ ] API key management for developers
-- [ ] Webhook system for events
-
----
-
-**Built with passion for security and innovation** | Marmara University © 2025
+See module implementation plans in `docs/modules/` for specific contribution areas.
