@@ -1,0 +1,515 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.7 Chrome/138.0.7204.251 Electron/37.7.1 Safari/537.36" version="28.2.7">
+  <diagram name="Page-1" id="O9uXOprco7sdJGsABokh">
+    <mxGraphModel dx="958" dy="566" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4681" pageHeight="3300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-5" value="" style="swimlane;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;startSize=0;html=1;flipH=0;flipV=0;" parent="1" vertex="1">
+          <mxGeometry x="560" y="1140" width="1250" height="990" as="geometry">
+            <mxRectangle x="390" y="270" width="190" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-9" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;IDENTITY CORE API&lt;/font&gt;" style="swimlane;startSize=20;html=1;" parent="irc-Vgu2PUloeFuTGgrz-5" vertex="1">
+          <mxGeometry width="530" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-565" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-51" target="irc-Vgu2PUloeFuTGgrz-564" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-51" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Receive Enrollment Request&lt;/span&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=center;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="65" y="720" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-53" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Authorization Valid?&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="70" y="480" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-64" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-58" target="irc-Vgu2PUloeFuTGgrz-61" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-58" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Check Tenant Permissions&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="70" y="350" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-61" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Validate User Input Data&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="70" y="245" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-62" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fillColor=#d5e8d4;strokeColor=#006600;startArrow=classic;startFill=1;endArrow=none;endFill=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-58" target="irc-Vgu2PUloeFuTGgrz-53" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="144.44000000000005" y="395" as="sourcePoint" />
+            <mxPoint x="144.44000000000005" y="445" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-63" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;YES&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-62" vertex="1" connectable="0">
+          <mxGeometry x="-0.0489" y="-2" relative="1" as="geometry">
+            <mxPoint x="3" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-605" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;endArrow=none;endFill=0;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-65" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="274.8888888888887" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-65" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Data Valid&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="305" y="220" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-586" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-69" target="irc-Vgu2PUloeFuTGgrz-85" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-69" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Extract Face from ID Photo&amp;nbsp;&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="303.75" y="550" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-85" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Send to Biometric Processor via REST&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="301.25" y="680" width="156.25" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-355" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-61" target="irc-Vgu2PUloeFuTGgrz-65" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-373" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Receive Biometric Response&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="330" y="810" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-424" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-422" target="irc-Vgu2PUloeFuTGgrz-343" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-422" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Associate with Tenant&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="10" y="910" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-581" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-343" target="irc-Vgu2PUloeFuTGgrz-579" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-343" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Store in Database Layer&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="190" y="910" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-649" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;endArrow=none;endFill=0;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-562" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="90.25" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="50" y="85" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-562" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Rollback Transaction and Return Error&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="170" y="50" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-564" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Validate JWT Token&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="70" y="620" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-566" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-564" target="irc-Vgu2PUloeFuTGgrz-53" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-575" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-573" target="irc-Vgu2PUloeFuTGgrz-69" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-619" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;YES&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-575" vertex="1" connectable="0">
+          <mxGeometry x="-0.0044" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-609" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;endArrow=none;endFill=0;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-573" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="430.44444444444434" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-573" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;Face Region Detected in ID Photo?&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="300" y="370" width="157.5" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-574" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-65" target="irc-Vgu2PUloeFuTGgrz-573" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-618" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;YES&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-574" vertex="1" connectable="0">
+          <mxGeometry x="-0.0933" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-577" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-373" target="irc-Vgu2PUloeFuTGgrz-375" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1440" y="1130.4444444444443" as="targetPoint" />
+            <mxPoint x="1555" y="1130" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-578" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-9" source="irc-Vgu2PUloeFuTGgrz-375" target="irc-Vgu2PUloeFuTGgrz-422" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-375" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Create User Entity&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="120" y="810" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-579" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Encrypt Embedding Vector&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-9" vertex="1">
+          <mxGeometry x="370" y="910" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-6" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;BIOMETRIC PROCESSOR API&lt;/font&gt;" style="swimlane;startSize=20;html=1;" parent="irc-Vgu2PUloeFuTGgrz-5" vertex="1">
+          <mxGeometry x="530" width="460" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-90" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Receive Biometric Request&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="30" y="752.5" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-108" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-90" target="irc-Vgu2PUloeFuTGgrz-107" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="105" y="740" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-107" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Validate Image Quality&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="30" y="640" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-117" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-314" target="irc-Vgu2PUloeFuTGgrz-116" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="105" y="480" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-589" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;YES&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-117" vertex="1" connectable="0">
+          <mxGeometry x="-0.0469" y="-3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-114" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-107" target="irc-Vgu2PUloeFuTGgrz-314" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="105" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-119" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-116" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="105" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-116" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Run Liveness Detection&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;(MediaPipe+EAR/MAR)&lt;/font&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=center;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="11.25" y="320" width="187.5" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-362" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-123" target="irc-Vgu2PUloeFuTGgrz-130" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-612" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;YES&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-362" vertex="1" connectable="0">
+          <mxGeometry x="-0.0807" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-123" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Liveness&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;Verifed?&lt;/font&gt;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="30" y="160" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-309" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-130" target="irc-Vgu2PUloeFuTGgrz-305" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-130" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Extract Face from the Image&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="260" y="250" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-614" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-305" target="irc-Vgu2PUloeFuTGgrz-364" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-305" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Generate Embedding Vectors&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;(ID+Live Image)&lt;/font&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="250" y="360" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-314" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Image Quality&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot; style=&quot;&quot;&gt;OK?&lt;/font&gt;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="22.5" y="490" width="165" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-359" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-116" target="irc-Vgu2PUloeFuTGgrz-123" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-367" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-6" source="irc-Vgu2PUloeFuTGgrz-364" target="irc-Vgu2PUloeFuTGgrz-366" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-620" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;YES&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-367" vertex="1" connectable="0">
+          <mxGeometry x="-0.1135" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-364" value="&lt;div style=&quot;text-align: justify;&quot;&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;Similarity&amp;gt;&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: justify;&quot;&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;font size=&quot;3&quot;&gt;Treshold?&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="260" y="490" width="150" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-366" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Return Embeddings to Identity Core&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-6" vertex="1">
+          <mxGeometry x="255" y="672.5" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-7" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;DATABASE LAYER&lt;/font&gt;" style="swimlane;startSize=20;html=1;" parent="irc-Vgu2PUloeFuTGgrz-5" vertex="1">
+          <mxGeometry x="990" width="260" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-561" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-7" source="irc-Vgu2PUloeFuTGgrz-426" target="irc-Vgu2PUloeFuTGgrz-559" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-426" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Insert User Record &amp;amp; Embedding Vector&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-7" vertex="1">
+          <mxGeometry x="55" y="900" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-430" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-7" source="irc-Vgu2PUloeFuTGgrz-428" target="irc-Vgu2PUloeFuTGgrz-431" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="134.66666666666697" y="450" as="targetPoint" />
+            <mxPoint x="135.0000000000009" y="610" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-443" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;YES&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-430" vertex="1" connectable="0">
+          <mxGeometry x="-0.0384" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-560" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;startArrow=classic;startFill=1;endArrow=none;endFill=0;" parent="irc-Vgu2PUloeFuTGgrz-7" source="irc-Vgu2PUloeFuTGgrz-428" target="irc-Vgu2PUloeFuTGgrz-559" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-428" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;Transaction&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Successfull&lt;/font&gt;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;" parent="irc-Vgu2PUloeFuTGgrz-7" vertex="1">
+          <mxGeometry x="60" y="590" width="150" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-432" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-7" source="irc-Vgu2PUloeFuTGgrz-431" target="irc-Vgu2PUloeFuTGgrz-433" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="135.1111111111113" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-431" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Update FAISS Index and&amp;nbsp; Cache User in Redis&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-7" vertex="1">
+          <mxGeometry x="52.5" y="420" width="165" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-433" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Return Success Status&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-7" vertex="1">
+          <mxGeometry x="60" y="250" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-559" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Begin Database Transaction&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-7" vertex="1">
+          <mxGeometry x="60" y="770" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-580" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-579" target="irc-Vgu2PUloeFuTGgrz-426" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-590" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-85" target="irc-Vgu2PUloeFuTGgrz-90" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-591" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-366" target="irc-Vgu2PUloeFuTGgrz-373" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-640" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-123" target="irc-Vgu2PUloeFuTGgrz-373" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="215" />
+              <mxPoint x="520" y="825" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-641" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;NO&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-640" vertex="1" connectable="0">
+          <mxGeometry x="0.3123" y="-4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-642" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-433" target="irc-Vgu2PUloeFuTGgrz-373" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1125" y="230" />
+              <mxPoint x="1280" y="230" />
+              <mxPoint x="1280" y="855" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-643" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;endArrow=none;endFill=0;startArrow=classic;startFill=1;dashed=1;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-562" target="irc-Vgu2PUloeFuTGgrz-428" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-644" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NO&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-643" vertex="1" connectable="0">
+          <mxGeometry x="-0.4065" relative="1" as="geometry">
+            <mxPoint x="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-645" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=1;entryDx=0;entryDy=0;strokeColor=#FF0000;dashed=1;" parent="irc-Vgu2PUloeFuTGgrz-5" source="irc-Vgu2PUloeFuTGgrz-364" target="irc-Vgu2PUloeFuTGgrz-562" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="390" y="110" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="960" y="543" />
+              <mxPoint x="960" y="120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-647" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NO&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-645" vertex="1" connectable="0">
+          <mxGeometry x="0.0494" y="2" relative="1" as="geometry">
+            <mxPoint x="-1" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-13" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="620" y="150" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="irc-Vgu2PUloeFuTGgrz-13" target="irc-Vgu2PUloeFuTGgrz-14" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-16" value="&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;START&lt;/b&gt;&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="620" y="220" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-11" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;USER&lt;/font&gt;" style="swimlane;startSize=20;html=1;" parent="1" vertex="1">
+          <mxGeometry x="730" y="90" width="430" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-14" target="irc-Vgu2PUloeFuTGgrz-18" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="134.55555555555566" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-14" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Open Mobile App&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="75" y="60" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-554" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-18" target="irc-Vgu2PUloeFuTGgrz-551" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-18" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Enter User Information &amp;amp; Upload ID&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="63.75" y="170" width="142.5" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-19" target="irc-Vgu2PUloeFuTGgrz-22" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="139.55555555555566" y="460" as="targetPoint" />
+            <mxPoint x="140" y="440" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-19" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Start Camera for Liveness Puzzle&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="75" y="370" width="125" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-22" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Capture Live Face Image&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="76" y="480" width="121.5" height="63" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fillColor=#d5e8d4;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-26" target="irc-Vgu2PUloeFuTGgrz-28" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="140" y="680" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-37" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;YES&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-31" vertex="1" connectable="0">
+          <mxGeometry x="-0.0489" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-552" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#FF0000;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-26" target="irc-Vgu2PUloeFuTGgrz-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-622" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NO&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-552" vertex="1" connectable="0">
+          <mxGeometry x="-0.2078" y="-5" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-26" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Challenges Completed&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="72.5" y="590" width="130" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-28" target="irc-Vgu2PUloeFuTGgrz-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-28" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Capture Live Face Image&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="75" y="750" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-29" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Send Enrollment Request&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="72.5" y="870" width="125" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-547" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-445" target="irc-Vgu2PUloeFuTGgrz-546" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-445" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Display Enrollment/Login Confirmation&amp;nbsp;&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="270" y="320" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-548" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-546" target="irc-Vgu2PUloeFuTGgrz-549" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="345.11111111111086" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-546" value="&lt;span style=&quot;font-size: 14px;&quot;&gt;Store Local Session Token&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="280" y="430" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-549" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="315" y="560" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-550" value="&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;END&lt;/b&gt;&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="300" y="620" width="90" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-555" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-551" target="irc-Vgu2PUloeFuTGgrz-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-551" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Request Liveness Challenge Sequence&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="60" y="280" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-553" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-22" target="irc-Vgu2PUloeFuTGgrz-26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-655" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-11" source="irc-Vgu2PUloeFuTGgrz-625" target="irc-Vgu2PUloeFuTGgrz-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-625" value="&lt;span style=&quot;font-size: 14px;&quot;&gt;Display 429 Error&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-11" vertex="1">
+          <mxGeometry x="285" y="750" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-557" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="irc-Vgu2PUloeFuTGgrz-29" target="irc-Vgu2PUloeFuTGgrz-39" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="970" y="2190.4444444444443" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-446" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="irc-Vgu2PUloeFuTGgrz-438" target="irc-Vgu2PUloeFuTGgrz-445" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-10" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;API GATEWAY&lt;/font&gt;" style="swimlane;startSize=20;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1160" y="90" width="420" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="irc-Vgu2PUloeFuTGgrz-10" source="irc-Vgu2PUloeFuTGgrz-39" target="irc-Vgu2PUloeFuTGgrz-40" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-39" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Receive Enrollment Request&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-10" vertex="1">
+          <mxGeometry x="35" y="870" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-40" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Rate Limiting Check&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-10" vertex="1">
+          <mxGeometry x="35" y="700" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-48" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#006600;" parent="irc-Vgu2PUloeFuTGgrz-10" source="irc-Vgu2PUloeFuTGgrz-42" target="irc-Vgu2PUloeFuTGgrz-46" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-354" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;YES&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-48" vertex="1" connectable="0">
+          <mxGeometry x="-0.2872" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-42" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Rate Limit OK?&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="irc-Vgu2PUloeFuTGgrz-10" vertex="1">
+          <mxGeometry x="45" y="550" width="130" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="irc-Vgu2PUloeFuTGgrz-10" source="irc-Vgu2PUloeFuTGgrz-40" target="irc-Vgu2PUloeFuTGgrz-42" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-569" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" parent="irc-Vgu2PUloeFuTGgrz-10" source="irc-Vgu2PUloeFuTGgrz-46" target="irc-Vgu2PUloeFuTGgrz-438" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-46" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Forward Request to Identity Core API&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-10" vertex="1">
+          <mxGeometry x="240" y="570" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-438" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Format JSON Response and Sent to User&lt;/font&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="irc-Vgu2PUloeFuTGgrz-10" vertex="1">
+          <mxGeometry x="50" y="315" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-626" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#FF0000;" parent="1" source="irc-Vgu2PUloeFuTGgrz-42" target="irc-Vgu2PUloeFuTGgrz-625" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1180" y="690" />
+              <mxPoint x="1180" y="870" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-627" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;NO&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-626" vertex="1" connectable="0">
+          <mxGeometry x="-0.2276" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-631" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeColor=#0000FF;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="irc-Vgu2PUloeFuTGgrz-46" target="irc-Vgu2PUloeFuTGgrz-51" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="610" y="1900" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1630" y="690" />
+              <mxPoint x="1630" y="1120" />
+              <mxPoint x="500" y="1120" />
+              <mxPoint x="500" y="1890" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-656" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#FF0000;" parent="1" source="irc-Vgu2PUloeFuTGgrz-314" target="irc-Vgu2PUloeFuTGgrz-438" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="1683" />
+              <mxPoint x="1050" y="1100" />
+              <mxPoint x="1740" y="1100" />
+              <mxPoint x="1740" y="422" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2ysK0LgvTIMmapG6bMse-1" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;NO&lt;/font&gt;&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-656" vertex="1" connectable="0">
+          <mxGeometry x="-0.7723" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-657" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#FF0000;" parent="1" source="irc-Vgu2PUloeFuTGgrz-53" target="irc-Vgu2PUloeFuTGgrz-438" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="1675" />
+              <mxPoint x="610" y="1060" />
+              <mxPoint x="1680" y="1060" />
+              <mxPoint x="1680" y="457" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="irc-Vgu2PUloeFuTGgrz-658" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NO&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="irc-Vgu2PUloeFuTGgrz-657" vertex="1" connectable="0">
+          <mxGeometry x="-0.7066" y="-3" relative="1" as="geometry">
+            <mxPoint x="-3" y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
