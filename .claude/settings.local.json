@@ -16,7 +16,12 @@
       "Bash(.gradlew.bat clean build -x test)",
       "Bash(powershell -Command \".\\gradlew.bat clean build -x test\")",
       "Bash(./gradlew bootRun)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gh pr list:*)",
+      "Bash(git merge:*)",
+      "Bash(./gradlew.bat:*)",
+      "Bash(powershell -Command \"cd ''C:\\Users\\ahabg\\OneDrive\\Belgeler\\GitHub\\FIVUCSAS\\mobile-app''; .\\gradlew.bat compileKotlin --no-daemon 2>&1\")",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
