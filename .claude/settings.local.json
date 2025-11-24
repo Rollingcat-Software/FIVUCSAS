@@ -21,7 +21,14 @@
       "Bash(git merge:*)",
       "Bash(./gradlew.bat:*)",
       "Bash(powershell -Command \"cd ''C:\\Users\\ahabg\\OneDrive\\Belgeler\\GitHub\\FIVUCSAS\\mobile-app''; .\\gradlew.bat compileKotlin --no-daemon 2>&1\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "Bash(NUL)"
     ],
     "deny": [],
     "ask": []
