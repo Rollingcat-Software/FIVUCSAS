@@ -62,33 +62,17 @@ services:
     depends_on:
       - prometheus
 
-  # PostgreSQL Exporter for Biometric Database
-  postgres-exporter-biometric:
+  # PostgreSQL Exporter (Single Database)
+  postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
-    container_name: fivucsas-postgres-exporter-biometric
+    container_name: fivucsas-postgres-exporter
     restart: unless-stopped
     environment:
-      - DATA_SOURCE_NAME=postgresql://${BIOMETRIC_DB_USER:-biometric_user}:${BIOMETRIC_DB_PASSWORD:-biometric_pass}@postgres-biometric:5432/biometric_db?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres_dev_password}@postgres:5432/${DB_NAME:-identity_core_db}?sslmode=disable
     ports:
       - "9187:9187"
     networks:
       - fivucsas-network
-    depends_on:
-      - postgres-biometric
-
-  # PostgreSQL Exporter for Identity Database
-  postgres-exporter-identity:
-    image: prometheuscommunity/postgres-exporter:v0.15.0
-    container_name: fivucsas-postgres-exporter-identity
-    restart: unless-stopped
-    environment:
-      - DATA_SOURCE_NAME=postgresql://${IDENTITY_DB_USER:-identity_user}:${IDENTITY_DB_PASSWORD:-identity_pass}@postgres-identity:5432/identity_db?sslmode=disable
-    ports:
-      - "9188:9187"
-    networks:
-      - fivucsas-network
-    depends_on:
-      - postgres-identity
 
   # Redis Exporter
   redis-exporter:
@@ -97,13 +81,11 @@ services:
     restart: unless-stopped
     environment:
       - REDIS_ADDR=redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_dev_password}
     ports:
       - "9121:9121"
     networks:
       - fivucsas-network
-    depends_on:
-      - redis
 
   # Node Exporter (System Metrics)
   node-exporter:

@@ -451,6 +451,54 @@ Licensed under the MIT License - see individual component LICENSE files for deta
 
 ---
 
+## 🔌 Backend-Frontend Integration
+
+The FIVUCSAS platform features a complete integration layer connecting React Web App and Kotlin Multiplatform Mobile App to the Spring Boot backend API.
+
+### Quick Start
+
+```bash
+# 1. Start backend
+cd identity-core-api
+export JWT_SECRET=your-dev-secret-key
+./gradlew bootRun --args='--spring.profiles.active=dev'
+
+# 2. Start web app (in new terminal)
+cd web-app
+pnpm install
+pnpm dev
+
+# 3. Test integration (in new terminal)
+./test-integration.sh  # Linux/Mac
+# or
+test-integration.bat   # Windows
+```
+
+### Key Features
+
+- **JWT Authentication**: Automatic token injection and refresh
+- **CORS Configuration**: Properly configured for all origins
+- **Error Handling**: Robust error handling with automatic retry
+- **Mock Mode**: Toggle between real API and mock data for development
+
+### Documentation
+
+- **Comprehensive Guide**: [`docs/04-api/BACKEND_FRONTEND_INTEGRATION.md`](docs/04-api/BACKEND_FRONTEND_INTEGRATION.md)
+- **Quick Start**: [`docs/01-getting-started/API_INTEGRATION_QUICKSTART.md`](docs/01-getting-started/API_INTEGRATION_QUICKSTART.md)
+- **Integration Summary**: [`INTEGRATION_SUMMARY.md`](INTEGRATION_SUMMARY.md)
+
+### Configuration Status
+
+| Component | Status | Configuration |
+|-----------|--------|---------------|
+| Web App | ✅ Configured | `VITE_ENABLE_MOCK_API=false` |
+| Mobile App | ✅ Configured | `ApiConfig.useRealApi = true` |
+| Backend CORS | ✅ Configured | Allows `localhost:5173` |
+| JWT Interceptor (Web) | ✅ Implemented | Auto token injection & refresh |
+| JWT Interceptor (Mobile) | ✅ Implemented | Auto token injection |
+
+---
+
 ## 🗺️ Roadmap
 
 ### MVP (Current Focus)

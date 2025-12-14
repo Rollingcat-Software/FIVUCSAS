@@ -36,15 +36,10 @@ scrape_configs:
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # PostgreSQL Exporter (Biometric DB)
-  - job_name: 'postgres-biometric'
+  # PostgreSQL Exporter (Single DB)
+  - job_name: 'postgres'
     static_configs:
-      - targets: ['postgres-exporter-biometric:9187']
-
-  # PostgreSQL Exporter (Identity DB)
-  - job_name: 'postgres-identity'
-    static_configs:
-      - targets: ['postgres-exporter-identity:9187']
+      - targets: ['postgres-exporter:9187']
 
   # Redis Exporter
   - job_name: 'redis'

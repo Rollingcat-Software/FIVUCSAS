@@ -57,14 +57,14 @@ scrape_configs:
   # ==========================================================================
   # Identity Core API (Spring Boot Actuator)
   # ==========================================================================
-  - job_name: 'identity-api'
+  - job_name: 'identity-core-api'
     metrics_path: '/actuator/prometheus'
     scrape_interval: 10s  # More frequent scraping for API
 
     static_configs:
-      - targets: ['identity-api:8080']
+      - targets: ['identity-core-api:8080']
         labels:
-          service: 'identity-api'
+          service: 'identity-core-api'
           component: 'backend'
 
     # Metric relabeling (optional - filter/rename metrics)
@@ -76,74 +76,47 @@ scrape_configs:
         replacement: 'http_latency'
 
   # ==========================================================================
-  # Biometric Processor (3 Replicas)
+  # Biometric Processor (FastAPI)
   # ==========================================================================
   - job_name: 'biometric-processor'
     metrics_path: '/metrics'
     scrape_interval: 10s
 
-    # Docker DNS service discovery
-    # Note: Docker Compose provides DNS for service replicas
-    dns_sd_configs:
-      - names:
-          - 'biometric-processor'
-        type: 'A'
-        port: 8000
-
-    # Alternative: Static configuration (if DNS discovery doesn't work)
-    # static_configs:
-    #   - targets:
-    #       - 'biometric-processor:8000'
-    #     labels:
-    #       service: 'biometric-processor'
-    #       component: 'ml-worker'
-
-    relabel_configs:
-      # Add service label
-      - target_label: 'service'
-        replacement: 'biometric-processor'
-      - target_label: 'component'
-        replacement: 'ml-worker'
+    static_configs:
+      - targets: ['biometric-processor:8001']
+        labels:
+          service: 'biometric-processor'
+          component: 'ml-worker'
 
   # ==========================================================================
-  # PostgreSQL Exporter (if installed)
+  # PostgreSQL Exporter
   # ==========================================================================
-  # - job_name: 'postgres'
-  #   static_configs:
-  #     - targets: ['postgres-exporter:9187']
-  #       labels:
-  #         service: 'postgres'
-  #         component: 'database'
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres'
+          component: 'database'
 
   # ==========================================================================
-  # Redis Exporter (if installed)
+  # Redis Exporter
   # ==========================================================================
-  # - job_name: 'redis'
-  #   static_configs:
-  #     - targets: ['redis-exporter:9121']
-  #       labels:
-  #         service: 'redis'
-  #         component: 'cache'
-
-  # ==========================================================================
-  # Nginx (if nginx-prometheus-exporter is installed)
-  # ==========================================================================
-  # - job_name: 'nginx'
-  #   static_configs:
-  #     - targets: ['nginx-exporter:9113']
-  #       labels:
-  #         service: 'nginx'
-  #         component: 'load-balancer'
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          component: 'cache'
 
   # ==========================================================================
   # Node Exporter (Host metrics - CPU, memory, disk)
   # ==========================================================================
-  # - job_name: 'node'
-  #   static_configs:
-  #     - targets: ['node-exporter:9100']
-  #       labels:
-  #         service: 'node-exporter'
-  #         component: 'infrastructure'
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          component: 'infrastructure'
 
 # ============================================================================
 # Key Metrics to Monitor
