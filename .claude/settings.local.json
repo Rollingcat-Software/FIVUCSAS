@@ -59,7 +59,21 @@
       "Bash(.venvScriptspip install mediapipe --quiet)",
       "Bash(.venvScriptspython.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
       "Bash(curl.exe:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(Select-String -Pattern \"(dashboard|api-explorer|embeddings|webhooks)\")",
+      "Bash(Select-Object -First 20)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx next lint:*)",
+      "Bash(for file in \"liveness\" \"quality\" \"verification\" \"search\" \"batch\" \"card-detection\" \"demographics\" \"enrollment\" \"similarity\")",
+      "Bash(do echo \"Checking $file/page.tsx...\")",
+      "Bash(done)",
+      "WebSearch",
+      "Bash(py -3.11 --version:*)",
+      "Bash(python3.11:*)",
+      "Bash(py:*)",
+      "Bash(winget install:*)"
     ],
     "deny": [],
     "ask": []
