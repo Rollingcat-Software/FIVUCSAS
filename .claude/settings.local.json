@@ -73,7 +73,17 @@
       "Bash(py -3.11 --version:*)",
       "Bash(python3.11:*)",
       "Bash(py:*)",
-      "Bash(winget install:*)"
+      "Bash(winget install:*)",
+      "Bash(.venvScriptspython.exe --version)",
+      "Bash(.venvScriptspip.exe list)",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Get-Process -Name ''PhoneExperienceHost'',''YourPhone'',''PhoneLink'' -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host ''Phone Link processes stopped''\")",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(python3:*)",
+      "Bash(cmd /c \"taskkill /F /PID 8252 && taskkill /F /PID 23032 && taskkill /F /PID 30076\")",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "Bash(cmd /c \"taskkill /F /PID 23508 && taskkill /F /PID 17900 && taskkill /F /PID 36624 && taskkill /F /PID 21488 && taskkill /F /PID 17432\")",
+      "Bash(tasklist:*)",
+      "Bash(.venv/Scripts/pip.exe install:*)"
     ],
     "deny": [],
     "ask": []
