@@ -83,7 +83,8 @@
       "Bash(cmd /c \"taskkill /F /IM node.exe\")",
       "Bash(cmd /c \"taskkill /F /PID 23508 && taskkill /F /PID 17900 && taskkill /F /PID 36624 && taskkill /F /PID 21488 && taskkill /F /PID 17432\")",
       "Bash(tasklist:*)",
-      "Bash(.venv/Scripts/pip.exe install:*)"
+      "Bash(.venv/Scripts/pip.exe install:*)",
+      "Bash(cmd /c \"taskkill /F /PID 33916 && taskkill /F /PID 32288\")"
     ],
     "deny": [],
     "ask": []
