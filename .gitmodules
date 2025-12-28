@@ -7,9 +7,9 @@
 [submodule "identity-core-api"]
 	path = identity-core-api
 	url = https://github.com/Rollingcat-Software/identity-core-api.git
-[submodule "mobile-app"]
-	path = mobile-app
-	url = https://github.com/Rollingcat-Software/mobile-app.git
+[submodule "client-apps"]
+	path = client-apps
+	url = https://github.com/Rollingcat-Software/client-apps.git
 [submodule "practice-and-test"]
 	path = practice-and-test
 	url = https://github.com/Rollingcat-Software/practice-and-test.git

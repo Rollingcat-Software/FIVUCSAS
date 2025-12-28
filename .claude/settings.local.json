@@ -89,7 +89,9 @@
       "Bash(cmd /c \"taskkill /F /PID 16644 && taskkill /F /PID 15256\")",
       "Bash(.venvScriptspython.exe -m alembic upgrade head)",
       "Bash(git checkout:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
