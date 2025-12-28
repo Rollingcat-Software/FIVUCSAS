@@ -87,7 +87,9 @@
       "Bash(cmd /c \"taskkill /F /PID 33916 && taskkill /F /PID 32288\")",
       "Bash(.venvScriptspython.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001)",
       "Bash(cmd /c \"taskkill /F /PID 16644 && taskkill /F /PID 15256\")",
-      "Bash(.venvScriptspython.exe -m alembic upgrade head)"
+      "Bash(.venvScriptspython.exe -m alembic upgrade head)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
