@@ -1,9 +1,6 @@
 [submodule "biometric-processor"]
 	path = biometric-processor
 	url = https://github.com/Rollingcat-Software/biometric-processor.git
-[submodule "desktop-app"]
-	path = desktop-app
-	url = https://github.com/Rollingcat-Software/desktop-app.git
 [submodule "docs"]
 	path = docs
 	url = https://github.com/Rollingcat-Software/docs.git
