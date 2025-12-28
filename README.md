@@ -25,7 +25,7 @@ Our unique **active liveness detection algorithm** requires users to perform a r
 │                                                               │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐    │
 │  │  Mobile App │  │   Web App    │  │  Desktop App    │    │
-│  │  (Flutter)  │  │   (React)    │  │  (Electron)     │    │
+│  │    (KMP)    │  │   (React)    │  │     (KMP)       │    │
 │  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘    │
 │         │                │                     │              │
 │         └────────────────┼─────────────────────┘              │
@@ -201,13 +201,13 @@ npm run dev
 
 Each repository has comprehensive README documentation:
 
-- **[Git Submodules Guide](./SUBMODULES_GUIDE.md)** ⭐ **START HERE**
+- **[Comprehensive Documentation](./docs/README.md)** ⭐ **START HERE**
 - [Identity Core API Documentation](./identity-core-api/README.md)
 - [Biometric Processor Documentation](./biometric-processor/README.md)
-- [Kotlin Multiplatform Guide](./KOTLIN_MULTIPLATFORM_GUIDE.md)
+- [Kotlin Multiplatform Guide](./docs/03-development/KOTLIN_MULTIPLATFORM_GUIDE.md)
 - [Mobile App Documentation](./mobile-app/README.md)
 - [Web App Documentation](./web-app/README.md)
-- [Desktop App Documentation](./desktop-app/README.md)
+- [Implementation Status Report](./docs/IMPLEMENTATION_STATUS_REPORT.md)
 
 ### API Documentation
 
@@ -269,7 +269,7 @@ pytest
 
 # Mobile App
 cd mobile-app
-flutter test
+./gradlew :shared:test
 
 # Web App
 cd web-app
@@ -350,44 +350,35 @@ Make sure to set secure values for:
 **Marmara University - Computer Engineering Department**
 
 **Project Team:**
-- [Your Name] - Project Lead & Backend Developer
-- [Team Member 1] - Mobile App Developer
-- [Team Member 2] - AI/ML & Biometric Systems
+- Ahmet Abdullah Gultekin - Project Lead & Backend Developer
+- Ayse Gulsum Eren - Mobile App Developer
+- Aysenur Arici - AI/ML & Biometric Systems
 
-**Supervisor:** [Supervisor's Name]
+**Advisor:** Assoc. Prof. Dr. Mustafa Agaoglu
 
-**Course:** CSE4297 Engineering Project 1
+**Course:** CSE4297/CSE4197 Engineering Project
 
 ---
 
-## 📅 Project Timeline
+## 📅 Project Status (Fall 2025)
 
-### Phase 1: Foundation (Weeks 1-4) ✅
-- [x] Project specification document
-- [x] Repository setup
-- [x] Docker Compose configuration
-- [x] Database schema design
-- [ ] Basic API endpoints
+### Completed ✅
+- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models
+- [x] Demo Web GUI (100%) - 14+ interactive pages (Next.js 14)
+- [x] Web Admin Dashboard (100%) - React 18, Material-UI
+- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 6 Flyway migrations
+- [x] Universal NFC Reader (85%) - 10+ card types supported
+- [x] Comprehensive Documentation
 
-### Phase 2: Core Features (Weeks 5-8)
-- [ ] User authentication & JWT
-- [ ] Multi-tenant implementation
-- [ ] Face recognition integration
-- [ ] Mobile app camera integration
-- [ ] Biometric Puzzle algorithm
+### In Progress ⚠️
+- [ ] Identity Core API (68%) - JWT auth working, RBAC pending
+- [ ] Mobile/Desktop UI (60%) - UI complete, backend integration pending
 
-### Phase 3: Integration (Weeks 9-12)
-- [ ] Full API integration
-- [ ] Redis message queue
-- [ ] Admin dashboard
-- [ ] Testing suite
-- [ ] Performance optimization
-
-### Phase 4: Finalization (Weeks 13-16)
-- [ ] Security audit
-- [ ] Documentation completion
-- [ ] Demo preparation
-- [ ] Final report
+### Planned for Spring 2026
+- [ ] Identity Core ↔ Biometric Processor integration
+- [ ] Mobile app ↔ Backend connection
+- [ ] NFC reader integration into main app
+- [ ] Production deployment
 
 ---
 
@@ -434,11 +425,11 @@ Licensed under the MIT License - see individual component LICENSE files for deta
 ## 🙏 Acknowledgments
 
 - **Marmara University** Computer Engineering Department
-- **Project Supervisor:** [Supervisor's Name]
+- **Advisor:** Assoc. Prof. Dr. Mustafa Agaoglu
 - **Open Source Libraries:**
   - Spring Framework, PostgreSQL, Redis
   - DeepFace, MediaPipe, TensorFlow
-  - Flutter, React, Electron
+  - Kotlin Multiplatform, Compose Multiplatform, React
 - **Inspiration:** Okta, Auth0, Azure AD
 
 ---
