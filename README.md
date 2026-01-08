@@ -4,50 +4,39 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-In%20Development-yellow.svg)
 
-## 📋 Overview
+## Overview
 
-**FIVUCSAS** (Face and Identity Verification Using Cloud-based SaaS) is a comprehensive, multi-tenant biometric authentication platform designed to provide secure identity verification for both physical and digital access control. Developed as an Engineering Project at **Marmara University's Computer Engineering Department**, this platform combines cutting-edge deep learning with modern cloud-native architecture.
+**FIVUCSAS** is a comprehensive, multi-tenant biometric authentication platform designed for secure identity verification. Developed as an Engineering Project at **Marmara University's Computer Engineering Department**.
 
 ### Key Innovation: The Biometric Puzzle
 
-Our unique **active liveness detection algorithm** requires users to perform a random sequence of facial actions (smile, blink, look left/right), making it highly resistant to spoofing attacks using photos, videos, or masks.
+Our unique **active liveness detection algorithm** requires users to perform a random sequence of facial actions (smile, blink, look left/right), making it highly resistant to spoofing attacks.
 
----
-
-## 🏗️ Architecture
-
-### System Components
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                        FIVUCSAS Platform                      │
+│                      FIVUCSAS Platform                        │
 ├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐    │
-│  │  Mobile App │  │   Web App    │  │  Desktop App    │    │
-│  │    (KMP)    │  │   (React)    │  │     (KMP)       │    │
-│  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘    │
-│         │                │                     │              │
-│         └────────────────┼─────────────────────┘              │
-│                          │                                    │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐     │
+│  │  Mobile App │  │   Web App    │  │  Desktop App    │     │
+│  │    (KMP)    │  │   (React)    │  │     (KMP)       │     │
+│  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘     │
+│         └────────────────┼───────────────────┘               │
 │                  ┌───────▼────────┐                          │
 │                  │  API Gateway   │                          │
 │                  │    (NGINX)     │                          │
 │                  └───────┬────────┘                          │
-│                          │                                    │
 │         ┌────────────────┴────────────────┐                  │
-│         │                                 │                  │
-│  ┌──────▼──────────┐          ┌──────────▼────────┐         │
-│  │ Identity Core   │◄────────►│  Biometric         │         │
-│  │ API (Spring)    │          │  Processor (FastAPI)│        │
-│  └────────┬────────┘          └──────────┬─────────┘         │
-│           │                              │                   │
-│  ┌────────▼────────┐          ┌──────────▼─────────┐         │
-│  │  PostgreSQL     │          │     Redis           │         │
-│  │  + pgvector     │          │ (Cache & Queue)     │         │
-│  └─────────────────┘          └─────────────────────┘         │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
+│  ┌──────▼──────────┐          ┌───────────▼─────────┐       │
+│  │ Identity Core   │◄────────►│  Biometric          │       │
+│  │ API (Spring)    │          │  Processor (FastAPI)│       │
+│  └────────┬────────┘          └───────────┬─────────┘       │
+│  ┌────────▼────────┐          ┌───────────▼─────────┐       │
+│  │  PostgreSQL     │          │       Redis          │       │
+│  │  + pgvector     │          │  (Cache & Queue)     │       │
+│  └─────────────────┘          └──────────────────────┘       │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
@@ -58,456 +47,139 @@ Our unique **active liveness detection algorithm** requires users to perform a r
 | **AI/ML Service** | FastAPI (Python 3.11+) | Biometric Processing |
 | **Mobile App** | Kotlin Multiplatform + Compose | Cross-platform (Android/iOS) |
 | **Web Dashboard** | React 18 + TypeScript | Admin Panel |
-| **Desktop Client** | Kotlin Multiplatform + Compose | Kiosk Mode + Admin Dashboard (90% code shared with mobile) |
+| **Desktop Client** | Kotlin Multiplatform + Compose | Kiosk Mode |
 | **Database** | PostgreSQL 16 + pgvector | Data & Vector Storage |
 | **Cache/Queue** | Redis 7 | Session & Messaging |
 | **API Gateway** | NGINX | Routing & Rate Limiting |
 
----
-
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 FIVUCSAS/
-├── identity-core-api/       # Spring Boot microservice
-├── biometric-processor/     # FastAPI ML service
-├── mobile-app/              # Kotlin Multiplatform (Android/iOS)
-├── web-app/                 # React admin dashboard
-├── desktop-app/             # Kotlin Multiplatform (Desktop)
-├── docs/                    # Documentation & configs
-│   ├── nginx/               # API Gateway configuration
-│   ├── sql/                 # Database initialization
-│   └── monitoring/          # Prometheus/Grafana configs
-├── docker-compose.yml       # Unified development environment
+├── biometric-processor/     # FastAPI ML service (submodule)
+├── identity-core-api/       # Spring Boot microservice (submodule)
+├── client-apps/             # Kotlin Multiplatform apps (submodule)
+├── web-app/                 # React admin dashboard (submodule)
+├── docs/                    # Comprehensive documentation (submodule)
+├── practice-and-test/       # R&D experiments (submodule)
+├── nginx/                   # API Gateway configuration
+├── monitoring/              # Prometheus/Grafana configs
+├── load-tests/              # Performance testing
+├── scripts/                 # Utility scripts
+├── docker-compose.yml       # Main development environment
 ├── docker-compose.dev.yml   # Development overrides
 ├── docker-compose.prod.yml  # Production configuration
-├── .env.example             # Environment variables template
-└── README.md               # This file
+└── .env.example             # Environment variables template
 ```
 
----
+## Quick Start
 
-## 🚀 Quick Start
-
-### ⚠️ Important: Git Submodules
-
-This repository uses **Git Submodules** to manage component repositories. When cloning:
+### Clone with Submodules
 
 ```bash
-# Clone with submodules (RECOMMENDED)
 git clone --recurse-submodules https://github.com/Rollingcat-Software/FIVUCSAS.git
+cd FIVUCSAS
 
-# Or if already cloned, initialize submodules:
+# Or initialize submodules if already cloned:
 git submodule update --init --recursive
 ```
 
-📖 **See [SUBMODULES_GUIDE.md](./SUBMODULES_GUIDE.md) for complete submodule workflow documentation.**
-
-### Prerequisites
-
-- **Git** with submodule support
-- **Docker & Docker Compose** (recommended)
-- **Java 21** (for identity-core-api)
-- **Python 3.11+** (for biometric-processor)
-- **Kotlin 1.9+** (for mobile-app & desktop-app)
-- **Android Studio / IntelliJ IDEA** (for KMP development)
-- **Node.js 18+** (for web-app)
-
-### Option 1: Docker Compose (Recommended)
+### Docker Compose (Recommended)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-org/FIVUCSAS.git
-cd FIVUCSAS
-
-# 2. Copy and configure environment variables
+# 1. Configure environment
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your settings
 
-# 3. Start all services
+# 2. Start all services
 docker-compose up -d
 
-# 4. Check service status
+# 3. Check status
 docker-compose ps
 
-# 5. View logs
+# 4. View logs
 docker-compose logs -f
 ```
 
-**Access Points:**
-- API Gateway: http://localhost:8000
-- Identity Core API: http://localhost:8080
-- Biometric Processor: http://localhost:8001
-- Swagger UI: http://localhost:8080/swagger-ui.html
+### Access Points
 
-### Option 2: Manual Setup
+| Service | URL |
+|---------|-----|
+| API Gateway | http://localhost:8000 |
+| Identity Core API | http://localhost:8080 |
+| Biometric Processor | http://localhost:8001 |
+| Swagger UI (Spring) | http://localhost:8080/swagger-ui.html |
+| API Docs (FastAPI) | http://localhost:8001/docs |
 
-#### 1. Start Infrastructure
+## Development
 
-```bash
-# Start PostgreSQL
-docker run -d --name fivucsas-postgres \
-  -e POSTGRES_DB=identity_core_db \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 \
-  pgvector/pgvector:pg16
-
-# Start Redis
-docker run -d --name fivucsas-redis \
-  -p 6379:6379 \
-  redis:7-alpine
-```
-
-#### 2. Run Identity Core API
+### Running Individual Services
 
 ```bash
+# Identity Core API
 cd identity-core-api
-cp .env.example .env
 ./gradlew bootRun
-```
 
-#### 3. Run Biometric Processor
-
-```bash
+# Biometric Processor
 cd biometric-processor
-cp .env.example .env
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8001
-```
 
-#### 4. Run Mobile App
-
-```bash
-cd mobile-app
-./gradlew :androidApp:installDebug
-# Or open in Android Studio / IntelliJ IDEA
-```
-
-#### 5. Run Web App
-
-```bash
+# Web App
 cd web-app
-npm install
-npm run dev
-```
-
----
-
-## 📖 Documentation
-
-### Individual Component Documentation
-
-Each repository has comprehensive README documentation:
-
-- **[Comprehensive Documentation](./docs/README.md)** ⭐ **START HERE**
-- [Identity Core API Documentation](./identity-core-api/README.md)
-- [Biometric Processor Documentation](./biometric-processor/README.md)
-- [Kotlin Multiplatform Guide](./docs/03-development/KOTLIN_MULTIPLATFORM_GUIDE.md)
-- [Mobile App Documentation](./mobile-app/README.md)
-- [Web App Documentation](./web-app/README.md)
-- [Implementation Status Report](./docs/IMPLEMENTATION_STATUS_REPORT.md)
-
-### API Documentation
-
-When services are running:
-- **OpenAPI/Swagger**: http://localhost:8080/swagger-ui.html
-- **FastAPI Docs**: http://localhost:8001/docs
-
-### Database Schema
-
-Database migrations are managed by Flyway. See:
-- `identity-core-api/src/main/resources/db/migration/`
-
-Initial schema includes:
-- `V1` - Tenants table
-- `V2` - Users table
-- `V3` - Roles & permissions
-- `V4` - Biometric data with pgvector
-- `V5` - Audit logs & sessions
-
----
-
-## 🛠️ Development
-
-### Environment Setup
-
-1. **Copy environment templates:**
-   ```bash
-   cp .env.example .env
-   cp identity-core-api/.env.example identity-core-api/.env
-   cp biometric-processor/.env.example biometric-processor/.env
-   # ... repeat for other services
-   ```
-
-2. **Configure each `.env` file** with your local settings
-
-### Development with Docker Compose
-
-```bash
-# Start with development overrides
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Rebuild after code changes
-docker-compose up -d --build
-
-# View specific service logs
-docker-compose logs -f identity-core-api
+npm install && npm run dev
 ```
 
 ### Running Tests
 
 ```bash
-# Identity Core API
-cd identity-core-api
-./gradlew test
+# Windows
+./scripts/run-all-tests.ps1
 
-# Biometric Processor
-cd biometric-processor
-pytest
+# Linux/Mac
+./scripts/run-tests.sh
 
-# Mobile App
-cd mobile-app
-./gradlew :shared:test
-
-# Web App
-cd web-app
-npm test
+# Integration tests
+./scripts/test-integration.sh
 ```
 
----
+## Documentation
 
-## 🔐 Security
+- **[Full Documentation](./docs/README.md)** - Start here
+- [Getting Started Guide](./docs/01-getting-started/)
+- [Architecture Analysis](./docs/02-architecture/)
+- [Development Guide](./docs/03-development/)
+- [API Documentation](./docs/04-api/)
+- [Implementation Status](./docs/07-status/IMPLEMENTATION_STATUS_REPORT.md)
 
-### Default Credentials (DEVELOPMENT ONLY)
+## Project Status (January 2026)
 
-**Database:**
-- Username: `postgres`
-- Password: `postgres_dev_password`
+### Completed
+- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models
+- [x] Web Admin Dashboard (100%) - React 18, Material-UI
+- [x] Database Schema (100%) - PostgreSQL 16 + pgvector
+- [x] Comprehensive Documentation (100%)
 
-**System Admin:**
-- Email: `admin@fivucsas.local`
-- Password: `Admin@123`
+### In Progress
+- [ ] Identity Core API (68%) - JWT auth working, RBAC pending
+- [ ] Mobile/Desktop Apps (60%) - UI complete, backend integration pending
 
-⚠️ **WARNING**: Change all default passwords before deploying to production!
-
-### Security Features
-
-- ✅ JWT-based authentication with refresh tokens
-- ✅ BCrypt password hashing (work factor 12)
-- ✅ AES-256 encryption for sensitive data
-- ✅ Row-level security for multi-tenancy
-- ✅ Rate limiting on authentication endpoints
-- ✅ CORS configuration
-- ✅ SQL injection prevention (parameterized queries)
-- ✅ XSS protection
-- ✅ KVKK/GDPR compliance features
-
----
-
-## 🧪 Testing
-
-### Test Coverage Goals
-
-- Unit Tests: > 80%
-- Integration Tests: > 70%
-- Overall Coverage: > 75%
-
-### Running All Tests
-
-```bash
-# Run tests for all components
-./scripts/run-all-tests.sh
-```
-
----
-
-## 📦 Deployment
-
-### Production Deployment
-
-```bash
-# Build production images
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
-
-# Start in production mode
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-### Environment Variables for Production
-
-Make sure to set secure values for:
-- `JWT_SECRET` - Use a strong 256-bit random key
-- `POSTGRES_PASSWORD` - Strong database password
-- `REDIS_PASSWORD` - Strong Redis password
-- `ENCRYPTION_KEY` - 32-byte AES key
-
----
-
-## 👥 Team
+## Team
 
 **Marmara University - Computer Engineering Department**
 
-**Project Team:**
-- Ahmet Abdullah Gultekin - Project Lead & Backend Developer
-- Ayse Gulsum Eren - Mobile App Developer
-- Aysenur Arici - AI/ML & Biometric Systems
+- **Ahmet Abdullah Gultekin** - Project Lead & Backend Developer
+- **Ayse Gulsum Eren** - Mobile App Developer
+- **Aysenur Arici** - AI/ML & Biometric Systems
 
 **Advisor:** Assoc. Prof. Dr. Mustafa Agaoglu
 
 **Course:** CSE4297/CSE4197 Engineering Project
 
----
+## License
 
-## 📅 Project Status (Fall 2025)
-
-### Completed ✅
-- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models
-- [x] Demo Web GUI (100%) - 14+ interactive pages (Next.js 14)
-- [x] Web Admin Dashboard (100%) - React 18, Material-UI
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 6 Flyway migrations
-- [x] Universal NFC Reader (85%) - 10+ card types supported
-- [x] Comprehensive Documentation
-
-### In Progress ⚠️
-- [ ] Identity Core API (68%) - JWT auth working, RBAC pending
-- [ ] Mobile/Desktop UI (60%) - UI complete, backend integration pending
-
-### Planned for Spring 2026
-- [ ] Identity Core ↔ Biometric Processor integration
-- [ ] Mobile app ↔ Backend connection
-- [ ] NFC reader integration into main app
-- [ ] Production deployment
+Copyright 2025 FIVUCSAS Team. Licensed under the MIT License.
 
 ---
 
-## 🤝 Contributing
-
-### Git Workflow
-
-```bash
-# Create feature branch
-git checkout -b feature/your-feature-name
-
-# Make changes and commit
-git add .
-git commit -m "feat: add your feature"
-
-# Push and create PR
-git push origin feature/your-feature-name
-```
-
-### Commit Convention
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `style:` - Code style changes
-- `refactor:` - Code refactoring
-- `test:` - Adding tests
-- `chore:` - Maintenance tasks
-
----
-
-## 📄 License
-
-This project is part of the FIVUCSAS platform developed as an Engineering Project at Marmara University, Faculty of Engineering, Computer Engineering Department.
-
-Copyright © 2025 FIVUCSAS Team. All rights reserved.
-
-Licensed under the MIT License - see individual component LICENSE files for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Marmara University** Computer Engineering Department
-- **Advisor:** Assoc. Prof. Dr. Mustafa Agaoglu
-- **Open Source Libraries:**
-  - Spring Framework, PostgreSQL, Redis
-  - DeepFace, MediaPipe, TensorFlow
-  - Kotlin Multiplatform, Compose Multiplatform, React
-- **Inspiration:** Okta, Auth0, Azure AD
-
----
-
-## 📞 Support & Contact
-
-- **GitHub Issues:** [Repository Issues](https://github.com/your-org/FIVUCSAS/issues)
-- **Email:** [team-email@example.com]
-- **Documentation:** [Project Wiki](https://github.com/your-org/FIVUCSAS/wiki)
-
----
-
-## 🔌 Backend-Frontend Integration
-
-The FIVUCSAS platform features a complete integration layer connecting React Web App and Kotlin Multiplatform Mobile App to the Spring Boot backend API.
-
-### Quick Start
-
-```bash
-# 1. Start backend
-cd identity-core-api
-export JWT_SECRET=your-dev-secret-key
-./gradlew bootRun --args='--spring.profiles.active=dev'
-
-# 2. Start web app (in new terminal)
-cd web-app
-pnpm install
-pnpm dev
-
-# 3. Test integration (in new terminal)
-./test-integration.sh  # Linux/Mac
-# or
-test-integration.bat   # Windows
-```
-
-### Key Features
-
-- **JWT Authentication**: Automatic token injection and refresh
-- **CORS Configuration**: Properly configured for all origins
-- **Error Handling**: Robust error handling with automatic retry
-- **Mock Mode**: Toggle between real API and mock data for development
-
-### Documentation
-
-- **Comprehensive Guide**: [`docs/04-api/BACKEND_FRONTEND_INTEGRATION.md`](docs/04-api/BACKEND_FRONTEND_INTEGRATION.md)
-- **Quick Start**: [`docs/01-getting-started/API_INTEGRATION_QUICKSTART.md`](docs/01-getting-started/API_INTEGRATION_QUICKSTART.md)
-- **Integration Summary**: [`INTEGRATION_SUMMARY.md`](INTEGRATION_SUMMARY.md)
-
-### Configuration Status
-
-| Component | Status | Configuration |
-|-----------|--------|---------------|
-| Web App | ✅ Configured | `VITE_ENABLE_MOCK_API=false` |
-| Mobile App | ✅ Configured | `ApiConfig.useRealApi = true` |
-| Backend CORS | ✅ Configured | Allows `localhost:5173` |
-| JWT Interceptor (Web) | ✅ Implemented | Auto token injection & refresh |
-| JWT Interceptor (Mobile) | ✅ Implemented | Auto token injection |
-
----
-
-## 🗺️ Roadmap
-
-### MVP (Current Focus)
-- [ ] Basic authentication system
-- [ ] Face recognition & verification
-- [ ] Liveness detection (Biometric Puzzle)
-- [ ] Mobile app for enrollment
-- [ ] Admin dashboard
-
-### Future Enhancements
-- [ ] Additional biometric modalities (fingerprint, voice)
-- [ ] Risk-based adaptive authentication
-- [ ] OAuth2/OpenID Connect provider
-- [ ] Kubernetes deployment
-- [ ] Advanced analytics dashboard
-- [ ] API key management for developers
-- [ ] Webhook system for events
-
----
-
-**Built with passion for security and innovation** | Marmara University © 2025
+**Built with passion for security and innovation** | Marmara University 2025

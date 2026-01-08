@@ -13,7 +13,6 @@
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Logs
 logs/
@@ -30,10 +29,13 @@ docker-compose.override.yml
 *.temp
 .cache/
 
-# OS
+# OS files
 Thumbs.db
 .DS_Store
-/_backup_before_submodules
+
+# Archive and backup folders
+/archive/
+/_backup_before_submodules/
 
 # Claude Code local settings
 .claude/settings.local.json
