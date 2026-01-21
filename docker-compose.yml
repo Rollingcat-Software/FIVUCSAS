@@ -67,7 +67,7 @@ services:
       - "8080:8080"
     environment:
       # Spring profiles
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: docker
 
       # Database configuration
       DB_HOST: postgres
@@ -88,6 +88,13 @@ services:
 
       # Biometric Processor API
       BIOMETRIC_PROCESSOR_URL: http://biometric-processor:8001
+
+      # Flyway configuration
+      SPRING_FLYWAY_BASELINE_VERSION: 0
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+
+      # JPA configuration - skip validation since Flyway manages schema
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
 
       # Logging
       LOGGING_LEVEL_ROOT: INFO
@@ -146,7 +153,6 @@ services:
       FACE_MODEL: VGG-Face
       FACE_DETECTOR: opencv
       SIMILARITY_THRESHOLD: 0.6
-      EMBEDDING_DIMENSION: 2622
 
       # Liveness Detection
       LIVENESS_ENABLED: "True"
