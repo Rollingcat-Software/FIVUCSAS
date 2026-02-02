@@ -6,7 +6,7 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~65% Complete (January 2026)
+- **Status**: ~75% Complete (February 2026)
 
 ## Architecture
 
@@ -27,6 +27,17 @@
 | Database | PostgreSQL 16 + pgvector | 5432 |
 | Cache/Queue | Redis 7 | 6379 |
 | API Gateway | NGINX | 8000 |
+
+### Deployment & Subdomains
+
+| Subdomain | Purpose | Hosting |
+|-----------|---------|---------|
+| `ica.fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | Hostinger |
+| `bpa.fivucsas.rollingcatsoftware.com` | Biometric Processor Admin (root only) | Hostinger |
+| `fivucsas.rollingcatsoftware.com` | Branding / Landing / Introduction | Hostinger |
+
+- **Identity Core API**: `http://34.116.233.134:8080` (GCP VM)
+- **Biometric Processor API**: `http://34.116.233.134:8001` (GCP VM)
 
 ## Repository Structure
 
@@ -188,16 +199,20 @@ JWT_SECRET=<256-bit-key>
 
 ### Completed (100%)
 - Biometric Processor (46+ endpoints)
-- Web Admin Dashboard
-- Database Schema (6 Flyway migrations)
+- Web Admin Dashboard (Identity Core Admin)
+- Database Schema (11 Flyway migrations)
 - Documentation
+- Identity Core API endpoints (auth, users, tenants, audit logs, enrollments, settings, statistics)
 
 ### In Progress
-- Identity Core API (68%) - RBAC implementation pending
+- Identity Core API (85%) - integration testing pending
 - Mobile/Desktop Apps (60%) - Backend integration pending
+- Frontend-Backend integration deployed
 
 ### Next Steps
-1. Complete Identity Core API RBAC
-2. Integrate Identity Core with Biometric Processor
-3. Connect mobile apps to backend
-4. End-to-end testing
+1. Deploy web-app to `ica.fivucsas.rollingcatsoftware.com` (Hostinger)
+2. Deploy biometric admin to `bpa.fivucsas.rollingcatsoftware.com`
+3. Create landing page for `fivucsas.rollingcatsoftware.com`
+4. Redeploy backend to GCP with latest changes
+5. Connect mobile apps to backend
+6. End-to-end testing
