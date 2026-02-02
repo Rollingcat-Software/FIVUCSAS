@@ -32,8 +32,8 @@
 
 | Subdomain | Purpose | Hosting |
 |-----------|---------|---------|
-| `ica.fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | Hostinger |
-| `bpa.fivucsas.rollingcatsoftware.com` | Biometric Processor Admin (root only) | Hostinger |
+| `ica-fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | Hostinger |
+| `bpa-fivucsas.rollingcatsoftware.com` | Biometric Processor Admin (root only) | Hostinger |
 | `fivucsas.rollingcatsoftware.com` | Branding / Landing / Introduction | Hostinger |
 
 - **Identity Core API**: `http://34.116.233.134:8080` (GCP VM)
@@ -210,8 +210,8 @@ JWT_SECRET=<256-bit-key>
 - Frontend-Backend integration deployed
 
 ### Next Steps
-1. Deploy web-app to `ica.fivucsas.rollingcatsoftware.com` (Hostinger)
-2. Deploy biometric admin to `bpa.fivucsas.rollingcatsoftware.com`
+1. Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)
+2. Deploy biometric admin to `bpa-fivucsas.rollingcatsoftware.com`
 3. Create landing page for `fivucsas.rollingcatsoftware.com`
 4. Redeploy backend to GCP with latest changes
 5. Connect mobile apps to backend
