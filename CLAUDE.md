@@ -30,14 +30,48 @@
 
 ### Deployment & Subdomains
 
-| Subdomain | Purpose | Hosting |
-|-----------|---------|---------|
-| `ica-fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | Hostinger |
-| `bpa-fivucsas.rollingcatsoftware.com` | Biometric Processor Admin (root only) | Hostinger |
-| `fivucsas.rollingcatsoftware.com` | Branding / Landing / Introduction | Hostinger |
+| Subdomain | Purpose | Status |
+|-----------|---------|--------|
+| `ica-fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | ✅ LIVE (Hostinger) |
+| `bpa-fivucsas.rollingcatsoftware.com` | Biometric Processor API | ⏳ Pending (Cloudflare Tunnel) |
+| `fivucsas.rollingcatsoftware.com` | Landing Page | ✅ LIVE (Hostinger) |
 
-- **Identity Core API**: `http://34.116.233.134:8080` (GCP VM)
-- **Biometric Processor API**: `http://34.116.233.134:8001` (GCP VM)
+### Production URLs (REMEMBER!)
+
+| Service | URL | Status |
+|---------|-----|--------|
+| **Identity Core API** | http://34.116.233.134:8080 | ✅ Running |
+| **Swagger UI** | http://34.116.233.134:8080/swagger-ui.html | ✅ Available |
+| **Web Dashboard** | https://ica-fivucsas.rollingcatsoftware.com | ✅ Live |
+| **Landing Website** | https://fivucsas.rollingcatsoftware.com | ✅ Live |
+| **Biometric API** | https://bpa-fivucsas.rollingcatsoftware.com | ⏳ Pending |
+
+## ⚠️ IMPORTANT: GCP VM Access (REMEMBER!)
+
+**Direct SSH does NOT work** - Port 22 is blocked by firewall.
+
+**Use gcloud with IAP tunnel instead:**
+```powershell
+# List instances
+gcloud compute instances list
+
+# SSH via IAP tunnel (REQUIRED)
+gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --command="docker ps"
+
+# Interactive SSH
+gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap
+```
+
+**GCP VM Details:**
+- **Instance Name**: `fivucsas-identity-core`
+- **Zone**: `europe-central2-a`
+- **External IP**: `34.116.233.134`
+- **Project**: `fivucsas`
+
+**Running Containers on GCP:**
+- `fivucsas-identity-core-api` (port 8080)
+- `fivucsas-redis` (port 6379, internal only)
+- `fivucsas-postgres` with pgvector (port 5432, internal only)
 
 ## Repository Structure
 
@@ -45,7 +79,8 @@
 FIVUCSAS/
 ├── biometric-processor/     # FastAPI ML service (submodule)
 ├── identity-core-api/       # Spring Boot API (submodule)
-├── web-app/                 # React dashboard (submodule)
+├── web-app/                 # React dashboard (submodule) → ica-fivucsas.rollingcatsoftware.com
+├── landing-website/         # Landing page (React + Tailwind) → fivucsas.rollingcatsoftware.com
 ├── client-apps/             # Kotlin Multiplatform (submodule)
 ├── docs/                    # Documentation (submodule)
 ├── practice-and-test/       # R&D experiments (submodule)
@@ -53,6 +88,7 @@ FIVUCSAS/
 ├── monitoring/              # Prometheus/Grafana
 ├── load-tests/              # Performance testing
 ├── scripts/                 # Utility scripts
+│   └── deploy/              # Deployment scripts and guides
 └── archive/                 # Archived documentation
 ```
 
@@ -76,9 +112,9 @@ docker-compose logs -f [service-name]
 ### Individual Services
 
 ```bash
-# Identity Core API (Spring Boot)
+# Identity Core API (Spring Boot) - USES MAVEN, NOT GRADLE!
 cd identity-core-api
-./gradlew bootRun --args='--spring.profiles.active=dev'
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # Biometric Processor (FastAPI)
 cd biometric-processor
@@ -109,7 +145,11 @@ git submodule foreach git pull origin master
 
 ## API Documentation
 
-When services are running:
+**Production:**
+- **Identity API Swagger**: http://34.116.233.134:8080/swagger-ui.html
+- **Biometric API Swagger**: https://bpa-fivucsas.rollingcatsoftware.com/docs (when tunnel is running)
+
+**Local Development:**
 - **Biometric API**: http://localhost:8001/docs (FastAPI Swagger)
 - **Identity API**: http://localhost:8080/swagger-ui.html (Spring OpenAPI)
 - **Comprehensive Docs**: See `docs/` submodule
@@ -187,6 +227,20 @@ REDIS_PASSWORD=<secure-password>
 JWT_SECRET=<256-bit-key>
 ```
 
+## ⚠️ Test Credentials (REMEMBER!)
+
+**Production Admin User:**
+- Email: `admin@fivucsas.local`
+- Password: `Test@123`
+- Tenant: `system`
+
+**Test Login:**
+```bash
+curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
+```
+
 ## Useful Paths
 
 - Main README: `./README.md`
@@ -203,16 +257,56 @@ JWT_SECRET=<256-bit-key>
 - Database Schema (11 Flyway migrations)
 - Documentation
 - Identity Core API endpoints (auth, users, tenants, audit logs, enrollments, settings, statistics)
+- ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
+- ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
+- ✅ Identity Core API running on GCP VM
 
 ### In Progress
 - Identity Core API (85%) - integration testing pending
 - Mobile/Desktop Apps (60%) - Backend integration pending
-- Frontend-Backend integration deployed
+- Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
 
 ### Next Steps
-1. Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)
-2. Deploy biometric admin to `bpa-fivucsas.rollingcatsoftware.com`
-3. Create landing page for `fivucsas.rollingcatsoftware.com`
-4. Redeploy backend to GCP with latest changes
-5. Connect mobile apps to backend
-6. End-to-end testing
+1. ~~Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)~~ ✅ DONE
+2. ~~Create landing page for `fivucsas.rollingcatsoftware.com`~~ ✅ DONE
+3. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
+4. Connect mobile apps to backend
+5. End-to-end testing
+
+## Deployment Scripts (REMEMBER!)
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/deploy/deploy-identity-core-gcp.ps1` | Deploy Identity Core API to GCP |
+| `scripts/deploy/setup-laptop-gpu-wsl.ps1` | Setup biometric processor on Windows/WSL2 |
+| `biometric-processor/deploy/laptop-gpu/setup-wsl.sh` | WSL2 setup script for biometric API |
+| `scripts/deploy/DEPLOYMENT_GUIDE.md` | Full deployment documentation |
+
+## Local Development Notes (REMEMBER!)
+
+### Your Machine Specs
+- **GPU**: NVIDIA GeForce GTX 1650 (4GB VRAM)
+- **WSL2**: Version 2.5.9.0
+- **Kernel**: 6.6.87.2
+
+### Building Frontends
+```powershell
+# Web Dashboard
+cd web-app && npm install && npm run build
+# Output: web-app/dist/
+
+# Landing Website
+cd landing-website && npm install && npm run build
+# Output: landing-website/dist/
+```
+
+### Hostinger Upload
+- Upload `dist/` folder contents to `public_html/` via cPanel File Manager
+- Ensure `.htaccess` is included for SPA routing
+
+### Identity Core API (Maven, not Gradle!)
+```powershell
+cd identity-core-api
+mvn clean package -DskipTests
+# Output: target/identity-core-api-1.0.0-MVP.jar
+```
