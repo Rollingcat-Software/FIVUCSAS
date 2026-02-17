@@ -6,7 +6,7 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~75% Complete (February 2026)
+- **Status**: ~80% Complete (February 2026)
 
 ## Architecture
 
@@ -195,6 +195,11 @@ git submodule foreach git pull origin master
 - `roles`, `permissions` - RBAC
 - `biometric_enrollments` - Face data
 - `audit_logs` - Compliance trail
+- `auth_methods`, `tenant_auth_methods` - Auth method definitions & per-tenant config
+- `auth_flows`, `auth_flow_steps` - Configurable auth flows per operation type
+- `auth_sessions`, `auth_session_steps` - Runtime auth session tracking
+- `user_devices` - Registered user devices
+- `user_enrollments` - Biometric enrollment status per user
 
 ## Testing
 
@@ -254,24 +259,33 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 ### Completed (100%)
 - Biometric Processor (46+ endpoints)
 - Web Admin Dashboard (Identity Core Admin)
-- Database Schema (11 Flyway migrations)
+- Database Schema (15 Flyway migrations)
 - Documentation
 - Identity Core API endpoints (auth, users, tenants, audit logs, enrollments, settings, statistics)
 - ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
 - ✅ Identity Core API running on GCP VM
+- ✅ Audit log persistence fix (infinite loop + @Transactional/@Async conflict)
+- ✅ Realistic sample data seeding (V15 migration: 3 tenants, 8 users, audit logs)
+- ✅ Audit log action filter fix (frontend param flattening)
+- ✅ User creation form UX fix (tenant dropdown)
+- ✅ Tenant create/edit form page
+- ✅ Multi-modal auth system architecture (10 documents in docs/09-auth-flows/)
 
 ### In Progress
-- Identity Core API (85%) - integration testing pending
+- Identity Core API (90%) - multi-modal auth flow implementation in progress
 - Mobile/Desktop Apps (60%) - Backend integration pending
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
 
 ### Next Steps
 1. ~~Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)~~ ✅ DONE
 2. ~~Create landing page for `fivucsas.rollingcatsoftware.com`~~ ✅ DONE
-3. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
-4. Connect mobile apps to backend
-5. End-to-end testing
+3. ~~Multi-modal auth system architecture documentation~~ ✅ DONE
+4. Implement Phase 1: Backend foundation (V16 migration, entities, repos, services, controllers)
+5. Implement Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code)
+6. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
+7. Connect mobile apps to backend
+8. End-to-end testing
 
 ## Deployment Scripts (REMEMBER!)
 
