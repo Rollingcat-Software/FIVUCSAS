@@ -60,6 +60,7 @@ FIVUCSAS/
 ├── identity-core-api/       # Spring Boot microservice (submodule)
 ├── client-apps/             # Kotlin Multiplatform apps (submodule)
 ├── web-app/                 # React admin dashboard (submodule)
+├── landing-website/         # Landing page (React + Tailwind)
 ├── docs/                    # Comprehensive documentation (submodule)
 ├── practice-and-test/       # R&D experiments (submodule)
 ├── nginx/                   # API Gateway configuration
@@ -116,9 +117,9 @@ docker-compose logs -f
 ### Running Individual Services
 
 ```bash
-# Identity Core API
+# Identity Core API (Maven, NOT Gradle!)
 cd identity-core-api
-./gradlew bootRun
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # Biometric Processor
 cd biometric-processor
@@ -150,19 +151,24 @@ npm install && npm run dev
 - [Architecture Analysis](./docs/02-architecture/)
 - [Development Guide](./docs/03-development/)
 - [API Documentation](./docs/04-api/)
-- [Implementation Status](./docs/07-status/IMPLEMENTATION_STATUS_REPORT.md)
+- [Implementation Status](./docs/IMPLEMENTATION_STATUS_REPORT.md)
+- [Multi-Modal Auth Architecture](./docs/09-auth-flows/README.md)
 
-## Project Status (January 2026)
+## Project Status (February 2026)
 
 ### Completed
 - [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models
-- [x] Web Admin Dashboard (100%) - React 18, Material-UI
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector
+- [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
+- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 15 Flyway migrations
 - [x] Comprehensive Documentation (100%)
+- [x] Identity Core API (90%) - JWT auth, RBAC, multi-tenancy, deployed on GCP
+- [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
+- [x] Multi-Modal Auth Architecture (10 design documents in docs/09-auth-flows/)
 
 ### In Progress
-- [ ] Identity Core API (68%) - JWT auth working, RBAC pending
+- [ ] Multi-Modal Auth Implementation - Phase 1 (backend foundation) & Phase 2 (core handlers)
 - [ ] Mobile/Desktop Apps (60%) - UI complete, backend integration pending
+- [ ] Biometric Processor deployment - Cloudflare Tunnel setup pending
 
 ## Team
 
@@ -182,4 +188,4 @@ Copyright 2025 FIVUCSAS Team. Licensed under the MIT License.
 
 ---
 
-**Built with passion for security and innovation** | Marmara University 2025
+**Built with passion for security and innovation** | Marmara University 2025-2026
