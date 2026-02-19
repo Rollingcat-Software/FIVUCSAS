@@ -6,7 +6,7 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~80% Complete (February 2026)
+- **Status**: ~95% Complete (February 2026)
 
 ## Architecture
 
@@ -275,21 +275,29 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code) + EmailService + unit tests
 - ✅ CI/CD Pipeline (GitHub Actions: Java 21 + Python 3.11 + Node 20)
 - ✅ Mobile app production API URLs configured
+- ✅ **All 10 auth handlers** (TOTP, SMS OTP, Fingerprint, Voice, Hardware Key, NFC Document)
+- ✅ **Device constraint enforcement** (PASSWORD mandatory for APP_LOGIN/API_ACCESS, full freedom for DOOR_ACCESS etc.)
+- ✅ **Infrastructure services** (TotpService, SmsService/NoOpSmsService, WebAuthnService)
+- ✅ **BiometricServicePort extended** (verifyFingerprint, verifyVoice endpoints)
+- ✅ **Frontend Auth Flow Admin UI** (AuthFlowRepository, list page, builder with operation types)
+- ✅ **Frontend Multi-Step Auth UI** (10 step components + MultiStepAuthFlow controller + StepProgress)
+- ✅ **Additional Admin Pages** (DevicesPage, AuthSessionsPage)
+- ✅ **E2E test setup** (Playwright config + 4 test specs + MCP config)
+- ✅ **Handler unit tests** (10 test files + ManageAuthFlowService constraint tests)
+- ✅ **WebAuthn dependency** (com.yubico:webauthn-server-core:2.5.2)
 
 ### In Progress
-- Identity Core API (95%) - SMS OTP, TOTP, and remaining handlers pending
+- Identity Core API (99%) - All handlers complete, deployment pending
 - Mobile/Desktop Apps (70%) - Production URLs configured, integration testing pending
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
 
 ### Next Steps
-1. ~~Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)~~ ✅ DONE
-2. ~~Create landing page for `fivucsas.rollingcatsoftware.com`~~ ✅ DONE
-3. ~~Multi-modal auth system architecture documentation~~ ✅ DONE
-4. ~~Implement Phase 1: Backend foundation (V16 migration, entities, repos, services, controllers)~~ ✅ DONE
-5. ~~Implement Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code)~~ ✅ DONE
-6. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
-7. ~~Connect mobile apps to backend~~ ✅ DONE (production URLs configured)
-8. End-to-end testing (browser E2E with Playwright/Cypress)
+1. Deploy updated backend JAR to GCP VM
+2. Build and deploy updated web-app to Hostinger
+3. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
+4. Run Playwright E2E tests against production
+5. SMS gateway integration (replace NoOpSmsService)
+6. Mobile app E2E integration testing
 
 ## Deployment Scripts (REMEMBER!)
 
