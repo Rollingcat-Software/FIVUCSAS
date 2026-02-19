@@ -259,33 +259,37 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 ### Completed (100%)
 - Biometric Processor (46+ endpoints)
 - Web Admin Dashboard (Identity Core Admin)
-- Database Schema (15 Flyway migrations)
+- Database Schema (16 Flyway migrations)
 - Documentation
 - Identity Core API endpoints (auth, users, tenants, audit logs, enrollments, settings, statistics)
 - ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
-- ✅ Identity Core API running on GCP VM
+- ✅ Identity Core API running on GCP VM (V16 migration applied)
 - ✅ Audit log persistence fix (infinite loop + @Transactional/@Async conflict)
 - ✅ Realistic sample data seeding (V15 migration: 3 tenants, 8 users, audit logs)
 - ✅ Audit log action filter fix (frontend param flattening)
 - ✅ User creation form UX fix (tenant dropdown)
 - ✅ Tenant create/edit form page
 - ✅ Multi-modal auth system architecture (10 documents in docs/09-auth-flows/)
+- ✅ Phase 1: Backend foundation (V16 migration, 8 entities, 8 repos, 5 services, 6 controllers)
+- ✅ Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code) + EmailService + unit tests
+- ✅ CI/CD Pipeline (GitHub Actions: Java 21 + Python 3.11 + Node 20)
+- ✅ Mobile app production API URLs configured
 
 ### In Progress
-- Identity Core API (90%) - multi-modal auth flow implementation in progress
-- Mobile/Desktop Apps (60%) - Backend integration pending
+- Identity Core API (95%) - SMS OTP, TOTP, and remaining handlers pending
+- Mobile/Desktop Apps (70%) - Production URLs configured, integration testing pending
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
 
 ### Next Steps
 1. ~~Deploy web-app to `ica-fivucsas.rollingcatsoftware.com` (Hostinger)~~ ✅ DONE
 2. ~~Create landing page for `fivucsas.rollingcatsoftware.com`~~ ✅ DONE
 3. ~~Multi-modal auth system architecture documentation~~ ✅ DONE
-4. Implement Phase 1: Backend foundation (V16 migration, entities, repos, services, controllers)
-5. Implement Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code)
+4. ~~Implement Phase 1: Backend foundation (V16 migration, entities, repos, services, controllers)~~ ✅ DONE
+5. ~~Implement Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code)~~ ✅ DONE
 6. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
-7. Connect mobile apps to backend
-8. End-to-end testing
+7. ~~Connect mobile apps to backend~~ ✅ DONE (production URLs configured)
+8. End-to-end testing (browser E2E with Playwright/Cypress)
 
 ## Deployment Scripts (REMEMBER!)
 
