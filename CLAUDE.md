@@ -6,8 +6,8 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~97% Complete (February 2026)
-- **Last verified**: 2026-02-20 — All services UP, backend deployed, web dashboard live
+- **Status**: ~98% Complete (February 2026)
+- **Last verified**: 2026-02-20 — All services UP, backend deployed, web dashboard live, E2E tests 14/14 pass
 
 ## Architecture
 
@@ -288,23 +288,26 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ **Frontend Auth Flow Admin UI** (AuthFlowRepository, list page, builder with operation types)
 - ✅ **Frontend Multi-Step Auth UI** (10 step components + MultiStepAuthFlow controller + StepProgress)
 - ✅ **Additional Admin Pages** (DevicesPage, AuthSessionsPage)
-- ✅ **E2E test setup** (Playwright config + 4 test specs + MCP config)
 - ✅ **Handler unit tests** (10 test files + ManageAuthFlowService constraint tests)
 - ✅ **WebAuthn dependency** (com.yubico:webauthn-server-core:2.5.2)
+- ✅ **System-wide improvements** (DeepFace 0.0.98, anti-spoofing, browser face detection, API key auth)
+- ✅ **Production bug fixes** (auth-flows/devices 500 errors — hardcoded tenantId + wrong API paths)
+- ✅ **Tenant-level device listing** (DeviceController accepts userId OR tenantId)
+- ✅ **Playwright E2E tests** (14/14 pass — auth setup pattern with sessionStorage injection)
+- ✅ **Deploy scripts updated** (trycloudflare.com quick tunnel, DeepFace 0.0.98)
 
 ### In Progress
-- Identity Core API (99%) - All 10 handlers complete, deployed on GCP (508 tests pass)
-- Mobile/Desktop Apps (70%) - Production URLs configured, integration testing pending
-- Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
+- Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
+- Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending, scripts ready)
 
 ### Next Steps (Priority Order)
 1. ~~Deploy updated backend JAR to GCP VM~~ ✅ Done (Feb 19, all 10 auth handlers live)
 2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done (multi-step auth UI live)
-3. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
-4. Run Playwright E2E tests against production
-5. SMS gateway integration (replace NoOpSmsService)
-6. Mobile app E2E integration testing
-7. Client-apps (Kotlin Multiplatform) final integration + build verification
+3. ~~Run Playwright E2E tests against production~~ ✅ Done (14/14 pass, Feb 20)
+4. ~~Fix production 500 errors (auth-flows, devices)~~ ✅ Done (Feb 20)
+5. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
+6. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
+7. SMS gateway integration (replace NoOpSmsService)
 8. Final documentation and presentation preparation
 
 ## Deployment Scripts (REMEMBER!)

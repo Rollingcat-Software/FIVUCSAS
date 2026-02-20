@@ -2,7 +2,40 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
-## [Unreleased] - 2026-02-19
+## [Unreleased] - 2026-02-20
+
+### Fixed - Production Bug Fixes
+- **Auth Flows 500 error** - AuthFlowsPage used hardcoded `'system'` as tenantId instead of UUID from auth context
+- **Devices 500 error** - DevicesPage same hardcoded tenantId issue + DeviceRepository called wrong API paths (`/tenants/{id}/devices` instead of `/devices?tenantId=`)
+- **DeviceController** - Now accepts optional `userId` OR `tenantId` query params for flexible device listing
+
+### Added - E2E Testing (14/14 Pass)
+- **Playwright auth setup pattern** - Single login per test run, sessionStorage injection via `addInitScript`
+- **Auth flow builder tests** (4 tests) - Navigate, create flow dialog, APP_LOGIN password enforcement, DOOR_ACCESS freedom
+- **Users CRUD tests** (3 tests) - Navigate, table display, create form
+- **Multi-step auth tests** (2 tests) - Dashboard access, login page rendering
+- **Login flow tests** (4 tests) - Page display, validation, valid/invalid credentials
+- **Auth setup project** (`auth.setup.ts`) - Logs in once, saves sessionStorage to file for reuse
+
+### Added - System-Wide Improvements
+- **Anti-spoofing integration** - DeepFace 0.0.98 built-in anti-spoofing with configurable threshold
+- **Browser-side face detection** - MediaPipe Tasks API in FaceCaptureStep for real-time face quality
+- **API key authentication** - BiometricServiceAdapter sends X-API-Key header to biometric processor
+- **Spoof detection handling** - FaceAuthHandler returns appropriate errors for detected spoofs
+- **New detection backends** - YOLOv11, YOLOv12, CenterFace, GhostFaceNet support in config
+- **Quick tunnel deploy** - trycloudflare.com option in WSL setup scripts
+- **Tenant-level device listing** - `findAllByTenantId()` in UserDeviceRepository
+
+### Changed
+- DeepFace upgraded from 0.0.79 to 0.0.98 across all requirements files
+- pgvector upgraded from 0.2.4 to 0.3.x
+- Default face detector changed from opencv to retinaface in laptop GPU config
+- Project status updated from ~97% to ~98% complete
+- playwright.config.ts restructured with setup/login-tests/authenticated project pattern
+
+---
+
+## [0.9.5] - 2026-02-19
 
 ### Added - Backend Auth Handlers (Phase 3 Complete: All 10 Methods)
 - **TOTP Auth Handler** (`TotpAuthHandler.java`) - Time-based one-time password via authenticator apps, wraps `dev.samstevens.totp` library

@@ -2,16 +2,13 @@
 
 ## High Priority
 
-- [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com`
-- [ ] **Mobile App E2E Testing** - Full integration testing with production API URLs
-- [ ] **Deploy Updated Backend** - Build JAR, deploy to GCP VM with new auth handlers
-- [ ] **Deploy Updated Frontend** - Build web-app, upload to Hostinger
+- [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)
+- [ ] **Mobile App Unit Tests** - Run `./gradlew :shared:test` (7 test files, needs Android SDK)
+- [ ] **Final Presentation Preparation** - Slides, demo, documentation review
 
 ## Medium Priority
 
 - [ ] **Identity Core API Integration Tests** - Comprehensive API test suite with TestContainers
-- [ ] **Playwright E2E Tests** - Run automated browser tests against production
-- [ ] **Rate Limiting Verification** - Test rate limiting on production endpoints
 - [ ] **Desktop App (Kiosk Mode)** - Finalize Kotlin Compose Desktop for kiosk enrollment stations
 - [ ] **SMS Gateway Integration** - Replace NoOpSmsService with Twilio/Vonage
 - [ ] **TOTP Enrollment Flow** - Complete TOTP setup with QR code in web dashboard
@@ -51,3 +48,11 @@
 - [x] **Unit tests** (6 new handler tests + ManageAuthFlowService constraint tests)
 - [x] **Tenant-Configurable Auth Methods** - Auth flow builder with per-tenant operation type config
 - [x] **Automated Deployment Pipeline** - CI/CD with GitHub Actions
+- [x] **Deploy Updated Backend** - JAR deployed to GCP VM (all 10 auth handlers live)
+- [x] **Deploy Updated Frontend** - Web-app uploaded to Hostinger (multi-step auth UI live)
+- [x] **Playwright E2E Tests** - 14/14 pass against production (auth setup pattern, sessionStorage injection)
+- [x] **Production 500 fixes** - Auth-flows/devices hardcoded tenantId replaced with auth context UUID
+- [x] **System-wide improvements** - DeepFace 0.0.98, anti-spoofing, browser face detection, API key auth
+- [x] **Tenant-level device listing** - DeviceController accepts userId or tenantId
+- [x] **Deploy scripts updated** - trycloudflare.com quick tunnel, DeepFace 0.0.98
+- [x] **Rate Limiting verified** - Confirmed working via E2E tests (429 responses observed and handled)

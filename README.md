@@ -141,6 +141,12 @@ npm install && npm run dev
 
 # Integration tests
 ./scripts/test-integration.sh
+
+# E2E tests (Playwright, against production)
+cd web-app && npx playwright test
+
+# Mobile unit tests (requires Android SDK)
+cd client-apps && ./gradlew :shared:test
 ```
 
 ## Documentation
@@ -156,22 +162,22 @@ npm install && npm run dev
 ## Project Status (February 2026)
 
 ### Completed
-- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models
+- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
 - [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
 - [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 16 Flyway migrations
 - [x] Comprehensive Documentation (100%)
-- [x] Identity Core API (95%) - JWT auth, RBAC, multi-tenancy, multi-modal auth flows, deployed on GCP
+- [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on GCP
 - [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
-- [x] Multi-Modal Auth Architecture (10 design documents in docs/09-auth-flows/)
-- [x] Multi-Modal Auth Backend Foundation - V16 migration, entities, repositories, services, controllers
-- [x] Core Auth Handlers - Password, Face, Email OTP, QR Code with unit tests
+- [x] Multi-Modal Auth System - 10 auth handlers, device constraints, configurable auth flows
+- [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
+- [x] Anti-Spoofing Integration - DeepFace 0.0.98 built-in + config for MiniFASNet
 - [x] CI/CD Pipeline - GitHub Actions for all 3 services
+- [x] E2E Testing - 14/14 Playwright tests pass against production (auth, CRUD, flows)
 - [x] Mobile App Backend Integration - Production API URLs configured
 
 ### In Progress
-- [ ] Mobile/Desktop Apps (70%) - Backend URLs configured, integration testing pending
-- [ ] Biometric Processor deployment - Cloudflare Tunnel setup pending
-- [ ] End-to-end testing - Unit tests complete, browser E2E pending
+- [ ] Mobile/Desktop Apps (70%) - 7 test files ready, need Android SDK to run
+- [ ] Biometric Processor deployment - Cloudflare Tunnel scripts ready, WSL2 setup pending
 
 ## Team
 
