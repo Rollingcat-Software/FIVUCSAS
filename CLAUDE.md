@@ -6,7 +6,7 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~98% Complete (February 2026)
+- **Status**: ~99% Complete (February 2026)
 - **Last verified**: 2026-02-20 — All services UP, backend deployed, web dashboard live, E2E tests 14/14 pass
 
 ## Architecture
@@ -263,11 +263,11 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 ## Current Focus Areas
 
 ### Completed (100%)
-- Biometric Processor (46+ endpoints)
+- Biometric Processor (46+ endpoints, DeepFace 0.0.98, anti-spoofing, API key auth)
 - Web Admin Dashboard (Identity Core Admin)
 - Database Schema (16 Flyway migrations)
 - Documentation
-- Identity Core API endpoints (auth, users, tenants, audit logs, enrollments, settings, statistics)
+- Identity Core API (100% - all endpoints complete, 508 tests pass, deployed on GCP)
 - ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
 - ✅ Identity Core API running on GCP VM (V16 migration applied)
@@ -295,6 +295,14 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ **Tenant-level device listing** (DeviceController accepts userId OR tenantId)
 - ✅ **Playwright E2E tests** (14/14 pass — auth setup pattern with sessionStorage injection)
 - ✅ **Deploy scripts updated** (trycloudflare.com quick tunnel, DeepFace 0.0.98)
+- ✅ **i18n (Turkish/English)** with i18next — full bilingual UI in web dashboard
+- ✅ **Analytics page** with recharts (pie, bar, area, and radial bar charts)
+- ✅ **TOTP enrollment dialog** in Settings page
+- ✅ **Real-time notification panel** with audit log polling
+- ✅ **TestContainers integration tests** (24 tests: 5 auth flow + 19 user API)
+- ✅ **Twilio SMS gateway** (TwilioSmsService with @ConditionalOnProperty, ready for activation)
+- ✅ **Spring 2026 final presentation slides** and speaker notes
+- ✅ **MediaPipe browser-side face detection** (client-side, no server round-trip for detection)
 
 ### In Progress
 - Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
@@ -305,10 +313,13 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done (multi-step auth UI live)
 3. ~~Run Playwright E2E tests against production~~ ✅ Done (14/14 pass, Feb 20)
 4. ~~Fix production 500 errors (auth-flows, devices)~~ ✅ Done (Feb 20)
-5. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
-6. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
-7. SMS gateway integration (replace NoOpSmsService)
-8. Final documentation and presentation preparation
+5. ~~TestContainers integration tests~~ ✅ Done (24 tests pass)
+6. ~~i18n, analytics, TOTP enrollment, notification panel~~ ✅ Done
+7. ~~Twilio SMS gateway~~ ✅ Done (ready for activation)
+8. ~~Spring 2026 presentation slides~~ ✅ Done
+9. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
+10. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
+11. Final presentation delivery (Spring 2026)
 
 ## Deployment Scripts (REMEMBER!)
 
