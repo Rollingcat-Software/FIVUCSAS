@@ -6,7 +6,8 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~95% Complete (February 2026)
+- **Status**: ~97% Complete (February 2026)
+- **Last verified**: 2026-02-20 — All services UP, backend deployed, web dashboard live
 
 ## Architecture
 
@@ -50,23 +51,28 @@
 
 **Direct SSH does NOT work** - Port 22 is blocked by firewall.
 
-**Use gcloud with IAP tunnel instead:**
+**Use gcloud with IAP tunnel instead (ALWAYS include `--project=fivucsas`):**
 ```powershell
 # List instances
-gcloud compute instances list
+gcloud compute instances list --project=fivucsas
 
-# SSH via IAP tunnel (REQUIRED)
-gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --command="docker ps"
+# SSH via IAP tunnel (REQUIRED - note --project flag!)
+gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --project=fivucsas --command="docker ps"
 
 # Interactive SSH
-gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap
+gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --project=fivucsas
+
+# SCP files to VM
+gcloud compute scp LOCAL_FILE fivucsas-identity-core:/remote/path --zone=europe-central2-a --tunnel-through-iap --project=fivucsas
 ```
+
+**⚠️ Default gcloud project is `muhabbet-app-prod` (NOT fivucsas!) — always pass `--project=fivucsas`**
 
 **GCP VM Details:**
 - **Instance Name**: `fivucsas-identity-core`
 - **Zone**: `europe-central2-a`
 - **External IP**: `34.116.233.134`
-- **Project**: `fivucsas`
+- **Project**: `fivucsas` (NOT the default project!)
 
 **Running Containers on GCP:**
 - `fivucsas-identity-core-api` (port 8080)
@@ -287,17 +293,19 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ **WebAuthn dependency** (com.yubico:webauthn-server-core:2.5.2)
 
 ### In Progress
-- Identity Core API (99%) - All handlers complete, deployment pending
+- Identity Core API (99%) - All 10 handlers complete, deployed on GCP (508 tests pass)
 - Mobile/Desktop Apps (70%) - Production URLs configured, integration testing pending
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending)
 
-### Next Steps
-1. Deploy updated backend JAR to GCP VM
-2. Build and deploy updated web-app to Hostinger
+### Next Steps (Priority Order)
+1. ~~Deploy updated backend JAR to GCP VM~~ ✅ Done (Feb 19, all 10 auth handlers live)
+2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done (multi-step auth UI live)
 3. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
 4. Run Playwright E2E tests against production
 5. SMS gateway integration (replace NoOpSmsService)
 6. Mobile app E2E integration testing
+7. Client-apps (Kotlin Multiplatform) final integration + build verification
+8. Final documentation and presentation preparation
 
 ## Deployment Scripts (REMEMBER!)
 
@@ -336,3 +344,50 @@ cd identity-core-api
 mvn clean package -DskipTests
 # Output: target/identity-core-api-1.0.0-MVP.jar
 ```
+
+## Cloud Development Notes (Claude Code Web/Cloud Sessions)
+
+### What Cloud Sessions CAN Do
+- Read, edit, and write code across all submodules
+- Run git operations (commit, push, pull, branch, PR creation)
+- Run build commands if tools are available (npm, mvn, python)
+- Test API endpoints via curl against production URLs
+- Create and review pull requests via `gh` CLI
+
+### What Cloud Sessions CANNOT Do
+- Access local gcloud credentials (no GCP VM deployment)
+- Access Hostinger cPanel (no frontend deployment)
+- Run local Docker Compose
+- Access local GPU for biometric processing
+- Access local IDE or file system outside the repo
+
+### Recommended Cloud Workflow
+1. **Code changes**: Edit files directly in submodules
+2. **Test against production**: Use `curl` to test `http://34.116.233.134:8080/api/v1/...`
+3. **Commit & push**: Push changes to GitHub from within the session
+4. **Deployment**: Flag changes that need deployment — user deploys from local machine
+
+### Key API Endpoints for Testing
+```bash
+# Health check
+curl http://34.116.233.134:8080/actuator/health
+
+# Login (get JWT token)
+curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
+
+# Use token for authenticated requests
+curl http://34.116.233.134:8080/api/v1/users \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Swagger UI (browser): http://34.116.233.134:8080/swagger-ui.html
+```
+
+### Submodule Development Pattern
+Each submodule is an independent Git repo. When making changes:
+1. `cd` into the submodule directory
+2. Make changes and commit within the submodule
+3. Push the submodule to its own remote
+4. Update the parent repo's submodule pointer: `git add <submodule-dir>`
+5. Commit and push the parent repo

@@ -32,10 +32,15 @@ docker-compose.override.yml
 # OS files
 Thumbs.db
 .DS_Store
+nul
+
+# Build artifacts
+*.zip
 
 # Archive and backup folders
 /archive/
 /_backup_before_submodules/
 
-# Claude Code local settings
+# Claude Code
 .claude/settings.local.json
+.claude/worktrees/
