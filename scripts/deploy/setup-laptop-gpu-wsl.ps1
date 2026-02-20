@@ -120,7 +120,7 @@ pip install --upgrade pip
 pip install "numpy>=1.26.0,<2.0"
 pip install opencv-python-headless>=4.8.0
 pip install tensorflow==2.15.0
-pip install --no-deps "deepface>=0.0.79"
+pip install --no-deps "deepface>=0.0.98"
 pip install lightphe
 
 # Copy code from Windows repo
@@ -198,6 +198,10 @@ Write-Host "   uvicorn app.main:app --host 0.0.0.0 --port 8001" -ForegroundColor
 Write-Host ""
 Write-Host "5. In another terminal, start Cloudflare Tunnel:" -ForegroundColor White
 Write-Host "   cloudflared tunnel run biometric-api" -ForegroundColor Gray
+Write-Host ""
+Write-Host "   OR use quick tunnel (no DNS, instant test):" -ForegroundColor White
+Write-Host "   cloudflared tunnel --url http://localhost:8001" -ForegroundColor Gray
+Write-Host "   # Copy the random trycloudflare.com URL and test" -ForegroundColor Gray
 Write-Host ""
 Write-Host "6. Test:" -ForegroundColor White
 Write-Host "   curl http://localhost:8001/api/v1/health" -ForegroundColor Gray
