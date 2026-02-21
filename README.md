@@ -164,7 +164,7 @@ cd client-apps && ./gradlew :shared:test
 ### Completed
 - [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
 - [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 16 Flyway migrations
+- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 17 Flyway migrations
 - [x] Comprehensive Documentation (100%)
 - [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on GCP
 - [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
@@ -172,8 +172,10 @@ cd client-apps && ./gradlew :shared:test
 - [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
 - [x] Anti-Spoofing Integration - DeepFace 0.0.98 built-in + config for MiniFASNet
 - [x] CI/CD Pipeline - GitHub Actions for all 3 services
-- [x] E2E Testing - 14/14 Playwright tests pass against production (auth, CRUD, flows)
+- [x] E2E Testing - 224 Playwright tests (217 pass, 7 skipped) against production
 - [x] Mobile App Backend Integration - Production API URLs configured
+- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on GCP (V17)
+- [x] 528+ Unit Tests - including step-up, auth handlers, TestContainers integration
 
 ### In Progress
 - [ ] Mobile/Desktop Apps (70%) - 7 test files ready, need Android SDK to run

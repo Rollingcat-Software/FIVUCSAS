@@ -2,22 +2,14 @@
 
 ## High Priority
 
+- [ ] **Coordinate with Aysenur** - Share step-up endpoint docs, verify public key format (X.509 DER Base64 vs Android Keystore), test end-to-end
 - [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)
-- [ ] **Mobile App Unit Tests** - Run `./gradlew :shared:test` (7 test files, needs Android SDK)
-- [ ] **Final Presentation Preparation** - Slides, demo, documentation review
+- [ ] **Final Presentation Delivery** - Spring 2026 (slides and speaker notes ready)
 
 ## Medium Priority
 
-- [ ] **Identity Core API Integration Tests** - Comprehensive API test suite with TestContainers
+- [ ] **Mobile App Unit Tests** - Run `./gradlew :shared:test` (7 test files, needs Android SDK)
 - [ ] **Desktop App (Kiosk Mode)** - Finalize Kotlin Compose Desktop for kiosk enrollment stations
-- [ ] **SMS Gateway Integration** - Replace NoOpSmsService with Twilio/Vonage
-- [ ] **TOTP Enrollment Flow** - Complete TOTP setup with QR code in web dashboard
-
-## Low Priority / Future
-
-- [ ] **Real-time Notifications** - WebSocket or SSE for admin dashboard alerts
-- [ ] **Advanced Analytics** - Charts and trends in dashboard (login patterns, biometric success rates)
-- [ ] **Multi-language Support** - i18n for web dashboard (Turkish, English)
 - [ ] **NFC Document Hardware Integration** - Physical NFC reader support for document verification
 - [ ] **Full WebAuthn Attestation** - CBOR signature verification for hardware keys
 
@@ -56,3 +48,15 @@
 - [x] **Tenant-level device listing** - DeviceController accepts userId or tenantId
 - [x] **Deploy scripts updated** - trycloudflare.com quick tunnel, DeepFace 0.0.98
 - [x] **Rate Limiting verified** - Confirmed working via E2E tests (429 responses observed and handled)
+- [x] **i18n (Turkish/English)** - Full bilingual UI with i18next
+- [x] **Advanced Analytics** - Charts and trends with recharts (pie, bar, area, radial bar)
+- [x] **TOTP Enrollment Flow** - TOTP setup with QR code in Settings page
+- [x] **Real-time Notifications** - Audit log polling notification panel
+- [x] **TestContainers Integration Tests** - 24 tests (5 auth flow + 19 user API)
+- [x] **SMS Gateway Integration** - TwilioSmsService implemented (ready for activation)
+- [x] **Presentation Slides** - Spring 2026 final presentation and speaker notes
+- [x] **MediaPipe Face Detection** - Browser-side face quality checks
+- [x] **Playwright E2E expanded** - 224 tests (217 pass, 7 skipped) covering all 16 pages
+- [x] **Fingerprint step-up backend** - V17 migration, StepUpController, ECDSA P-256, Redis challenges
+- [x] **Step-up backend deployed to GCP** - V17 applied, 3 endpoints live, smoke-tested (Feb 21)
+- [x] **Step-up unit tests** - 20 tests (8 StepUpChallengeService + 12 StepUpAuthService)

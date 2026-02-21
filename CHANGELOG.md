@@ -2,7 +2,26 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
-## [Unreleased] - 2026-02-20
+## [Unreleased] - 2026-02-21
+
+### Added - Step-Up Backend Deployed + Unit Tests
+- **Fingerprint step-up authentication deployed to GCP** — V17 migration applied, 3 new endpoints live on production
+  - `POST /api/v1/step-up/register-device` — register device with ECDSA P-256 public key (201 Created)
+  - `POST /api/v1/step-up/challenge` — request cryptographic challenge with 5-min Redis TTL (200 OK)
+  - `POST /api/v1/step-up/verify-challenge` — verify ECDSA signature and issue JWT (200 OK)
+- **StepUpChallengeServiceTest** — 8 unit tests (Redis mock, ECDSA P-256 crypto, base64url encoding, TTL)
+- **StepUpAuthServiceTest** — 12 unit tests (device registration new/upsert, challenge request, verify flows, error cases)
+- V17 Flyway migration: `public_key`, `public_key_algorithm`, `step_up_registered_at` columns on `user_devices`
+- Total backend test count: 528+ (was 508)
+- Playwright E2E tests expanded to 224 (217 pass, 7 skipped) covering all 16 pages
+
+### Changed
+- Identity Core API JAR redeployed to GCP VM with `--no-cache` Docker rebuild
+- Database schema now at V17 (was V16)
+
+---
+
+## [0.9.8] - 2026-02-20
 
 ### Fixed - Production Bug Fixes
 - **Auth Flows 500 error** - AuthFlowsPage used hardcoded `'system'` as tenantId instead of UUID from auth context

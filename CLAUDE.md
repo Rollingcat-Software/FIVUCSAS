@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: ~99% Complete (February 2026)
-- **Last verified**: 2026-02-21 — All services UP, backend deployed, web dashboard live, E2E tests 224/224 pass (217 passed, 7 skipped)
+- **Last verified**: 2026-02-21 — All services UP, step-up backend deployed (V17), web dashboard live, E2E tests 224/224 pass (217 passed, 7 skipped)
 
 ## Architecture
 
@@ -271,12 +271,12 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 ### Completed (100%)
 - Biometric Processor (46+ endpoints, DeepFace 0.0.98, anti-spoofing, API key auth)
 - Web Admin Dashboard (Identity Core Admin)
-- Database Schema (17 Flyway migrations)
+- Database Schema (17 Flyway migrations, V1-V17)
 - Documentation
-- Identity Core API (100% - all endpoints complete, 508 tests pass, deployed on GCP)
+- Identity Core API (100% - all endpoints complete, 528 tests pass, deployed on GCP with V17)
 - ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
-- ✅ Identity Core API running on GCP VM (V16 migration applied)
+- ✅ Identity Core API running on GCP VM (V17 migration applied)
 - ✅ Audit log persistence fix (infinite loop + @Transactional/@Async conflict)
 - ✅ Realistic sample data seeding (V15 migration: 3 tenants, 8 users, audit logs)
 - ✅ Audit log action filter fix (frontend param flattening)
@@ -311,6 +311,8 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ **MediaPipe browser-side face detection** (client-side, no server round-trip for detection)
 - ✅ **Playwright E2E test suite expanded** (224 tests: 217 pass, 7 skipped — covers all 16 pages)
 - ✅ **Fingerprint step-up backend** (V17 migration, StepUpController, ECDSA P-256 challenge-response, Redis challenges)
+- ✅ **Step-up backend deployed to GCP** (V17 migration applied, 3 endpoints live, smoke-tested)
+- ✅ **Step-up unit tests** (20 tests: 8 StepUpChallengeServiceTest + 12 StepUpAuthServiceTest)
 
 ### In Progress
 - Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
@@ -327,10 +329,12 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 8. ~~Spring 2026 presentation slides~~ ✅ Done
 9. ~~Playwright E2E tests expanded to 224~~ ✅ Done (Feb 21, 42 failures → 0 failures)
 10. ~~Fingerprint step-up backend for mobile app~~ ✅ Done (Feb 21, V17 migration + 3 endpoints)
-11. Deploy step-up backend to GCP VM (build JAR, SCP, docker compose)
-12. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
-13. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
-14. Final presentation delivery (Spring 2026)
+11. ~~Deploy step-up backend to GCP VM~~ ✅ Done (Feb 21, V17 applied, 3 endpoints live, smoke-tested)
+12. ~~Step-up unit tests~~ ✅ Done (Feb 21, 20 tests: StepUpChallengeServiceTest + StepUpAuthServiceTest)
+13. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
+14. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
+15. Coordinate with Aysenur: share step-up endpoint docs, verify public key format compatibility
+16. Final presentation delivery (Spring 2026)
 
 ## Deployment Scripts (REMEMBER!)
 

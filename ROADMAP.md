@@ -10,31 +10,38 @@
 - Biometric processor with 46+ endpoints (Face recognition, liveness detection)
 - Web admin dashboard (React + TypeScript + MUI)
 - Landing website
-- Database with 16 Flyway migrations, pgvector for embeddings
+- Database with 17 Flyway migrations (V1-V17), pgvector for embeddings
 - CI/CD pipeline (GitHub Actions)
 - Audit logging with async persistence
+- Fingerprint step-up authentication (ECDSA P-256, 3 endpoints, deployed)
+- i18n (Turkish/English) with i18next
+- Analytics dashboard with recharts
+- TOTP enrollment dialog in Settings page
+- Real-time notification panel
+- Twilio SMS gateway (ready for activation)
+- Playwright E2E tests (224 tests)
+- TestContainers integration tests (24 tests)
+- 528+ unit tests across all services
+- Spring 2026 presentation slides and speaker notes
 
 ### Remaining
 - Cloudflare Tunnel for biometric processor (laptop GPU)
-- Mobile app E2E integration testing
-- Production deployment of updated backend/frontend
+- Mobile app E2E integration testing (need Android SDK)
+- Coordinate with Aysenur for step-up endpoint integration
 
 ---
 
 ## v1.1 Biometric Integration (March 2026)
 
-- Fingerprint/voice endpoints in biometric processor
 - Full NFC document reader hardware integration
-- TOTP enrollment flow with QR code provisioning in dashboard
-- SMS gateway integration (Twilio/Vonage)
 - WebAuthn full CBOR attestation verification
 - Biometric enrollment management in web dashboard
+- Desktop app kiosk mode finalization
 
 ---
 
 ## v1.2 Production Hardening (April 2026)
 
-- Playwright E2E test suite (full coverage)
 - Load testing with k6/Artillery
 - Rate limiting tuning per endpoint
 - Redis cluster for HA
@@ -48,9 +55,6 @@
 
 - Multi-region deployment
 - SSO (SAML 2.0 / OpenID Connect) integration
-- Advanced analytics dashboard (login trends, biometric success rates)
-- Real-time notifications (WebSocket/SSE)
-- Multi-language support (Turkish, English)
 - Kiosk mode for desktop enrollment stations
 - SDK for third-party integrations
 - White-label tenant branding
