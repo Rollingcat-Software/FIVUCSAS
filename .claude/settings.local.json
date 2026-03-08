@@ -215,7 +215,8 @@
       "WebFetch(domain:browsermcp.io)",
       "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS\" submodule status)",
       "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS/web-app\" ls-tree:*)",
-      "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS\" submodule foreach --quiet \"echo $name: $sha1\")"
+      "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS\" submodule foreach --quiet \"echo $name: $sha1\")",
+      "Bash(do echo:*)"
     ],
     "deny": [],
     "ask": []
