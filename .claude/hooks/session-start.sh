@@ -92,28 +92,25 @@ fi
 echo ""
 
 # ==============================================================================
-# 4. Setup Java/Gradle Environments (identity-core-api, client-apps)
+# 4. Setup Java/Maven & Kotlin/Gradle Environments
 # ==============================================================================
-echo "☕ Step 4/4: Setting up Java/Gradle projects..."
+echo "☕ Step 4/4: Setting up Java/Kotlin projects..."
 
-# Setup identity-core-api
-if [ -d "identity-core-api" ] && [ -f "identity-core-api/gradlew" ]; then
-  echo "   Setting up identity-core-api (Spring Boot)..."
+# Setup identity-core-api (uses Maven, NOT Gradle!)
+if [ -d "identity-core-api" ] && [ -f "identity-core-api/pom.xml" ]; then
+  echo "   Setting up identity-core-api (Spring Boot + Maven)..."
   cd identity-core-api
 
-  # Make gradlew executable
-  chmod +x gradlew
-
-  # Download dependencies (without daemon for faster execution in cloud)
-  if ./gradlew --no-daemon dependencies --quiet 2>&1 | tail -5; then
+  # Download dependencies
+  if mvn dependency:resolve --quiet 2>&1 | tail -5; then
     echo "   ✅ identity-core-api dependencies downloaded"
   else
-    echo "   ⚠️  Warning: Gradle dependencies may have issues"
+    echo "   ⚠️  Warning: Maven dependencies may have issues"
   fi
 
   cd ..
 else
-  echo "   ⏭️  Skipping identity-core-api (gradlew not found)"
+  echo "   ⏭️  Skipping identity-core-api (pom.xml not found)"
 fi
 
 # Setup client-apps (Kotlin Multiplatform)
@@ -167,7 +164,7 @@ echo "📊 Summary:"
 echo "   • Git submodules initialized (6 submodules)"
 echo "   • Python environment ready (biometric-processor)"
 echo "   • Node.js dependencies installed (web-app)"
-echo "   • Java/Gradle projects configured (identity-core-api, client-apps)"
+echo "   • Java/Maven + Kotlin/Gradle projects configured (identity-core-api, client-apps)"
 echo "   • Environment variables set"
 echo ""
 echo "⏱️  Total time: ${DURATION} seconds"
