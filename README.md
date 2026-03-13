@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow.svg)
+![Status](https://img.shields.io/badge/status-Near%20Production-orange.svg)
 
 ## Overview
 
@@ -159,7 +159,7 @@ cd client-apps && ./gradlew :shared:test
 - [Implementation Status](./docs/IMPLEMENTATION_STATUS_REPORT.md)
 - [Multi-Modal Auth Architecture](./docs/09-auth-flows/README.md)
 
-## Project Status (February 2026)
+## Project Status (March 2026)
 
 ### Completed
 - [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
@@ -176,10 +176,16 @@ cd client-apps && ./gradlew :shared:test
 - [x] Mobile App Backend Integration - Production API URLs configured
 - [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on GCP (V17)
 - [x] 528+ Unit Tests - including step-up, auth handlers, TestContainers integration
+- [x] Auth Flow Contract Alignment - backend-driven auth method sourcing and typed operation contracts in web-app
+- [x] QR Auth Runtime Integration - QR token generation wired to backend in multi-step flow with manual fallback
+- [x] WebAuthn Settings Integration - platform authenticator and hardware key enrollment dialogs added to Settings
+- [x] Auth Flow Guardrails Hardened - required-step restrictions expanded for unsupported methods (NFC/Fingerprint/Voice)
 
 ### In Progress
 - [ ] Mobile/Desktop Apps (70%) - 7 test files ready, need Android SDK to run
 - [ ] Biometric Processor deployment - Cloudflare Tunnel scripts ready, WSL2 setup pending
+- [ ] Full web-app Vitest stabilization - legacy e2e/service tests still contain baseline failures
+- [ ] biometric-processor submodule fast-forward blocked by local untracked-file conflict (`uniface_liveness_detector.py`)
 
 ## Team
 

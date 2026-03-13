@@ -4,6 +4,42 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased] - 2026-02-21
 
+### Added - 2026-03-13 Integration Closure Batch
+- **web-app test baseline mocks** under `src/core/repositories/__mocks__/`:
+  - `MockAuthRepository`, `MockUserRepository`, `MockDashboardRepository`
+  - `MockTenantRepository`, `MockEnrollmentRepository`, `MockAuditLogRepository`
+- **QR runtime repository methods** in `AuthSessionRepository`:
+  - `generateQrToken(userId)` -> `/qr/generate/{userId}`
+  - `invalidateQrToken(token)` -> `DELETE /qr/{token}`
+- **Settings WebAuthn enrollment actions**:
+  - Platform authenticator registration action
+  - Hardware security key registration action
+  - Both wired to existing `WebAuthnEnrollment` component
+
+### Changed - 2026-03-13
+- **QR step flow wiring**:
+  - `MultiStepAuthFlow` now resolves session user id and passes QR token-generation callback
+  - `steps/QrCodeStep` auto-generates token, pre-fills manual input, and preserves manual fallback on errors
+- **README / ROADMAP / TODO status alignment** updated to reflect current integration and validation state
+
+### Fixed - 2026-03-13
+- **Auth flow guardrails** in `ManageAuthFlowService` now prevent required unsupported steps:
+  - `NFC_DOCUMENT`
+  - `FINGERPRINT`
+  - `VOICE`
+- **identity-core-api compile break** in `QrSessionService`:
+  - migrated removed `User#getRoles()` usage to role-name based fallback (`getRoleNames()` / `userType`)
+- **Hook test contract drift**:
+  - `useAuth` tests now render inside `AuthProvider`
+  - `useDashboard` tests now construct stats with `DashboardStats.fromJSON(...)` to match model constructor
+
+### Validation - 2026-03-13
+- `web-app` build: ✅ pass
+- changed-file lint: ✅ pass (warnings only)
+- targeted hook tests: ✅ `59 passed` (`useAuth`, `useDashboard`, `useUsers`)
+- full `web-app` vitest suite: ❌ baseline still failing (`45 failed / 148 passed`) in legacy e2e/service suites
+- `identity-core-api` compile (`mvn -DskipTests compile`): ✅ pass
+
 ### Added - Step-Up Backend Deployed + Unit Tests
 - **Fingerprint step-up authentication deployed to GCP** — V17 migration applied, 3 new endpoints live on production
   - `POST /api/v1/step-up/register-device` — register device with ECDSA P-256 public key (201 Created)

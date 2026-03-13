@@ -216,9 +216,21 @@
       "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS\" submodule status)",
       "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS/web-app\" ls-tree:*)",
       "Bash(git -C \"C:/Users/ahabg/OneDrive/Belgeler/GitHub/FIVUCSAS\" submodule foreach --quiet \"echo $name: $sha1\")",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(docker:*)",
+      "Bash(npm list:*)",
+      "Bash(npx:*)",
+      "Bash(npm search:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install:*)",
+      "Bash(E2E_BASE_URL=http://localhost:5173 npx playwright:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "remote": {
+    "defaultEnvironmentId": "env_01KZzwzbmrVZ3zsiz5JMUtom"
+  },
+  "prefersReducedMotion": false
 }

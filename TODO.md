@@ -4,6 +4,8 @@
 
 - [ ] **Coordinate with Aysenur** - Share step-up endpoint docs, verify public key format (X.509 DER Base64 vs Android Keystore), test end-to-end
 - [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)
+- [ ] **Stabilize full web-app Vitest suite** - Resolve remaining legacy e2e/service test failures (`45 failed / 148 passed` baseline)
+- [ ] **Resolve biometric-processor submodule conflict** - Non-destructive cleanup for untracked `uniface_liveness_detector.py` and fast-forward
 - [ ] **Final Presentation Delivery** - Spring 2026 (slides and speaker notes ready)
 
 ## Medium Priority
@@ -60,3 +62,9 @@
 - [x] **Fingerprint step-up backend** - V17 migration, StepUpController, ECDSA P-256, Redis challenges
 - [x] **Step-up backend deployed to GCP** - V17 applied, 3 endpoints live, smoke-tested (Feb 21)
 - [x] **Step-up unit tests** - 20 tests (8 StepUpChallengeService + 12 StepUpAuthService)
+- [x] **Auth flow contract alignment (web-app)** - backend-driven auth methods and typed operation mapping
+- [x] **TOTP frontend wiring** - `TotpEnrollment` integrated with backend setup/verify endpoints
+- [x] **QR runtime wiring** - multi-step flow now generates QR token from backend with manual fallback
+- [x] **WebAuthn settings integration** - platform and hardware-key enrollment dialogs added
+- [x] **Auth flow guardrails hardened** - required-step restrictions expanded (NFC_DOCUMENT/FINGERPRINT/VOICE)
+- [x] **Identity-core compile blocker fixed** - `QrSessionService` updated for role-name accessors
