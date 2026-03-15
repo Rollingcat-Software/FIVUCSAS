@@ -1,6 +1,6 @@
 # FIVUCSAS - Product Roadmap
 
-> Last updated: 2026-03-13
+> Last updated: 2026-03-15
 
 ## Project Status Summary
 
@@ -132,22 +132,40 @@
 
 ## Phase 4: Deployment & Infrastructure (MEDIUM)
 
-### 4.1 Biometric Processor Deployment
+### 4.1 CI/CD Pipeline ✅ DONE
+- [x] Fix CI workflow (submodule checkout → infrastructure validation only)
+- [x] Fix test scripts to use production HTTPS URL (Copilot review feedback)
+- [x] Add `deploy-hetzner.yml` SSH deploy workflow to identity-core-api
+- [x] Set GitHub secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY) on FIVUCSAS + identity-core-api repos
+- [x] Deploy key generated and authorized on Hetzner VPS
+
+### 4.2 Biometric Processor Deployment
 - [ ] Setup Cloudflare Tunnel on laptop GPU (GTX 1650)
 - [ ] Configure `bpa-fivucsas.rollingcatsoftware.com`
 - [ ] Deploy with GPU acceleration
 - [ ] Verify face operations through tunnel
 
-### 4.2 Production Sync
-- [ ] Rebuild and deploy identity-core-api to Hetzner VPS
-- [ ] Rebuild and deploy web-app to Hostinger
+### 4.3 Production Sync
+- [x] Identity Core API running on Hetzner VPS (auth.rollingcatsoftware.com)
+- [ ] Rebuild and deploy web-app to Hostinger (if changes made)
 - [ ] Run E2E tests against production
 - [ ] Verify all services healthy
 
-### 4.3 CI/CD
-- [ ] Add Docker build verification to GitHub Actions
-- [ ] Add health check verification
-- [ ] Add Playwright E2E in CI pipeline
+### 4.4 Real Email/SMS OTP Delivery
+- [ ] Configure SMTP credentials for email OTP (SendGrid / AWS SES / direct SMTP)
+- [ ] Configure SMS gateway credentials (Twilio — TwilioSmsService already implemented)
+- [ ] Test email OTP flow end-to-end
+- [ ] Test SMS OTP flow end-to-end
+
+### 4.5 Web Frontend Sync
+- [ ] Rebuild and deploy web-app dashboard to Hostinger if auth flow UI changed
+- [ ] Verify multi-step auth flows work in production
+- [ ] Test all 10 auth methods via production UI
+
+### 4.6 Playwright E2E in CI
+- [ ] Add Playwright E2E tests to GitHub Actions CI pipeline
+- [ ] Run against production or staging environment
+- [ ] Gate deployments on E2E pass
 
 ---
 
