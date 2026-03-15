@@ -1,13 +1,14 @@
 #!/bin/bash
 # ============================================================================
-# FIVUCSAS - Deploy Identity-Core-API to GCP VM
-# Target: 34.116.233.134
+# FIVUCSAS - Deploy Identity-Core-API to Hetzner VPS
+# Target: 116.203.222.213
 # ============================================================================
 
 set -e
 
 # Configuration
-GCP_HOST="user@34.116.233.134"
+HETZNER_HOST="root@116.203.222.213"
+SSH_KEY="$HOME/.ssh/hetzner_ed25519"
 REMOTE_DIR="/opt/identity-core-api"
 LOCAL_DIR="$(dirname "$0")/../../identity-core-api"
 
@@ -26,20 +27,20 @@ echo "Built: $JAR_FILE"
 # Step 2: Prepare remote directory
 echo ""
 echo "[2/4] Preparing remote directory..."
-ssh "$GCP_HOST" "sudo mkdir -p $REMOTE_DIR && sudo chown \$(whoami):\$(whoami) $REMOTE_DIR"
+ssh -i "$SSH_KEY" "$HETZNER_HOST" "mkdir -p $REMOTE_DIR"
 
-# Step 3: Copy files to GCP
+# Step 3: Copy files to Hetzner VPS
 echo ""
-echo "[3/4] Copying files to GCP..."
-scp "$JAR_FILE" "$GCP_HOST:$REMOTE_DIR/app.jar"
-scp docker-compose.yml "$GCP_HOST:$REMOTE_DIR/"
-scp .env.gcp "$GCP_HOST:$REMOTE_DIR/.env"
-scp Dockerfile "$GCP_HOST:$REMOTE_DIR/"
+echo "[3/4] Copying files to Hetzner VPS..."
+scp -i "$SSH_KEY" "$JAR_FILE" "$HETZNER_HOST:$REMOTE_DIR/app.jar"
+scp -i "$SSH_KEY" docker-compose.yml "$HETZNER_HOST:$REMOTE_DIR/"
+scp -i "$SSH_KEY" .env.hetzner "$HETZNER_HOST:$REMOTE_DIR/.env"
+scp -i "$SSH_KEY" Dockerfile "$HETZNER_HOST:$REMOTE_DIR/"
 
 # Step 4: Deploy with Docker Compose
 echo ""
 echo "[4/4] Deploying..."
-ssh "$GCP_HOST" "cd $REMOTE_DIR && docker compose down && docker compose up -d --build"
+ssh -i "$SSH_KEY" "$HETZNER_HOST" "cd $REMOTE_DIR && docker compose down && docker compose up -d --build"
 
 # Verify
 echo ""
@@ -48,12 +49,12 @@ sleep 10
 
 echo ""
 echo "Checking health..."
-curl -s "http://34.116.233.134:8080/actuator/health" | head -c 200
+curl -s "http://116.203.222.213:8080/actuator/health" | head -c 200
 echo ""
 
 echo ""
 echo "=========================================="
 echo "Deployment complete!"
-echo "API: http://34.116.233.134:8080"
-echo "Swagger: http://34.116.233.134:8080/swagger-ui.html"
+echo "API: http://116.203.222.213:8080"
+echo "Swagger: http://116.203.222.213:8080/swagger-ui.html"
 echo "=========================================="

@@ -45,7 +45,7 @@ University project (Marmara University, CSE4297/CSE4197) building a **multi-tena
 
 | Service | Tech | Port | Status |
 |---------|------|------|--------|
-| identity-core-api | Spring Boot 3.2 / Java 21 | 8080 | ✅ Running (GCP + Local Docker) |
+| identity-core-api | Spring Boot 3.2 / Java 21 | 8080 | ✅ Running (Hetzner VPS + Local Docker) |
 | biometric-processor | FastAPI / Python 3.11 | 8001 | ✅ Running (Local Docker) |
 | web-app | React 18 + TypeScript | 5173/3000 | ✅ Live (Hostinger) |
 | client-apps | Kotlin Multiplatform | — | 70% |
@@ -205,7 +205,7 @@ TenantContextFilter
 | Voice step | POST /sessions/{id}/steps/{n} | ⚠️ Stub | biometric-processor stub always fails |
 | NFC Document step | POST /sessions/{id}/steps/{n} | ❌ Broken | Hardcoded failure |
 | Hardware Key (WebAuthn) | POST /sessions/{id}/steps/{n} | ✅ Implemented | FIDO2 |
-| Step-Up Auth (ECDSA P-256) | POST /api/v1/step-up/* | ✅ Working | V17, deployed to GCP |
+| Step-Up Auth (ECDSA P-256) | POST /api/v1/step-up/* | ✅ Working | V17, deployed to Hetzner |
 
 ### 4.2 User Management Features
 

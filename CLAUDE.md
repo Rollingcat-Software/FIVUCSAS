@@ -41,40 +41,34 @@
 
 | Service | URL | Status |
 |---------|-----|--------|
-| **Identity Core API** | http://34.116.233.134:8080 | ✅ Running |
-| **Swagger UI** | http://34.116.233.134:8080/swagger-ui.html | ✅ Available |
+| **Identity Core API** | https://auth.rollingcatsoftware.com | ✅ Running |
+| **Swagger UI** | https://auth.rollingcatsoftware.com/swagger-ui.html | ✅ Available |
 | **Web Dashboard** | https://ica-fivucsas.rollingcatsoftware.com | ✅ Live |
 | **Landing Website** | https://fivucsas.rollingcatsoftware.com | ✅ Live |
 | **Biometric API** | https://bpa-fivucsas.rollingcatsoftware.com | ⏳ Pending |
 
-## ⚠️ IMPORTANT: GCP VM Access (REMEMBER!)
+## ⚠️ IMPORTANT: Hetzner VPS Access (REMEMBER!)
 
-**Direct SSH does NOT work** - Port 22 is blocked by firewall.
-
-**Use gcloud with IAP tunnel instead (ALWAYS include `--project=fivucsas`):**
-```powershell
-# List instances
-gcloud compute instances list --project=fivucsas
-
-# SSH via IAP tunnel (REQUIRED - note --project flag!)
-gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --project=fivucsas --command="docker ps"
+**SSH directly with key:**
+```bash
+# Check running containers
+ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213 "docker ps"
 
 # Interactive SSH
-gcloud compute ssh fivucsas-identity-core --zone=europe-central2-a --tunnel-through-iap --project=fivucsas
+ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213
 
-# SCP files to VM
-gcloud compute scp LOCAL_FILE fivucsas-identity-core:/remote/path --zone=europe-central2-a --tunnel-through-iap --project=fivucsas
+# Copy files to server
+scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core-api/
 ```
 
-**⚠️ Default gcloud project is `muhabbet-app-prod` (NOT fivucsas!) — always pass `--project=fivucsas`**
+**Hetzner VPS Details:**
+- **IP**: `116.203.222.213`
+- **Type**: CX33 (8GB RAM), Nuremberg, Ubuntu 24.04
+- **SSH key**: `~/.ssh/hetzner_ed25519`
+- **Docker**: 29.3.0, Docker Compose v5.1.0
+- **Firewall**: UFW — 22/80/443 open
 
-**GCP VM Details:**
-- **Instance Name**: `fivucsas-identity-core`
-- **Zone**: `europe-central2-a`
-- **External IP**: `34.116.233.134`
-- **Project**: `fivucsas` (NOT the default project!)
-
-**Running Containers on GCP:**
+**Running Containers on Hetzner:**
 - `fivucsas-identity-core-api` (port 8080)
 - `fivucsas-redis` (port 6379, internal only)
 - `fivucsas-postgres` with pgvector (port 5432, internal only)
@@ -152,7 +146,7 @@ git submodule foreach git pull origin master
 ## API Documentation
 
 **Production:**
-- **Identity API Swagger**: http://34.116.233.134:8080/swagger-ui.html
+- **Identity API Swagger**: https://auth.rollingcatsoftware.com/swagger-ui.html
 - **Biometric API Swagger**: https://bpa-fivucsas.rollingcatsoftware.com/docs (when tunnel is running)
 
 **Local Development:**
@@ -253,7 +247,7 @@ JWT_SECRET=<256-bit-key>
 
 **Test Login:**
 ```bash
-curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
+curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
 ```
@@ -273,10 +267,10 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - Web Admin Dashboard (Identity Core Admin)
 - Database Schema (17 Flyway migrations, V1-V17)
 - Documentation
-- Identity Core API (100% - all endpoints complete, 528 tests pass, deployed on GCP with V17)
+- Identity Core API (100% - all endpoints complete, 528 tests pass, deployed on Hetzner VPS)
 - ✅ Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - ✅ Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
-- ✅ Identity Core API running on GCP VM (V17 migration applied)
+- ✅ Identity Core API running on Hetzner VPS (V17 migration applied)
 - ✅ Audit log persistence fix (infinite loop + @Transactional/@Async conflict)
 - ✅ Realistic sample data seeding (V15 migration: 3 tenants, 8 users, audit logs)
 - ✅ Audit log action filter fix (frontend param flattening)
@@ -311,7 +305,7 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - ✅ **MediaPipe browser-side face detection** (client-side, no server round-trip for detection)
 - ✅ **Playwright E2E test suite expanded** (224 tests: 217 pass, 7 skipped — covers all 16 pages)
 - ✅ **Fingerprint step-up backend** (V17 migration, StepUpController, ECDSA P-256 challenge-response, Redis challenges)
-- ✅ **Step-up backend deployed to GCP** (V17 migration applied, 3 endpoints live, smoke-tested)
+- ✅ **Step-up backend deployed to Hetzner VPS** (V17 migration applied, 3 endpoints live, smoke-tested)
 - ✅ **Step-up unit tests** (20 tests: 8 StepUpChallengeServiceTest + 12 StepUpAuthServiceTest)
 
 ### In Progress
@@ -319,7 +313,7 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending, scripts ready)
 
 ### Next Steps (Priority Order)
-1. ~~Deploy updated backend JAR to GCP VM~~ ✅ Done (Feb 19, all 10 auth handlers live)
+1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done (Feb 19, all 10 auth handlers live)
 2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done (multi-step auth UI live)
 3. ~~Run Playwright E2E tests against production~~ ✅ Done (14/14 pass, Feb 20)
 4. ~~Fix production 500 errors (auth-flows, devices)~~ ✅ Done (Feb 20)
@@ -329,7 +323,7 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 8. ~~Spring 2026 presentation slides~~ ✅ Done
 9. ~~Playwright E2E tests expanded to 224~~ ✅ Done (Feb 21, 42 failures → 0 failures)
 10. ~~Fingerprint step-up backend for mobile app~~ ✅ Done (Feb 21, V17 migration + 3 endpoints)
-11. ~~Deploy step-up backend to GCP VM~~ ✅ Done (Feb 21, V17 applied, 3 endpoints live, smoke-tested)
+11. ~~Deploy step-up backend to Hetzner VPS~~ ✅ Done (Feb 21, V17 applied, 3 endpoints live, smoke-tested)
 12. ~~Step-up unit tests~~ ✅ Done (Feb 21, 20 tests: StepUpChallengeServiceTest + StepUpAuthServiceTest)
 13. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
 14. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
@@ -340,7 +334,7 @@ curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/deploy/deploy-identity-core-gcp.ps1` | Deploy Identity Core API to GCP |
+| `scripts/deploy/deploy-identity-core-hetzner.ps1` | Deploy Identity Core API to Hetzner |
 | `scripts/deploy/setup-laptop-gpu-wsl.ps1` | Setup biometric processor on Windows/WSL2 |
 | `biometric-processor/deploy/laptop-gpu/setup-wsl.sh` | WSL2 setup script for biometric API |
 | `scripts/deploy/DEPLOYMENT_GUIDE.md` | Full deployment documentation |
@@ -384,7 +378,7 @@ mvn clean package -DskipTests
 - Create and review pull requests via `gh` CLI
 
 ### What Cloud Sessions CANNOT Do
-- Access local gcloud credentials (no GCP VM deployment)
+- Access local gcloud credentials (no Hetzner VPS deployment from cloud sessions)
 - Access Hostinger cPanel (no frontend deployment)
 - Run local Docker Compose
 - Access local GPU for biometric processing
@@ -392,25 +386,25 @@ mvn clean package -DskipTests
 
 ### Recommended Cloud Workflow
 1. **Code changes**: Edit files directly in submodules
-2. **Test against production**: Use `curl` to test `http://34.116.233.134:8080/api/v1/...`
+2. **Test against production**: Use `curl` to test `https://auth.rollingcatsoftware.com/api/v1/...`
 3. **Commit & push**: Push changes to GitHub from within the session
 4. **Deployment**: Flag changes that need deployment — user deploys from local machine
 
 ### Key API Endpoints for Testing
 ```bash
 # Health check
-curl http://34.116.233.134:8080/actuator/health
+curl https://auth.rollingcatsoftware.com/actuator/health
 
 # Login (get JWT token)
-curl -X POST http://34.116.233.134:8080/api/v1/auth/login \
+curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
 
 # Use token for authenticated requests
-curl http://34.116.233.134:8080/api/v1/users \
+curl https://auth.rollingcatsoftware.com/api/v1/users \
   -H "Authorization: Bearer <TOKEN>"
 
-# Swagger UI (browser): http://34.116.233.134:8080/swagger-ui.html
+# Swagger UI (browser): https://auth.rollingcatsoftware.com/swagger-ui.html
 ```
 
 ### Submodule Development Pattern

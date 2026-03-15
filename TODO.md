@@ -17,7 +17,7 @@
 
 ## Completed
 
-- [x] Identity Core API deployment on GCP
+- [x] Identity Core API deployment on Hetzner VPS
 - [x] Web Dashboard deployment to Hostinger
 - [x] Landing Website deployment
 - [x] Audit log persistence fix
@@ -42,7 +42,7 @@
 - [x] **Unit tests** (6 new handler tests + ManageAuthFlowService constraint tests)
 - [x] **Tenant-Configurable Auth Methods** - Auth flow builder with per-tenant operation type config
 - [x] **Automated Deployment Pipeline** - CI/CD with GitHub Actions
-- [x] **Deploy Updated Backend** - JAR deployed to GCP VM (all 10 auth handlers live)
+- [x] **Deploy Updated Backend** - JAR deployed to Hetzner VPS (all 10 auth handlers live)
 - [x] **Deploy Updated Frontend** - Web-app uploaded to Hostinger (multi-step auth UI live)
 - [x] **Playwright E2E Tests** - 14/14 pass against production (auth setup pattern, sessionStorage injection)
 - [x] **Production 500 fixes** - Auth-flows/devices hardcoded tenantId replaced with auth context UUID
@@ -60,7 +60,7 @@
 - [x] **MediaPipe Face Detection** - Browser-side face quality checks
 - [x] **Playwright E2E expanded** - 224 tests (217 pass, 7 skipped) covering all 16 pages
 - [x] **Fingerprint step-up backend** - V17 migration, StepUpController, ECDSA P-256, Redis challenges
-- [x] **Step-up backend deployed to GCP** - V17 applied, 3 endpoints live, smoke-tested (Feb 21)
+- [x] **Step-up backend deployed to Hetzner VPS** - V17 applied, 3 endpoints live, smoke-tested (Feb 21)
 - [x] **Step-up unit tests** - 20 tests (8 StepUpChallengeService + 12 StepUpAuthService)
 - [x] **Auth flow contract alignment (web-app)** - backend-driven auth methods and typed operation mapping
 - [x] **TOTP frontend wiring** - `TotpEnrollment` integrated with backend setup/verify endpoints

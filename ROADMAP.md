@@ -5,7 +5,7 @@
 ## Project Status Summary
 
 - **Overall Completion**: ~95%
-- **Production Services**: Identity Core API (GCP), Web Dashboard (Hostinger), Landing Website (Hostinger)
+- **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger)
 - **Local Dev**: Docker Compose (5 services, all healthy)
 - **Tests**: 528+ backend, 224 E2E, 20 step-up unit tests
 
@@ -139,7 +139,7 @@
 - [ ] Verify face operations through tunnel
 
 ### 4.2 Production Sync
-- [ ] Rebuild and deploy identity-core-api to GCP VM
+- [ ] Rebuild and deploy identity-core-api to Hetzner VPS
 - [ ] Rebuild and deploy web-app to Hostinger
 - [ ] Run E2E tests against production
 - [ ] Verify all services healthy
