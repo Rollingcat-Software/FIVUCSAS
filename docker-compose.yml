@@ -82,7 +82,7 @@ services:
       REDIS_PASSWORD: redis_dev_password
 
       # JWT configuration
-      JWT_SECRET: fivucsas-dev-secret-key-change-in-production-256-bits
+      JWT_SECRET: Zml2dWNzYXMtZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRvY2tlci1kZXZlbG9wbWVudA==
       JWT_ACCESS_TOKEN_EXPIRATION: 3600000
       JWT_REFRESH_TOKEN_EXPIRATION: 604800000
 
