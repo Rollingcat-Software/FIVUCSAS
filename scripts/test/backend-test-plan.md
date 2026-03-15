@@ -1,6 +1,6 @@
 # FIVUCSAS Backend Comprehensive Test Plan
 
-**API Base URL:** `http://34.116.233.134:8080`
+**API Base URL:** `http://116.203.222.213:8080`
 **Date:** 2026-02-03
 **Status:** In Progress
 

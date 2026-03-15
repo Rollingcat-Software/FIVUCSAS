@@ -166,7 +166,7 @@ cd client-apps && ./gradlew :shared:test
 - [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
 - [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 17 Flyway migrations
 - [x] Comprehensive Documentation (100%)
-- [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on GCP
+- [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on Hetzner
 - [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
 - [x] Multi-Modal Auth System - 10 auth handlers, device constraints, configurable auth flows
 - [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
@@ -174,7 +174,7 @@ cd client-apps && ./gradlew :shared:test
 - [x] CI/CD Pipeline - GitHub Actions for all 3 services
 - [x] E2E Testing - 224 Playwright tests (217 pass, 7 skipped) against production
 - [x] Mobile App Backend Integration - Production API URLs configured
-- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on GCP (V17)
+- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on Hetzner VPS (V17)
 - [x] 528+ Unit Tests - including step-up, auth handlers, TestContainers integration
 - [x] Auth Flow Contract Alignment - backend-driven auth method sourcing and typed operation contracts in web-app
 - [x] QR Auth Runtime Integration - QR token generation wired to backend in multi-step flow with manual fallback

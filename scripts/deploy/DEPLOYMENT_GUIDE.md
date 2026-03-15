@@ -6,26 +6,26 @@ This guide covers deploying all 4 components of FIVUCSAS.
 
 | Component | Target | URL |
 |-----------|--------|-----|
-| Identity Core API | GCP VM | http://34.116.233.134:8080 |
+| Identity Core API | Hetzner VPS | http://116.203.222.213:8080 |
 | Web Dashboard | Hostinger | https://ica-fivucsas.rollingcatsoftware.com |
 | Landing Website | Hostinger | https://fivucsas.rollingcatsoftware.com |
 | Biometric API | Your Laptop via Cloudflare | https://bpa-fivucsas.rollingcatsoftware.com |
 
 ---
 
-## Track A: Identity-Core-API (GCP VM)
+## Track A: Identity-Core-API (Hetzner VPS)
 
 ### Prerequisites
-- SSH access to `user@34.116.233.134`
+- SSH access: `ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213`
 - Maven installed locally
-- Docker & Docker Compose on GCP VM
+- Docker & Docker Compose on Hetzner VPS
 
 ### Deployment Steps
 
 **Option 1: Using the deployment script**
 ```powershell
 # From FIVUCSAS root
-.\scripts\deploy\deploy-identity-core-gcp.ps1
+.\scripts\deploy\deploy-identity-core-hetzner.ps1
 ```
 
 **Option 2: Manual deployment**
@@ -34,22 +34,22 @@ This guide covers deploying all 4 components of FIVUCSAS.
 cd identity-core-api
 mvn clean package -DskipTests
 
-# 2. Copy to GCP
-scp target/identity-core-api-1.0.0-MVP.jar user@34.116.233.134:/opt/identity-core-api/app.jar
-scp docker-compose.yml user@34.116.233.134:/opt/identity-core-api/
-scp .env.gcp user@34.116.233.134:/opt/identity-core-api/.env
-scp Dockerfile user@34.116.233.134:/opt/identity-core-api/
+# 2. Copy to Hetzner VPS
+scp -i ~/.ssh/hetzner_ed25519 target/identity-core-api-1.0.0-MVP.jar root@116.203.222.213:/opt/identity-core-api/app.jar
+scp -i ~/.ssh/hetzner_ed25519 docker-compose.yml root@116.203.222.213:/opt/identity-core-api/
+scp -i ~/.ssh/hetzner_ed25519 .env.hetzner root@116.203.222.213:/opt/identity-core-api/.env
+scp -i ~/.ssh/hetzner_ed25519 Dockerfile root@116.203.222.213:/opt/identity-core-api/
 
-# 3. Deploy on GCP
-ssh user@34.116.233.134 "cd /opt/identity-core-api && docker compose down && docker compose up -d --build"
+# 3. Deploy on Hetzner VPS
+ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213 "cd /opt/identity-core-api && docker compose down && docker compose up -d --build"
 
 # 4. Verify
-curl http://34.116.233.134:8080/actuator/health
+curl http://116.203.222.213:8080/actuator/health
 ```
 
 ### Verify
-- Health: http://34.116.233.134:8080/actuator/health
-- Swagger: http://34.116.233.134:8080/swagger-ui.html
+- Health: http://116.203.222.213:8080/actuator/health
+- Swagger: http://116.203.222.213:8080/swagger-ui.html
 
 ---
 
@@ -211,7 +211,7 @@ After all deployments:
 
 | Service | Check Command | Expected |
 |---------|--------------|----------|
-| Identity API | `curl http://34.116.233.134:8080/actuator/health` | `{"status":"UP"}` |
+| Identity API | `curl http://116.203.222.213:8080/actuator/health` | `{"status":"UP"}` |
 | Web Dashboard | Browser: `https://ica-fivucsas.rollingcatsoftware.com` | Login page |
 | Landing | Browser: `https://fivucsas.rollingcatsoftware.com` | Landing page |
 | Biometric API | `curl https://bpa-fivucsas.rollingcatsoftware.com/api/v1/health` | `{"status":"healthy"}` |
@@ -220,11 +220,10 @@ After all deployments:
 
 ## Troubleshooting
 
-### GCP SSH Timeout
+### Hetzner SSH Timeout
 ```bash
-# Check if VM is running in GCP Console
-# Or try with explicit key
-ssh -i ~/.ssh/gcp_key user@34.116.233.134
+# Check if VPS is reachable
+ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213
 ```
 
 ### Hostinger 404 Errors

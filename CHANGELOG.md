@@ -41,7 +41,7 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 - `identity-core-api` compile (`mvn -DskipTests compile`): ✅ pass
 
 ### Added - Step-Up Backend Deployed + Unit Tests
-- **Fingerprint step-up authentication deployed to GCP** — V17 migration applied, 3 new endpoints live on production
+- **Fingerprint step-up authentication deployed to Hetzner VPS** — V17 migration applied, 3 new endpoints live on production
   - `POST /api/v1/step-up/register-device` — register device with ECDSA P-256 public key (201 Created)
   - `POST /api/v1/step-up/challenge` — request cryptographic challenge with 5-min Redis TTL (200 OK)
   - `POST /api/v1/step-up/verify-challenge` — verify ECDSA signature and issue JWT (200 OK)
@@ -52,7 +52,7 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 - Playwright E2E tests expanded to 224 (217 pass, 7 skipped) covering all 16 pages
 
 ### Changed
-- Identity Core API JAR redeployed to GCP VM with `--no-cache` Docker rebuild
+- Identity Core API JAR redeployed to Hetzner VPS with `--no-cache` Docker rebuild
 - Database schema now at V17 (was V16)
 
 ---
@@ -170,9 +170,9 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ### Changed
 - Updated Identity Core API completion from 85% to 95%
-- Updated mobile app API URLs to production GCP endpoints
+- Updated mobile app API URLs to production Hetzner VPS endpoints
 - Updated project status documentation to reflect February 2026 state
-- Deployed latest Identity Core API build to GCP VM (V16 migration applied)
+- Deployed latest Identity Core API build to Hetzner VPS (V16 migration applied)
 
 ## [1.0.0-MVP] - January 2026
 
@@ -182,6 +182,6 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 - Web Admin Dashboard (React 18 + Material UI)
 - Landing Website deployed to `fivucsas.rollingcatsoftware.com`
 - Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
-- Identity Core API deployed on GCP VM (34.116.233.134)
+- Identity Core API deployed on Hetzner VPS (116.203.222.213)
 - 14 Flyway database migrations
 - Comprehensive documentation
