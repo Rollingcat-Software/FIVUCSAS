@@ -3,7 +3,7 @@
 # FIVUCSAS Backend Comprehensive Test Script
 # =============================================================================
 
-API_URL="http://116.203.222.213:8080"
+API_URL="https://auth.rollingcatsoftware.com"
 PASS=0
 FAIL=0
 SKIP=0
