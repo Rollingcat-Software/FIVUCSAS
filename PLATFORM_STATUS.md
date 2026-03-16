@@ -1,5 +1,5 @@
 # FIVUCSAS — Platform Status, Analysis & Roadmap
-> Last updated: 2026-03-15
+> Last updated: 2026-03-16
 > Generated from deep codebase analysis across all submodules
 
 ---
@@ -33,6 +33,13 @@
 | 2026-03-15 | Simple flow visual | ✅ Section 3 |
 | 2026-03-15 | Criticize architectural decisions | ✅ Section 11 |
 | 2026-03-15 | Create living document for all requests/analysis/roadmap | ✅ This file |
+| 2026-03-16 | Fix Muhabbet CI failures (4 cascading issues) | ✅ Done — commits bbd1442..828b07e |
+| 2026-03-16 | Deploy web-app to Hostinger | ✅ Done — ica-fivucsas.rollingcatsoftware.com |
+| 2026-03-16 | Fix CSP blocking API calls | ✅ Done — vite.config.ts + .htaccess |
+| 2026-03-16 | Fix registration 500 (audit FK) | ✅ Done — AuditLogAdapter propagation fix |
+| 2026-03-16 | Configure Hostinger SMTP for email OTP | ✅ Done — smtp.hostinger.com:587 |
+| 2026-03-16 | Firebase FCM credentials | ✅ Done — firebase-adminsdk.json mounted |
+| 2026-03-16 | Full UI/UX audit via Playwright | ✅ Done — see web-app/UI_UX_AUDIT_REPORT.md |
 
 ---
 
@@ -45,9 +52,9 @@ University project (Marmara University, CSE4297/CSE4197) building a **multi-tena
 
 | Service | Tech | Port | Status |
 |---------|------|------|--------|
-| identity-core-api | Spring Boot 3.2 / Java 21 | 8080 | ✅ Running (Hetzner VPS + Local Docker) |
+| identity-core-api | Spring Boot 4.0.2 / Java 21 | 8080 | ✅ Running (Hetzner VPS) |
 | biometric-processor | FastAPI / Python 3.11 | 8001 | ✅ Running (Local Docker) |
-| web-app | React 18 + TypeScript | 5173/3000 | ✅ Live (Hostinger) |
+| web-app | React 18 + TypeScript + Vite | Hostinger | ✅ Live — https://ica-fivucsas.rollingcatsoftware.com |
 | client-apps | Kotlin Multiplatform | — | 70% |
 | api-gateway | NGINX | 8000 | ✅ Running (Local Docker) |
 | postgres | PostgreSQL 16 + pgvector | 5432 | ✅ Running |

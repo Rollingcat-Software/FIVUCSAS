@@ -6,8 +6,8 @@
 
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
-- **Status**: ~99% Complete (February 2026)
-- **Last verified**: 2026-02-21 — All services UP, step-up backend deployed (V17), web dashboard live, E2E tests 224/224 pass (217 passed, 7 skipped)
+- **Status**: Production deployed and running (March 2026)
+- **Last verified**: 2026-03-16 — All 6 services UP and healthy, web-app deployed to Hostinger, register+login E2E verified via Playwright. Email OTP active (Hostinger SMTP). Firebase FCM credentials mounted. CI/CD GREEN on all repos.
 
 ## Architecture
 
@@ -21,7 +21,7 @@
 
 | Component | Technology | Port |
 |-----------|-----------|------|
-| Identity Core API | Spring Boot 3.2 (Java 21) | 8080 |
+| Identity Core API | Spring Boot 4.0.2 (Java 21) | 8080 |
 | Biometric Processor | FastAPI (Python 3.11+) | 8001 |
 | Web Dashboard | React 18 + TypeScript | 5173 |
 | Mobile/Desktop | Kotlin Multiplatform | - |
@@ -68,10 +68,18 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - **Docker**: 29.3.0, Docker Compose v5.1.0
 - **Firewall**: UFW — 22/80/443 open
 
-**Running Containers on Hetzner:**
-- `fivucsas-identity-core-api` (port 8080)
-- `fivucsas-redis` (port 6379, internal only)
-- `fivucsas-postgres` with pgvector (port 5432, internal only)
+**Running Containers on Hetzner (deploy user, /opt/projects/fivucsas/):**
+- `identity-core-api` (port 8080, healthy) — Spring Boot 4.0.2 / Java 21
+- `shared-redis` (port 6379, internal only)
+- `shared-postgres` with pgvector (port 5432, internal only)
+
+**Rebuild & restart identity-core-api:**
+```bash
+cd /opt/projects/fivucsas/identity-core-api
+docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache identity-core-api
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d identity-core-api
+```
+**Always use `--env-file .env.prod`** or env vars will be blank.
 
 ## Repository Structure
 
