@@ -56,29 +56,15 @@
 - **Client-app**: Login screen ✅
 - **Status**: Production-ready
 
-### 2. FACE (Priority 2) — ⚠️ Detection only, embedding needed
+### 2. FACE (Priority 2) — ✅ Production (0.9-1.5s)
 
-**Browser flow (target):**
-```
-Camera → MediaPipe detection → ONNX MobileFaceNet embedding (4MB)
-→ Liveness check (anti-spoofing ONNX, 800KB)
-→ Encrypt embedding (Web Crypto AES-256-GCM)
-→ Send to server → Server compares → Auth decision
-```
-
-**Client-app flow:**
-```
-CameraX/AVFoundation → ML Kit face detection
-→ TFLite MobileFaceNet embedding
-→ Send to server → Auth decision
-```
-
-**Server (biometric-processor):**
-- `POST /enrollment/enroll_embedding` — Store 512-dim vector in pgvector
-- `POST /enrollment/verify_embedding` — Cosine similarity match
+**Server (biometric-processor) — DEPLOYED on Hetzner:**
+- `POST /face/enroll` — Enroll face embedding (512-dim) in pgvector
+- `POST /face/verify` — Cosine similarity verification
+- `POST /face/search` — 1:N search across enrolled faces
+- `POST /face/centroid` — Centroid-based enrollment (multi-sample averaging)
 - Threshold: 0.6 for verification, 0.4 for search
-
-**Storage:** pgvector (512-dim float32 vectors), same as current face approach
+- Storage: pgvector (512-dim float32), `face_embeddings` table in `biometric_db`
 
 **What exists:**
 | Component | File | Status |
@@ -86,33 +72,28 @@ CameraX/AVFoundation → ML Kit face detection
 | Browser detection | `web-app/.../hooks/useFaceDetection.ts` | ✅ Working |
 | Browser capture | `web-app/.../steps/FaceCaptureStep.tsx` | ✅ Working |
 | Client-app capture | `client-apps/.../BiometricEnrollScreen.kt` | ✅ Working |
-| Server enrollment | `biometric-processor/app/api/v1/enrollment/` | ✅ Working |
-| Server verification | `biometric-processor/app/api/v1/enrollment/` | ✅ Working |
-| pgvector storage | `biometric-processor` DB | ✅ Working |
-| ONNX browser embedding | — | ❌ **NEEDED** |
-| Browser liveness | — | ❌ **NEEDED** |
+| Server enroll/verify/search/centroid | `biometric-processor/app/api/` | ✅ Production |
+| pgvector storage | `biometric-processor` DB | ✅ Production |
+| ONNX browser embedding | — | ❌ Future (client-side) |
+| Browser liveness | — | ❌ Future (client-side) |
 
-### 3. NFC (Priority 3) — Existing code needs integration
+### 3. NFC (Priority 3) — ✅ Integrated into client-apps (11,089 lines, 43 files)
+
+**Client-app (FULL eID reading) — INTEGRATED:**
+- NFC reader classes integrated into `client-apps/` (11,089 lines, 43 files)
+- Turkish eID, passport, Istanbulkart, NDEF, DESFire, Mifare support
+- BAC authentication, Secure Messaging, SOD validation
 
 **Browser flow (Chrome Android only):**
 ```
 Web NFC API (NDEFReader) → Read NDEF tag
 → Extract identifier → Send to server → Auth decision
 ```
-**Limitation**: Web NFC can only read NDEF tags. It CANNOT do APDU/BAC for eID reading.
 
-**Client-app flow (FULL eID reading):**
-```
-Android NFC (IsoDep) → Select MRTD app (APDU)
-→ BAC authentication (MRZ → Kseed → 3DES keys)
-→ Secure Messaging → Read DG1 (personal data) + DG2 (photo)
-→ SOD validation → Send verified identity to server
-```
-
-**What exists (COMPREHENSIVE!):**
+**What exists:**
 | Component | File | Status |
 |-----------|------|--------|
-| Universal NFC reader | `practice-and-test/UniversalNfcReader/` | ✅ 10+ card types (Turkish eID, passport, Istanbulkart, NDEF, DESFire, Mifare) |
+| Universal NFC reader | `client-apps/` (integrated) | ✅ 10+ card types |
 | APDU commands | `data/nfc/ApduHelper.kt` | ✅ ISO 7816-4 |
 | BAC authentication | `data/nfc/BacAuthentication.kt` | ✅ ICAO Doc 9303 |
 | Secure Messaging | `data/nfc/SecureMessaging.kt` | ✅ 3DES-CBC + MAC |
@@ -120,76 +101,32 @@ Android NFC (IsoDep) → Select MRTD app (APDU)
 | DG2 photo parser | `data/nfc/Dg2Parser.kt` | ✅ JPEG extraction |
 | SOD validator | `data/nfc/security/SodValidator.kt` | ✅ Signature check |
 | Card detector | `data/nfc/detector/CardDetector.kt` | ✅ Auto-detect card type |
-| Passport reader | `UniversalNfcReader/.../PassportNfcReader.kt` | ✅ |
-| NDEF reader | `UniversalNfcReader/.../NdefReader.kt` | ✅ |
-| DESFire/Istanbulkart | `UniversalNfcReader/.../MifareDesfireReader.kt` | ✅ |
-| Client-app integration | — | ❌ **NEEDED** |
+| Client-app integration | `client-apps/` | ✅ Done |
 
-**Integration plan:**
-1. Copy NFC reader classes from `practice-and-test/UniversalNfcReader/data/nfc/` → `client-apps/shared/` (androidMain)
-2. Create `NfcAuthScreen.kt` in client-app with MRZ input + NFC scan flow
-3. On successful read: extract DG1 data + DG2 photo → send to identity-core-api
-4. Server matches identity from eID against enrolled user → Auth decision
-5. Web browser: show "Scan with FIVUCSAS app" QR code → client-app does NFC → pushes result back
+### 4. VOICE (Priority 4) — ✅ Production (490-585ms, Resemblyzer 256-dim)
 
-### 4. VOICE (Priority 4) — Stub, needs full implementation
-
-**Browser flow:**
-```
-Web Audio API → Record 3-5 seconds
-→ Extract MFCC/mel-spectrogram features (meyda.js, ~50KB)
-→ OR: ONNX ECAPA-TDNN speaker embedding (~20-30MB)
-→ Encrypt → Send to server → Server compares → Auth decision
-```
-
-**Client-app flow:**
-```
-Android MediaRecorder / iOS AVAudioRecorder
-→ Same embedding pipeline → Send to server
-```
-
-**Storage design (like face, pgvector):**
-```sql
--- New table for voice embeddings
-CREATE TABLE voice_enrollments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    embedding vector(192),          -- ECAPA-TDNN: 192-dim
-    sample_count INTEGER DEFAULT 0,  -- Number of enrollment samples averaged
-    quality_score FLOAT,             -- SNR / confidence
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_voice_embedding ON voice_enrollments
-    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-```
-
-**Pipeline (biometric-processor):**
-| Step | Operation | Where | Tech |
-|------|-----------|-------|------|
-| 1 | Audio capture | Client | Web Audio API / MediaRecorder |
-| 2 | Preprocessing | Client or Server | Noise removal, VAD, silence trim |
-| 3 | Feature extraction | Server (MVP) / Client (future) | ECAPA-TDNN via SpeechBrain |
-| 4 | Embedding (192-dim) | Server | SpeechBrain `spkrec-ecapa-voxceleb` |
-| 5 | Storage | Server | pgvector |
-| 6 | Comparison | Server | Cosine similarity, threshold 0.7 |
+**Server (biometric-processor) — DEPLOYED on Hetzner:**
+- `POST /voice/enroll` — Enroll voice embedding (256-dim Resemblyzer) in pgvector
+- `POST /voice/verify` — Cosine similarity verification
+- `POST /voice/search` — 1:N speaker search
+- `POST /voice/centroid` — Centroid-based enrollment (multi-sample averaging)
+- Storage: pgvector (256-dim float32), `voice_enrollments` table in `biometric_db`
+- Latency: 490-585ms per operation
 
 **What exists:**
 | Component | File | Status |
 |-----------|------|--------|
 | Web capture UI | `web-app/.../steps/VoiceStep.tsx` | ✅ Recording works |
-| Backend handler | `identity-core-api/.../VoiceAuthHandler.java` | ✅ Wired (calls stub) |
+| Backend handler | `identity-core-api/.../VoiceAuthHandler.java` | ✅ Wired |
 | Backend adapter | `identity-core-api/.../BiometricServiceAdapter.java` | ✅ HTTP calls ready |
-| BP endpoints | `biometric-processor/.../voice.py` | ❌ Stub (501) |
-| ML model | — | ❌ Need SpeechBrain/ECAPA-TDNN |
-| DB schema | — | ❌ Need voice_enrollments table |
-| Proctoring audio | `biometric-processor/.../basic_audio_analyzer.py` | ✅ VAD exists (reusable) |
+| BP enroll/verify/search/centroid | `biometric-processor/app/api/` | ✅ Production |
+| Resemblyzer model | Resemblyzer (256-dim) | ✅ Loaded |
+| DB schema | `voice_enrollments` table | ✅ Production |
+| Proctoring audio | `biometric-processor/.../basic_audio_analyzer.py` | ✅ VAD (reusable) |
 
 ### 5. FINGERPRINT — DUAL MODE (Priority 5)
 
-#### 5a. FP-Embedded (Phone/Laptop sensor — yes/no answer)
+#### 5a. FP-Embedded (Phone/Laptop sensor — yes/no answer) — ✅ Confirmed on mobile phone
 
 **What it is:** Touch ID, Windows Hello, Android BiometricPrompt — returns cryptographic proof of biometric match, NOT the fingerprint image.
 
@@ -229,7 +166,7 @@ Web shows QR code → User scans with FIVUCSAS app
 | Web WebAuthn | — | ❌ **NEEDED** |
 | Web fallback QR | — | ❌ **NEEDED** |
 
-#### 5b. FP-External (USB scanner — real fingerprint image)
+#### 5b. FP-External (USB scanner — real fingerprint image) — ⏳ Needs USB scanner hardware
 
 **What it is:** Dedicated USB fingerprint scanners (SecuGen, DigitalPersona, etc.) that capture the actual fingerprint image with minutiae data.
 
@@ -285,7 +222,7 @@ CREATE INDEX idx_fp_user ON fingerprint_enrollments(user_id);
 | Vendor bridge | — | ❌ Future (SecuGen WebAPI) |
 | FP image processing | — | ❌ Need OpenCV minutiae extraction or SourceAFIS |
 
-### 6. QR CODE (Priority 6) — Mostly done
+### 6. QR CODE (Priority 6) — ⚠️ Scanner lib ESM issue
 
 **Browser flow:**
 ```
@@ -307,54 +244,60 @@ CameraX → ML Kit barcode scanning → Decode QR
 | Client-app QR | `client-apps/.../QrLoginScanScreen.kt` | ✅ |
 | QR login API | `client-apps/.../QrLoginApiImpl.kt` | ✅ |
 
-### 7. EMAIL OTP (Priority 7) — ✅ DONE
+### 7. EMAIL OTP (Priority 7) — ⚠️ Needs testing
 - Backend: EmailOtpAuthHandler ✅
 - Web: EmailOtpStep.tsx ✅
 - SMTP: Hostinger SMTP configured ✅
+- Status: Code complete, needs E2E verification
 
-### 8. TOTP (Priority 8) — ✅ DONE
+### 8. TOTP (Priority 8) — ⚠️ Needs testing
 - Backend: TotpAuthHandler ✅
 - Web: TotpStep.tsx ✅
 - Enrollment: Settings page TOTP dialog ✅
+- Status: Code complete, needs E2E verification
 
-### 9. SMS OTP (Priority 9) — ✅ DONE
+### 9. SMS OTP (Priority 9) — ⏳ Needs Twilio activation
 - Backend: SmsOtpAuthHandler ✅
 - Twilio: TwilioSmsService ready (conditional activation) ✅
+- Status: Blocked on Twilio account activation
 
-### 10. HARDWARE TOKEN (Priority 10) — WebAuthn cross-platform
+### 10. HARDWARE TOKEN (Priority 10) — ⚠️ Needs physical security key to verify
 - Same as FP-Embedded but `authenticatorAttachment: "cross-platform"` (YubiKey, etc.)
 - Backend: HardwareKeyAuthHandler ✅ (shares WebAuthn infra with fingerprint)
+- Status: Code complete, needs physical YubiKey/security key for verification
+
+### 11. CARD DETECTION (Visual) — ✅ Production (YOLO-based)
+- `POST /card/detect` — YOLO-based visual card detection
+- Deployed on biometric-processor (Hetzner)
 
 ---
 
 ## Revised Phases
 
-### Phase 0: Auth Test Page (Week 1, Days 1-3)
+### Phase 0: Auth Test Page (Week 1, Days 1-3) — ✅ COMPLETE
 **Goal**: Single HTML page testing all auth methods against real APIs.
 
-- [ ] Create `auth-test/index.html` — standalone, no build step
-- [ ] Password login test ✅ (POST /auth/login)
-- [ ] Face capture with MediaPipe + quality feedback
-- [ ] WebAuthn test (FP-Embedded + Hardware Token)
-- [ ] Voice recording + playback
-- [ ] QR scan + verify
-- [ ] Email/TOTP/SMS OTP input
-- [ ] NFC detection (Chrome Android)
-- [ ] Raw API log panel
-- [ ] Deploy to `https://ica-fivucsas.rollingcatsoftware.com/auth-test/`
+- [x] Create `auth-test/index.html` — standalone, no build step
+- [x] Password login test (POST /auth/login)
+- [x] Face capture with MediaPipe + quality feedback
+- [x] WebAuthn test (FP-Embedded + Hardware Token)
+- [x] Voice recording + playback
+- [x] QR scan + verify
+- [x] Email/TOTP/SMS OTP input
+- [x] NFC detection (Chrome Android)
+- [x] Raw API log panel
+- [x] Deploy to `https://ica-fivucsas.rollingcatsoftware.com/auth-test/`
 
-**Deliverable**: Working test console on production domain.
+**Deliverable**: ✅ Working test console deployed at production domain.
 
-### Phase 1: Face — Full Client-Side Pipeline (Week 1-2)
-**Goal**: Face enrollment + verification with browser-side ONNX embedding.
+### Phase 1: Face — Server-Side Pipeline (Week 1-2) — ✅ COMPLETE
+**Goal**: Face enrollment + verification via biometric-processor.
 
-- [ ] `npm install onnxruntime-web` in web-app
-- [ ] Create `useFaceEmbedding.ts` (MobileFaceNet ONNX, 4MB, 512-dim)
-- [ ] Create `useLivenessDetection.ts` (anti-spoofing ONNX, 800KB)
-- [ ] Add biometric-processor endpoints: `enroll_embedding`, `verify_embedding`
-- [ ] Wire into FaceCaptureStep: detect → crop → embed → encrypt → send
-- [ ] CSP headers for ONNX WASM loading
-- [ ] Production test on real domain
+- [x] Biometric-processor face endpoints: enroll, verify, search, centroid
+- [x] pgvector storage (512-dim, face_embeddings table)
+- [x] Deploy biometric-processor to Hetzner (CPU mode)
+- [x] Production test — 0.9-1.5s latency
+- [ ] Future: Client-side ONNX embedding (MobileFaceNet, browser-side)
 
 ### Phase 2: NFC — Integrate Existing Readers (Week 2-3)
 **Goal**: NFC eID reading via client-app, NDEF via browser.
@@ -366,16 +309,16 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [ ] Web browser: "Scan with FIVUCSAS app" flow (QR → app → push result)
 - [ ] Browser NDEF fallback for simple NFC tags (Chrome Android)
 
-### Phase 3: Voice — Full Pipeline (Week 3-4)
+### Phase 3: Voice — Full Pipeline (Week 3-4) — ✅ COMPLETE
 **Goal**: Voice enrollment + verification with pgvector storage.
 
-- [ ] Add SpeechBrain/ECAPA-TDNN to biometric-processor
-- [ ] Implement `/voice/enroll` — extract 192-dim embedding → pgvector
-- [ ] Implement `/voice/verify` — cosine similarity match
-- [ ] Flyway migration: `voice_enrollments` table with pgvector
-- [ ] Update VoiceStep.tsx: better recording UX, waveform, noise indicator
-- [ ] Client-app VoiceEnrollScreen (Android MediaRecorder → send to server)
-- [ ] Reuse proctoring VAD (`basic_audio_analyzer.py`) for voice activity detection
+- [x] Add Resemblyzer to biometric-processor (256-dim speaker embeddings)
+- [x] Implement `/voice/enroll` — extract 256-dim embedding → pgvector
+- [x] Implement `/voice/verify` — cosine similarity match
+- [x] Implement `/voice/search` — 1:N speaker search
+- [x] Implement `/voice/centroid` — centroid-based enrollment
+- [x] `voice_enrollments` table with pgvector
+- [x] Deploy to Hetzner — 490-585ms latency
 
 ### Phase 4: Fingerprint Dual-Mode (Week 4-5)
 **Goal**: FP-Embedded via WebAuthn/client-app, FP-External via vendor bridge.
@@ -426,10 +369,10 @@ CameraX → ML Kit barcode scanning → Decode QR
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        WEB BROWSER (Primary)                         │
 │                                                                      │
-│  Password ✅  Face (ONNX) 🔨  Voice (WebAudio) 🔨  QR ✅            │
+│  Password ✅  Face ✅  Voice ✅  QR ⚠️  Card Detection ✅            │
 │  Email OTP ✅  TOTP ✅  SMS OTP ✅                                    │
-│  FP-Embedded (WebAuthn) 🔨  Hardware Token (WebAuthn) 🔨             │
-│  NFC (Web NFC, Chrome Android only) 🔨                               │
+│  FP-Embedded (WebAuthn) ✅  Hardware Token (WebAuthn) ⚠️             │
+│  NFC (client-app integrated) ✅                                      │
 │                                                                      │
 │  When browser can't ──► Shows QR code: "Open FIVUCSAS App"          │
 └────────────────────────────────┬─────────────────────────────────────┘
@@ -481,12 +424,13 @@ CameraX → ML Kit barcode scanning → Decode QR
 | BiometricEnrollScreen | `client-apps/.../BiometricEnrollScreen.kt` | App face capture |
 | enrollment routes | `biometric-processor/app/api/v1/enrollment/` | Server endpoints |
 
-### Voice (Stub only)
+### Voice (Production)
 | File | Path | What |
 |------|------|------|
 | VoiceStep | `web-app/.../steps/VoiceStep.tsx` | Web recording UI |
 | VoiceAuthHandler | `identity-core-api/.../VoiceAuthHandler.java` | Backend handler |
-| voice.py | `biometric-processor/app/api/routes/voice.py` | Stub (501) |
+| voice routes | `biometric-processor/app/api/` | enroll/verify/search/centroid |
+| Resemblyzer | biometric-processor | 256-dim speaker embeddings |
 | audio_analyzer | `biometric-processor/.../basic_audio_analyzer.py` | VAD (reusable) |
 
 ### Fingerprint (Partial)
@@ -560,9 +504,9 @@ CameraX → ML Kit barcode scanning → Decode QR
 | Identity Core API | https://auth.rollingcatsoftware.com | ✅ Running |
 | Swagger UI | https://auth.rollingcatsoftware.com/swagger-ui.html | ✅ |
 | Web Dashboard | https://ica-fivucsas.rollingcatsoftware.com | ✅ Live |
-| Auth Test Page | https://ica-fivucsas.rollingcatsoftware.com/auth-test/ | 🔨 Phase 0 |
+| Auth Test Page | https://ica-fivucsas.rollingcatsoftware.com/auth-test/ | ✅ Deployed |
 | Landing Page | https://fivucsas.rollingcatsoftware.com | ✅ Live |
-| Biometric API | https://bpa-fivucsas.rollingcatsoftware.com | ⏳ Pending |
+| Biometric API | Hetzner VPS (port 8001, internal) | ✅ Running |
 
 ## Test Credentials
 

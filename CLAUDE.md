@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running (March 2026)
-- **Last verified**: 2026-03-16 — All 6 services UP and healthy, web-app deployed to Hostinger, register+login E2E verified via Playwright. Email OTP active (Hostinger SMTP). Firebase FCM credentials mounted. CI/CD GREEN on all repos.
+- **Last verified**: 2026-03-17 — All services UP and healthy (including biometric-api). 7/12 auth methods production. Auth-test page deployed. Voice + Face + Card detection live. NFC integrated into client-apps.
 
 ## Architecture
 
@@ -34,7 +34,7 @@
 | Subdomain | Purpose | Status |
 |-----------|---------|--------|
 | `ica-fivucsas.rollingcatsoftware.com` | Identity Core Admin (web-app) | ✅ LIVE (Hostinger) |
-| `bpa-fivucsas.rollingcatsoftware.com` | Biometric Processor API | ⏳ Pending (Cloudflare Tunnel) |
+| `bpa-fivucsas.rollingcatsoftware.com` | Biometric Processor API | ✅ Running (Hetzner, port 8001) |
 | `fivucsas.rollingcatsoftware.com` | Landing Page | ✅ LIVE (Hostinger) |
 
 ### Production URLs (REMEMBER!)
@@ -45,7 +45,7 @@
 | **Swagger UI** | https://auth.rollingcatsoftware.com/swagger-ui.html | ✅ Available |
 | **Web Dashboard** | https://ica-fivucsas.rollingcatsoftware.com | ✅ Live |
 | **Landing Website** | https://fivucsas.rollingcatsoftware.com | ✅ Live |
-| **Biometric API** | https://bpa-fivucsas.rollingcatsoftware.com | ⏳ Pending |
+| **Biometric API** | Hetzner VPS (port 8001, internal) | ✅ Running |
 
 ## ⚠️ IMPORTANT: Hetzner VPS Access (REMEMBER!)
 
@@ -70,8 +70,9 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 
 **Running Containers on Hetzner (deploy user, /opt/projects/fivucsas/):**
 - `identity-core-api` (port 8080, healthy) — Spring Boot 4.0.2 / Java 21
+- `biometric-api` (port 8001, healthy) — FastAPI, CPU mode, Resemblyzer + DeepFace
 - `shared-redis` (port 6379, internal only)
-- `shared-postgres` with pgvector (port 5432, internal only)
+- `shared-postgres` with pgvector (port 5432, internal only) — biometric_db: face_embeddings, voice_enrollments
 
 **Rebuild & restart identity-core-api:**
 ```bash
@@ -317,10 +318,22 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ **Step-up backend deployed to Hetzner VPS** (V17 migration applied, 3 endpoints live, smoke-tested)
 - ✅ **Step-up unit tests** (20 tests: 8 StepUpChallengeServiceTest + 12 StepUpAuthServiceTest)
 
+### Recently Completed (March 2026)
+- ✅ **Auth-test page** live at `/auth-test/` (ica-fivucsas.rollingcatsoftware.com/auth-test/)
+- ✅ **biometric-processor deployed** on Hetzner (CPU mode, biometric-api container, port 8001)
+- ✅ **Voice auth implemented** — Resemblyzer 256-dim, enroll/verify/search/centroid, 490-585ms
+- ✅ **Face auth production** — enroll/verify/search/centroid, 0.9-1.5s
+- ✅ **Card detection endpoint** live (YOLO-based)
+- ✅ **NFC integrated** into client-apps (11,089 lines, 43 files)
+- ✅ **Login/Register pages**: 22 UI/UX fixes deployed (see `web-app/UI_UX_AUDIT_LOGIN_REGISTER.md`)
+- ✅ **Client-apps audit** report at `client-apps/PRODUCTION_AUDIT.md` (5.6/10, P0 fixes needed)
+- ✅ **7 of 12 auth methods** working in production
+
 ### In Progress
-- **ROADMAP_V2 Phase 0**: Auth-test page — standalone HTML page for testing all auth methods against production API
 - Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
-- Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending, scripts ready)
+- QR Code scanner ESM issue fix
+- Email OTP / TOTP E2E verification
+- Client-apps P0 fixes from audit
 
 ### Next Steps (Priority Order)
 1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done (Feb 19, all 10 auth handlers live)
