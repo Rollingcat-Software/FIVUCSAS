@@ -781,7 +781,9 @@ async function toggleVoiceRecording() {
   }
 
   try {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    var micId = document.getElementById('voiceMicSelect').value;
+    var audioConstraints = micId ? { deviceId: { exact: micId } } : true;
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
     voiceAudioCtx = new AudioContext();
     var source = voiceAudioCtx.createMediaStreamSource(voiceStream);
     voiceAnalyser = voiceAudioCtx.createAnalyser();
@@ -789,7 +791,7 @@ async function toggleVoiceRecording() {
     source.connect(voiceAnalyser);
 
     voiceChunks = [];
-    voiceRecorder = new MediaRecorder(voiceStream, { mimeType: 'audio/webm' });
+    voiceRecorder = new MediaRecorder(voiceStream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 128000 });
     voiceRecorder.ondataavailable = function(e) { if (e.data.size > 0) voiceChunks.push(e.data); };
     voiceRecorder.onstop = function() {
       var blob = new Blob(voiceChunks, { type: 'audio/webm' });
@@ -1168,6 +1170,34 @@ document.addEventListener('DOMContentLoaded', function() {
   updateTokenUI();
   initNfc();
   checkPlatformAuth();
+
+  // Enumerate microphones
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+    stream.getTracks().forEach(function(t) { t.stop(); });
+    return navigator.mediaDevices.enumerateDevices();
+  }).then(function(devices) {
+    var select = document.getElementById('voiceMicSelect');
+    while (select.firstChild) select.removeChild(select.firstChild);
+    devices.filter(function(d) { return d.kind === 'audioinput'; }).forEach(function(d, i) {
+      var opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.textContent = d.label || ('Microphone ' + (i + 1));
+      select.appendChild(opt);
+    });
+    if (select.options.length === 0) {
+      var fallback = document.createElement('option');
+      fallback.value = '';
+      fallback.textContent = 'No microphones found';
+      select.appendChild(fallback);
+    }
+  }).catch(function() {
+    var select = document.getElementById('voiceMicSelect');
+    while (select.firstChild) select.removeChild(select.firstChild);
+    var errOpt = document.createElement('option');
+    errOpt.value = '';
+    errOpt.textContent = 'Mic access denied';
+    select.appendChild(errOpt);
+  });
   // Don't auto-check external FP scanner — only on button click
   document.getElementById('fpxStat-status').textContent = 'Click Check Scanner';
   document.getElementById('fpxStat-status').style.color = 'var(--text-muted)';
