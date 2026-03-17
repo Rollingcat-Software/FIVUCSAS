@@ -1149,7 +1149,7 @@ async function setupTotp() {
   var uid = getUserId();
   if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
   showResult('totpResult', 'Setting up TOTP...', true);
-  var res = await apiCall('POST', '/api/v1/otp/totp/setup/' + uid, null);
+  var res = await apiCall('POST', '/api/v1/totp/setup/' + uid, null);
   var infoEl = document.getElementById('totpSetupInfo');
   if (res.ok && res.data) {
     var qrUri = res.data.qrCodeUri || res.data.otpauthUrl || res.data.uri || res.data.secretUri || '';
@@ -1184,7 +1184,7 @@ async function checkTotpStatus() {
   var uid = getUserId();
   if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
   showResult('totpResult', 'Checking TOTP status...', true);
-  var res = await apiCall('GET', '/api/v1/otp/totp/status/' + uid, null);
+  var res = await apiCall('GET', '/api/v1/totp/status/' + uid, null);
   if (res.ok && res.data) {
     var enabled = res.data.enabled || res.data.totpEnabled || res.data.active || false;
     showResult('totpResult',
@@ -1203,7 +1203,7 @@ async function verifyTotp() {
   var code = document.getElementById('totpCode').value;
   if (!code || code.length < 6) { showResult('totpResult', 'Enter a 6-digit TOTP code.', false); return; }
   showResult('totpResult', 'Verifying TOTP code...', true);
-  var res = await apiCall('POST', '/api/v1/otp/totp/verify-setup/' + uid, { code: code });
+  var res = await apiCall('POST', '/api/v1/totp/verify-setup/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
