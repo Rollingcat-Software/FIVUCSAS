@@ -814,6 +814,7 @@ async function toggleVoiceRecording() {
         // Enable enroll/verify buttons
         document.getElementById('btnVoiceEnroll').disabled = false;
         document.getElementById('btnVoiceVerify').disabled = false;
+        document.getElementById('btnVoiceSearch').disabled = false;
       };
       reader.readAsDataURL(blob);
     };
@@ -891,6 +892,48 @@ async function verifyVoice() {
     showResult('voiceResult', 'Voice verification: ' + JSON.stringify(resp, null, 2), resp.verified === true);
   } catch (e) {
     showResult('voiceResult', 'Voice verification failed: ' + e.message, false);
+  }
+}
+
+async function searchVoice() {
+  if (!voiceBase64Data) { showResult('voiceResult', 'Record voice first.', false); return; }
+  showResult('voiceResult', 'Searching voice...', true);
+  var token = getToken();
+  var start = performance.now();
+  try {
+    var res = await fetch(getApiUrl() + '/api/v1/biometric/voice/search', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': 'Bearer ' + token } : {}),
+      body: JSON.stringify({ voiceData: voiceBase64Data })
+    });
+    var elapsed = performance.now() - start;
+    var data = await res.json().catch(function() { return null; });
+    addLogEntry('POST', '/api/v1/biometric/voice/search', res.status, elapsed, '(voice audio)', data);
+
+    if (res.ok && data && data.matches && data.matches.length > 0) {
+      var lines = 'SPEAKER IDENTIFIED! (' + formatMs(elapsed) + ')\n\n';
+      data.matches.forEach(function(m, i) {
+        lines += '#' + (i + 1) + ' User: ' + m.user_id + ' | Similarity: ' + ((m.similarity || 0) * 100).toFixed(1) + '%\n';
+      });
+      try {
+        var topId = data.matches[0].user_id;
+        var userRes = await fetch(getApiUrl() + '/api/v1/users/' + topId, {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (userRes.ok) {
+          var user = await userRes.json();
+          lines += '\n--- Top Match ---\n';
+          lines += 'Name: ' + (user.firstName || '') + ' ' + (user.lastName || '') + '\n';
+          lines += 'Email: ' + (user.email || '--') + '\n';
+          lines += 'Role: ' + (user.role || '--');
+        }
+      } catch (e) { /* optional */ }
+      showResult('voiceResult', lines, true);
+    } else {
+      showResult('voiceResult', 'No speaker match found. (' + formatMs(elapsed) + ')\n' + JSON.stringify(data, null, 2), false);
+    }
+  } catch (e) {
+    showResult('voiceResult', 'Search error: ' + e.message, false);
   }
 }
 
@@ -1225,6 +1268,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'voiceRecordBtn': toggleVoiceRecording,
     'btnVoiceEnroll': enrollVoice,
     'btnVoiceVerify': verifyVoice,
+    'btnVoiceSearch': searchVoice,
     'btnFpeRegister': fpeRegister,
     'btnFpeVerify': fpeVerify,
     'btnCheckScanner': checkExternalFP,
