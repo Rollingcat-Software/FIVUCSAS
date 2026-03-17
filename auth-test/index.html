@@ -44,17 +44,41 @@
       <div class="form-row">
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="loginEmail" placeholder="admin@fivucsas.local">
+          <input type="email" id="loginEmail" value="admin@fivucsas.local">
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="loginPassword" placeholder="Test@123">
+          <input type="password" id="loginPassword" value="Test@123">
         </div>
       </div>
       <div class="form-actions">
         <button class="btn btn-primary" id="btnLogin">Login</button>
       </div>
       <div class="result-box" id="loginResult" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Who Am I Panel -->
+  <div class="card" id="card-whoami" style="display:none;">
+    <div class="card-header">
+      <div class="card-header-left">
+        <span class="card-number" style="background:var(--purple);">&#9733;</span>
+        <span class="card-title">Authenticated User</span>
+        <span class="card-badge badge-api">Session</span>
+      </div>
+      <span class="card-chevron">&#9654;</span>
+    </div>
+    <div class="card-body">
+      <div class="stats" id="userStats">
+        <div class="stat"><div class="stat-label">Name</div><div class="stat-value" id="userStat-name">--</div></div>
+        <div class="stat"><div class="stat-label">Email</div><div class="stat-value" id="userStat-email">--</div></div>
+        <div class="stat"><div class="stat-label">Role</div><div class="stat-value" id="userStat-role">--</div></div>
+        <div class="stat"><div class="stat-label">Tenant</div><div class="stat-value" id="userStat-tenant">--</div></div>
+        <div class="stat"><div class="stat-label">Biometric</div><div class="stat-value" id="userStat-biometric">--</div></div>
+        <div class="stat"><div class="stat-label">Verifications</div><div class="stat-value" id="userStat-verifications">--</div></div>
+        <div class="stat"><div class="stat-label">User ID</div><div class="stat-value" id="userStat-id" style="font-size:0.7rem;">--</div></div>
+        <div class="stat"><div class="stat-label">Enrolled At</div><div class="stat-value" id="userStat-enrolled">--</div></div>
+      </div>
     </div>
   </div>
 

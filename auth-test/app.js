@@ -250,13 +250,31 @@ async function doLogin() {
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
-    if (res.data.user && res.data.user.id) localStorage.setItem('fivucsas_user_id', res.data.user.id);
+    if (res.data.user && res.data.user.id) {
+      localStorage.setItem('fivucsas_user_id', res.data.user.id);
+      showUserPanel(res.data.user);
+    }
     showResult('loginResult',
       'Login successful (' + formatMs(res.elapsed) + ')\n\n' + JSON.stringify(res.data, null, 2), true);
   } else {
     showResult('loginResult',
       'Login failed: ' + (res.error || JSON.stringify(res.data, null, 2)), false);
   }
+}
+
+function showUserPanel(user) {
+  var panel = document.getElementById('card-whoami');
+  panel.style.display = 'block';
+  panel.classList.add('open');
+  document.getElementById('userStat-name').textContent = (user.firstName || '') + ' ' + (user.lastName || '');
+  document.getElementById('userStat-email').textContent = user.email || '--';
+  document.getElementById('userStat-role').textContent = (user.roles || [user.role]).join(', ');
+  document.getElementById('userStat-tenant').textContent = user.tenantId || '--';
+  document.getElementById('userStat-biometric').textContent = user.biometricEnrolled ? 'Enrolled' : 'Not enrolled';
+  document.getElementById('userStat-biometric').style.color = user.biometricEnrolled ? 'var(--green)' : 'var(--yellow)';
+  document.getElementById('userStat-verifications').textContent = user.verificationCount || 0;
+  document.getElementById('userStat-id').textContent = user.id;
+  document.getElementById('userStat-enrolled').textContent = user.enrolledAt ? new Date(user.enrolledAt).toLocaleString() : 'Never';
 }
 
 // ── 2. Face Verification ────────────────────────────────────────────
