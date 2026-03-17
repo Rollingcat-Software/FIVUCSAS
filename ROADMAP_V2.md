@@ -7,6 +7,28 @@
 
 ---
 
+## Current Session Results (2026-03-17)
+
+### What was accomplished:
+- **Auth-test page**: 11 sections deployed at `/auth-test/` (Password, Face, Voice, FP-Embedded, FP-External, QR, Email OTP, TOTP, SMS OTP, Hardware Token, NFC)
+- **Face**: enroll/verify/search + liveness puzzle + 3-angle bank enrollment flow
+- **Voice**: enroll/verify/search with Resemblyzer 256-dim + centroid averaging
+- **Card detection**: YOLO-based endpoint live on biometric-processor
+- **FP-Embedded**: WebAuthn confirmed working on mobile phone
+- **NFC**: Fully integrated into client-apps (11,089 lines, 43 files)
+- **Web-app**: Enrollment page + secondary auth + 22 UI/UX fixes on login/register
+- **Client-apps**: P0 blockers fixed, all mocks removed, i18n added (TR/EN), 6 new screens
+- **Biometric-processor**: Deployed on Hetzner in CPU mode (biometric-api container, port 8001)
+
+### Known Issues (to fix next session):
+- Web-app CSP blocks MediaPipe WASM (needs `connect-src` + `unsafe-eval` in CSP headers)
+- Enrollment endpoints return 403 for USER role (need permission adjustment)
+- Audit log polling returns 403 for non-admin users
+- WebAuthn RP ID mismatch on web-app (domain config issue)
+- TOTP enrollment works, but other enrollment methods need permission fixes on backend
+
+---
+
 ## Core Design Principle
 
 ```
