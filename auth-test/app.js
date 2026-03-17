@@ -1042,33 +1042,48 @@ async function checkExternalFP() {
 
 // ── 6. QR Code ───────────────────────────────────────────────────────
 
-var qrScanner = null;
+var html5QrScanner = null;
 
 async function startQrScan() {
-  var video = document.getElementById('qrVideo');
-  var container = document.getElementById('qrContainer');
+  var container = document.getElementById('qrReaderContainer');
   container.style.display = 'block';
   document.getElementById('qrStartBtn').disabled = true;
   document.getElementById('qrStopBtn').disabled = false;
 
   try {
-    if (typeof QrScanner === 'undefined' && typeof window.QrScanner === 'undefined') {
-      showResult('qrResult', 'QR Scanner library not loaded. Check CDN.', false);
+    if (typeof Html5Qrcode === 'undefined') {
+      showResult('qrResult', 'QR Scanner library (html5-qrcode) not loaded. Check CDN.', false);
+      document.getElementById('qrStartBtn').disabled = false;
+      document.getElementById('qrStopBtn').disabled = true;
       return;
     }
-    qrScanner = new QrScanner(video, function(result) {
-      showResult('qrResult', 'QR Decoded:\n' + result.data, true);
-    }, { highlightScanRegion: true, highlightCodeOutline: true });
-    await qrScanner.start();
+
+    html5QrScanner = new Html5Qrcode('qrReader');
+    await html5QrScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+      function onScanSuccess(decodedText, decodedResult) {
+        showResult('qrResult', 'QR Decoded:\n' + decodedText, true);
+      },
+      function onScanFailure(errorMessage) {
+        // Ignore scan failures (no QR found in frame) — this fires constantly
+      }
+    );
+    showResult('qrResult', 'QR Scanner started. Point camera at a QR code.', true);
   } catch (e) {
     showResult('qrResult', 'QR Scanner error: ' + (e.message || e), false);
     document.getElementById('qrStartBtn').disabled = false;
+    document.getElementById('qrStopBtn').disabled = true;
   }
 }
 
-function stopQrScan() {
-  if (qrScanner) { qrScanner.stop(); qrScanner.destroy(); qrScanner = null; }
-  document.getElementById('qrContainer').style.display = 'none';
+async function stopQrScan() {
+  if (html5QrScanner) {
+    try { await html5QrScanner.stop(); } catch (e) { /* ignore */ }
+    try { html5QrScanner.clear(); } catch (e) { /* ignore */ }
+    html5QrScanner = null;
+  }
+  document.getElementById('qrReaderContainer').style.display = 'none';
   document.getElementById('qrStartBtn').disabled = false;
   document.getElementById('qrStopBtn').disabled = true;
 }
@@ -1090,11 +1105,22 @@ function generateTestQr() {
 
 async function sendEmailOtp() {
   var uid = getUserId();
-  if (!uid) { showResult('emailOtpResult', 'Login first to get user ID.', false); return; }
+  if (!uid) { showResult('emailOtpResult', 'Login first to get user ID (use Password Login above).', false); return; }
+  showResult('emailOtpResult', 'Sending OTP to user email...', true);
   var res = await apiCall('POST', '/api/v1/otp/email/send/' + uid, null);
-  showResult('emailOtpResult', res.ok
-    ? 'OTP sent! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
-    : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
+  if (res.ok) {
+    showResult('emailOtpResult',
+      'OTP sent successfully! (' + formatMs(res.elapsed) + ')\n' +
+      'Check your email inbox for the 6-digit code.\n' +
+      '(If SMTP is not configured, the OTP may not arrive — check the API response below)\n\n' +
+      JSON.stringify(res.data, null, 2), true);
+  } else {
+    var errMsg = res.error || '';
+    if (res.data) errMsg = JSON.stringify(res.data, null, 2);
+    showResult('emailOtpResult',
+      'Send failed (' + (res.status || 'ERR') + '):\n' + errMsg +
+      '\n\nNote: If SMTP is not configured, the server may return an error.', false);
+  }
 }
 
 async function verifyEmailOtp() {
@@ -1102,31 +1128,93 @@ async function verifyEmailOtp() {
   if (!uid) { showResult('emailOtpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('emailOtpCode').value;
   if (!code || code.length < 6) { showResult('emailOtpResult', 'Enter a 6-digit OTP code.', false); return; }
+  showResult('emailOtpResult', 'Verifying OTP code...', true);
   var res = await apiCall('POST', '/api/v1/otp/email/verify/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
+    showResult('emailOtpResult',
+      'Email OTP verified successfully! (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), true);
+  } else {
+    showResult('emailOtpResult',
+      'Verification failed (' + (res.status || 'ERR') + '):\n' +
+      (res.error || JSON.stringify(res.data, null, 2)), false);
   }
-  showResult('emailOtpResult', res.ok
-    ? 'Verified! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
-    : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
 }
 
 // ── 8. TOTP ──────────────────────────────────────────────────────────
+
+async function setupTotp() {
+  var uid = getUserId();
+  if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
+  showResult('totpResult', 'Setting up TOTP...', true);
+  var res = await apiCall('POST', '/api/v1/otp/totp/setup/' + uid, null);
+  var infoEl = document.getElementById('totpSetupInfo');
+  if (res.ok && res.data) {
+    var qrUri = res.data.qrCodeUri || res.data.otpauthUrl || res.data.uri || res.data.secretUri || '';
+    var secret = res.data.secret || res.data.secretKey || '';
+    // Build info display
+    while (infoEl.firstChild) infoEl.removeChild(infoEl.firstChild);
+    infoEl.style.display = 'block';
+
+    var box = document.createElement('div');
+    box.className = 'result-box success';
+    box.style.display = 'block';
+    box.style.wordBreak = 'break-all';
+
+    var lines = 'TOTP Setup successful! (' + formatMs(res.elapsed) + ')\n\n';
+    if (secret) lines += 'Secret Key: ' + secret + '\n';
+    if (qrUri) lines += 'OTPAuth URI: ' + qrUri + '\n';
+    lines += '\nScan this URI in your authenticator app, then enter the 6-digit code below to verify.\n';
+    lines += '\nFull response:\n' + JSON.stringify(res.data, null, 2);
+    box.textContent = lines;
+    infoEl.appendChild(box);
+
+    showResult('totpResult', 'TOTP setup complete! Enter the code from your authenticator app to verify.', true);
+  } else {
+    infoEl.style.display = 'none';
+    showResult('totpResult',
+      'TOTP setup failed (' + (res.status || 'ERR') + '):\n' +
+      (res.error || JSON.stringify(res.data, null, 2)), false);
+  }
+}
+
+async function checkTotpStatus() {
+  var uid = getUserId();
+  if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
+  showResult('totpResult', 'Checking TOTP status...', true);
+  var res = await apiCall('GET', '/api/v1/otp/totp/status/' + uid, null);
+  if (res.ok && res.data) {
+    var enabled = res.data.enabled || res.data.totpEnabled || res.data.active || false;
+    showResult('totpResult',
+      'TOTP Status: ' + (enabled ? 'ENABLED' : 'NOT ENABLED') + ' (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), enabled);
+  } else {
+    showResult('totpResult',
+      'Status check failed (' + (res.status || 'ERR') + '):\n' +
+      (res.error || JSON.stringify(res.data, null, 2)), false);
+  }
+}
 
 async function verifyTotp() {
   var uid = getUserId();
   if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('totpCode').value;
   if (!code || code.length < 6) { showResult('totpResult', 'Enter a 6-digit TOTP code.', false); return; }
+  showResult('totpResult', 'Verifying TOTP code...', true);
   var res = await apiCall('POST', '/api/v1/otp/totp/verify-setup/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
+    showResult('totpResult',
+      'TOTP verified successfully! (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), true);
+  } else {
+    showResult('totpResult',
+      'TOTP verification failed (' + (res.status || 'ERR') + '):\n' +
+      (res.error || JSON.stringify(res.data, null, 2)), false);
   }
-  showResult('totpResult', res.ok
-    ? 'TOTP verified! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
-    : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
 }
 
 // ── 9. SMS OTP ───────────────────────────────────────────────────────
@@ -1134,10 +1222,20 @@ async function verifyTotp() {
 async function sendSmsOtp() {
   var uid = getUserId();
   if (!uid) { showResult('smsOtpResult', 'Login first to get user ID.', false); return; }
+  showResult('smsOtpResult', 'Attempting to send SMS OTP...', true);
   var res = await apiCall('POST', '/api/v1/otp/sms/send/' + uid, null);
-  showResult('smsOtpResult', res.ok
-    ? 'SMS sent! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
-    : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
+  if (res.ok) {
+    showResult('smsOtpResult',
+      'SMS OTP sent! (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), true);
+  } else {
+    var errMsg = res.error || '';
+    if (res.data) errMsg = JSON.stringify(res.data, null, 2);
+    showResult('smsOtpResult',
+      'SMS send failed (' + (res.status || 'ERR') + '):\n' + errMsg +
+      '\n\n[Pending Activation] SMS OTP requires Twilio to be configured.\n' +
+      'Contact admin to set up: twilio.account-sid, twilio.auth-token, twilio.from-number', false);
+  }
 }
 
 async function verifySmsOtp() {
@@ -1145,22 +1243,43 @@ async function verifySmsOtp() {
   if (!uid) { showResult('smsOtpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('smsOtpCode').value;
   if (!code || code.length < 6) { showResult('smsOtpResult', 'Enter a 6-digit OTP code.', false); return; }
+  showResult('smsOtpResult', 'Verifying SMS OTP code...', true);
   var res = await apiCall('POST', '/api/v1/otp/sms/verify/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
+    showResult('smsOtpResult',
+      'SMS OTP verified! (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), true);
+  } else {
+    showResult('smsOtpResult',
+      'SMS OTP verification failed (' + (res.status || 'ERR') + '):\n' +
+      (res.error || JSON.stringify(res.data, null, 2)), false);
   }
-  showResult('smsOtpResult', res.ok
-    ? 'Verified! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
-    : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
 }
 
 // ── 10. Hardware Token ───────────────────────────────────────────────
 
+async function checkHwTokenSupport() {
+  var el = document.getElementById('hwStat-available');
+  if (!window.PublicKeyCredential) {
+    el.textContent = 'No WebAuthn support';
+    el.style.color = 'var(--red)';
+    return;
+  }
+  el.textContent = 'WebAuthn available (cross-platform)';
+  el.style.color = 'var(--green)';
+}
+
 async function hwRegister() {
+  if (!window.PublicKeyCredential) {
+    showResult('hwResult', 'WebAuthn is not supported in this browser. Cannot register hardware keys.', false);
+    return;
+  }
   var username = document.getElementById('hwUsername').value || 'testuser';
   var challenge = randomBytes(32);
   var userId = randomBytes(16);
+  showResult('hwResult', 'Insert your YubiKey or security key and tap when prompted...', true);
   try {
     var credential = await navigator.credentials.create({
       publicKey: {
@@ -1178,14 +1297,23 @@ async function hwRegister() {
     var credId = bufToBase64url(credential.rawId);
     showResult('hwResult',
       'Hardware key registered!\nCredential ID: ' + credId +
-      '\nAttestation format: ' + (credential.response.attestationObject ? 'present' : 'none'), true);
+      '\nAttestation format: ' + (credential.response.attestationObject ? 'present' : 'none') +
+      '\nTransport hints: USB / NFC / BLE', true);
     localStorage.setItem('fivucsas_hw_credId', credId);
   } catch (e) {
-    showResult('hwResult', 'Registration failed: ' + e.message, false);
+    if (e.name === 'NotAllowedError') {
+      showResult('hwResult', 'No security key detected or operation was cancelled.\nMake sure your security key is inserted and try again.', false);
+    } else {
+      showResult('hwResult', 'Registration failed: ' + e.message, false);
+    }
   }
 }
 
 async function hwVerify() {
+  if (!window.PublicKeyCredential) {
+    showResult('hwResult', 'WebAuthn is not supported in this browser.', false);
+    return;
+  }
   var challenge = randomBytes(32);
   var allowCredentials = [];
   var storedId = localStorage.getItem('fivucsas_hw_credId');
@@ -1193,6 +1321,7 @@ async function hwVerify() {
     var raw = Uint8Array.from(atob(storedId.replace(/-/g,'+').replace(/_/g,'/')), function(c) { return c.charCodeAt(0); });
     allowCredentials.push({ id: raw, type: 'public-key', transports: ['usb', 'nfc', 'ble'] });
   }
+  showResult('hwResult', 'Tap your security key now...', true);
   try {
     var assertion = await navigator.credentials.get({
       publicKey: {
@@ -1207,7 +1336,11 @@ async function hwVerify() {
       'Hardware key verified!\nCredential ID: ' + bufToBase64url(assertion.rawId) +
       '\nSignature present: yes\nUser present: yes', true);
   } catch (e) {
-    showResult('hwResult', 'Verification failed: ' + e.message, false);
+    if (e.name === 'NotAllowedError') {
+      showResult('hwResult', 'No security key detected or operation was cancelled.\nInsert your security key and try again.', false);
+    } else {
+      showResult('hwResult', 'Verification failed: ' + e.message, false);
+    }
   }
 }
 
@@ -1778,6 +1911,7 @@ document.addEventListener('DOMContentLoaded', function() {
   updateTokenUI();
   initNfc();
   checkPlatformAuth();
+  checkHwTokenSupport();
 
   // Enumerate microphones
   navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
@@ -1844,6 +1978,8 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnGenTestQr': generateTestQr,
     'btnSendEmailOtp': sendEmailOtp,
     'btnVerifyEmailOtp': verifyEmailOtp,
+    'btnSetupTotp': setupTotp,
+    'btnTotpStatus': checkTotpStatus,
     'btnVerifyTotp': verifyTotp,
     'btnSendSms': sendSmsOtp,
     'btnVerifySms': verifySmsOtp,

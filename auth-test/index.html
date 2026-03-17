@@ -239,8 +239,8 @@
         <button class="btn btn-danger" id="qrStopBtn" disabled>Stop</button>
         <button class="btn" id="btnGenTestQr">Generate Test QR</button>
       </div>
-      <div class="media-container" id="qrContainer" style="display:none;">
-        <video id="qrVideo" autoplay playsinline muted></video>
+      <div id="qrReaderContainer" style="display:none; margin-bottom:12px;">
+        <div id="qrReader" style="width:100%;max-width:500px;"></div>
       </div>
       <div id="qrGenOutput" style="margin-top:8px;"></div>
       <div class="result-box" id="qrResult" style="display:none;"></div>
@@ -291,7 +291,12 @@
       <span class="card-chevron">&#9654;</span>
     </div>
     <div class="card-body">
-      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Enter the 6-digit code from your authenticator app (Google Authenticator, Authy, etc.).</p>
+      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Setup TOTP by scanning the QR code URI in your authenticator app (Google Authenticator, Authy, etc.), then verify with the 6-digit code.</p>
+      <div class="form-actions" style="margin-bottom:12px;">
+        <button class="btn btn-primary" id="btnSetupTotp">Setup TOTP</button>
+        <button class="btn" id="btnTotpStatus" style="background:var(--purple);color:#fff;">Check Status</button>
+      </div>
+      <div id="totpSetupInfo" style="display:none; margin-bottom:12px;"></div>
       <div class="form-row">
         <div class="form-group" style="max-width:200px;">
           <label>TOTP Code</label>
@@ -312,10 +317,12 @@
         <span class="card-number">9</span>
         <span class="card-title">SMS OTP</span>
         <span class="card-badge badge-api">API</span>
+        <span class="card-badge" style="background:var(--yellow);color:#000;font-size:0.65rem;">Pending Activation</span>
       </div>
       <span class="card-chevron">&#9654;</span>
     </div>
     <div class="card-body">
+      <p class="info-text" style="margin-top:0;margin-bottom:12px;color:var(--yellow);">SMS OTP requires Twilio activation. Contact admin to configure Twilio credentials (Account SID, Auth Token, Sender Number).</p>
       <div class="form-row">
         <div class="form-group">
           <label>Phone Number</label>
@@ -323,7 +330,7 @@
         </div>
       </div>
       <div class="form-actions" style="margin-bottom:12px;">
-        <button class="btn btn-primary" id="btnSendSms">Send SMS</button>
+        <button class="btn btn-primary" id="btnSendSms">Send SMS (Test)</button>
       </div>
       <div class="form-row">
         <div class="form-group" style="max-width:200px;">
@@ -349,7 +356,10 @@
       <span class="card-chevron">&#9654;</span>
     </div>
     <div class="card-body">
-      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Insert your security key (YubiKey, Titan, etc.) and tap when prompted.</p>
+      <div class="stats" style="margin-bottom:12px;">
+        <div class="stat"><div class="stat-label">WebAuthn Support</div><div class="stat-value" id="hwStat-available">Checking...</div></div>
+      </div>
+      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Insert your YubiKey or security key and tap when prompted. This uses WebAuthn with <code>authenticatorAttachment: "cross-platform"</code> for USB/NFC/BLE security keys (not built-in biometrics).</p>
       <div class="form-row">
         <div class="form-group">
           <label>Username (for registration)</label>
@@ -408,6 +418,7 @@
 
 </div>
 
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
