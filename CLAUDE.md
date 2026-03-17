@@ -263,6 +263,7 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 ## Useful Paths
 
 - Main README: `./README.md`
+- **ROADMAP_V2.md**: `./ROADMAP_V2.md` — Browser-first roadmap, 7 phases, ~11 weeks
 - Full Documentation: `./docs/README.md`
 - API Integration: `./docs/04-api/`
 - Architecture: `./docs/02-architecture/`
@@ -317,6 +318,7 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ **Step-up unit tests** (20 tests: 8 StepUpChallengeServiceTest + 12 StepUpAuthServiceTest)
 
 ### In Progress
+- **ROADMAP_V2 Phase 0**: Auth-test page — standalone HTML page for testing all auth methods against production API
 - Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
 - Biometric Processor laptop GPU deployment (Cloudflare Tunnel setup pending, scripts ready)
 
