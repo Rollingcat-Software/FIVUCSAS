@@ -243,7 +243,11 @@ async function checkConnection() {
 
 // ── 1. Password Login ────────────────────────────────────────────────
 
+var loginInProgress = false;
 async function doLogin() {
+  if (loginInProgress) return;
+  loginInProgress = true;
+  document.getElementById('btnLogin').disabled = true;
   var email = document.getElementById('loginEmail').value || 'admin@fivucsas.local';
   var password = document.getElementById('loginPassword').value || 'Test@123';
   var res = await apiCall('POST', '/api/v1/auth/login', { email: email, password: password });
@@ -260,6 +264,8 @@ async function doLogin() {
     showResult('loginResult',
       'Login failed: ' + (res.error || JSON.stringify(res.data, null, 2)), false);
   }
+  loginInProgress = false;
+  document.getElementById('btnLogin').disabled = false;
 }
 
 function showUserPanel(user) {
@@ -1097,7 +1103,24 @@ function generateTestQr() {
   var box = document.createElement('div');
   box.className = 'result-box success';
   box.style.display = 'block';
-  box.textContent = 'Test QR Payload (copy to any QR generator):\n\n' + payload;
+  var label = document.createElement('div');
+  label.textContent = 'Test QR Payload:';
+  label.style.marginBottom = '8px';
+  box.appendChild(label);
+
+  var img = document.createElement('img');
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(payload);
+  img.alt = 'QR Code';
+  img.style.display = 'block';
+  img.style.marginBottom = '8px';
+  box.appendChild(img);
+
+  var code = document.createElement('pre');
+  code.textContent = payload;
+  code.style.fontSize = '0.75rem';
+  code.style.wordBreak = 'break-all';
+  box.appendChild(code);
+
   el.appendChild(box);
 }
 
@@ -1205,11 +1228,10 @@ async function verifyTotp() {
   showResult('totpResult', 'Verifying TOTP code...', true);
   var res = await apiCall('POST', '/api/v1/totp/verify-setup/' + uid, { code: code });
   if (res.ok && res.data) {
-    var token = res.data.token || res.data.accessToken || res.data.access_token;
-    if (token) setToken(token);
+    var verified = res.data.success !== false;
     showResult('totpResult',
-      'TOTP verified successfully! (' + formatMs(res.elapsed) + ')\n\n' +
-      JSON.stringify(res.data, null, 2), true);
+      (verified ? 'TOTP verified!' : 'TOTP code invalid.') + ' (' + formatMs(res.elapsed) + ')\n\n' +
+      JSON.stringify(res.data, null, 2), verified);
   } else {
     showResult('totpResult',
       'TOTP verification failed (' + (res.status || 'ERR') + '):\n' +
@@ -1801,7 +1823,7 @@ async function startBankEnrollment() {
 
     var formData = new FormData();
     for (var j = 0; j < capturedBlobs.length; j++) {
-      formData.append('images', capturedBlobs[j], 'angle_' + j + '.jpg');
+      formData.append('files', capturedBlobs[j], 'angle_' + j + '.jpg');
     }
 
     var token = getToken();
