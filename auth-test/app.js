@@ -525,6 +525,7 @@ function captureFace() {
     lastFaceBlob = blob;
     document.getElementById('btnFaceEnroll').disabled = false;
     document.getElementById('btnFaceVerify').disabled = false;
+    document.getElementById('btnFaceSearch').disabled = false;
     showResult('faceResult',
       'Captured frame: ' + formatBytes(blob.size) + ' JPEG\nResolution: ' + c.width + 'x' + c.height +
       '\n\nReady — click Enroll or Verify below.', true);
@@ -593,6 +594,62 @@ async function verifyFace() {
   } catch (e) {
     showResult('faceResult', 'Verification error: ' + e.message, false);
     addLogEntry('POST', '/api/v1/biometric/verify/' + uid, 'ERR', performance.now() - start, null, e.message);
+  }
+}
+
+async function searchFace() {
+  if (!lastFaceBlob) { showResult('faceResult', 'Capture a face frame first.', false); return; }
+
+  var formData = new FormData();
+  formData.append('file', lastFaceBlob, 'face.jpg');
+
+  var start = performance.now();
+  try {
+    var token = getToken();
+    var res = await fetch(getApiUrl() + '/api/v1/biometric/search', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData
+    });
+    var elapsed = performance.now() - start;
+    var data = await res.json().catch(function() { return null; });
+    addLogEntry('POST', '/api/v1/biometric/search', res.status, elapsed, '(multipart image)', data);
+
+    if (res.ok && data) {
+      var matches = data.matches || data.results || [];
+      if (matches.length > 0) {
+        var lines = 'FACE IDENTIFIED! (' + formatMs(elapsed) + ')\n\n';
+        for (var i = 0; i < matches.length; i++) {
+          var m = matches[i];
+          var sim = m.similarity ? (m.similarity * 100).toFixed(1) : ((1 - (m.distance || 0)) * 100).toFixed(1);
+          lines += '#' + (i + 1) + ' User: ' + m.user_id + ' | Similarity: ' + sim + '%\n';
+        }
+        // Fetch user info for top match
+        try {
+          var topId = matches[0].user_id;
+          var userRes = await fetch(getApiUrl() + '/api/v1/users/' + topId, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          });
+          if (userRes.ok) {
+            var user = await userRes.json();
+            lines += '\n--- Top Match ---\n';
+            lines += 'Name: ' + (user.firstName || '') + ' ' + (user.lastName || '') + '\n';
+            lines += 'Email: ' + (user.email || '--') + '\n';
+            lines += 'Role: ' + (user.role || '--') + '\n';
+            lines += 'Enrolled: ' + (user.enrolledAt ? new Date(user.enrolledAt).toLocaleString() : 'N/A') + '\n';
+            lines += 'Verifications: ' + (user.verificationCount || 0);
+          }
+        } catch (e) { /* optional */ }
+        showResult('faceResult', lines, true);
+      } else {
+        showResult('faceResult', 'No match found. This face is not enrolled. (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), false);
+      }
+    } else {
+      showResult('faceResult', 'Search failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(data, null, 2), false);
+    }
+  } catch (e) {
+    showResult('faceResult', 'Search error: ' + e.message, false);
+    addLogEntry('POST', '/api/v1/biometric/search', 'ERR', performance.now() - start, null, e.message);
   }
 }
 
@@ -709,6 +766,7 @@ var voiceAnalyser = null;
 var voiceAnimFrame = null;
 var voiceStartTime = 0;
 var voiceAudioCtx = null;
+var voiceBase64Data = null; // stored after recording for enroll/verify
 
 async function toggleVoiceRecording() {
   var btn = document.getElementById('voiceRecordBtn');
@@ -749,7 +807,11 @@ async function toggleVoiceRecording() {
       var reader = new FileReader();
       reader.onload = function() {
         var base64 = reader.result.split(',')[1];
-        showResult('voiceResult', 'Recording complete.\nBase64 length: ' + base64.length + ' chars\nReady for API submission.', true);
+        voiceBase64Data = base64;
+        showResult('voiceResult', 'Recording complete.\nBase64 length: ' + base64.length + ' chars\nReady for Enroll or Verify.', true);
+        // Enable enroll/verify buttons
+        document.getElementById('btnVoiceEnroll').disabled = false;
+        document.getElementById('btnVoiceVerify').disabled = false;
       };
       reader.readAsDataURL(blob);
     };
@@ -796,6 +858,38 @@ function drawWaveform() {
     ctx.stroke();
   }
   draw();
+}
+
+async function enrollVoice() {
+  var userId = getUserId();
+  if (!userId) { showResult('voiceResult', 'Login first to get a user ID.', false); return; }
+  if (!voiceBase64Data) { showResult('voiceResult', 'Record audio first.', false); return; }
+
+  showResult('voiceResult', 'Enrolling voice...', true);
+  try {
+    var resp = await apiCall('POST', '/api/v1/biometric/voice/enroll/' + userId, {
+      voiceData: voiceBase64Data
+    });
+    showResult('voiceResult', 'Voice enrollment: ' + JSON.stringify(resp, null, 2), resp.verified !== false);
+  } catch (e) {
+    showResult('voiceResult', 'Voice enrollment failed: ' + e.message, false);
+  }
+}
+
+async function verifyVoice() {
+  var userId = getUserId();
+  if (!userId) { showResult('voiceResult', 'Login first to get a user ID.', false); return; }
+  if (!voiceBase64Data) { showResult('voiceResult', 'Record audio first.', false); return; }
+
+  showResult('voiceResult', 'Verifying voice...', true);
+  try {
+    var resp = await apiCall('POST', '/api/v1/biometric/voice/verify/' + userId, {
+      voiceData: voiceBase64Data
+    });
+    showResult('voiceResult', 'Voice verification: ' + JSON.stringify(resp, null, 2), resp.verified === true);
+  } catch (e) {
+    showResult('voiceResult', 'Voice verification failed: ' + e.message, false);
+  }
 }
 
 // ── 5a. Fingerprint Embedded ─────────────────────────────────────────
@@ -1095,9 +1189,12 @@ document.addEventListener('DOMContentLoaded', function() {
     'faceCaptureBtn': captureFace,
     'btnFaceEnroll': enrollFace,
     'btnFaceVerify': verifyFace,
+    'btnFaceSearch': searchFace,
     'btnFaceDelete': deleteFaceEnrollment,
     'faceStopBtn': stopFaceDetection,
     'voiceRecordBtn': toggleVoiceRecording,
+    'btnVoiceEnroll': enrollVoice,
+    'btnVoiceVerify': verifyVoice,
     'btnFpeRegister': fpeRegister,
     'btnFpeVerify': fpeVerify,
     'btnCheckScanner': checkExternalFP,

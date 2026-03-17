@@ -98,6 +98,7 @@
         <button class="btn" id="faceCaptureBtn" disabled>Capture Frame</button>
         <button class="btn btn-success" id="btnFaceEnroll" disabled>Enroll Face</button>
         <button class="btn btn-success" id="btnFaceVerify" disabled>Verify Face</button>
+        <button class="btn" id="btnFaceSearch" disabled style="background:var(--purple);color:#fff;">Who Is This?</button>
         <button class="btn btn-danger" id="btnFaceDelete">Delete Enrollment</button>
         <button class="btn btn-danger" id="faceStopBtn" disabled>Stop</button>
       </div>
@@ -146,6 +147,8 @@
     <div class="card-body">
       <div class="form-actions" style="margin-bottom:12px;">
         <button class="btn btn-primary" id="voiceRecordBtn">Start Recording</button>
+        <button class="btn btn-success" id="btnVoiceEnroll" disabled>Enroll Voice</button>
+        <button class="btn btn-success" id="btnVoiceVerify" disabled>Verify Voice</button>
       </div>
       <canvas class="waveform-canvas" id="voiceWaveform"></canvas>
       <div id="voicePlayback" style="display:none; margin-bottom:12px;">
@@ -156,6 +159,7 @@
         <div class="stat"><div class="stat-label">Sample Rate</div><div class="stat-value" id="voiceStat-samplerate">--</div></div>
         <div class="stat"><div class="stat-label">Size</div><div class="stat-value" id="voiceStat-size">--</div></div>
       </div>
+      <p class="info-text">Record your voice, then click Enroll or Verify. Audio is sent as base64 WebM to the biometric processor for 256-dim speaker embedding extraction.</p>
       <div class="result-box" id="voiceResult" style="display:none;"></div>
     </div>
   </div>
