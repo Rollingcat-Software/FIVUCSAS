@@ -100,6 +100,8 @@
         <button class="btn btn-success" id="btnFaceVerify" disabled>Verify Face</button>
         <button class="btn" id="btnFaceSearch" disabled style="background:var(--purple);color:#fff;">Who Is This?</button>
         <button class="btn btn-danger" id="btnFaceDelete">Delete Enrollment</button>
+        <button class="btn" id="btnLivenessPuzzle" disabled style="background:var(--orange,#d29922);color:#fff;">Liveness Puzzle</button>
+        <button class="btn" id="btnBankEnroll" disabled style="background:#1f6feb;color:#fff;">Bank Enrollment (3 angles)</button>
         <button class="btn btn-danger" id="faceStopBtn" disabled>Stop</button>
       </div>
       <div class="media-container" id="faceContainer" style="display:none;">
@@ -113,7 +115,7 @@
         <div class="stat"><div class="stat-label">Face Size</div><div class="stat-value" id="faceStat-model">--</div></div>
         <div class="stat"><div class="stat-label">FPS</div><div class="stat-value" id="faceStat-fps">--</div></div>
       </div>
-      <p class="info-text">ONNX embedding not yet implemented -- detection only for now. Uses MediaPipe Face Detection via CDN.</p>
+      <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion.</p>
       <div class="result-box" id="faceResult" style="display:none;"></div>
     </div>
   </div>

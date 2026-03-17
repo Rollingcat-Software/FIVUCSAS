@@ -292,6 +292,8 @@ async function startFaceDetection() {
   document.getElementById('faceStartBtn').disabled = true;
   document.getElementById('faceStopBtn').disabled = false;
   document.getElementById('faceCaptureBtn').disabled = false;
+  document.getElementById('btnLivenessPuzzle').disabled = false;
+  document.getElementById('btnBankEnroll').disabled = false;
   container.style.display = 'block';
   statsEl.style.display = 'grid';
 
@@ -512,6 +514,8 @@ function stopFaceDetection() {
   document.getElementById('faceStartBtn').disabled = false;
   document.getElementById('faceStopBtn').disabled = true;
   document.getElementById('faceCaptureBtn').disabled = true;
+  document.getElementById('btnLivenessPuzzle').disabled = true;
+  document.getElementById('btnBankEnroll').disabled = true;
 }
 
 var lastFaceBlob = null;
@@ -1323,6 +1327,451 @@ async function captureAndDetectCard() {
   }, 'image/jpeg', 0.92);
 }
 
+// ── Face Landmark Detection Helpers ──────────────────────────────────
+
+function landmarkDist(landmarks, a, b) {
+  var la = landmarks[a], lb = landmarks[b];
+  var dx = la.x - lb.x, dy = la.y - lb.y, dz = (la.z || 0) - (lb.z || 0);
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+function detectBlink(landmarks) {
+  // Eye aspect ratio: vertical / horizontal
+  // Left eye: 159(top), 145(bottom), 33(outer), 133(inner)
+  var leftV = landmarkDist(landmarks, 159, 145);
+  var leftH = landmarkDist(landmarks, 33, 133);
+  var leftEAR = leftH > 0 ? leftV / leftH : 1;
+  // Right eye: 386(top), 374(bottom), 362(outer), 263(inner)
+  var rightV = landmarkDist(landmarks, 386, 374);
+  var rightH = landmarkDist(landmarks, 362, 263);
+  var rightEAR = rightH > 0 ? rightV / rightH : 1;
+  var avgEAR = (leftEAR + rightEAR) / 2;
+  return { detected: avgEAR < 0.18, ear: avgEAR };
+}
+
+function detectSmile(landmarks) {
+  // Mouth width (61-291) vs mouth height (13-14)
+  var mouthWidth = landmarkDist(landmarks, 61, 291);
+  var mouthHeight = landmarkDist(landmarks, 13, 14);
+  var ratio = mouthHeight > 0 ? mouthWidth / mouthHeight : 0;
+  return { detected: ratio > 3.5, ratio: ratio };
+}
+
+function detectHeadTurn(landmarks) {
+  // Compare nose tip (1) x-position to midpoint of face bbox
+  // Use left ear (234) and right ear (454) as reference
+  var noseX = landmarks[1].x;
+  var leftRef = landmarks[234].x;
+  var rightRef = landmarks[454].x;
+  var faceCenter = (leftRef + rightRef) / 2;
+  var faceWidth = Math.abs(rightRef - leftRef);
+  var offset = (noseX - faceCenter) / (faceWidth || 0.001);
+  // offset > 0.12 means nose is right of center (user turned left from camera POV)
+  // offset < -0.12 means nose is left of center (user turned right from camera POV)
+  if (offset > 0.12) return { direction: 'left', offset: offset };
+  if (offset < -0.12) return { direction: 'right', offset: offset };
+  return { direction: 'center', offset: offset };
+}
+
+function detectNod(landmarks) {
+  // Track nose tip (1) y-position relative to face center
+  var noseY = landmarks[1].y;
+  var foreheadY = landmarks[10].y;
+  var chinY = landmarks[152].y;
+  var faceCenter = (foreheadY + chinY) / 2;
+  var faceHeight = Math.abs(chinY - foreheadY);
+  var offset = (noseY - faceCenter) / (faceHeight || 0.001);
+  // offset > 0.15 means nose is below center (nod down)
+  // offset < -0.05 means nose is above center (look up)
+  return { nod: offset > 0.15, lookUp: offset < -0.05, offset: offset };
+}
+
+function captureFrameAsBlob() {
+  return new Promise(function(resolve) {
+    var video = document.getElementById('faceVideo');
+    var c = document.createElement('canvas');
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.92);
+  });
+}
+
+// ── Liveness Puzzle ─────────────────────────────────────────────────
+
+var livenessActive = false;
+
+async function startLivenessPuzzle() {
+  if (!faceStream || !faceDetector) {
+    showResult('faceResult', 'Start camera first and wait for MediaPipe to load.', false);
+    return;
+  }
+  if (livenessActive) return;
+  livenessActive = true;
+
+  var btn = document.getElementById('btnLivenessPuzzle');
+  btn.disabled = true;
+  btn.textContent = 'Puzzle Active...';
+
+  try {
+    // 1. Get challenge from server
+    showResult('faceResult', 'Requesting liveness challenge...', true);
+    var res = await apiCall('POST', '/api/v1/enrollment/liveness/challenge', {});
+    if (!res.ok || !res.data) {
+      showResult('faceResult', 'Failed to get liveness challenge: ' + JSON.stringify(res.data, null, 2), false);
+      resetLivenessBtn();
+      return;
+    }
+
+    var challenge = res.data;
+    var challengeId = challenge.challengeId;
+    var steps = challenge.steps || [];
+    var timeoutSec = challenge.timeoutSeconds || 60;
+
+    if (steps.length === 0) {
+      showResult('faceResult', 'No steps in challenge. Raw response:\n' + JSON.stringify(challenge, null, 2), false);
+      resetLivenessBtn();
+      return;
+    }
+
+    // Sort steps by order
+    steps.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+
+    showResult('faceResult', 'Challenge received: ' + steps.length + ' steps. ID: ' + challengeId, true);
+
+    var capturedFrames = [];
+    var allPassed = true;
+
+    // 2. Process each step
+    for (var i = 0; i < steps.length; i++) {
+      var step = steps[i];
+      var action = step.action || step.type || '';
+      var duration = (step.duration_seconds || step.durationSeconds || 5) * 1000;
+      var instruction = getActionInstruction(action);
+
+      document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + '/' + steps.length + ': ' + instruction;
+      document.getElementById('faceOverlay').style.color = '#d29922';
+      showResult('faceResult', 'Step ' + (i + 1) + '/' + steps.length + ': ' + instruction + ' (max ' + (duration / 1000) + 's)', true);
+
+      var detected = await waitForAction(action, duration);
+      if (detected) {
+        var frame = await captureFrameAsBlob();
+        capturedFrames.push({ stepIndex: i, action: action, blob: frame });
+        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' PASSED!';
+        document.getElementById('faceOverlay').style.color = '#3fb950';
+        showResult('faceResult', 'Step ' + (i + 1) + ' (' + action + ') detected!', true);
+      } else {
+        allPassed = false;
+        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' TIMEOUT';
+        document.getElementById('faceOverlay').style.color = '#f85149';
+        showResult('faceResult', 'Step ' + (i + 1) + ' (' + action + ') timed out.', false);
+        // Still capture a frame for server-side evaluation
+        var frame2 = await captureFrameAsBlob();
+        capturedFrames.push({ stepIndex: i, action: action, blob: frame2 });
+      }
+
+      // Brief pause between steps
+      if (i < steps.length - 1) {
+        await new Promise(function(r) { setTimeout(r, 800); });
+      }
+    }
+
+    // 3. Verify with server
+    document.getElementById('faceOverlay').textContent = 'Verifying with server...';
+    document.getElementById('faceOverlay').style.color = '#d29922';
+    showResult('faceResult', 'Sending ' + capturedFrames.length + ' frames for verification...', true);
+
+    var formData = new FormData();
+    formData.append('challengeId', challengeId);
+    for (var j = 0; j < capturedFrames.length; j++) {
+      formData.append('frames', capturedFrames[j].blob, 'step_' + j + '.jpg');
+    }
+
+    var token = getToken();
+    var start = performance.now();
+    var verifyRes = await fetch(getApiUrl() + '/api/v1/enrollment/liveness/verify', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData
+    });
+    var elapsed = performance.now() - start;
+    var verifyData = await verifyRes.json().catch(function() { return null; });
+    addLogEntry('POST', '/api/v1/enrollment/liveness/verify', verifyRes.status, elapsed, '(multipart: challengeId + frames)', verifyData);
+
+    if (verifyRes.ok && verifyData) {
+      var passed = verifyData.passed || verifyData.alive || verifyData.liveness || false;
+      var score = verifyData.score || verifyData.confidence || 0;
+      document.getElementById('faceOverlay').textContent = passed ? 'LIVENESS PASSED!' : 'LIVENESS FAILED';
+      document.getElementById('faceOverlay').style.color = passed ? '#3fb950' : '#f85149';
+      showResult('faceResult',
+        (passed ? 'LIVENESS VERIFIED!' : 'LIVENESS FAILED') +
+        ' (Score: ' + (score * 100).toFixed(1) + '%, ' + formatMs(elapsed) + ')\n\n' +
+        JSON.stringify(verifyData, null, 2), passed);
+    } else {
+      document.getElementById('faceOverlay').textContent = 'Verification failed';
+      document.getElementById('faceOverlay').style.color = '#f85149';
+      showResult('faceResult', 'Liveness verification failed (' + (verifyRes.status || 'ERR') + '): ' +
+        JSON.stringify(verifyData, null, 2), false);
+    }
+  } catch (e) {
+    showResult('faceResult', 'Liveness puzzle error: ' + e.message, false);
+  }
+
+  resetLivenessBtn();
+}
+
+function resetLivenessBtn() {
+  livenessActive = false;
+  var btn = document.getElementById('btnLivenessPuzzle');
+  btn.disabled = !faceStream;
+  btn.textContent = 'Liveness Puzzle';
+}
+
+function getActionInstruction(action) {
+  var map = {
+    'blink': 'Blink your eyes',
+    'smile': 'Smile!',
+    'turn_left': 'Turn your head LEFT',
+    'turn_right': 'Turn your head RIGHT',
+    'nod': 'Nod your head down',
+    'look_up': 'Look up'
+  };
+  return map[action] || ('Perform: ' + action);
+}
+
+function waitForAction(action, timeoutMs) {
+  return new Promise(function(resolve) {
+    var startTime = performance.now();
+    var detectedCount = 0;
+    var requiredCount = 3; // Need 3 consecutive frames to confirm
+
+    function check() {
+      if (!faceStream || !faceDetector) { resolve(false); return; }
+      if (performance.now() - startTime > timeoutMs) { resolve(false); return; }
+
+      var video = document.getElementById('faceVideo');
+      if (video.readyState < 2) {
+        requestAnimationFrame(check);
+        return;
+      }
+
+      try {
+        var result = faceDetector.detectForVideo(video, performance.now());
+        if (result.faceLandmarks && result.faceLandmarks.length > 0) {
+          var landmarks = result.faceLandmarks[0];
+          var actionDetected = false;
+
+          switch (action) {
+            case 'blink':
+              actionDetected = detectBlink(landmarks).detected;
+              break;
+            case 'smile':
+              actionDetected = detectSmile(landmarks).detected;
+              break;
+            case 'turn_left':
+              actionDetected = detectHeadTurn(landmarks).direction === 'left';
+              break;
+            case 'turn_right':
+              actionDetected = detectHeadTurn(landmarks).direction === 'right';
+              break;
+            case 'nod':
+              actionDetected = detectNod(landmarks).nod;
+              break;
+            case 'look_up':
+              actionDetected = detectNod(landmarks).lookUp;
+              break;
+            default:
+              actionDetected = false;
+          }
+
+          if (actionDetected) {
+            detectedCount++;
+            if (detectedCount >= requiredCount) {
+              resolve(true);
+              return;
+            }
+          } else {
+            detectedCount = Math.max(0, detectedCount - 1);
+          }
+        }
+      } catch (e) { /* skip frame */ }
+
+      requestAnimationFrame(check);
+    }
+
+    requestAnimationFrame(check);
+  });
+}
+
+// ── Bank Enrollment (Multi-Perspective) ─────────────────────────────
+
+var bankEnrollActive = false;
+
+async function startBankEnrollment() {
+  if (!faceStream || !faceDetector) {
+    showResult('faceResult', 'Start camera first and wait for MediaPipe to load.', false);
+    return;
+  }
+  if (bankEnrollActive) return;
+
+  var uid = getUserId();
+  if (!uid) { showResult('faceResult', 'Login first to get user ID.', false); return; }
+
+  bankEnrollActive = true;
+  var btn = document.getElementById('btnBankEnroll');
+  btn.disabled = true;
+  btn.textContent = 'Enrolling...';
+
+  var captureSteps = [
+    { label: 'Look straight at camera', detectFn: function(lm) { return detectHeadTurn(lm).direction === 'center'; } },
+    { label: 'Turn your head slightly LEFT', detectFn: function(lm) { return detectHeadTurn(lm).direction === 'left'; } },
+    { label: 'Turn your head slightly RIGHT', detectFn: function(lm) { return detectHeadTurn(lm).direction === 'right'; } }
+  ];
+
+  var capturedBlobs = [];
+
+  try {
+    for (var i = 0; i < captureSteps.length; i++) {
+      var step = captureSteps[i];
+      document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + '/3: ' + step.label;
+      document.getElementById('faceOverlay').style.color = '#d29922';
+      showResult('faceResult', 'Bank Enrollment ' + (i + 1) + '/3: ' + step.label, true);
+
+      // Wait for pose detection (10 second timeout per step)
+      var detected = await waitForPose(step.detectFn, 10000);
+      if (detected) {
+        // Hold steady for a moment, then capture
+        await new Promise(function(r) { setTimeout(r, 300); });
+        var blob = await captureFrameAsBlob();
+        capturedBlobs.push(blob);
+        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' captured!';
+        document.getElementById('faceOverlay').style.color = '#3fb950';
+        showResult('faceResult', 'Angle ' + (i + 1) + ' captured (' + formatBytes(blob.size) + ')', true);
+      } else {
+        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' timed out - capturing anyway';
+        document.getElementById('faceOverlay').style.color = '#f85149';
+        showResult('faceResult', 'Pose timeout for step ' + (i + 1) + ', capturing current frame.', false);
+        var fallbackBlob = await captureFrameAsBlob();
+        capturedBlobs.push(fallbackBlob);
+      }
+
+      // Brief pause between steps
+      if (i < captureSteps.length - 1) {
+        await new Promise(function(r) { setTimeout(r, 1000); });
+      }
+    }
+
+    // Send all captures to enrollment endpoint
+    document.getElementById('faceOverlay').textContent = 'Sending 3 angles for enrollment...';
+    document.getElementById('faceOverlay').style.color = '#d29922';
+    showResult('faceResult', 'Sending ' + capturedBlobs.length + ' angle captures to server...', true);
+
+    var formData = new FormData();
+    for (var j = 0; j < capturedBlobs.length; j++) {
+      formData.append('images', capturedBlobs[j], 'angle_' + j + '.jpg');
+    }
+
+    var token = getToken();
+    var start = performance.now();
+
+    // Try multi-enroll first, fall back to standard enroll with first image
+    var enrollUrl = '/api/v1/biometric/enroll/multi/' + uid;
+    var res = await fetch(getApiUrl() + enrollUrl, {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData
+    });
+    var elapsed = performance.now() - start;
+
+    // If multi-enroll not available (404), fall back to single enroll with each image
+    if (res.status === 404) {
+      showResult('faceResult', 'Multi-enroll endpoint not available, falling back to sequential single enrollments...', false);
+      var lastData = null;
+      for (var k = 0; k < capturedBlobs.length; k++) {
+        var singleForm = new FormData();
+        singleForm.append('image', capturedBlobs[k], 'face_' + k + '.jpg');
+        var singleStart = performance.now();
+        var singleRes = await fetch(getApiUrl() + '/api/v1/biometric/enroll/' + uid, {
+          method: 'POST',
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+          body: singleForm
+        });
+        var singleElapsed = performance.now() - singleStart;
+        lastData = await singleRes.json().catch(function() { return null; });
+        addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, singleRes.status, singleElapsed, '(angle ' + (k + 1) + ')', lastData);
+        showResult('faceResult', 'Angle ' + (k + 1) + ' enrolled: ' + (singleRes.ok ? 'OK' : 'FAILED') + ' (' + formatMs(singleElapsed) + ')', singleRes.ok);
+      }
+      document.getElementById('faceOverlay').textContent = 'Bank enrollment complete (fallback mode)';
+      document.getElementById('faceOverlay').style.color = '#3fb950';
+    } else {
+      var data = await res.json().catch(function() { return null; });
+      addLogEntry('POST', enrollUrl, res.status, elapsed, '(multipart: 3 angle images)', data);
+
+      if (res.ok && data) {
+        document.getElementById('faceOverlay').textContent = 'BANK ENROLLMENT SUCCESS!';
+        document.getElementById('faceOverlay').style.color = '#3fb950';
+        showResult('faceResult',
+          'MULTI-ANGLE ENROLLMENT COMPLETE! (' + formatMs(elapsed) + ')\n' +
+          capturedBlobs.length + ' angles fused into template.\n\n' +
+          JSON.stringify(data, null, 2), true);
+      } else {
+        document.getElementById('faceOverlay').textContent = 'Enrollment failed';
+        document.getElementById('faceOverlay').style.color = '#f85149';
+        showResult('faceResult',
+          'Bank enrollment failed (' + (res.status || 'ERR') + '): ' +
+          JSON.stringify(data, null, 2), false);
+      }
+    }
+  } catch (e) {
+    showResult('faceResult', 'Bank enrollment error: ' + e.message, false);
+  }
+
+  bankEnrollActive = false;
+  btn.disabled = !faceStream;
+  btn.textContent = 'Bank Enrollment (3 angles)';
+}
+
+function waitForPose(detectFn, timeoutMs) {
+  return new Promise(function(resolve) {
+    var startTime = performance.now();
+    var stableCount = 0;
+    var requiredStable = 5; // Need 5 consecutive frames for a stable pose
+
+    function check() {
+      if (!faceStream || !faceDetector) { resolve(false); return; }
+      if (performance.now() - startTime > timeoutMs) { resolve(false); return; }
+
+      var video = document.getElementById('faceVideo');
+      if (video.readyState < 2) {
+        requestAnimationFrame(check);
+        return;
+      }
+
+      try {
+        var result = faceDetector.detectForVideo(video, performance.now());
+        if (result.faceLandmarks && result.faceLandmarks.length > 0) {
+          var landmarks = result.faceLandmarks[0];
+          if (detectFn(landmarks)) {
+            stableCount++;
+            if (stableCount >= requiredStable) {
+              resolve(true);
+              return;
+            }
+          } else {
+            stableCount = Math.max(0, stableCount - 1);
+          }
+        } else {
+          stableCount = 0;
+        }
+      } catch (e) { /* skip frame */ }
+
+      requestAnimationFrame(check);
+    }
+
+    requestAnimationFrame(check);
+  });
+}
+
 // ── Init ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1380,6 +1829,8 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnFaceVerify': verifyFace,
     'btnFaceSearch': searchFace,
     'btnFaceDelete': deleteFaceEnrollment,
+    'btnLivenessPuzzle': startLivenessPuzzle,
+    'btnBankEnroll': startBankEnrollment,
     'faceStopBtn': stopFaceDetection,
     'voiceRecordBtn': toggleVoiceRecording,
     'btnVoiceEnroll': enrollVoice,
