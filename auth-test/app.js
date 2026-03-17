@@ -1049,6 +1049,7 @@ async function checkExternalFP() {
 // ── 6. QR Code ───────────────────────────────────────────────────────
 
 var html5QrScanner = null;
+var lastQrResult = null;
 
 async function startQrScan() {
   var container = document.getElementById('qrReaderContainer');
@@ -1069,6 +1070,8 @@ async function startQrScan() {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       function onScanSuccess(decodedText, decodedResult) {
+        if (decodedText === lastQrResult) return; // debounce same QR
+        lastQrResult = decodedText;
         showResult('qrResult', 'QR Decoded:\n' + decodedText, true);
       },
       function onScanFailure(errorMessage) {
