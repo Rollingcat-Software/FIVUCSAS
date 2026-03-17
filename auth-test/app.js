@@ -53,8 +53,21 @@ function timeStr() {
 function showResult(id, text, ok) {
   var el = document.getElementById(id);
   el.style.display = 'block';
-  el.textContent = text;
-  el.className = 'result-box ' + (ok ? 'success' : 'error');
+  // Append instead of overwrite — add separator if existing content
+  if (el.textContent.trim()) {
+    var sep = document.createElement('div');
+    sep.style.borderTop = '1px solid var(--border)';
+    sep.style.margin = '8px 0';
+    el.appendChild(sep);
+  }
+  var entry = document.createElement('pre');
+  entry.textContent = '[' + timeStr() + '] ' + text;
+  entry.style.margin = '0';
+  entry.style.whiteSpace = 'pre-wrap';
+  entry.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.appendChild(entry);
+  el.className = 'result-box';
+  el.scrollTop = el.scrollHeight;
 }
 
 function randomBytes(len) {
@@ -356,16 +369,86 @@ function stopFaceDetection() {
   document.getElementById('faceCaptureBtn').disabled = true;
 }
 
+var lastFaceBlob = null;
+
 function captureFace() {
   var video = document.getElementById('faceVideo');
   var c = document.createElement('canvas');
   c.width = video.videoWidth; c.height = video.videoHeight;
   c.getContext('2d').drawImage(video, 0, 0);
   c.toBlob(function(blob) {
+    lastFaceBlob = blob;
+    document.getElementById('btnFaceEnroll').disabled = false;
+    document.getElementById('btnFaceVerify').disabled = false;
     showResult('faceResult',
       'Captured frame: ' + formatBytes(blob.size) + ' JPEG\nResolution: ' + c.width + 'x' + c.height +
-      '\n\nBlob ready for API submission.', true);
+      '\n\nReady — click Enroll or Verify below.', true);
   }, 'image/jpeg', 0.9);
+}
+
+async function enrollFace() {
+  var uid = getUserId();
+  if (!uid) { showResult('faceResult', 'Login first to get user ID.', false); return; }
+  if (!lastFaceBlob) { showResult('faceResult', 'Capture a face frame first.', false); return; }
+
+  var formData = new FormData();
+  formData.append('image', lastFaceBlob, 'face.jpg');
+
+  var start = performance.now();
+  try {
+    var token = getToken();
+    var res = await fetch(getApiUrl() + '/api/v1/biometric/enroll/' + uid, {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData
+    });
+    var elapsed = performance.now() - start;
+    var data = await res.json().catch(function() { return null; });
+    addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, res.status, elapsed, '(multipart image)', data);
+
+    if (res.ok && data) {
+      showResult('faceResult', 'Face enrolled! (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), true);
+    } else {
+      showResult('faceResult', 'Enrollment failed (' + res.status + '): ' + JSON.stringify(data, null, 2), false);
+    }
+  } catch (e) {
+    showResult('faceResult', 'Enrollment error: ' + e.message, false);
+    addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, 'ERR', performance.now() - start, null, e.message);
+  }
+}
+
+async function verifyFace() {
+  var uid = getUserId();
+  if (!uid) { showResult('faceResult', 'Login first to get user ID.', false); return; }
+  if (!lastFaceBlob) { showResult('faceResult', 'Capture a face frame first.', false); return; }
+
+  var formData = new FormData();
+  formData.append('image', lastFaceBlob, 'face.jpg');
+
+  var start = performance.now();
+  try {
+    var token = getToken();
+    var res = await fetch(getApiUrl() + '/api/v1/biometric/verify/' + uid, {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData
+    });
+    var elapsed = performance.now() - start;
+    var data = await res.json().catch(function() { return null; });
+    addLogEntry('POST', '/api/v1/biometric/verify/' + uid, res.status, elapsed, '(multipart image)', data);
+
+    if (res.ok && data) {
+      var msg = data.verified
+        ? 'VERIFIED! Confidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%'
+        : 'NOT VERIFIED. Confidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%';
+      showResult('faceResult', msg + ' (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), data.verified);
+    } else {
+      showResult('faceResult', 'Verification failed (' + res.status + '): ' + JSON.stringify(data, null, 2), false);
+    }
+  } catch (e) {
+    showResult('faceResult', 'Verification error: ' + e.message, false);
+    addLogEntry('POST', '/api/v1/biometric/verify/' + uid, 'ERR', performance.now() - start, null, e.message);
+  }
 }
 
 // ── 3. NFC ───────────────────────────────────────────────────────────
@@ -854,6 +937,8 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnLogin': doLogin,
     'faceStartBtn': startFaceDetection,
     'faceCaptureBtn': captureFace,
+    'btnFaceEnroll': enrollFace,
+    'btnFaceVerify': verifyFace,
     'faceStopBtn': stopFaceDetection,
     'voiceRecordBtn': toggleVoiceRecording,
     'btnFpeRegister': fpeRegister,
