@@ -362,6 +362,37 @@
     </div>
   </div>
 
+  <!-- 11. Card Detection -->
+  <div class="card" id="card-carddetect">
+    <div class="card-header">
+      <div class="card-header-left">
+        <span class="card-number">11</span>
+        <span class="card-title">Card Detection (Visual)</span>
+        <span class="card-badge badge-api">API</span>
+      </div>
+      <span class="card-chevron">&#9654;</span>
+    </div>
+    <div class="card-body">
+      <div class="form-actions" style="margin-bottom:12px;">
+        <button class="btn btn-primary" id="cardStartBtn">Start Camera</button>
+        <button class="btn btn-success" id="cardDetectBtn" disabled>Capture + Detect</button>
+        <button class="btn btn-danger" id="cardStopBtn" disabled>Stop</button>
+      </div>
+      <div class="media-container" id="cardContainer" style="display:none;">
+        <video id="cardVideo" autoplay playsinline muted></video>
+        <div class="media-overlay" id="cardOverlay">Initializing...</div>
+      </div>
+      <div class="stats" id="cardStats" style="display:none;">
+        <div class="stat"><div class="stat-label">Detected</div><div class="stat-value" id="cardStat-detected">--</div></div>
+        <div class="stat"><div class="stat-label">Card Type</div><div class="stat-value" id="cardStat-type">--</div></div>
+        <div class="stat"><div class="stat-label">Class ID</div><div class="stat-value" id="cardStat-classid">--</div></div>
+        <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value" id="cardStat-confidence">--</div></div>
+      </div>
+      <p class="info-text">Point your camera at an ID card (Turkish ID, passport, driver's license, student card, or academic card). The image is sent to the biometric processor's YOLO-based card type detection model.</p>
+      <div class="result-box" id="cardDetectResult" style="display:none;"></div>
+    </div>
+  </div>
+
   <!-- API Log Panel -->
   <div class="log-panel" id="logPanel">
     <div class="log-header">

@@ -1207,6 +1207,122 @@ async function hwVerify() {
   }
 }
 
+// ── 11. Card Detection ───────────────────────────────────────────────
+
+var cardStream = null;
+
+async function startCardCamera() {
+  var video = document.getElementById('cardVideo');
+  var container = document.getElementById('cardContainer');
+  document.getElementById('cardStartBtn').disabled = true;
+  document.getElementById('cardStopBtn').disabled = false;
+  document.getElementById('cardDetectBtn').disabled = false;
+  container.style.display = 'block';
+
+  try {
+    cardStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    video.srcObject = cardStream;
+    video.addEventListener('loadedmetadata', function() {
+      document.getElementById('cardOverlay').textContent = 'Camera: ' + video.videoWidth + 'x' + video.videoHeight + ' — Point at a card';
+    });
+  } catch (e) {
+    showResult('cardDetectResult', 'Camera error: ' + e.message, false);
+    document.getElementById('cardStartBtn').disabled = false;
+    document.getElementById('cardStopBtn').disabled = true;
+    document.getElementById('cardDetectBtn').disabled = true;
+  }
+}
+
+function stopCardCamera() {
+  if (cardStream) {
+    cardStream.getTracks().forEach(function(t) { t.stop(); });
+    cardStream = null;
+  }
+  document.getElementById('cardContainer').style.display = 'none';
+  document.getElementById('cardStats').style.display = 'none';
+  document.getElementById('cardStartBtn').disabled = false;
+  document.getElementById('cardStopBtn').disabled = true;
+  document.getElementById('cardDetectBtn').disabled = true;
+}
+
+async function captureAndDetectCard() {
+  var video = document.getElementById('cardVideo');
+  if (!cardStream || video.readyState < 2) {
+    showResult('cardDetectResult', 'Camera not ready. Wait a moment.', false);
+    return;
+  }
+
+  var c = document.createElement('canvas');
+  c.width = video.videoWidth;
+  c.height = video.videoHeight;
+  c.getContext('2d').drawImage(video, 0, 0);
+
+  document.getElementById('cardOverlay').textContent = 'Detecting...';
+  document.getElementById('cardDetectBtn').disabled = true;
+
+  c.toBlob(async function(blob) {
+    var formData = new FormData();
+    formData.append('file', blob, 'card.jpg');
+
+    var start = performance.now();
+    try {
+      var token = getToken();
+      var res = await fetch(getApiUrl() + '/api/v1/biometric/card-detect', {
+        method: 'POST',
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+        body: formData
+      });
+      var elapsed = performance.now() - start;
+      var data = await res.json().catch(function() { return null; });
+      addLogEntry('POST', '/api/v1/biometric/card-detect', res.status, elapsed, '(multipart image)', data);
+
+      document.getElementById('cardStats').style.display = 'grid';
+      document.getElementById('cardDetectBtn').disabled = false;
+
+      if (res.ok && data) {
+        var detected = data.detected;
+        var className = data.class_name || '--';
+        var classId = data.class_id != null ? data.class_id : '--';
+        var confidence = data.confidence != null ? (data.confidence * 100).toFixed(1) + '%' : '--';
+
+        // Friendly card type names
+        var friendlyNames = {
+          'tc_kimlik': 'Turkish ID Card (TC Kimlik)',
+          'ehliyet': 'Driver\'s License (Ehliyet)',
+          'pasaport': 'Passport (Pasaport)',
+          'ogrenci_karti': 'Student Card',
+          'akademisyen_karti': 'Academic Card'
+        };
+        var displayName = friendlyNames[className] || className;
+
+        document.getElementById('cardStat-detected').textContent = detected ? 'YES' : 'NO';
+        document.getElementById('cardStat-detected').style.color = detected ? 'var(--green)' : 'var(--red)';
+        document.getElementById('cardStat-type').textContent = displayName;
+        document.getElementById('cardStat-classid').textContent = classId;
+        document.getElementById('cardStat-confidence').textContent = confidence;
+        document.getElementById('cardOverlay').textContent = detected
+          ? displayName + ' (' + confidence + ')'
+          : 'No card detected — try again';
+
+        showResult('cardDetectResult',
+          (detected ? 'CARD DETECTED!' : 'No card detected.') +
+          ' (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), detected);
+      } else {
+        document.getElementById('cardOverlay').textContent = 'Detection failed — try again';
+        showResult('cardDetectResult',
+          'Detection failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(data, null, 2), false);
+      }
+    } catch (e) {
+      document.getElementById('cardDetectBtn').disabled = false;
+      document.getElementById('cardOverlay').textContent = 'Error — try again';
+      showResult('cardDetectResult', 'Detection error: ' + e.message, false);
+      addLogEntry('POST', '/api/v1/biometric/card-detect', 'ERR', performance.now() - start, null, e.message);
+    }
+  }, 'image/jpeg', 0.92);
+}
+
 // ── Init ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1282,6 +1398,9 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnVerifySms': verifySmsOtp,
     'btnHwRegister': hwRegister,
     'btnHwVerify': hwVerify,
+    'cardStartBtn': startCardCamera,
+    'cardDetectBtn': captureAndDetectCard,
+    'cardStopBtn': stopCardCamera,
     'btnClearLog': clearLog
   };
   Object.keys(bindings).forEach(function(id) {
