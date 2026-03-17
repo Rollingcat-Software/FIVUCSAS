@@ -15,7 +15,12 @@ function setToken(token) {
 
 function clearToken() {
   localStorage.removeItem('fivucsas_token');
+  localStorage.removeItem('fivucsas_user_id');
   updateTokenUI();
+}
+
+function getUserId() {
+  return localStorage.getItem('fivucsas_user_id');
 }
 
 function updateTokenUI() {
@@ -204,16 +209,17 @@ async function checkConnection() {
   txt.textContent = 'Checking...';
   try {
     var start = performance.now();
-    var res = await fetch(getApiUrl() + '/health', { method: 'GET', signal: AbortSignal.timeout(5000) });
+    var res = await fetch(getApiUrl() + '/actuator/health', { method: 'GET', signal: AbortSignal.timeout(5000) });
     var elapsed = performance.now() - start;
+    var body = await res.text();
     if (res.ok) {
       dot.className = 'status-dot green';
       txt.textContent = 'Connected (' + formatMs(elapsed) + ')';
-      addLogEntry('GET', '/health', res.status, elapsed, null, 'OK');
+      addLogEntry('GET', '/actuator/health', res.status, elapsed, null, body);
     } else {
       dot.className = 'status-dot yellow';
       txt.textContent = 'HTTP ' + res.status;
-      addLogEntry('GET', '/health', res.status, elapsed, null, null);
+      addLogEntry('GET', '/actuator/health', res.status, elapsed, null, body);
     }
   } catch (e) {
     dot.className = 'status-dot red';
@@ -231,6 +237,7 @@ async function doLogin() {
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
+    if (res.data.user && res.data.user.id) localStorage.setItem('fivucsas_user_id', res.data.user.id);
     showResult('loginResult',
       'Login successful (' + formatMs(res.elapsed) + ')\n\n' + JSON.stringify(res.data, null, 2), true);
   } else {
@@ -702,18 +709,20 @@ function generateTestQr() {
 // ── 7. Email OTP ─────────────────────────────────────────────────────
 
 async function sendEmailOtp() {
-  var email = document.getElementById('emailOtpAddr').value || 'admin@fivucsas.local';
-  var res = await apiCall('POST', '/api/v1/auth/otp/email/send', { email: email });
+  var uid = getUserId();
+  if (!uid) { showResult('emailOtpResult', 'Login first to get user ID.', false); return; }
+  var res = await apiCall('POST', '/api/v1/otp/email/send/' + uid, null);
   showResult('emailOtpResult', res.ok
-    ? 'OTP sent to ' + email + ' (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
+    ? 'OTP sent! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
     : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
 }
 
 async function verifyEmailOtp() {
-  var email = document.getElementById('emailOtpAddr').value || 'admin@fivucsas.local';
+  var uid = getUserId();
+  if (!uid) { showResult('emailOtpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('emailOtpCode').value;
   if (!code || code.length < 6) { showResult('emailOtpResult', 'Enter a 6-digit OTP code.', false); return; }
-  var res = await apiCall('POST', '/api/v1/auth/otp/email/verify', { email: email, code: code });
+  var res = await apiCall('POST', '/api/v1/otp/email/verify/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
@@ -726,9 +735,11 @@ async function verifyEmailOtp() {
 // ── 8. TOTP ──────────────────────────────────────────────────────────
 
 async function verifyTotp() {
+  var uid = getUserId();
+  if (!uid) { showResult('totpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('totpCode').value;
   if (!code || code.length < 6) { showResult('totpResult', 'Enter a 6-digit TOTP code.', false); return; }
-  var res = await apiCall('POST', '/api/v1/auth/totp/verify', { code: code });
+  var res = await apiCall('POST', '/api/v1/otp/totp/verify-setup/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
@@ -741,19 +752,20 @@ async function verifyTotp() {
 // ── 9. SMS OTP ───────────────────────────────────────────────────────
 
 async function sendSmsOtp() {
-  var phone = document.getElementById('smsPhone').value;
-  if (!phone) { showResult('smsOtpResult', 'Enter a phone number.', false); return; }
-  var res = await apiCall('POST', '/api/v1/auth/otp/sms/send', { phone: phone });
+  var uid = getUserId();
+  if (!uid) { showResult('smsOtpResult', 'Login first to get user ID.', false); return; }
+  var res = await apiCall('POST', '/api/v1/otp/sms/send/' + uid, null);
   showResult('smsOtpResult', res.ok
-    ? 'SMS sent to ' + phone + ' (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
+    ? 'SMS sent! (' + formatMs(res.elapsed) + ')\n' + JSON.stringify(res.data, null, 2)
     : 'Failed: ' + (res.error || JSON.stringify(res.data, null, 2)), res.ok);
 }
 
 async function verifySmsOtp() {
-  var phone = document.getElementById('smsPhone').value;
+  var uid = getUserId();
+  if (!uid) { showResult('smsOtpResult', 'Login first to get user ID.', false); return; }
   var code = document.getElementById('smsOtpCode').value;
   if (!code || code.length < 6) { showResult('smsOtpResult', 'Enter a 6-digit OTP code.', false); return; }
-  var res = await apiCall('POST', '/api/v1/auth/otp/sms/verify', { phone: phone, code: code });
+  var res = await apiCall('POST', '/api/v1/otp/sms/verify/' + uid, { code: code });
   if (res.ok && res.data) {
     var token = res.data.token || res.data.accessToken || res.data.access_token;
     if (token) setToken(token);
