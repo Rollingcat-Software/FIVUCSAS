@@ -300,7 +300,7 @@ input::placeholder { color: var(--text-muted); }
   border-radius: var(--radius-sm);
   overflow: hidden;
   margin-bottom: 12px;
-  max-width: 400px;
+  max-width: 100%;
 }
 .media-container video, .media-container canvas {
   display: block;

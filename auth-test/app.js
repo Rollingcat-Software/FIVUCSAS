@@ -278,24 +278,31 @@ async function startFaceDetection() {
   statsEl.style.display = 'grid';
 
   try {
-    faceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    faceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 4096 }, height: { ideal: 2160 } } });
     video.srcObject = faceStream;
-    document.getElementById('faceOverlay').textContent = 'Camera active';
+    video.addEventListener('loadedmetadata', function() {
+      document.getElementById('faceOverlay').textContent = 'Camera: ' + video.videoWidth + 'x' + video.videoHeight;
+    });
     document.getElementById('faceStat-status').textContent = 'Camera OK';
 
     // Try loading MediaPipe
     try {
       var modelStart = performance.now();
       var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
-      var FaceDetector = vision.FaceDetector;
+      var FaceLandmarker = vision.FaceLandmarker;
       var FilesetResolver = vision.FilesetResolver;
       var filesetResolver = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
       );
-      faceDetector = await FaceDetector.createFromOptions(filesetResolver, {
-        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite', delegate: 'GPU' },
+      faceDetector = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: 'GPU' },
         runningMode: 'VIDEO',
-        minDetectionConfidence: 0.5
+        numFaces: 1,
+        minFaceDetectionConfidence: 0.5,
+        minFacePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+        outputFaceBlendshapes: false,
+        outputFacialTransformationMatrixes: false
       });
       var modelTime = performance.now() - modelStart;
       document.getElementById('faceStat-model').textContent = formatMs(modelTime);
@@ -336,23 +343,143 @@ function detectFaceLoop() {
       faceFpsStart = performance.now();
     }
 
-    if (result.detections && result.detections.length > 0) {
-      var det = result.detections[0];
-      var conf = det.categories && det.categories[0] ? det.categories[0].score : 0;
-      document.getElementById('faceStat-status').textContent = 'Detected';
-      document.getElementById('faceStat-confidence').textContent = (conf * 100).toFixed(1) + '%';
-      document.getElementById('faceOverlay').textContent = 'Face detected';
+    var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      if (det.boundingBox) {
-        var bb = det.boundingBox;
-        ctx.strokeStyle = '#58a6ff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bb.originX, bb.originY, bb.width, bb.height);
+    // Draw centering guide oval
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, canvas.width * 0.22, canvas.height * 0.38, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (result.faceLandmarks && result.faceLandmarks.length > 0) {
+      var landmarks = result.faceLandmarks[0]; // 478 landmarks
+
+      // Compute bounding box from landmarks
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      landmarks.forEach(function(lm) {
+        var lx = lm.x * canvas.width, ly = lm.y * canvas.height;
+        if (lx < minX) minX = lx; if (ly < minY) minY = ly;
+        if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
+      });
+      var bbW = maxX - minX, bbH = maxY - minY;
+      var faceCx = minX + bbW / 2, faceCy = minY + bbH / 2;
+      var faceArea = bbW * bbH;
+      var frameArea = canvas.width * canvas.height;
+      var faceRatio = faceArea / frameArea;
+
+      // Quality checks
+      var isCentered = Math.abs(faceCx - cx) < canvas.width * 0.12 && Math.abs(faceCy - cy) < canvas.height * 0.12;
+      var isTooClose = faceRatio > 0.35;
+      var isTooFar = faceRatio < 0.03;
+      var isGoodSize = !isTooClose && !isTooFar;
+      var isReady = isCentered && isGoodSize;
+
+      var boxColor = isReady ? '#3fb950' : (isCentered && isGoodSize ? '#d29922' : '#f85149');
+
+      // Draw all 478 face landmarks as mesh
+      // Face oval (silhouette) indices
+      var silhouette = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+      // Draw mesh connections (tessellation)
+      ctx.strokeStyle = boxColor + '40'; // semi-transparent
+      ctx.lineWidth = 0.5;
+      for (var i = 0; i < landmarks.length; i++) {
+        var lm = landmarks[i];
+        var lx = lm.x * canvas.width, ly = lm.y * canvas.height;
+        // Draw tiny dots for each landmark
+        ctx.fillStyle = boxColor + '60';
+        ctx.fillRect(lx - 0.5, ly - 0.5, 1, 1);
       }
+
+      // Draw face oval outline
+      ctx.strokeStyle = boxColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      silhouette.forEach(function(idx, i) {
+        var lm = landmarks[idx];
+        var lx = lm.x * canvas.width, ly = lm.y * canvas.height;
+        if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      // Draw key feature points: eyes, nose, mouth (larger dots)
+      var keyIndices = [
+        // Left eye
+        33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246,
+        // Right eye
+        362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398,
+        // Left eyebrow
+        46, 53, 52, 65, 55, 70, 63, 105, 66, 107,
+        // Right eyebrow
+        276, 283, 282, 295, 285, 300, 293, 334, 296, 336,
+        // Nose
+        1, 2, 98, 327, 4, 5, 195, 197,
+        // Lips outer
+        61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185,
+        // Lips inner
+        78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95
+      ];
+      ctx.fillStyle = boxColor;
+      keyIndices.forEach(function(idx) {
+        if (idx < landmarks.length) {
+          var lm = landmarks[idx];
+          var lx = lm.x * canvas.width, ly = lm.y * canvas.height;
+          ctx.beginPath();
+          ctx.arc(lx, ly, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Draw iris centers (landmarks 468-477 if available)
+      if (landmarks.length > 468) {
+        ctx.fillStyle = '#58a6ff';
+        [468, 473].forEach(function(idx) { // left iris, right iris centers
+          if (idx < landmarks.length) {
+            var lm = landmarks[idx];
+            var lx = lm.x * canvas.width, ly = lm.y * canvas.height;
+            ctx.beginPath();
+            ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+
+      // Corner accents on bounding box
+      var pad = 10;
+      var bx = minX - pad, by = minY - pad, bw = bbW + pad * 2, bh = bbH + pad * 2;
+      var cornerLen = Math.min(bw, bh) * 0.15;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = boxColor;
+      ctx.beginPath(); ctx.moveTo(bx, by + cornerLen); ctx.lineTo(bx, by); ctx.lineTo(bx + cornerLen, by); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cornerLen); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx, by + bh - cornerLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cornerLen, by + bh); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cornerLen); ctx.stroke();
+
+      // Confidence bar
+      ctx.fillStyle = boxColor;
+      ctx.fillRect(bx, by - 6, bw, 4);
+
+      // Label
+      ctx.font = '13px monospace';
+      ctx.fillStyle = boxColor;
+      ctx.fillText(landmarks.length + ' pts | ' + bbW.toFixed(0) + 'x' + bbH.toFixed(0) + 'px', bx, by - 10);
+
+      var statusMsg = isReady ? 'READY — Capture now' : (isTooClose ? 'Too close' : (isTooFar ? 'Move closer' : (!isCentered ? 'Center your face' : 'Hold still...')));
+      document.getElementById('faceStat-status').textContent = statusMsg;
+      document.getElementById('faceStat-status').style.color = boxColor;
+      document.getElementById('faceStat-confidence').textContent = landmarks.length + ' landmarks';
+      document.getElementById('faceOverlay').textContent = statusMsg;
+      document.getElementById('faceOverlay').style.color = boxColor;
+      document.getElementById('faceStat-model').textContent = (faceRatio * 100).toFixed(1) + '% of frame';
     } else {
       document.getElementById('faceStat-status').textContent = 'No face';
+      document.getElementById('faceStat-status').style.color = 'var(--red)';
       document.getElementById('faceStat-confidence').textContent = '--';
-      document.getElementById('faceOverlay').textContent = 'No face detected';
+      document.getElementById('faceOverlay').textContent = 'Position your face in the oval guide';
+      document.getElementById('faceOverlay').style.color = 'var(--text-secondary)';
     }
   } catch (e) { /* skip frame */ }
 
@@ -383,7 +510,7 @@ function captureFace() {
     showResult('faceResult',
       'Captured frame: ' + formatBytes(blob.size) + ' JPEG\nResolution: ' + c.width + 'x' + c.height +
       '\n\nReady — click Enroll or Verify below.', true);
-  }, 'image/jpeg', 0.9);
+  }, 'image/jpeg', 0.92);
 }
 
 async function enrollFace() {
@@ -449,6 +576,15 @@ async function verifyFace() {
     showResult('faceResult', 'Verification error: ' + e.message, false);
     addLogEntry('POST', '/api/v1/biometric/verify/' + uid, 'ERR', performance.now() - start, null, e.message);
   }
+}
+
+async function deleteFaceEnrollment() {
+  var uid = getUserId();
+  if (!uid) { showResult('faceResult', 'Login first.', false); return; }
+  var res = await apiCall('DELETE', '/api/v1/biometric/face/' + uid, null);
+  showResult('faceResult', res.ok
+    ? 'Enrollment deleted. You can now enroll a different face.'
+    : 'Delete failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(res.data, null, 2), res.ok);
 }
 
 // ── 3. NFC ───────────────────────────────────────────────────────────
@@ -739,7 +875,7 @@ async function checkExternalFP() {
   } catch (e) {
     el.textContent = 'Not Found';
     el.style.color = 'var(--text-muted)';
-    showResult('fpxResult', 'No SecuGen WebAPI detected at localhost:9120\n' + e.message, false);
+    // Silently handle — no console error for expected missing scanner
   }
 }
 
@@ -920,7 +1056,9 @@ document.addEventListener('DOMContentLoaded', function() {
   updateTokenUI();
   initNfc();
   checkPlatformAuth();
-  checkExternalFP();
+  // Don't auto-check external FP scanner — only on button click
+  document.getElementById('fpxStat-status').textContent = 'Click Check Scanner';
+  document.getElementById('fpxStat-status').style.color = 'var(--text-muted)';
   checkConnection();
 
   // Bind card headers for toggle
@@ -939,6 +1077,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'faceCaptureBtn': captureFace,
     'btnFaceEnroll': enrollFace,
     'btnFaceVerify': verifyFace,
+    'btnFaceDelete': deleteFaceEnrollment,
     'faceStopBtn': stopFaceDetection,
     'voiceRecordBtn': toggleVoiceRecording,
     'btnFpeRegister': fpeRegister,

@@ -74,6 +74,7 @@
         <button class="btn" id="faceCaptureBtn" disabled>Capture Frame</button>
         <button class="btn btn-success" id="btnFaceEnroll" disabled>Enroll Face</button>
         <button class="btn btn-success" id="btnFaceVerify" disabled>Verify Face</button>
+        <button class="btn btn-danger" id="btnFaceDelete">Delete Enrollment</button>
         <button class="btn btn-danger" id="faceStopBtn" disabled>Stop</button>
       </div>
       <div class="media-container" id="faceContainer" style="display:none;">
@@ -84,7 +85,7 @@
       <div class="stats" id="faceStats" style="display:none;">
         <div class="stat"><div class="stat-label">Status</div><div class="stat-value" id="faceStat-status">--</div></div>
         <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value" id="faceStat-confidence">--</div></div>
-        <div class="stat"><div class="stat-label">Model Load</div><div class="stat-value" id="faceStat-model">--</div></div>
+        <div class="stat"><div class="stat-label">Face Size</div><div class="stat-value" id="faceStat-model">--</div></div>
         <div class="stat"><div class="stat-label">FPS</div><div class="stat-value" id="faceStat-fps">--</div></div>
       </div>
       <p class="info-text">ONNX embedding not yet implemented -- detection only for now. Uses MediaPipe Face Detection via CDN.</p>
