@@ -114,6 +114,9 @@
         <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value" id="faceStat-confidence">--</div></div>
         <div class="stat"><div class="stat-label">Face Size</div><div class="stat-value" id="faceStat-model">--</div></div>
         <div class="stat"><div class="stat-label">FPS</div><div class="stat-value" id="faceStat-fps">--</div></div>
+        <div class="stat"><div class="stat-label">Quality</div><div class="stat-value" id="faceStat-quality">--</div></div>
+        <div class="stat"><div class="stat-label">Blur</div><div class="stat-value" id="faceStat-blur">--</div></div>
+        <div class="stat"><div class="stat-label">Lighting</div><div class="stat-value" id="faceStat-lighting">--</div></div>
       </div>
       <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion.</p>
       <div class="result-box" id="faceResult" style="display:none;"></div>
@@ -380,7 +383,7 @@
       <div class="card-header-left">
         <span class="card-number">11</span>
         <span class="card-title">Card Detection (Visual)</span>
-        <span class="card-badge badge-api">API</span>
+        <span class="card-badge badge-device">Client-Side</span>
       </div>
       <span class="card-chevron">&#9654;</span>
     </div>
@@ -388,19 +391,27 @@
       <div class="form-actions" style="margin-bottom:12px;">
         <button class="btn btn-primary" id="cardStartBtn">Start Camera</button>
         <button class="btn btn-success" id="cardDetectBtn" disabled>Capture + Detect</button>
+        <button class="btn" id="cardLiveToggle" disabled style="background:var(--purple);color:#fff;">Live Detection: OFF</button>
         <button class="btn btn-danger" id="cardStopBtn" disabled>Stop</button>
       </div>
       <div class="media-container" id="cardContainer" style="display:none;">
         <video id="cardVideo" autoplay playsinline muted></video>
+        <canvas id="cardCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
         <div class="media-overlay" id="cardOverlay">Initializing...</div>
+      </div>
+      <div id="cardCropContainer" style="display:none; margin:12px 0; text-align:center;">
+        <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px;">Cropped Card Image</div>
+        <canvas id="cardCropCanvas" style="max-width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);"></canvas>
       </div>
       <div class="stats" id="cardStats" style="display:none;">
         <div class="stat"><div class="stat-label">Detected</div><div class="stat-value" id="cardStat-detected">--</div></div>
         <div class="stat"><div class="stat-label">Card Type</div><div class="stat-value" id="cardStat-type">--</div></div>
-        <div class="stat"><div class="stat-label">Class ID</div><div class="stat-value" id="cardStat-classid">--</div></div>
         <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value" id="cardStat-confidence">--</div></div>
+        <div class="stat"><div class="stat-label">Process Time</div><div class="stat-value" id="cardStat-time">--</div></div>
+        <div class="stat"><div class="stat-label">Aspect Ratio</div><div class="stat-value" id="cardStat-ratio">--</div></div>
+        <div class="stat"><div class="stat-label">Card Area</div><div class="stat-value" id="cardStat-area">--</div></div>
       </div>
-      <p class="info-text">Point your camera at an ID card (Turkish ID, passport, driver's license, student card, or academic card). The image is sent to the biometric processor's YOLO-based card type detection model.</p>
+      <p class="info-text">Client-side card detection using edge detection + contour analysis + aspect ratio matching. No server round-trip needed. Detects ID cards (ISO/IEC 7810 standard: 85.6 x 53.98 mm, ratio 1.586:1). Processing is done entirely in the browser using Canvas API.</p>
       <div class="result-box" id="cardDetectResult" style="display:none;"></div>
     </div>
   </div>

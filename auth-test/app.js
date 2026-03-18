@@ -290,6 +290,117 @@ var faceDetector = null;
 var faceAnimFrame = null;
 var faceFrameCount = 0;
 var faceFpsStart = 0;
+var lastQuality = null;
+var lastQualityUpdateTime = 0;
+
+// ── Quality Assessment (client-side, Canvas API) ──────────────────
+// Mirrors server-side: blur (Laplacian variance), lighting (mean brightness), face size
+
+function assessQuality(video, landmarks) {
+  // Draw video frame to an offscreen canvas for pixel access
+  var w = video.videoWidth, h = video.videoHeight;
+  var offCanvas = document.createElement('canvas');
+  offCanvas.width = w;
+  offCanvas.height = h;
+  var offCtx = offCanvas.getContext('2d');
+  offCtx.drawImage(video, 0, 0, w, h);
+  var imageData = offCtx.getImageData(0, 0, w, h);
+  var pixels = imageData.data;
+  var totalPixels = w * h;
+
+  // 1. Convert to grayscale array
+  var gray = new Float32Array(totalPixels);
+  for (var i = 0; i < totalPixels; i++) {
+    var idx = i * 4;
+    gray[i] = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
+  }
+
+  // 2. Lighting — mean brightness (0-255)
+  var brightnessSum = 0;
+  for (var i = 0; i < totalPixels; i++) {
+    brightnessSum += gray[i];
+  }
+  var meanBrightness = brightnessSum / totalPixels;
+
+  // Lighting score: 100 if in [80,180], drops linearly outside
+  var lightingScore;
+  if (meanBrightness >= 80 && meanBrightness <= 180) {
+    lightingScore = 100;
+  } else if (meanBrightness < 80) {
+    lightingScore = Math.max(0, (meanBrightness / 80) * 100);
+  } else {
+    lightingScore = Math.max(0, ((255 - meanBrightness) / 75) * 100);
+  }
+
+  // 3. Blur detection — Laplacian variance on grayscale
+  // 3x3 Laplacian kernel: [0,1,0; 1,-4,1; 0,1,0]
+  // Sample every 4th pixel for performance (still accurate enough)
+  var lapSum = 0, lapSumSq = 0, lapCount = 0;
+  var step = 4; // sample every 4th pixel
+  for (var y = 1; y < h - 1; y += step) {
+    for (var x = 1; x < w - 1; x += step) {
+      var center = gray[y * w + x];
+      var lap = -4 * center
+        + gray[(y - 1) * w + x]
+        + gray[(y + 1) * w + x]
+        + gray[y * w + (x - 1)]
+        + gray[y * w + (x + 1)];
+      lapSum += lap;
+      lapSumSq += lap * lap;
+      lapCount++;
+    }
+  }
+  var lapMean = lapSum / lapCount;
+  var lapVariance = (lapSumSq / lapCount) - (lapMean * lapMean);
+
+  // Blur score: variance < 15 = blurry (score 0), > 500 = very sharp (score 100)
+  // Linear scale between thresholds
+  var BLUR_LOW = 15.0;
+  var BLUR_HIGH = 500.0;
+  var blurScore;
+  if (lapVariance <= BLUR_LOW) {
+    blurScore = 0;
+  } else if (lapVariance >= BLUR_HIGH) {
+    blurScore = 100;
+  } else {
+    blurScore = ((lapVariance - BLUR_LOW) / (BLUR_HIGH - BLUR_LOW)) * 100;
+  }
+
+  // 4. Face size — minimum dimension of face bounding box in pixels
+  var faceSizePx = 0;
+  var faceSizeScore = 0;
+  if (landmarks && landmarks.length > 0) {
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    landmarks.forEach(function(lm) {
+      var lx = lm.x * w, ly = lm.y * h;
+      if (lx < minX) minX = lx; if (ly < minY) minY = ly;
+      if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
+    });
+    faceSizePx = Math.min(maxX - minX, maxY - minY);
+    // Face size score: < 80px = 0, > 250px = 100
+    if (faceSizePx <= 80) {
+      faceSizeScore = 0;
+    } else if (faceSizePx >= 250) {
+      faceSizeScore = 100;
+    } else {
+      faceSizeScore = ((faceSizePx - 80) / (250 - 80)) * 100;
+    }
+  }
+
+  // 5. Overall: weighted average (blur 40% + lighting 30% + size 30%)
+  var overall = blurScore * 0.4 + lightingScore * 0.3 + faceSizeScore * 0.3;
+
+  return {
+    blur: Math.round(blurScore),
+    blurVariance: Math.round(lapVariance),
+    lighting: Math.round(lightingScore),
+    brightness: Math.round(meanBrightness),
+    faceSize: Math.round(faceSizePx),
+    faceSizeScore: Math.round(faceSizeScore),
+    overall: Math.round(overall),
+    acceptable: overall >= 40
+  };
+}
 
 async function startFaceDetection() {
   var video = document.getElementById('faceVideo');
@@ -501,13 +612,41 @@ function detectFaceLoop() {
       document.getElementById('faceOverlay').textContent = statusMsg;
       document.getElementById('faceOverlay').style.color = boxColor;
       document.getElementById('faceStat-model').textContent = (faceRatio * 100).toFixed(1) + '% of frame';
+
+      // Quality assessment — throttled to every 500ms
+      var now = performance.now();
+      if (now - lastQualityUpdateTime > 500) {
+        lastQualityUpdateTime = now;
+        lastQuality = assessQuality(video, landmarks);
+        var q = lastQuality;
+
+        // Color coding: green (>70), yellow (40-70), red (<40)
+        var qualityColor = q.overall > 70 ? 'var(--green)' : (q.overall >= 40 ? 'var(--yellow)' : 'var(--red)');
+        var blurColor = q.blur > 70 ? 'var(--green)' : (q.blur >= 40 ? 'var(--yellow)' : 'var(--red)');
+        var lightColor = q.lighting > 70 ? 'var(--green)' : (q.lighting >= 40 ? 'var(--yellow)' : 'var(--red)');
+
+        var qualityLabel = q.overall > 70 ? 'Good' : (q.overall >= 40 ? 'Fair' : 'Poor');
+        document.getElementById('faceStat-quality').textContent = qualityLabel + ' (' + q.overall + ')';
+        document.getElementById('faceStat-quality').style.color = qualityColor;
+        document.getElementById('faceStat-blur').textContent = q.blur + ' (var:' + q.blurVariance + ')';
+        document.getElementById('faceStat-blur').style.color = blurColor;
+        document.getElementById('faceStat-lighting').textContent = q.lighting + ' (br:' + q.brightness + ')';
+        document.getElementById('faceStat-lighting').style.color = lightColor;
+      }
     } else {
       lastFaceLandmarks = null;
+      lastQuality = null;
       document.getElementById('faceStat-status').textContent = 'No face';
       document.getElementById('faceStat-status').style.color = 'var(--red)';
       document.getElementById('faceStat-confidence').textContent = '--';
       document.getElementById('faceOverlay').textContent = 'Position your face in the oval guide';
       document.getElementById('faceOverlay').style.color = 'var(--text-secondary)';
+      document.getElementById('faceStat-quality').textContent = '--';
+      document.getElementById('faceStat-quality').style.color = '';
+      document.getElementById('faceStat-blur').textContent = '--';
+      document.getElementById('faceStat-blur').style.color = '';
+      document.getElementById('faceStat-lighting').textContent = '--';
+      document.getElementById('faceStat-lighting').style.color = '';
     }
   } catch (e) { /* skip frame */ }
 
@@ -533,6 +672,21 @@ var lastFaceBlob = null;
 var lastFaceLandmarks = null;
 
 function captureFace() {
+  // Quality gate — block capture if quality is too poor
+  if (lastQuality) {
+    if (lastQuality.overall < 40) {
+      showResult('faceResult', 'Image quality too poor (score: ' + lastQuality.overall + '/100).\n' +
+        'Blur: ' + lastQuality.blur + ', Lighting: ' + lastQuality.lighting + ', Face Size: ' + lastQuality.faceSizeScore + '\n' +
+        'Improve lighting, hold camera steady, and position face closer.', false);
+      return;
+    }
+    if (lastQuality.overall < 70) {
+      showResult('faceResult', 'Warning: Image quality is fair (score: ' + lastQuality.overall + '/100).\n' +
+        'Blur: ' + lastQuality.blur + ', Lighting: ' + lastQuality.lighting + ', Face Size: ' + lastQuality.faceSizeScore + '\n' +
+        'Proceeding with capture, but results may be less reliable.', true);
+    }
+  }
+
   var video = document.getElementById('faceVideo');
   var c = document.createElement('canvas');
   var w = video.videoWidth, h = video.videoHeight;
