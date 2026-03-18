@@ -709,16 +709,26 @@ function captureFace() {
     var cropW = Math.min(w - cropX, Math.ceil(bbW + padX * 2));
     var cropH = Math.min(h - cropY, Math.ceil(bbH + padY * 2));
 
-    c.width = cropW; c.height = cropH;
-    c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    // Resize to max 720px to prevent "multiple faces" on high-res mobile cameras
+    var maxDim = 720;
+    var scale = 1;
+    if (cropW > maxDim || cropH > maxDim) {
+      scale = maxDim / Math.max(cropW, cropH);
+    }
+    c.width = Math.round(cropW * scale);
+    c.height = Math.round(cropH * scale);
+    c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
 
-    console.log('[captureFace] Cropped to face region: ' + cropW + 'x' + cropH +
-      ' from ' + w + 'x' + h + ' (padding 60%)');
+    console.log('[captureFace] Cropped+resized: ' + c.width + 'x' + c.height +
+      ' from ' + w + 'x' + h + ' (crop ' + cropW + 'x' + cropH + ', scale ' + scale.toFixed(2) + ')');
   } else {
-    // Fallback: capture full frame
-    c.width = w; c.height = h;
-    c.getContext('2d').drawImage(video, 0, 0);
-    console.log('[captureFace] No landmarks available, capturing full frame: ' + w + 'x' + h);
+    // Fallback: capture full frame, resize if needed
+    var maxFull = 720;
+    var fullScale = Math.min(1, maxFull / Math.max(w, h));
+    c.width = Math.round(w * fullScale);
+    c.height = Math.round(h * fullScale);
+    c.getContext('2d').drawImage(video, 0, 0, w, h, 0, 0, c.width, c.height);
+    console.log('[captureFace] Full frame resized: ' + c.width + 'x' + c.height + ' from ' + w + 'x' + h);
   }
 
   c.toBlob(function(blob) {
@@ -2514,8 +2524,12 @@ function captureFullFrameAsBlob() {
   return new Promise(function(resolve) {
     var video = document.getElementById('faceVideo');
     var c = document.createElement('canvas');
-    c.width = video.videoWidth; c.height = video.videoHeight;
-    c.getContext('2d').drawImage(video, 0, 0);
+    var w = video.videoWidth, h = video.videoHeight;
+    var maxDim = 720;
+    var scale = Math.min(1, maxDim / Math.max(w, h));
+    c.width = Math.round(w * scale);
+    c.height = Math.round(h * scale);
+    c.getContext('2d').drawImage(video, 0, 0, w, h, 0, 0, c.width, c.height);
     c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.92);
   });
 }
