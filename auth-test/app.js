@@ -2391,6 +2391,41 @@ async function captureAndDetectCard() {
     detailLines.push('  Area: ' + (result.bestCandidate.areaFraction * 100).toFixed(1) + '% of frame');
   }
   showResult('cardDetectResult', detailLines.join('\n'), result.detected);
+
+  // Also try server-side YOLO detection (more accurate for card TYPE classification)
+  var token = getToken();
+  if (token) {
+    var c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(async function(blob) {
+      var formData = new FormData();
+      formData.append('file', blob, 'card.jpg');
+      try {
+        var res = await fetch(getApiUrl() + '/api/v1/biometric/card-detect', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
+        });
+        var data = await res.json().catch(function() { return null; });
+        addLogEntry('POST', '/api/v1/biometric/card-detect', res.status, 0, '(card image)', data);
+        if (data && data.detected) {
+          var cardNames = { 'tc_kimlik': 'Turkish ID (TC Kimlik)', 'pasaport': 'Passport', 'ehliyet': "Driver's License", 'ogrenci_karti': 'Student Card', 'akademisyen_karti': 'Academic Card' };
+          showResult('cardDetectResult',
+            'SERVER YOLO DETECTED: ' + (cardNames[data.class_name] || data.class_name) +
+            '\nConfidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%' +
+            '\nClass: ' + data.class_name + ' (ID: ' + data.class_id + ')', true);
+          document.getElementById('cardStat-detected').textContent = 'YES (YOLO)';
+          document.getElementById('cardStat-detected').style.color = 'var(--green)';
+          document.getElementById('cardStat-type').textContent = cardNames[data.class_name] || data.class_name;
+        } else if (data && !data.detected) {
+          showResult('cardDetectResult', 'Server YOLO: No card detected in this frame.', false);
+        }
+      } catch (e) {
+        // Server detection failed silently — client-side result already shown
+      }
+    }, 'image/jpeg', 0.92);
+  }
 }
 
 // ── Face Landmark Detection Helpers ──────────────────────────────────
