@@ -2235,12 +2235,13 @@ function stopCardCamera() {
 
 function toggleCardLiveDetection() {
   cardLiveMode = !cardLiveMode;
-  document.getElementById('cardLiveToggle').textContent = 'Live Detection: ' + (cardLiveMode ? 'ON' : 'OFF');
+  var label = cardLiveMode ? 'Live Detection: ON (slow ~7s/frame)' : 'Live Detection: OFF';
+  document.getElementById('cardLiveToggle').textContent = label;
   document.getElementById('cardLiveToggle').style.background = cardLiveMode ? 'var(--green)' : 'var(--purple)';
   if (cardLiveMode) {
     cardLiveLoop();
   } else {
-    if (cardLiveRAF) { cancelAnimationFrame(cardLiveRAF); cardLiveRAF = null; }
+    if (cardLiveRAF) { clearTimeout(cardLiveRAF); cardLiveRAF = null; }
     var oc = document.getElementById('cardCanvas');
     oc.getContext('2d').clearRect(0, 0, oc.width, oc.height);
   }
@@ -2266,7 +2267,8 @@ async function cardLiveLoop() {
     }
   }
   cardLiveRunning = false;
-  cardLiveRAF = requestAnimationFrame(cardLiveLoop);
+  // Use setTimeout instead of requestAnimationFrame — YOLO takes 7s per frame
+  cardLiveRAF = setTimeout(cardLiveLoop, 500);
 }
 
 async function runYoloDetection(videoOrCanvas) {
