@@ -1136,6 +1136,9 @@ function computeAndShowEmbedding() {
 
 // ── 3. NFC ───────────────────────────────────────────────────────────
 
+// Track last scanned NFC serial for enroll/verify/search actions
+var lastNfcSerial = null;
+
 function initNfc() {
   var el = document.getElementById('nfcContent');
   // Clear existing content
@@ -1145,12 +1148,68 @@ function initNfc() {
     var actionsDiv = document.createElement('div');
     actionsDiv.className = 'form-actions';
     actionsDiv.style.marginBottom = '12px';
+
     var scanBtn = document.createElement('button');
     scanBtn.className = 'btn btn-primary';
     scanBtn.textContent = 'Scan NFC Tag';
     scanBtn.addEventListener('click', scanNfc);
     actionsDiv.appendChild(scanBtn);
+
+    var enrollBtn = document.createElement('button');
+    enrollBtn.className = 'btn btn-success';
+    enrollBtn.id = 'nfcEnrollBtn';
+    enrollBtn.textContent = 'Enroll This Card';
+    enrollBtn.disabled = true;
+    enrollBtn.addEventListener('click', nfcEnrollCard);
+    actionsDiv.appendChild(enrollBtn);
+
+    var verifyBtn = document.createElement('button');
+    verifyBtn.className = 'btn';
+    verifyBtn.id = 'nfcVerifyBtn';
+    verifyBtn.textContent = 'Verify Card';
+    verifyBtn.disabled = true;
+    verifyBtn.addEventListener('click', nfcVerifyCard);
+    actionsDiv.appendChild(verifyBtn);
+
+    var whoseBtn = document.createElement('button');
+    whoseBtn.className = 'btn';
+    whoseBtn.id = 'nfcWhoseBtn';
+    whoseBtn.textContent = "Whose Card?";
+    whoseBtn.disabled = true;
+    whoseBtn.addEventListener('click', nfcWhoseCard);
+    actionsDiv.appendChild(whoseBtn);
+
     el.appendChild(actionsDiv);
+
+    // Card type selector for enrollment
+    var enrollOptions = document.createElement('div');
+    enrollOptions.className = 'form-row';
+    enrollOptions.id = 'nfcEnrollOptions';
+    enrollOptions.style.display = 'none';
+    enrollOptions.style.marginBottom = '12px';
+
+    var typeGroup = document.createElement('div');
+    typeGroup.className = 'form-group';
+    var typeLabel = document.createElement('label');
+    typeLabel.textContent = 'Card Type';
+    var typeSelect = document.createElement('select');
+    typeSelect.id = 'nfcCardType';
+    typeSelect.style.padding = '6px 10px';
+    typeSelect.style.borderRadius = '6px';
+    typeSelect.style.border = '1px solid var(--border)';
+    typeSelect.style.background = 'var(--bg)';
+    typeSelect.style.color = 'var(--text)';
+    var cardTypes = ['TURKISH_ID', 'PASSPORT', 'DRIVER_LICENSE', 'EMPLOYEE_BADGE', 'ACCESS_CARD', 'OTHER'];
+    cardTypes.forEach(function(t) {
+      var opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t.replace(/_/g, ' ');
+      typeSelect.appendChild(opt);
+    });
+    typeGroup.appendChild(typeLabel);
+    typeGroup.appendChild(typeSelect);
+    enrollOptions.appendChild(typeGroup);
+    el.appendChild(enrollOptions);
 
     var statsDiv = document.createElement('div');
     statsDiv.className = 'stats';
@@ -1215,17 +1274,103 @@ async function scanNfc() {
     reader.addEventListener('reading', function(event) {
       var serialNumber = event.serialNumber;
       var message = event.message;
+      lastNfcSerial = serialNumber;
       document.getElementById('nfcStat-serial').textContent = serialNumber || 'N/A';
       document.getElementById('nfcStat-records').textContent = message.records.length;
       var types = Array.from(message.records).map(function(r) { return r.recordType; }).join(', ');
       document.getElementById('nfcStat-type').textContent = types || 'N/A';
       showResult('nfcResult', 'Tag read!\nSerial: ' + serialNumber + '\nRecords: ' + message.records.length + '\nTypes: ' + types, true);
+
+      // Enable action buttons after a successful scan
+      var enrollBtn = document.getElementById('nfcEnrollBtn');
+      var verifyBtn = document.getElementById('nfcVerifyBtn');
+      var whoseBtn = document.getElementById('nfcWhoseBtn');
+      var enrollOpts = document.getElementById('nfcEnrollOptions');
+      if (enrollBtn) enrollBtn.disabled = false;
+      if (verifyBtn) verifyBtn.disabled = false;
+      if (whoseBtn) whoseBtn.disabled = false;
+      if (enrollOpts) enrollOpts.style.display = 'flex';
     });
     reader.addEventListener('readingerror', function() {
       showResult('nfcResult', 'Error reading NFC tag. Try again.', false);
     });
   } catch (e) {
     showResult('nfcResult', 'NFC error: ' + e.message, false);
+  }
+}
+
+async function nfcEnrollCard() {
+  if (!lastNfcSerial) {
+    showResult('nfcResult', 'No card scanned yet. Tap "Scan NFC Tag" first.', false);
+    return;
+  }
+  if (!getToken()) {
+    showResult('nfcResult', 'Please log in first to enroll an NFC card.', false);
+    return;
+  }
+  var cardType = document.getElementById('nfcCardType') ? document.getElementById('nfcCardType').value : 'UNKNOWN';
+  var userId = getUserId();
+  try {
+    var res = await apiCall('POST', '/api/v1/nfc/enroll', {
+      userId: userId,
+      cardSerial: lastNfcSerial,
+      cardType: cardType
+    });
+    if (res.success) {
+      showResult('nfcResult', 'Card enrolled!\nSerial: ' + lastNfcSerial + '\nCard ID: ' + res.cardId, true);
+    } else {
+      showResult('nfcResult', 'Enrollment failed: ' + (res.message || 'Unknown error'), false);
+    }
+  } catch (e) {
+    showResult('nfcResult', 'Enrollment error: ' + (e.message || e), false);
+  }
+}
+
+async function nfcVerifyCard() {
+  if (!lastNfcSerial) {
+    showResult('nfcResult', 'No card scanned yet. Tap "Scan NFC Tag" first.', false);
+    return;
+  }
+  if (!getToken()) {
+    showResult('nfcResult', 'Please log in first to verify an NFC card.', false);
+    return;
+  }
+  try {
+    var res = await apiCall('POST', '/api/v1/nfc/verify', {
+      cardSerial: lastNfcSerial
+    });
+    if (res.enrolled) {
+      showResult('nfcResult', 'Card is ENROLLED\nOwner: ' + res.userName + '\nEmail: ' + res.email + '\nType: ' + res.cardType + '\nEnrolled: ' + res.enrolledAt, true);
+    } else {
+      showResult('nfcResult', 'Card is NOT enrolled. Serial: ' + lastNfcSerial, false);
+    }
+  } catch (e) {
+    showResult('nfcResult', 'Verify error: ' + (e.message || e), false);
+  }
+}
+
+async function nfcWhoseCard() {
+  if (!lastNfcSerial) {
+    showResult('nfcResult', 'No card scanned yet. Tap "Scan NFC Tag" first.', false);
+    return;
+  }
+  if (!getToken()) {
+    showResult('nfcResult', 'Please log in first to search for a card.', false);
+    return;
+  }
+  try {
+    var res = await apiCall('GET', '/api/v1/nfc/search/' + encodeURIComponent(lastNfcSerial));
+    if (res.found) {
+      var text = 'Found ' + res.count + ' enrollment(s) for serial: ' + lastNfcSerial;
+      (res.results || []).forEach(function(r) {
+        text += '\n  - ' + r.userName + ' (' + r.email + ') [' + r.cardType + '] Active: ' + r.isActive;
+      });
+      showResult('nfcResult', text, true);
+    } else {
+      showResult('nfcResult', 'No enrollments found for serial: ' + lastNfcSerial, false);
+    }
+  } catch (e) {
+    showResult('nfcResult', 'Search error: ' + (e.message || e), false);
   }
 }
 
@@ -2010,17 +2155,31 @@ async function loadCardModel() {
   if (cardModelLoaded || cardModelLoading) return;
   cardModelLoading = true;
   updateModelProgress(0);
-  showResult('cardDetectResult', 'Downloading YOLO model (~99MB, cached after first load)...', true);
+
+  // Try nano model first (~6MB), fallback to full model (~99MB)
+  var nanoUrl = '/auth-test/card_model_nano.onnx';
+  var fullUrl = '/auth-test/card_model.onnx';
+  var modelUrl = fullUrl;
+  var modelLabel = 'full (~99MB)';
 
   try {
-    var modelUrl = '/auth-test/card_model.onnx';
+    var nanoCheck = await fetch(nanoUrl, { method: 'HEAD' });
+    if (nanoCheck.ok) {
+      modelUrl = nanoUrl;
+      modelLabel = 'nano (~6MB)';
+    }
+  } catch (e) { /* nano not available, use full */ }
 
+  showResult('cardDetectResult', 'Downloading YOLO ' + modelLabel + ' model (cached after first load)...', true);
+
+  try {
     // Fetch with progress tracking
     var response = await fetch(modelUrl);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
     var contentLength = response.headers.get('content-length');
-    var totalBytes = contentLength ? parseInt(contentLength, 10) : 99 * 1024 * 1024;
+    var defaultSize = modelUrl.indexOf('nano') !== -1 ? 6 * 1024 * 1024 : 99 * 1024 * 1024;
+    var totalBytes = contentLength ? parseInt(contentLength, 10) : defaultSize;
     var reader = response.body.getReader();
     var chunks = [];
     var receivedBytes = 0;
@@ -2049,9 +2208,10 @@ async function loadCardModel() {
     });
     cardModelLoaded = true;
     cardModelLoading = false;
+    var isNano = modelUrl.indexOf('nano') !== -1;
     var progressContainer = document.getElementById('cardModelProgress');
     if (progressContainer) progressContainer.style.display = 'none';
-    showResult('cardDetectResult', 'YOLO model loaded! Ready to detect cards (WASM backend).', true);
+    showResult('cardDetectResult', 'YOLO ' + (isNano ? 'nano' : 'full') + ' model loaded! Ready to detect cards (WASM backend).' + (isNano ? ' ~100ms/frame.' : ' ~7s/frame.'), true);
   } catch (e) {
     cardModelLoading = false;
     var progressContainer = document.getElementById('cardModelProgress');
@@ -2235,7 +2395,7 @@ function stopCardCamera() {
 
 function toggleCardLiveDetection() {
   cardLiveMode = !cardLiveMode;
-  var label = cardLiveMode ? 'Live Detection: ON (slow ~7s/frame)' : 'Live Detection: OFF';
+  var label = cardLiveMode ? 'Live Detection: ON' : 'Live Detection: OFF';
   document.getElementById('cardLiveToggle').textContent = label;
   document.getElementById('cardLiveToggle').style.background = cardLiveMode ? 'var(--green)' : 'var(--purple)';
   if (cardLiveMode) {
@@ -2267,8 +2427,11 @@ async function cardLiveLoop() {
     }
   }
   cardLiveRunning = false;
-  // Use setTimeout instead of requestAnimationFrame — YOLO takes 7s per frame
-  cardLiveRAF = setTimeout(cardLiveLoop, 500);
+  // For nano model (~100ms), use shorter interval for near-real-time
+  // For full model (~7s), use longer interval to avoid queuing
+  var lastElapsed = (result && result.elapsed) ? result.elapsed : 7000;
+  var interval = lastElapsed < 500 ? 100 : 500;
+  cardLiveRAF = setTimeout(cardLiveLoop, interval);
 }
 
 async function runYoloDetection(videoOrCanvas) {
