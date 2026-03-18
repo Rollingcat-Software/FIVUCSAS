@@ -429,6 +429,36 @@ input::placeholder { color: var(--text-muted); }
   width: 160px !important;
 }
 
+/* Focus styles for accessibility */
+.card-header[role="button"]:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.card-header[role="button"]:focus:not(:focus-visible) {
+  outline: none;
+}
+.card-header[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
