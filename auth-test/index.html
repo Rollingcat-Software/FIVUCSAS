@@ -419,10 +419,10 @@
         <div class="stat"><div class="stat-label">Card Type</div><div class="stat-value" id="cardStat-type">--</div></div>
         <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value" id="cardStat-confidence">--</div></div>
         <div class="stat"><div class="stat-label">Process Time</div><div class="stat-value" id="cardStat-time">--</div></div>
-        <div class="stat"><div class="stat-label">Aspect Ratio</div><div class="stat-value" id="cardStat-ratio">--</div></div>
+        <div class="stat"><div class="stat-label">Method</div><div class="stat-value" id="cardStat-method">--</div></div>
         <div class="stat"><div class="stat-label">Card Area</div><div class="stat-value" id="cardStat-area">--</div></div>
       </div>
-      <p class="info-text">Client-side card detection using edge detection + contour analysis + aspect ratio matching. No server round-trip needed. Detects ID cards (ISO/IEC 7810 standard: 85.6 x 53.98 mm, ratio 1.586:1). Processing is done entirely in the browser using Canvas API.</p>
+      <p class="info-text">Client-side card detection using YOLO ONNX model (99MB, cached after first load). Detects 5 card types: TC Kimlik, Passport, Driver's License, Student Card, Academic Card. Falls back to edge detection if model fails to load. Processing via ONNX Runtime Web (WebGL/WASM).</p>
       <div class="result-box" id="cardDetectResult" style="display:none;"></div>
     </div>
   </div>
@@ -441,6 +441,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.0/dist/ort.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

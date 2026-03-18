@@ -1972,17 +1972,174 @@ async function hwVerify() {
   }
 }
 
-// ── 11. Card Detection (Client-Side) ────────────────────────────────
+// ── 11. Card Detection (Client-Side YOLO ONNX) ─────────────────────
 
 var cardStream = null;
 var cardLiveMode = false;
 var cardLiveRAF = null;
 
-// ISO/IEC 7810 ID-1 card: 85.6mm x 53.98mm = 1.586 aspect ratio
-var CARD_ASPECT_RATIO = 85.6 / 53.98; // ~1.586
-var CARD_RATIO_TOLERANCE = 0.25; // allow 1.33 to 1.84 (covers passports too)
-var CARD_MIN_AREA_FRACTION = 0.04; // card must be at least 4% of frame
-var CARD_MAX_AREA_FRACTION = 0.85; // card must be at most 85% of frame
+// YOLO ONNX model state
+var cardOnnxSession = null;
+var cardModelLoading = false;
+var cardModelLoaded = false;
+var YOLO_CLASS_NAMES = ['ehliyet', 'pasaport', 'ogrenci_karti', 'tc_kimlik', 'akademisyen_karti'];
+var YOLO_CLASS_LABELS = {
+  'ehliyet': "Driver's License (Ehliyet)",
+  'pasaport': 'Passport (Pasaport)',
+  'ogrenci_karti': 'Student Card (Ogrenci Karti)',
+  'tc_kimlik': 'Turkish ID (TC Kimlik)',
+  'akademisyen_karti': 'Academic Card (Akademisyen Karti)'
+};
+var YOLO_CONF_THRESHOLD = 0.25;
+var YOLO_IOU_THRESHOLD = 0.45;
+
+// Fallback edge detection constants
+var CARD_ASPECT_RATIO = 85.6 / 53.98;
+var CARD_RATIO_TOLERANCE = 0.25;
+var CARD_MIN_AREA_FRACTION = 0.04;
+var CARD_MAX_AREA_FRACTION = 0.85;
+
+async function loadCardModel() {
+  if (cardModelLoaded || cardModelLoading) return;
+  cardModelLoading = true;
+  showResult('cardDetectResult', 'Loading YOLO model (99MB, first time only)...', true);
+
+  try {
+    var modelUrl = '/auth-test/card_model.onnx';
+    cardOnnxSession = await ort.InferenceSession.create(modelUrl, {
+      executionProviders: ['webgl', 'wasm']
+    });
+    cardModelLoaded = true;
+    cardModelLoading = false;
+    showResult('cardDetectResult', 'YOLO model loaded! Ready to detect cards.', true);
+  } catch (e) {
+    cardModelLoading = false;
+    showResult('cardDetectResult', 'YOLO model load failed: ' + e.message + '. Using edge detection fallback.', false);
+  }
+}
+
+async function detectCardYolo(videoOrCanvas) {
+  if (!cardOnnxSession) return null;
+
+  var srcW, srcH;
+  if (videoOrCanvas.videoWidth) {
+    srcW = videoOrCanvas.videoWidth;
+    srcH = videoOrCanvas.videoHeight;
+  } else {
+    srcW = videoOrCanvas.width;
+    srcH = videoOrCanvas.height;
+  }
+
+  // Preprocess: resize to 640x640, normalize to [0,1], NCHW format
+  var resized = document.createElement('canvas');
+  resized.width = 640;
+  resized.height = 640;
+  var rCtx = resized.getContext('2d');
+
+  // Letterbox: maintain aspect ratio with padding
+  var scale = Math.min(640 / srcW, 640 / srcH);
+  var newW = Math.round(srcW * scale);
+  var newH = Math.round(srcH * scale);
+  var padX = (640 - newW) / 2;
+  var padY = (640 - newH) / 2;
+
+  rCtx.fillStyle = '#808080';
+  rCtx.fillRect(0, 0, 640, 640);
+  rCtx.drawImage(videoOrCanvas, 0, 0, srcW, srcH, padX, padY, newW, newH);
+
+  var imageData = rCtx.getImageData(0, 0, 640, 640);
+  var input = new Float32Array(3 * 640 * 640);
+
+  // RGBA to RGB normalized NCHW
+  for (var i = 0; i < 640 * 640; i++) {
+    input[i] = imageData.data[i * 4] / 255.0;
+    input[640 * 640 + i] = imageData.data[i * 4 + 1] / 255.0;
+    input[2 * 640 * 640 + i] = imageData.data[i * 4 + 2] / 255.0;
+  }
+
+  var tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
+  var results = await cardOnnxSession.run({ images: tensor });
+
+  // YOLOv8 output: [1, 9, 8400] where 9 = 4 bbox + 5 class scores
+  var output = results[Object.keys(results)[0]];
+  var data = output.data;
+  var numDetections = output.dims[2]; // 8400
+  var numValues = output.dims[1]; // 9
+  var numClasses = numValues - 4; // 5
+
+  var detections = [];
+  for (var i = 0; i < numDetections; i++) {
+    // Get class scores (indices 4..8)
+    var maxScore = -1;
+    var maxClassIdx = 0;
+    for (var c = 0; c < numClasses; c++) {
+      var score = data[(4 + c) * numDetections + i];
+      if (score > maxScore) {
+        maxScore = score;
+        maxClassIdx = c;
+      }
+    }
+
+    if (maxScore < YOLO_CONF_THRESHOLD) continue;
+
+    // Get bbox (cx, cy, w, h) in 640x640 space
+    var cx = data[0 * numDetections + i];
+    var cy = data[1 * numDetections + i];
+    var bw = data[2 * numDetections + i];
+    var bh = data[3 * numDetections + i];
+
+    // Convert from letterboxed 640x640 to original image coordinates
+    var x1 = (cx - bw / 2 - padX) / scale;
+    var y1 = (cy - bh / 2 - padY) / scale;
+    var x2 = (cx + bw / 2 - padX) / scale;
+    var y2 = (cy + bh / 2 - padY) / scale;
+
+    // Clamp to frame
+    x1 = Math.max(0, Math.min(x1, srcW));
+    y1 = Math.max(0, Math.min(y1, srcH));
+    x2 = Math.max(0, Math.min(x2, srcW));
+    y2 = Math.max(0, Math.min(y2, srcH));
+
+    detections.push({
+      x: Math.round(x1),
+      y: Math.round(y1),
+      w: Math.round(x2 - x1),
+      h: Math.round(y2 - y1),
+      confidence: maxScore,
+      classIdx: maxClassIdx,
+      className: YOLO_CLASS_NAMES[maxClassIdx]
+    });
+  }
+
+  // NMS (Non-Maximum Suppression)
+  detections.sort(function(a, b) { return b.confidence - a.confidence; });
+  var keep = [];
+  var suppressed = new Array(detections.length).fill(false);
+  for (var i = 0; i < detections.length; i++) {
+    if (suppressed[i]) continue;
+    keep.push(detections[i]);
+    for (var j = i + 1; j < detections.length; j++) {
+      if (suppressed[j]) continue;
+      if (computeIoU(detections[i], detections[j]) > YOLO_IOU_THRESHOLD) {
+        suppressed[j] = true;
+      }
+    }
+  }
+
+  return keep;
+}
+
+function computeIoU(a, b) {
+  var x1 = Math.max(a.x, b.x);
+  var y1 = Math.max(a.y, b.y);
+  var x2 = Math.min(a.x + a.w, b.x + b.w);
+  var y2 = Math.min(a.y + a.h, b.y + b.h);
+  var intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  var aArea = a.w * a.h;
+  var bArea = b.w * b.h;
+  var union = aArea + bArea - intersection;
+  return union > 0 ? intersection / union : 0;
+}
 
 async function startCardCamera() {
   var video = document.getElementById('cardVideo');
@@ -1992,6 +2149,9 @@ async function startCardCamera() {
   document.getElementById('cardDetectBtn').disabled = false;
   document.getElementById('cardLiveToggle').disabled = false;
   container.style.display = 'block';
+
+  // Start loading YOLO model in background
+  loadCardModel();
 
   try {
     cardStream = await navigator.mediaDevices.getUserMedia({
@@ -2044,15 +2204,79 @@ function toggleCardLiveDetection() {
   }
 }
 
-function cardLiveLoop() {
+var cardLiveRunning = false;
+async function cardLiveLoop() {
   if (!cardLiveMode || !cardStream) return;
+  if (cardLiveRunning) { cardLiveRAF = requestAnimationFrame(cardLiveLoop); return; }
+  cardLiveRunning = true;
   var video = document.getElementById('cardVideo');
   if (video.readyState >= 2) {
-    var result = runCardDetection(video);
-    drawCardOverlay(result);
-    updateCardStats(result);
+    var result;
+    if (cardModelLoaded) {
+      result = await runYoloDetection(video);
+      drawCardOverlay(result);
+      updateCardStats(result);
+    } else {
+      // Don't use edge detection for live mode — wait for YOLO model
+      document.getElementById('cardOverlay').textContent = cardModelLoading ? 'Loading YOLO model...' : 'Model not loaded';
+    }
   }
+  cardLiveRunning = false;
   cardLiveRAF = requestAnimationFrame(cardLiveLoop);
+}
+
+async function runYoloDetection(videoOrCanvas) {
+  var start = performance.now();
+  var srcW, srcH;
+  if (videoOrCanvas.videoWidth) {
+    srcW = videoOrCanvas.videoWidth;
+    srcH = videoOrCanvas.videoHeight;
+  } else {
+    srcW = videoOrCanvas.width;
+    srcH = videoOrCanvas.height;
+  }
+
+  var detections = await detectCardYolo(videoOrCanvas);
+  var elapsed = performance.now() - start;
+
+  if (!detections || detections.length === 0) {
+    return {
+      detected: false,
+      bestCandidate: null,
+      cardType: '--',
+      candidateCount: 0,
+      elapsed: elapsed,
+      frameWidth: srcW,
+      frameHeight: srcH,
+      method: 'Client YOLO',
+      allDetections: []
+    };
+  }
+
+  var best = detections[0];
+  var frameArea = srcW * srcH;
+  var label = YOLO_CLASS_LABELS[best.className] || best.className;
+
+  return {
+    detected: true,
+    bestCandidate: {
+      x: best.x,
+      y: best.y,
+      w: best.w,
+      h: best.h,
+      confidence: best.confidence,
+      aspectRatio: best.w > best.h ? best.w / best.h : best.h / best.w,
+      areaFraction: (best.w * best.h) / frameArea,
+      className: best.className
+    },
+    cardType: label,
+    candidateCount: detections.length,
+    elapsed: elapsed,
+    frameWidth: srcW,
+    frameHeight: srcH,
+    method: 'Client YOLO',
+    allDetections: detections
+  };
 }
 
 // ── Image Processing Utilities ──────────────────────────────────────
@@ -2293,7 +2517,9 @@ function runCardDetection(videoOrCanvas) {
     candidateCount: candidates.length,
     elapsed: elapsed,
     frameWidth: srcW,
-    frameHeight: srcH
+    frameHeight: srcH,
+    method: 'Edge Detection',
+    allDetections: []
   };
 }
 
@@ -2302,10 +2528,47 @@ function drawCardOverlay(result) {
   var ctx = oc.getContext('2d');
   ctx.clearRect(0, 0, oc.width, oc.height);
 
-  if (result.detected && result.bestCandidate) {
+  // Draw all YOLO detections if available
+  var detections = result.allDetections || [];
+  if (detections.length > 0) {
+    for (var di = 0; di < detections.length; di++) {
+      var det = detections[di];
+      var conf = det.confidence;
+      var color;
+      if (conf > 0.65) color = '#3fb950';
+      else if (conf > 0.45) color = '#d29922';
+      else color = '#f85149';
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = di === 0 ? 3 : 2;
+      ctx.setLineDash(di === 0 ? [] : [6, 3]);
+      ctx.strokeRect(det.x, det.y, det.w, det.h);
+
+      // Corner markers for best detection
+      if (di === 0) {
+        var cornerLen = Math.min(det.w, det.h) * 0.1;
+        ctx.lineWidth = 4;
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(det.x, det.y + cornerLen); ctx.lineTo(det.x, det.y); ctx.lineTo(det.x + cornerLen, det.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(det.x + det.w - cornerLen, det.y); ctx.lineTo(det.x + det.w, det.y); ctx.lineTo(det.x + det.w, det.y + cornerLen); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(det.x, det.y + det.h - cornerLen); ctx.lineTo(det.x, det.y + det.h); ctx.lineTo(det.x + cornerLen, det.y + det.h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(det.x + det.w - cornerLen, det.y + det.h); ctx.lineTo(det.x + det.w, det.y + det.h); ctx.lineTo(det.x + det.w, det.y + det.h - cornerLen); ctx.stroke();
+      }
+
+      // Label
+      ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
+      var classLabel = YOLO_CLASS_LABELS[det.className] || det.className;
+      var label = classLabel + ' (' + (conf * 100).toFixed(0) + '%)';
+      var labelW = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(det.x, det.y - 22, labelW + 10, 20);
+      ctx.fillStyle = color;
+      ctx.fillText(label, det.x + 5, det.y - 6);
+    }
+  } else if (result.detected && result.bestCandidate) {
+    // Fallback edge detection overlay
     var c = result.bestCandidate;
     var conf = c.confidence;
-
     var color;
     if (conf > 0.65) color = '#3fb950';
     else if (conf > 0.45) color = '#d29922';
@@ -2316,16 +2579,13 @@ function drawCardOverlay(result) {
     ctx.setLineDash([]);
     ctx.strokeRect(c.x, c.y, c.w, c.h);
 
-    // Corner markers
     var cornerLen = Math.min(c.w, c.h) * 0.1;
     ctx.lineWidth = 4;
-    ctx.strokeStyle = color;
     ctx.beginPath(); ctx.moveTo(c.x, c.y + cornerLen); ctx.lineTo(c.x, c.y); ctx.lineTo(c.x + cornerLen, c.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(c.x + c.w - cornerLen, c.y); ctx.lineTo(c.x + c.w, c.y); ctx.lineTo(c.x + c.w, c.y + cornerLen); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(c.x, c.y + c.h - cornerLen); ctx.lineTo(c.x, c.y + c.h); ctx.lineTo(c.x + cornerLen, c.y + c.h); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(c.x + c.w - cornerLen, c.y + c.h); ctx.lineTo(c.x + c.w, c.y + c.h); ctx.lineTo(c.x + c.w, c.y + c.h - cornerLen); ctx.stroke();
 
-    // Label
     ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
     var label = result.cardType + ' (' + (conf * 100).toFixed(0) + '%)';
     var labelW = ctx.measureText(label).width;
@@ -2344,14 +2604,16 @@ function updateCardStats(result) {
   document.getElementById('cardStat-confidence').textContent = result.bestCandidate
     ? (result.bestCandidate.confidence * 100).toFixed(1) + '%' : '--';
   document.getElementById('cardStat-time').textContent = formatMs(result.elapsed);
-  document.getElementById('cardStat-ratio').textContent = result.bestCandidate
-    ? result.bestCandidate.aspectRatio.toFixed(3) : '--';
+  var method = result.method || 'Edge Detection';
+  document.getElementById('cardStat-method').textContent = method;
+  document.getElementById('cardStat-method').style.color = method === 'Client YOLO' ? 'var(--green)' : 'var(--yellow)';
   document.getElementById('cardStat-area').textContent = result.bestCandidate
     ? (result.bestCandidate.areaFraction * 100).toFixed(1) + '% of frame' : '--';
 
+  var methodTag = method === 'Client YOLO' ? '[YOLO] ' : '[Edge] ';
   document.getElementById('cardOverlay').textContent = result.detected
-    ? result.cardType + ' (' + (result.bestCandidate.confidence * 100).toFixed(0) + '%) — ' + formatMs(result.elapsed)
-    : 'No card detected — ' + formatMs(result.elapsed);
+    ? methodTag + result.cardType + ' (' + (result.bestCandidate.confidence * 100).toFixed(0) + '%) — ' + formatMs(result.elapsed)
+    : methodTag + 'No card detected — ' + formatMs(result.elapsed);
 }
 
 function cropDetectedCard(result) {
@@ -2376,7 +2638,13 @@ async function captureAndDetectCard() {
   document.getElementById('cardOverlay').textContent = 'Detecting...';
   document.getElementById('cardDetectBtn').disabled = true;
 
-  var result = runCardDetection(video);
+  var result;
+  if (cardModelLoaded) {
+    result = await runYoloDetection(video);
+  } else {
+    result = runCardDetection(video);
+  }
+
   drawCardOverlay(result);
   updateCardStats(result);
 
@@ -2386,55 +2654,61 @@ async function captureAndDetectCard() {
 
   document.getElementById('cardDetectBtn').disabled = false;
 
+  var method = result.method || 'Edge Detection';
   var detailLines = [
     result.detected ? 'CARD DETECTED!' : 'No card detected.',
+    'Method: ' + method,
     'Processing time: ' + formatMs(result.elapsed) + ' (client-side)',
-    'Candidates found: ' + result.candidateCount,
+    'Detections: ' + result.candidateCount,
   ];
   if (result.bestCandidate) {
-    detailLines.push('Best candidate:');
+    detailLines.push('Best detection:');
     detailLines.push('  Bounding box: (' + result.bestCandidate.x + ', ' + result.bestCandidate.y + ') ' + result.bestCandidate.w + 'x' + result.bestCandidate.h);
-    detailLines.push('  Aspect ratio: ' + result.bestCandidate.aspectRatio.toFixed(3) + ' (target: ' + CARD_ASPECT_RATIO.toFixed(3) + ')');
-    detailLines.push('  Edge density: ' + (result.bestCandidate.edgeDensity * 100).toFixed(1) + '%');
+    if (result.bestCandidate.className) {
+      detailLines.push('  Class: ' + result.bestCandidate.className);
+    }
     detailLines.push('  Confidence: ' + (result.bestCandidate.confidence * 100).toFixed(1) + '%');
     detailLines.push('  Card type: ' + result.cardType);
     detailLines.push('  Area: ' + (result.bestCandidate.areaFraction * 100).toFixed(1) + '% of frame');
   }
   showResult('cardDetectResult', detailLines.join('\n'), result.detected);
 
-  // Also try server-side YOLO detection (more accurate for card TYPE classification)
-  var token = getToken();
-  if (token) {
-    var c = document.createElement('canvas');
-    c.width = video.videoWidth; c.height = video.videoHeight;
-    c.getContext('2d').drawImage(video, 0, 0);
-    c.toBlob(async function(blob) {
-      var formData = new FormData();
-      formData.append('file', blob, 'card.jpg');
-      try {
-        var res = await fetch(getApiUrl() + '/api/v1/biometric/card-detect', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + token },
-          body: formData
-        });
-        var data = await res.json().catch(function() { return null; });
-        addLogEntry('POST', '/api/v1/biometric/card-detect', res.status, 0, '(card image)', data);
-        if (data && data.detected) {
-          var cardNames = { 'tc_kimlik': 'Turkish ID (TC Kimlik)', 'pasaport': 'Passport', 'ehliyet': "Driver's License", 'ogrenci_karti': 'Student Card', 'akademisyen_karti': 'Academic Card' };
-          showResult('cardDetectResult',
-            'SERVER YOLO DETECTED: ' + (cardNames[data.class_name] || data.class_name) +
-            '\nConfidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%' +
-            '\nClass: ' + data.class_name + ' (ID: ' + data.class_id + ')', true);
-          document.getElementById('cardStat-detected').textContent = 'YES (YOLO)';
-          document.getElementById('cardStat-detected').style.color = 'var(--green)';
-          document.getElementById('cardStat-type').textContent = cardNames[data.class_name] || data.class_name;
-        } else if (data && !data.detected) {
-          showResult('cardDetectResult', 'Server YOLO: No card detected in this frame.', false);
+  // If YOLO model not loaded, also try server-side YOLO as fallback
+  if (!cardModelLoaded) {
+    var token = getToken();
+    if (token) {
+      var c = document.createElement('canvas');
+      c.width = video.videoWidth; c.height = video.videoHeight;
+      c.getContext('2d').drawImage(video, 0, 0);
+      c.toBlob(async function(blob) {
+        var formData = new FormData();
+        formData.append('file', blob, 'card.jpg');
+        try {
+          var res = await fetch(getApiUrl() + '/api/v1/biometric/card-detect', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+          });
+          var data = await res.json().catch(function() { return null; });
+          addLogEntry('POST', '/api/v1/biometric/card-detect', res.status, 0, '(card image)', data);
+          if (data && data.detected) {
+            showResult('cardDetectResult',
+              'SERVER YOLO DETECTED: ' + (YOLO_CLASS_LABELS[data.class_name] || data.class_name) +
+              '\nConfidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%' +
+              '\nClass: ' + data.class_name + ' (ID: ' + data.class_id + ')', true);
+            document.getElementById('cardStat-detected').textContent = 'YES (Server YOLO)';
+            document.getElementById('cardStat-detected').style.color = 'var(--green)';
+            document.getElementById('cardStat-type').textContent = YOLO_CLASS_LABELS[data.class_name] || data.class_name;
+            document.getElementById('cardStat-method').textContent = 'Server YOLO';
+            document.getElementById('cardStat-method').style.color = 'var(--yellow)';
+          } else if (data && !data.detected) {
+            showResult('cardDetectResult', 'Server YOLO: No card detected in this frame.', false);
+          }
+        } catch (e) {
+          // Server detection failed silently — client-side result already shown
         }
-      } catch (e) {
-        // Server detection failed silently — client-side result already shown
-      }
-    }, 'image/jpeg', 0.92);
+      }, 'image/jpeg', 0.92);
+    }
   }
 }
 
