@@ -1,52 +1,117 @@
 # FIVUCSAS — Comprehensive Production Roadmap V2
 
-> **Created**: 2026-03-17 | **Revised**: 2026-03-17
+> **Created**: 2026-03-17 | **Revised**: 2026-03-18
 > **Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
 > **Philosophy**: Browser handles everything it can. What it can't → client-app acts as authenticator bridge.
 > **Server**: CPU-only (no GPU needed) — Hetzner VPS + Hostinger
 
 ---
 
-## Session 2026-03-17/18 Results
+## Session 2026-03-17/18 FINAL Results
 
 ### Completed:
-- **Auth-test page**: 11 sections + client-side YOLO card detection (97.1% tc_kimlik)
-- **Face**: enroll/verify/search + liveness puzzle (100% client, 95% server) + bank enrollment (3-angle fusion) + quality assessment + 512-dim landmark embedding + 640px resize
-- **Voice**: enroll/verify/search with centroid, Resemblyzer 256-dim, WAV conversion in browser
-- **NFC**: integrated into client-apps (11,089 lines, BAC/APDU/SecureMessaging)
-- **Card detection**: YOLO model runs in browser via ONNX Runtime Web (97.1% accuracy, ~7s/frame WASM)
+- **Auth-test page**: 11 sections + client-side YOLO card detection (97.1% browser, 94.8% server)
+- **Face**: complete pipeline — enroll/verify/search/liveness/bank/quality/embedding (0.9-1.5s)
+- **Voice**: complete pipeline — enroll/verify/search, WAV conversion in browser, Resemblyzer 256-dim (490-585ms)
+- **NFC**: V22 migration, 5 REST endpoints (enroll/verify/search/delete/list), client-apps integration (11,089 lines)
+- **Card detection**: YOLO ONNX runs in browser (99MB model, ~7s/frame WASM) + server fallback
+- **Client-apps**: voice/OTP/TOTP/analytics screens added (39 files, 2789 lines), desktop polished, APK GREEN
+- **Web-app**: CardDetectionPage + FaceSearchPage + React hooks ported (useCardDetection, useFaceSearch)
+- **Security**: SecurityHeaders, AntiReplayFilter, rate limiting re-enabled
+- **Feature branch**: `feature/client-side-ml` merged to master
+- **Docs**: FRONTEND_COMPARISON_REPORT.md, CLIENT_SIDE_ML_REPORT.md created
+- **Biometric-processor**: deployed on Hetzner, quality-weighted centroids, largest-face selection
 - **FP-Embedded**: confirmed on mobile phone (WebAuthn)
 - **QR scanner**: working (html5-qrcode + debounce)
 - **Email OTP + TOTP (QR code)**: working
-- **Web-app**: enrollment page + secondary auth + liveness/bank/quality/voice React hooks + 22 UI/UX fixes
-- **Client-apps**: complete overhaul — all mocks removed (18 files), profile/settings/password/fingerprint fixed, all DTOs corrected, ErrorMapper for 14 ViewModels, APK GREEN
-- **Biometric-processor**: deployed on Hetzner, voice auth, quality-weighted centroids, largest-face selection
-- **CLIENT_SIDE_ML_REPORT.md + FRONTEND_COMPARISON_REPORT.md** created
 
-### Feature Branch:
-`feature/client-side-ml` with 20+ commits ready to merge:
-- Client-side quality assessment (Canvas JS)
-- Client-side YOLO card detection (ONNX Runtime Web)
-- Face embedding from landmarks (512-dim)
-- Hybrid liveness scoring
-- Voice WAV conversion (Web Audio API)
-- All refinements and bug fixes
+### Stats:
+- **Auth-test**: 3302 lines (app.js), 11 auth method sections + YOLO card detection
+- **Web-app**: 10 auth step components, 17 pages, 8 custom hooks
+- **Client-apps**: 31 Android screens, 9 desktop screens, 18 ViewModels, 382-line VoiceEnrollScreen
+- **Backend**: 132 endpoints across 16 controllers, 10 auth handlers, 18 Flyway migrations (V1-V18)
+- **Biometric-processor**: 27 route files, face/voice/fingerprint(stub)/card endpoints
 
-### Known Issues:
-- YOLO WASM inference: ~7s/frame (need YOLOv8n nano model for real-time, or WebGPU)
-- Client-apps: voice auth, OTP, liveness, analytics not yet implemented (70% complete)
-- Web-app: face search, card detection not ported to React yet
-- Feature branch not merged to master yet
+---
 
-### Next Steps:
-1. Merge `feature/client-side-ml` → master (after verification)
-2. Train YOLOv8n (nano) with same dataset for real-time browser card detection
-3. Implement client-apps missing features: voice, OTP, TOTP, liveness, analytics
-4. Port card detection + face search to web-app React
-5. NFC card enrollment (register card → verify → who is this)
-6. Export MobileFaceNet ONNX for browser face embedding (replace landmark-based)
-7. Client-apps comprehensive testing on real devices
-8. Web-app E2E tests for new features
+## Remaining Work for 100% Coverage
+
+### Coverage Matrix (as of 2026-03-18)
+
+| Auth Method | Auth-Test | Web-App | Client-Apps | Backend | BP |
+|-------------|-----------|---------|-------------|---------|-----|
+| Password | DONE | DONE | DONE | DONE | N/A |
+| Face Enroll | DONE | DONE (step) | DONE (BiometricEnrollScreen) | DONE | DONE |
+| Face Verify | DONE | DONE (step) | DONE (BiometricVerifyScreen) | DONE | DONE |
+| Face Search | DONE | DONE (FaceSearchPage) | DONE (IdentifyTenantScreen) | DONE | DONE |
+| Face Liveness | DONE | DONE (hooks) | MISSING | DONE | DONE |
+| Face Bank Enroll | DONE | DONE (hook) | MISSING | DONE | DONE |
+| Voice Enroll | DONE | DONE (step) | DONE (VoiceEnrollScreen) | DONE | DONE |
+| Voice Verify | DONE | DONE (step) | MISSING (screen) | DONE | DONE |
+| Voice Search | DONE | MISSING (no page) | MISSING | DONE | DONE |
+| NFC Read | DONE | DONE (step) | DONE (NfcReadScreen) | DONE (5 endpoints) | N/A |
+| FP-Embedded | DONE | DONE (step+WebAuthn) | DONE (FingerprintAuthenticator) | DONE (StepUp) | N/A |
+| FP-External | N/A | N/A | N/A | Stub | Stub (501) |
+| QR Code | DONE | DONE (step) | DONE (QrLoginScanScreen) | DONE | N/A |
+| Email OTP | DONE | DONE (step) | DONE (EmailOtpScreen) | DONE | N/A |
+| TOTP | DONE | DONE (step+settings) | DONE (TotpEnrollScreen) | DONE | N/A |
+| SMS OTP | DONE | DONE (step) | DONE (SmsOtpScreen) | DONE (Twilio ready) | N/A |
+| Hardware Token | DONE | DONE (step) | N/A (cross-platform) | DONE (WebAuthn) | N/A |
+| Card Detection | DONE (YOLO) | DONE (CardDetectionPage) | MISSING | DONE | DONE |
+| NFC Auth Flow | DONE (browser) | DONE (step) | DONE (read) | STUB (returns failure) | N/A |
+
+**Coverage %:**
+- Auth-test: 100% (reference implementation)
+- Web-app: ~90% (missing voice search page, liveness puzzle page as standalone)
+- Client-apps: ~80% (missing voice verify, face liveness, bank enroll, card detection)
+- Backend: ~95% (NfcDocumentAuthHandler stubbed, FP-External stub)
+- Biometric-processor: ~95% (fingerprint endpoints return 501)
+
+### Specific Remaining Items
+
+#### P0 (Must-have for demo)
+
+| # | Item | Files to Change | Effort |
+|---|------|----------------|--------|
+| 1 | **NfcDocumentAuthHandler**: Currently always returns failure. Wire it to NfcController's verify endpoint so NFC cards enrolled via REST can be used in auth flows | `identity-core-api/.../handler/NfcDocumentAuthHandler.java` | Small |
+| 2 | **WebAuthn registration endpoint**: FingerprintStep and HardwareKeyStep do client-side WebAuthn but there's no backend endpoint to save the credential. Need `POST /api/v1/webauthn/register` that stores to `webauthn_credentials` table (V18 migration exists) | `identity-core-api` — new WebAuthnController.java or extend StepUpController | Medium |
+| 3 | **WebAuthn assertion endpoint**: Need `POST /api/v1/webauthn/authenticate` to verify assertions during login flow | Same controller as #2 | Medium |
+
+#### P1 (Should-have for completeness)
+
+| # | Item | Files to Change | Effort |
+|---|------|----------------|--------|
+| 4 | **Client-apps: Voice verify screen** — VoiceEnrollScreen exists (382 lines) but no VoiceVerifyScreen for login-time voice verification | `client-apps/androidApp/.../screen/VoiceVerifyScreen.kt` (new), wire in navigation | Small |
+| 5 | **Client-apps: Face liveness screen** — BiometricEnrollScreen captures face but doesn't do liveness puzzle (head turn, blink) like auth-test does | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add liveness challenge UI | Medium |
+| 6 | **Client-apps: Card detection** — No visual card detection in mobile app (only NFC). Could use CameraX + ML Kit or server YOLO fallback | New screen + ViewModel | Large |
+| 7 | **Web-app: Voice search page** — useFaceSearch hook exists but no useVoiceSearch hook or VoiceSearchPage for 1:N speaker identification | `web-app/src/hooks/useVoiceSearch.ts` + `web-app/src/pages/VoiceSearchPage.tsx` (new) | Small |
+| 8 | **Client-apps: Push notification (FCM)** — No Firebase Cloud Messaging integration for push-based auth approval | `client-apps/androidApp/build.gradle.kts` + new FCM service + manifest | Large |
+| 9 | **Web-app: Enrollment page NFC flow** — EnrollmentPage lists NFC_DOCUMENT but clicking it shows generic "requires mobile" message; should show QR code to open app | `web-app/.../EnrollmentPage.tsx` — improve NFC enrollment UX | Small |
+| 10 | **Deploy V18 migration** — webauthn_credentials table migration exists in source but may not be applied on Hetzner | SSH to Hetzner, restart identity-core-api to apply V18 | Small |
+
+#### P2 (Nice-to-have improvements)
+
+| # | Item | Files to Change | Effort |
+|---|------|----------------|--------|
+| 11 | **YOLO nano model** — Current 99MB model takes ~7s/frame in WASM. Train YOLOv8n (6MB) for real-time detection | Training script + replace model file in auth-test | Large |
+| 12 | **MobileFaceNet ONNX** — Replace landmark-based 512-dim embedding with proper MobileFaceNet ONNX model in browser | Export model + update auth-test/app.js embedding code | Medium |
+| 13 | **Web-app E2E tests** — CardDetectionPage and FaceSearchPage have no Playwright tests | `web-app/e2e/card-detection.spec.ts`, `face-search.spec.ts` (new) | Medium |
+| 14 | **Client-apps unit tests** — Only 3 test files exist (AdminViewModelTest, KioskViewModelTest, LoginViewModelTest) | `client-apps/shared/src/commonTest/` — add tests for all 18 ViewModels | Large |
+| 15 | **SMS OTP activation** — Twilio account needs activation and test phone number | Twilio dashboard + `.env.prod` update | Small |
+| 16 | **Hardware token E2E test** — Needs physical YubiKey to verify full flow | Manual testing only | Small |
+| 17 | **Client-apps: bank enrollment** — No 3-angle face capture (frontal + left + right) like auth-test has | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add multi-angle capture | Medium |
+| 18 | **iOS target** — client-apps has no iosMain implementation yet | `client-apps/iosApp/` — Swift/SwiftUI wrappers, Core NFC, LocalAuthentication | Large |
+
+#### P3 (Future/stretch)
+
+| # | Item | Files to Change | Effort |
+|---|------|----------------|--------|
+| 19 | **FP-External (USB scanner)** — BP fingerprint endpoints return 501. Need SecuGen WebAPI or similar vendor bridge | `biometric-processor/app/api/routes/fingerprint.py` + vendor SDK | Large |
+| 20 | **Cloudflare Tunnel** — Persistent tunnel for biometric-processor GPU access from laptop | `/opt/projects/fivucsas/scripts/deploy/` — systemd service | Medium |
+| 21 | **Route guards** — Web-app admin pages lack proper role-based route guards | `web-app/src/App.tsx` + new ProtectedRoute component | Medium |
+| 22 | **CSP hardening** — Current CSP allows CDN resources broadly; tighten to specific hashes | `identity-core-api/.../SecurityHeadersConfig.java` | Small |
+| 23 | **Production pen test** — Security audit of all endpoints | External tool or manual | Large |
+| 24 | **Desktop NFC** — javax.smartcardio integration for USB NFC readers on desktop | `client-apps/desktopApp/` — JNA/smartcardio wrappers | Large |
 
 ---
 
@@ -342,15 +407,16 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [x] Production test — 0.9-1.5s latency
 - [ ] Future: Client-side ONNX embedding (MobileFaceNet, browser-side)
 
-### Phase 2: NFC — Integrate Existing Readers (Week 2-3)
+### Phase 2: NFC — Integrate Existing Readers (Week 2-3) — ✅ COMPLETE
 **Goal**: NFC eID reading via client-app, NDEF via browser.
 
-- [ ] Copy `UniversalNfcReader` classes → `client-apps/shared/` (platform: androidMain)
-- [ ] Create `NfcReadScreen.kt` with MRZ input + NFC scan
-- [ ] Create `NfcAuthHandler` result → identity-core-api verification
-- [ ] Add identity-core-api endpoint: `POST /auth/nfc/verify-eid`
+- [x] Copy `UniversalNfcReader` classes → `client-apps/` (11,089 lines, 43 files)
+- [x] Create `NfcReadScreen.kt` with MRZ input + NFC scan (642 lines)
+- [x] Create NfcController with 5 REST endpoints (enroll/verify/search/delete/list)
+- [x] V22 Flyway migration: `nfc_card_enrollments` table
+- [x] Browser NDEF fallback in auth-test (Chrome Android)
 - [ ] Web browser: "Scan with FIVUCSAS app" flow (QR → app → push result)
-- [ ] Browser NDEF fallback for simple NFC tags (Chrome Android)
+- [ ] NfcDocumentAuthHandler: wire to NfcController verify (currently stubbed)
 
 ### Phase 3: Voice — Full Pipeline (Week 3-4) — ✅ COMPLETE
 **Goal**: Voice enrollment + verification with pgvector storage.
