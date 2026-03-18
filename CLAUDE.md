@@ -319,21 +319,25 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ **Step-up unit tests** (20 tests: 8 StepUpChallengeServiceTest + 12 StepUpAuthServiceTest)
 
 ### Recently Completed (March 2026)
-- ✅ **Auth-test page** live at `/auth-test/` (ica-fivucsas.rollingcatsoftware.com/auth-test/)
+- ✅ **Auth-test page** live at `/auth-test/` — 11 sections complete
 - ✅ **biometric-processor deployed** on Hetzner (CPU mode, biometric-api container, port 8001)
-- ✅ **Voice auth implemented** — Resemblyzer 256-dim, enroll/verify/search/centroid, 490-585ms
-- ✅ **Face auth production** — enroll/verify/search/centroid, 0.9-1.5s
-- ✅ **Card detection endpoint** live (YOLO-based)
+- ✅ **Voice auth implemented** — Resemblyzer 256-dim, quality-weighted centroids, 490-585ms
+- ✅ **Face auth production** — enroll/verify/search/centroid, face cropping, liveness, 0.9-1.5s
 - ✅ **NFC integrated** into client-apps (11,089 lines, 43 files)
-- ✅ **Login/Register pages**: 22 UI/UX fixes deployed (see `web-app/UI_UX_AUDIT_LOGIN_REGISTER.md`)
-- ✅ **Client-apps audit** report at `client-apps/PRODUCTION_AUDIT.md` (5.6/10, P0 fixes needed)
-- ✅ **7 of 12 auth methods** working in production
+- ✅ **QR scanner** working (html5-qrcode + debounce)
+- ✅ **Email OTP** working
+- ✅ **TOTP** working with QR code enrollment
+- ✅ **CLIENT_SIDE_ML_REPORT.md** created — comprehensive client-side ML migration plan
+- ✅ **Android build CI** added and GREEN
+- ✅ **All refinements deployed** (face cropping, quality-weighted centroid, liveness)
+- ✅ **Client-apps** upgraded to ~9/10 (P0 fixed, mocks removed, i18n, 6 new screens)
+- ✅ **Login/Register pages**: 22 UI/UX fixes deployed
+- ✅ **10 of 12 auth methods** working in production
 
 ### In Progress
-- Mobile/Desktop Apps (70%) - Production URLs configured, 7 test files exist (need Android SDK to run)
-- QR Code scanner ESM issue fix
-- Email OTP / TOTP E2E verification
-- Client-apps P0 fixes from audit
+- Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
+- Mobile/Desktop Apps (70%) - Production URLs configured, Android APK GREEN
+- Card detection: server YOLO fails on CPU, migrating to client-side ONNX
 
 ### Next Steps (Priority Order)
 1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done (Feb 19, all 10 auth handlers live)

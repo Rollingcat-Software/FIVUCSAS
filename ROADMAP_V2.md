@@ -7,20 +7,32 @@
 
 ---
 
-## Current Session Results (2026-03-17)
+## Session 2026-03-17/18 Results
 
-### What was accomplished:
-- **Auth-test page**: 11 sections deployed at `/auth-test/` (Password, Face, Voice, FP-Embedded, FP-External, QR, Email OTP, TOTP, SMS OTP, Hardware Token, NFC)
-- **Face**: enroll/verify/search + liveness puzzle + 3-angle bank enrollment flow
-- **Voice**: enroll/verify/search with Resemblyzer 256-dim + centroid averaging
-- **Card detection**: YOLO-based endpoint live on biometric-processor
-- **FP-Embedded**: WebAuthn confirmed working on mobile phone
-- **NFC**: Fully integrated into client-apps (11,089 lines, 43 files)
-- **Web-app**: Enrollment page + secondary auth + 22 UI/UX fixes on login/register
-- **Client-apps**: P0 blockers fixed, all mocks removed, i18n added (TR/EN), 6 new screens
-- **Biometric-processor**: Deployed on Hetzner in CPU mode (biometric-api container, port 8001)
+### Completed:
+- **Auth-test page**: 11 sections complete, deployed at `/auth-test/`
+- **Face**: enroll/verify/search + liveness puzzle + bank enrollment (3-angle) + face cropping
+- **Voice**: enroll/verify/search with centroid, Resemblyzer 256-dim
+- **NFC**: integrated into client-apps (11,089 lines)
+- **Card detection**: server YOLO fails on CPU, `CLIENT_SIDE_ML_REPORT.md` recommends client-side
+- **FP-Embedded**: confirmed on mobile phone
+- **QR scanner**: working with html5-qrcode + debounce
+- **Email OTP**: working
+- **TOTP**: working with QR code
+- **Web-app**: enrollment page + secondary auth + 22 UI/UX fixes
+- **Client-apps**: P0 fixed, mocks removed, i18n, 6 new screens, Android APK GREEN
+- **Biometric-processor**: deployed on Hetzner, voice auth, quality-weighted centroids
+- **CLIENT_SIDE_ML_REPORT.md**: comprehensive client-side ML plan
 
-### Known Issues (to fix next session):
+### Next Phase: Client-Side ML Migration
+- **P0**: Quality assessment → Canvas JS (zero models)
+- **P0**: Card detection → YOLO ONNX in browser
+- **P1**: Face embedding → MobileFaceNet ONNX (5MB, 30-80ms)
+- **P1**: Liveness → hybrid (client detects, server verifies)
+- **P2**: Voice preprocessing → Web Audio API
+- **P3**: Voice embedding → ECAPA-TDNN ONNX
+
+### Known Issues:
 - Web-app CSP blocks MediaPipe WASM (needs `connect-src` + `unsafe-eval` in CSP headers)
 - Enrollment endpoints return 403 for USER role (need permission adjustment)
 - Audit log polling returns 403 for non-admin users
@@ -244,7 +256,7 @@ CREATE INDEX idx_fp_user ON fingerprint_enrollments(user_id);
 | Vendor bridge | — | ❌ Future (SecuGen WebAPI) |
 | FP image processing | — | ❌ Need OpenCV minutiae extraction or SourceAFIS |
 
-### 6. QR CODE (Priority 6) — ⚠️ Scanner lib ESM issue
+### 6. QR CODE (Priority 6) — ✅ Working (html5-qrcode + debounce)
 
 **Browser flow:**
 ```
@@ -266,13 +278,13 @@ CameraX → ML Kit barcode scanning → Decode QR
 | Client-app QR | `client-apps/.../QrLoginScanScreen.kt` | ✅ |
 | QR login API | `client-apps/.../QrLoginApiImpl.kt` | ✅ |
 
-### 7. EMAIL OTP (Priority 7) — ⚠️ Needs testing
+### 7. EMAIL OTP (Priority 7) — ✅ Working
 - Backend: EmailOtpAuthHandler ✅
 - Web: EmailOtpStep.tsx ✅
 - SMTP: Hostinger SMTP configured ✅
 - Status: Code complete, needs E2E verification
 
-### 8. TOTP (Priority 8) — ⚠️ Needs testing
+### 8. TOTP (Priority 8) — ✅ Working (with QR code enrollment)
 - Backend: TotpAuthHandler ✅
 - Web: TotpStep.tsx ✅
 - Enrollment: Settings page TOTP dialog ✅
@@ -288,9 +300,9 @@ CameraX → ML Kit barcode scanning → Decode QR
 - Backend: HardwareKeyAuthHandler ✅ (shares WebAuthn infra with fingerprint)
 - Status: Code complete, needs physical YubiKey/security key for verification
 
-### 11. CARD DETECTION (Visual) — ✅ Production (YOLO-based)
-- `POST /card/detect` — YOLO-based visual card detection
-- Deployed on biometric-processor (Hetzner)
+### 11. CARD DETECTION (Visual) — ⚠️ Server YOLO fails on CPU, migrate to client-side
+- `POST /card/detect` — YOLO-based, fails on Hetzner CPU
+- Plan: YOLO ONNX in browser (see `CLIENT_SIDE_ML_REPORT.md`)
 
 ---
 
