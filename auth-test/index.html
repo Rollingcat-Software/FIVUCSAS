@@ -102,6 +102,7 @@
         <button class="btn btn-danger" id="btnFaceDelete">Delete Enrollment</button>
         <button class="btn" id="btnLivenessPuzzle" disabled style="background:var(--orange,#d29922);color:#fff;">Liveness Puzzle</button>
         <button class="btn" id="btnBankEnroll" disabled style="background:#1f6feb;color:#fff;">Bank Enrollment (3 angles)</button>
+        <button class="btn" id="btnFaceEmbedding" disabled style="background:#1a7f37;color:#fff;">Compute Embedding</button>
         <button class="btn btn-danger" id="faceStopBtn" disabled>Stop</button>
       </div>
       <div class="media-container" id="faceContainer" style="display:none;">
@@ -117,8 +118,15 @@
         <div class="stat"><div class="stat-label">Quality</div><div class="stat-value" id="faceStat-quality">--</div></div>
         <div class="stat"><div class="stat-label">Blur</div><div class="stat-value" id="faceStat-blur">--</div></div>
         <div class="stat"><div class="stat-label">Lighting</div><div class="stat-value" id="faceStat-lighting">--</div></div>
+        <div class="stat"><div class="stat-label">Liveness</div><div class="stat-value" id="faceStat-liveness">--</div></div>
       </div>
-      <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion.</p>
+      <div class="stats" id="embeddingStats" style="display:none;">
+        <div class="stat"><div class="stat-label">Embedding</div><div class="stat-value" id="embStat-dim">--</div></div>
+        <div class="stat"><div class="stat-label">Compute Time</div><div class="stat-value" id="embStat-time">--</div></div>
+        <div class="stat"><div class="stat-label">Similarity</div><div class="stat-value" id="embStat-similarity">--</div></div>
+        <div class="stat"><div class="stat-label">First 5 Values</div><div class="stat-value" id="embStat-preview" style="font-size:0.65rem;">--</div></div>
+      </div>
+      <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion. Compute Embedding extracts a 512-dim face descriptor from landmark geometry (client-side, no server needed).</p>
       <div class="result-box" id="faceResult" style="display:none;"></div>
     </div>
   </div>
@@ -169,9 +177,12 @@
       <div class="stats" id="voiceStats" style="display:none;">
         <div class="stat"><div class="stat-label">Duration</div><div class="stat-value" id="voiceStat-duration">--</div></div>
         <div class="stat"><div class="stat-label">Sample Rate</div><div class="stat-value" id="voiceStat-samplerate">--</div></div>
-        <div class="stat"><div class="stat-label">Size</div><div class="stat-value" id="voiceStat-size">--</div></div>
+        <div class="stat"><div class="stat-label">Size (Original)</div><div class="stat-value" id="voiceStat-size">--</div></div>
+        <div class="stat"><div class="stat-label">Size (WAV 16kHz)</div><div class="stat-value" id="voiceStat-wavsize">--</div></div>
+        <div class="stat"><div class="stat-label">Conversion</div><div class="stat-value" id="voiceStat-conversion">--</div></div>
+        <div class="stat"><div class="stat-label">Format</div><div class="stat-value" id="voiceStat-format">--</div></div>
       </div>
-      <p class="info-text">Record your voice, then click Enroll or Verify. Audio is sent as base64 WebM to the biometric processor for 256-dim speaker embedding extraction.</p>
+      <p class="info-text">Record your voice, then click Enroll or Verify. Audio is converted to WAV 16kHz mono in-browser (Web Audio API) before sending, eliminating server-side format conversion overhead.</p>
       <div class="result-box" id="voiceResult" style="display:none;"></div>
     </div>
   </div>

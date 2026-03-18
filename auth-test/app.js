@@ -701,7 +701,7 @@ function captureFace() {
       if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
     });
     var bbW = maxX - minX, bbH = maxY - minY;
-    var padX = bbW * 0.3, padY = bbH * 0.3;
+    var padX = bbW * 0.6, padY = bbH * 0.6;
     var cropX = Math.max(0, Math.floor(minX - padX));
     var cropY = Math.max(0, Math.floor(minY - padY));
     var cropW = Math.min(w - cropX, Math.ceil(bbW + padX * 2));
@@ -966,6 +966,65 @@ async function scanNfc() {
 
 // ── 4. Voice Recording ──────────────────────────────────────────────
 
+// ── WAV Conversion Helpers (Web Audio API) ──────────────────────────
+
+function writeString(view, offset, string) {
+  for (var i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+function createWavBuffer(samples, sampleRate) {
+  var buffer = new ArrayBuffer(44 + samples.length * 2);
+  var view = new DataView(buffer);
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  for (var i = 0; i < samples.length; i++) {
+    var s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buffer;
+}
+
+async function convertToWav16k(blob) {
+  var audioCtx = new AudioContext({ sampleRate: 16000 });
+  var arrayBuffer = await blob.arrayBuffer();
+  var audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  var channelData;
+  if (audioBuffer.numberOfChannels === 1) {
+    channelData = audioBuffer.getChannelData(0);
+  } else {
+    var ch0 = audioBuffer.getChannelData(0);
+    var ch1 = audioBuffer.getChannelData(1);
+    channelData = new Float32Array(ch0.length);
+    for (var i = 0; i < ch0.length; i++) {
+      channelData[i] = (ch0[i] + ch1[i]) / 2;
+    }
+  }
+  var wavBuffer = createWavBuffer(channelData, 16000);
+  audioCtx.close();
+  return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
+var canConvertWav = (function() {
+  try {
+    return typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined';
+  } catch (e) {
+    return false;
+  }
+})();
+
 var voiceRecorder = null;
 var voiceChunks = [];
 var voiceStream = null;
@@ -1009,21 +1068,75 @@ async function toggleVoiceRecording() {
       document.getElementById('voiceStats').style.display = 'grid';
 
       var duration = (performance.now() - voiceStartTime) / 1000;
+      var origSampleRate = voiceAudioCtx.sampleRate;
       document.getElementById('voiceStat-duration').textContent = duration.toFixed(1) + 's';
-      document.getElementById('voiceStat-samplerate').textContent = voiceAudioCtx.sampleRate + ' Hz';
+      document.getElementById('voiceStat-samplerate').textContent = origSampleRate + ' Hz';
       document.getElementById('voiceStat-size').textContent = formatBytes(blob.size);
 
-      var reader = new FileReader();
-      reader.onload = function() {
-        var base64 = reader.result.split(',')[1];
-        voiceBase64Data = base64;
-        showResult('voiceResult', 'Recording complete.\nBase64 length: ' + base64.length + ' chars\nReady for Enroll or Verify.', true);
-        // Enable enroll/verify buttons
-        document.getElementById('btnVoiceEnroll').disabled = false;
-        document.getElementById('btnVoiceVerify').disabled = false;
-        document.getElementById('btnVoiceSearch').disabled = false;
-      };
-      reader.readAsDataURL(blob);
+      // Try client-side WAV conversion (WebM -> WAV 16kHz mono)
+      if (canConvertWav) {
+        document.getElementById('voiceStat-conversion').textContent = 'Converting...';
+        document.getElementById('voiceStat-format').textContent = 'WebM -> WAV';
+        var convStart = performance.now();
+        convertToWav16k(blob).then(function(wavBlob) {
+          var convTime = performance.now() - convStart;
+          document.getElementById('voiceStat-wavsize').textContent = formatBytes(wavBlob.size);
+          document.getElementById('voiceStat-conversion').textContent = formatMs(convTime);
+          document.getElementById('voiceStat-format').textContent = 'WAV 16kHz mono';
+
+          // Read WAV as base64
+          var wavReader = new FileReader();
+          wavReader.onload = function() {
+            var base64 = wavReader.result.split(',')[1];
+            voiceBase64Data = base64;
+            showResult('voiceResult',
+              'Recording complete + converted to WAV.\n' +
+              'Original: WebM, ' + origSampleRate + 'Hz, ' + formatBytes(blob.size) + '\n' +
+              'Converted: WAV, 16kHz, mono, ' + formatBytes(wavBlob.size) + '\n' +
+              'Conversion time: ' + formatMs(convTime) + '\n' +
+              'Base64 length: ' + base64.length + ' chars\n' +
+              'Ready for Enroll or Verify.', true);
+            document.getElementById('btnVoiceEnroll').disabled = false;
+            document.getElementById('btnVoiceVerify').disabled = false;
+            document.getElementById('btnVoiceSearch').disabled = false;
+          };
+          wavReader.readAsDataURL(wavBlob);
+        }).catch(function(err) {
+          // Fallback: send WebM if conversion fails
+          console.warn('WAV conversion failed, falling back to WebM:', err);
+          document.getElementById('voiceStat-conversion').textContent = 'Failed (using WebM)';
+          document.getElementById('voiceStat-format').textContent = 'WebM (fallback)';
+          document.getElementById('voiceStat-wavsize').textContent = '--';
+          var reader = new FileReader();
+          reader.onload = function() {
+            var base64 = reader.result.split(',')[1];
+            voiceBase64Data = base64;
+            showResult('voiceResult',
+              'Recording complete (WAV conversion failed, using WebM).\n' +
+              'Format: WebM, ' + origSampleRate + 'Hz, ' + formatBytes(blob.size) + '\n' +
+              'Base64 length: ' + base64.length + ' chars\nReady for Enroll or Verify.', true);
+            document.getElementById('btnVoiceEnroll').disabled = false;
+            document.getElementById('btnVoiceVerify').disabled = false;
+            document.getElementById('btnVoiceSearch').disabled = false;
+          };
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        // No AudioContext support — send WebM as-is
+        document.getElementById('voiceStat-conversion').textContent = 'N/A (no AudioContext)';
+        document.getElementById('voiceStat-format').textContent = 'WebM (original)';
+        document.getElementById('voiceStat-wavsize').textContent = '--';
+        var reader = new FileReader();
+        reader.onload = function() {
+          var base64 = reader.result.split(',')[1];
+          voiceBase64Data = base64;
+          showResult('voiceResult', 'Recording complete.\nBase64 length: ' + base64.length + ' chars\nReady for Enroll or Verify.', true);
+          document.getElementById('btnVoiceEnroll').disabled = false;
+          document.getElementById('btnVoiceVerify').disabled = false;
+          document.getElementById('btnVoiceSearch').disabled = false;
+        };
+        reader.readAsDataURL(blob);
+      }
     };
 
     voiceRecorder.start();
@@ -2115,7 +2228,7 @@ function captureFrameAsBlob() {
         if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
       });
       var bbW = maxX - minX, bbH = maxY - minY;
-      var padX = bbW * 0.3, padY = bbH * 0.3;
+      var padX = bbW * 0.6, padY = bbH * 0.6;
       var cropX = Math.max(0, Math.floor(minX - padX));
       var cropY = Math.max(0, Math.floor(minY - padY));
       var cropW = Math.min(w - cropX, Math.ceil(bbW + padX * 2));
@@ -2174,9 +2287,10 @@ async function startLivenessPuzzle() {
     showResult('faceResult', 'Challenge received: ' + steps.length + ' steps. ID: ' + challengeId, true);
 
     var capturedFrames = [];
-    var allPassed = true;
+    var stepConfidences = [];
+    var stepResults = [];
 
-    // 2. Process each step
+    // 2. Process each step with client-side scoring
     for (var i = 0; i < steps.length; i++) {
       var step = steps[i];
       var action = step.action || step.type || '';
@@ -2187,21 +2301,32 @@ async function startLivenessPuzzle() {
       document.getElementById('faceOverlay').style.color = '#d29922';
       showResult('faceResult', 'Step ' + (i + 1) + '/' + steps.length + ': ' + instruction + ' (max ' + (duration / 1000) + 's)', true);
 
-      var detected = await waitForAction(action, duration);
-      if (detected) {
+      var actionResult = await waitForAction(action, duration);
+      var stepConfidence = actionResult.detected ? 1.0 : 0.3;
+      stepConfidences.push(stepConfidence);
+
+      if (actionResult.detected) {
         var frame = await captureFrameAsBlob();
         capturedFrames.push({ stepIndex: i, action: action, blob: frame });
+        var detectedSymbol = String.fromCharCode(10003); // checkmark
+        var stepMsg = 'Step ' + (i + 1) + ': ' + instruction + ' ' + detectedSymbol +
+          ' (detected in ' + (actionResult.elapsedMs / 1000).toFixed(1) + 's)' +
+          ' -- confidence: ' + stepConfidence.toFixed(1);
         document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' PASSED!';
         document.getElementById('faceOverlay').style.color = '#3fb950';
-        showResult('faceResult', 'Step ' + (i + 1) + ' (' + action + ') detected!', true);
+        showResult('faceResult', stepMsg, true);
+        stepResults.push({ action: action, detected: true, elapsed: actionResult.elapsedMs, confidence: stepConfidence });
       } else {
-        allPassed = false;
-        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' TIMEOUT';
-        document.getElementById('faceOverlay').style.color = '#f85149';
-        showResult('faceResult', 'Step ' + (i + 1) + ' (' + action + ') timed out.', false);
-        // Still capture a frame for server-side evaluation
         var frame2 = await captureFrameAsBlob();
         capturedFrames.push({ stepIndex: i, action: action, blob: frame2 });
+        var failSymbol = String.fromCharCode(10007); // X mark
+        var stepMsg2 = 'Step ' + (i + 1) + ': ' + instruction + ' ' + failSymbol +
+          ' (timed out)' +
+          ' -- confidence: ' + stepConfidence.toFixed(1);
+        document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' TIMEOUT';
+        document.getElementById('faceOverlay').style.color = '#f85149';
+        showResult('faceResult', stepMsg2, false);
+        stepResults.push({ action: action, detected: false, elapsed: actionResult.elapsedMs, confidence: stepConfidence });
       }
 
       // Brief pause between steps
@@ -2210,10 +2335,27 @@ async function startLivenessPuzzle() {
       }
     }
 
+    // 2b. Compute client-side liveness score
+    var clientScoreSum = 0;
+    for (var cs = 0; cs < stepConfidences.length; cs++) {
+      clientScoreSum += stepConfidences[cs];
+    }
+    var clientScore = stepConfidences.length > 0 ? clientScoreSum / stepConfidences.length : 0;
+    var clientScorePct = (clientScore * 100).toFixed(1);
+
+    showResult('faceResult', 'Client liveness score: ' + clientScorePct + '%', clientScore >= 0.6);
+
+    // Update liveness stat in face stats panel
+    var livenessStatEl = document.getElementById('faceStat-liveness');
+    if (livenessStatEl) {
+      livenessStatEl.textContent = clientScorePct + '%';
+      livenessStatEl.style.color = clientScore >= 0.6 ? 'var(--green)' : (clientScore >= 0.4 ? 'var(--yellow)' : 'var(--red)');
+    }
+
     // 3. Verify with server
     document.getElementById('faceOverlay').textContent = 'Verifying with server...';
     document.getElementById('faceOverlay').style.color = '#d29922';
-    showResult('faceResult', 'Sending ' + capturedFrames.length + ' frames for verification...', true);
+    showResult('faceResult', 'Sending ' + capturedFrames.length + ' frames for server verification...', true);
 
     var formData = new FormData();
     formData.append('challengeId', challengeId);
@@ -2233,18 +2375,35 @@ async function startLivenessPuzzle() {
     addLogEntry('POST', '/api/v1/enrollment/liveness/verify', verifyRes.status, elapsed, '(multipart: challengeId + frames)', verifyData);
 
     if (verifyRes.ok && verifyData) {
+      var serverScore = verifyData.score || verifyData.confidence || 0;
+      var serverScorePct = (serverScore * 100).toFixed(1);
       var passed = verifyData.passed || verifyData.alive || verifyData.liveness || false;
-      var score = verifyData.score || verifyData.confidence || 0;
-      document.getElementById('faceOverlay').textContent = passed ? 'LIVENESS PASSED!' : 'LIVENESS FAILED';
-      document.getElementById('faceOverlay').style.color = passed ? '#3fb950' : '#f85149';
-      showResult('faceResult',
-        (passed ? 'LIVENESS VERIFIED!' : 'LIVENESS FAILED') +
-        ' (Score: ' + (score * 100).toFixed(1) + '%, ' + formatMs(elapsed) + ')\n\n' +
-        JSON.stringify(verifyData, null, 2), passed);
+
+      // Show both client and server scores
+      var finalVerdict = (clientScore >= 0.6 && passed) ? 'PASSED' : 'FAILED';
+      var verdictSymbol = finalVerdict === 'PASSED' ? String.fromCharCode(10003) : String.fromCharCode(10007);
+      var hybridMsg = 'Client score: ' + clientScorePct + '%\n' +
+        'Server score: ' + serverScorePct + '% (' + formatMs(elapsed) + ')\n' +
+        'Final: ' + finalVerdict + ' ' + verdictSymbol;
+
+      document.getElementById('faceOverlay').textContent = finalVerdict === 'PASSED' ? 'LIVENESS PASSED!' : 'LIVENESS FAILED';
+      document.getElementById('faceOverlay').style.color = finalVerdict === 'PASSED' ? '#3fb950' : '#f85149';
+      showResult('faceResult', hybridMsg + '\n\n' + JSON.stringify(verifyData, null, 2), finalVerdict === 'PASSED');
+
+      // Update liveness stat with final hybrid score
+      if (livenessStatEl) {
+        var hybridScore = (clientScore * 0.4 + serverScore * 0.6);
+        var hybridPct = (hybridScore * 100).toFixed(1);
+        livenessStatEl.textContent = hybridPct + '% (C:' + clientScorePct + '% S:' + serverScorePct + '%)';
+        livenessStatEl.style.color = finalVerdict === 'PASSED' ? 'var(--green)' : 'var(--red)';
+      }
     } else {
-      document.getElementById('faceOverlay').textContent = 'Verification failed';
+      // Server verification failed, show client-only score
+      document.getElementById('faceOverlay').textContent = 'Server verification failed';
       document.getElementById('faceOverlay').style.color = '#f85149';
-      showResult('faceResult', 'Liveness verification failed (' + (verifyRes.status || 'ERR') + '): ' +
+      showResult('faceResult',
+        'Client score: ' + clientScorePct + '%\n' +
+        'Server verification failed (' + (verifyRes.status || 'ERR') + ')\n\n' +
         JSON.stringify(verifyData, null, 2), false);
     }
   } catch (e) {
@@ -2282,8 +2441,8 @@ function waitForAction(action, timeoutMs) {
     var requiredCount = 3; // Need 3 consecutive frames to confirm
 
     function check() {
-      if (!faceStream || !faceDetector) { resolve(false); return; }
-      if (performance.now() - startTime > timeoutMs) { resolve(false); return; }
+      if (!faceStream || !faceDetector) { resolve({ detected: false, elapsedMs: performance.now() - startTime }); return; }
+      if (performance.now() - startTime > timeoutMs) { resolve({ detected: false, elapsedMs: performance.now() - startTime }); return; }
 
       var video = document.getElementById('faceVideo');
       if (video.readyState < 2) {
@@ -2329,7 +2488,7 @@ function waitForAction(action, timeoutMs) {
           if (actionDetected) {
             detectedCount++;
             if (detectedCount >= requiredCount) {
-              resolve(true);
+              resolve({ detected: true, elapsedMs: performance.now() - startTime });
               return;
             }
           } else {
