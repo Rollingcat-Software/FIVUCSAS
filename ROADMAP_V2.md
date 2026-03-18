@@ -10,34 +10,43 @@
 ## Session 2026-03-17/18 Results
 
 ### Completed:
-- **Auth-test page**: 11 sections complete, deployed at `/auth-test/`
-- **Face**: enroll/verify/search + liveness puzzle + bank enrollment (3-angle) + face cropping
-- **Voice**: enroll/verify/search with centroid, Resemblyzer 256-dim
-- **NFC**: integrated into client-apps (11,089 lines)
-- **Card detection**: server YOLO fails on CPU, `CLIENT_SIDE_ML_REPORT.md` recommends client-side
-- **FP-Embedded**: confirmed on mobile phone
-- **QR scanner**: working with html5-qrcode + debounce
-- **Email OTP**: working
-- **TOTP**: working with QR code
-- **Web-app**: enrollment page + secondary auth + 22 UI/UX fixes
-- **Client-apps**: P0 fixed, mocks removed, i18n, 6 new screens, Android APK GREEN
-- **Biometric-processor**: deployed on Hetzner, voice auth, quality-weighted centroids
-- **CLIENT_SIDE_ML_REPORT.md**: comprehensive client-side ML plan
+- **Auth-test page**: 11 sections + client-side YOLO card detection (97.1% tc_kimlik)
+- **Face**: enroll/verify/search + liveness puzzle (100% client, 95% server) + bank enrollment (3-angle fusion) + quality assessment + 512-dim landmark embedding + 640px resize
+- **Voice**: enroll/verify/search with centroid, Resemblyzer 256-dim, WAV conversion in browser
+- **NFC**: integrated into client-apps (11,089 lines, BAC/APDU/SecureMessaging)
+- **Card detection**: YOLO model runs in browser via ONNX Runtime Web (97.1% accuracy, ~7s/frame WASM)
+- **FP-Embedded**: confirmed on mobile phone (WebAuthn)
+- **QR scanner**: working (html5-qrcode + debounce)
+- **Email OTP + TOTP (QR code)**: working
+- **Web-app**: enrollment page + secondary auth + liveness/bank/quality/voice React hooks + 22 UI/UX fixes
+- **Client-apps**: complete overhaul — all mocks removed (18 files), profile/settings/password/fingerprint fixed, all DTOs corrected, ErrorMapper for 14 ViewModels, APK GREEN
+- **Biometric-processor**: deployed on Hetzner, voice auth, quality-weighted centroids, largest-face selection
+- **CLIENT_SIDE_ML_REPORT.md + FRONTEND_COMPARISON_REPORT.md** created
 
-### Next Phase: Client-Side ML Migration
-- **P0**: Quality assessment → Canvas JS (zero models)
-- **P0**: Card detection → YOLO ONNX in browser
-- **P1**: Face embedding → MobileFaceNet ONNX (5MB, 30-80ms)
-- **P1**: Liveness → hybrid (client detects, server verifies)
-- **P2**: Voice preprocessing → Web Audio API
-- **P3**: Voice embedding → ECAPA-TDNN ONNX
+### Feature Branch:
+`feature/client-side-ml` with 20+ commits ready to merge:
+- Client-side quality assessment (Canvas JS)
+- Client-side YOLO card detection (ONNX Runtime Web)
+- Face embedding from landmarks (512-dim)
+- Hybrid liveness scoring
+- Voice WAV conversion (Web Audio API)
+- All refinements and bug fixes
 
 ### Known Issues:
-- Web-app CSP blocks MediaPipe WASM (needs `connect-src` + `unsafe-eval` in CSP headers)
-- Enrollment endpoints return 403 for USER role (need permission adjustment)
-- Audit log polling returns 403 for non-admin users
-- WebAuthn RP ID mismatch on web-app (domain config issue)
-- TOTP enrollment works, but other enrollment methods need permission fixes on backend
+- YOLO WASM inference: ~7s/frame (need YOLOv8n nano model for real-time, or WebGPU)
+- Client-apps: voice auth, OTP, liveness, analytics not yet implemented (70% complete)
+- Web-app: face search, card detection not ported to React yet
+- Feature branch not merged to master yet
+
+### Next Steps:
+1. Merge `feature/client-side-ml` → master (after verification)
+2. Train YOLOv8n (nano) with same dataset for real-time browser card detection
+3. Implement client-apps missing features: voice, OTP, TOTP, liveness, analytics
+4. Port card detection + face search to web-app React
+5. NFC card enrollment (register card → verify → who is this)
+6. Export MobileFaceNet ONNX for browser face embedding (replace landmark-based)
+7. Client-apps comprehensive testing on real devices
+8. Web-app E2E tests for new features
 
 ---
 
