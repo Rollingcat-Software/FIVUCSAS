@@ -1587,9 +1587,17 @@ async function hwVerify() {
   }
 }
 
-// ── 11. Card Detection ───────────────────────────────────────────────
+// ── 11. Card Detection (Client-Side) ────────────────────────────────
 
 var cardStream = null;
+var cardLiveMode = false;
+var cardLiveRAF = null;
+
+// ISO/IEC 7810 ID-1 card: 85.6mm x 53.98mm = 1.586 aspect ratio
+var CARD_ASPECT_RATIO = 85.6 / 53.98; // ~1.586
+var CARD_RATIO_TOLERANCE = 0.25; // allow 1.33 to 1.84 (covers passports too)
+var CARD_MIN_AREA_FRACTION = 0.04; // card must be at least 4% of frame
+var CARD_MAX_AREA_FRACTION = 0.85; // card must be at most 85% of frame
 
 async function startCardCamera() {
   var video = document.getElementById('cardVideo');
@@ -1597,14 +1605,18 @@ async function startCardCamera() {
   document.getElementById('cardStartBtn').disabled = true;
   document.getElementById('cardStopBtn').disabled = false;
   document.getElementById('cardDetectBtn').disabled = false;
+  document.getElementById('cardLiveToggle').disabled = false;
   container.style.display = 'block';
 
   try {
     cardStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     video.srcObject = cardStream;
     video.addEventListener('loadedmetadata', function() {
+      var canvas = document.getElementById('cardCanvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       document.getElementById('cardOverlay').textContent = 'Camera: ' + video.videoWidth + 'x' + video.videoHeight + ' — Point at a card';
     });
   } catch (e) {
@@ -1612,19 +1624,361 @@ async function startCardCamera() {
     document.getElementById('cardStartBtn').disabled = false;
     document.getElementById('cardStopBtn').disabled = true;
     document.getElementById('cardDetectBtn').disabled = true;
+    document.getElementById('cardLiveToggle').disabled = true;
   }
 }
 
 function stopCardCamera() {
+  cardLiveMode = false;
+  if (cardLiveRAF) { cancelAnimationFrame(cardLiveRAF); cardLiveRAF = null; }
   if (cardStream) {
     cardStream.getTracks().forEach(function(t) { t.stop(); });
     cardStream = null;
   }
   document.getElementById('cardContainer').style.display = 'none';
   document.getElementById('cardStats').style.display = 'none';
+  document.getElementById('cardCropContainer').style.display = 'none';
   document.getElementById('cardStartBtn').disabled = false;
   document.getElementById('cardStopBtn').disabled = true;
   document.getElementById('cardDetectBtn').disabled = true;
+  document.getElementById('cardLiveToggle').disabled = true;
+  document.getElementById('cardLiveToggle').textContent = 'Live Detection: OFF';
+  document.getElementById('cardLiveToggle').style.background = 'var(--purple)';
+}
+
+function toggleCardLiveDetection() {
+  cardLiveMode = !cardLiveMode;
+  document.getElementById('cardLiveToggle').textContent = 'Live Detection: ' + (cardLiveMode ? 'ON' : 'OFF');
+  document.getElementById('cardLiveToggle').style.background = cardLiveMode ? 'var(--green)' : 'var(--purple)';
+  if (cardLiveMode) {
+    cardLiveLoop();
+  } else {
+    if (cardLiveRAF) { cancelAnimationFrame(cardLiveRAF); cardLiveRAF = null; }
+    var oc = document.getElementById('cardCanvas');
+    oc.getContext('2d').clearRect(0, 0, oc.width, oc.height);
+  }
+}
+
+function cardLiveLoop() {
+  if (!cardLiveMode || !cardStream) return;
+  var video = document.getElementById('cardVideo');
+  if (video.readyState >= 2) {
+    var result = runCardDetection(video);
+    drawCardOverlay(result);
+    updateCardStats(result);
+  }
+  cardLiveRAF = requestAnimationFrame(cardLiveLoop);
+}
+
+// ── Image Processing Utilities ──────────────────────────────────────
+
+function toGrayscale(imageData) {
+  var data = imageData.data;
+  var w = imageData.width;
+  var h = imageData.height;
+  var gray = new Float32Array(w * h);
+  for (var i = 0; i < w * h; i++) {
+    var idx = i * 4;
+    gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+  }
+  return { data: gray, width: w, height: h };
+}
+
+function gaussianBlur3x3(gray) {
+  var w = gray.width, h = gray.height;
+  var src = gray.data;
+  var dst = new Float32Array(w * h);
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      var idx = y * w + x;
+      dst[idx] = (
+        src[(y-1)*w+(x-1)] + 2*src[(y-1)*w+x] + src[(y-1)*w+(x+1)] +
+        2*src[y*w+(x-1)]   + 4*src[y*w+x]     + 2*src[y*w+(x+1)] +
+        src[(y+1)*w+(x-1)] + 2*src[(y+1)*w+x] + src[(y+1)*w+(x+1)]
+      ) / 16;
+    }
+  }
+  return { data: dst, width: w, height: h };
+}
+
+function sobelGradient(gray) {
+  var w = gray.width, h = gray.height;
+  var src = gray.data;
+  var mag = new Float32Array(w * h);
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      var gx = -src[(y-1)*w+(x-1)] + src[(y-1)*w+(x+1)]
+              -2*src[y*w+(x-1)]    + 2*src[y*w+(x+1)]
+              -src[(y+1)*w+(x-1)]  + src[(y+1)*w+(x+1)];
+      var gy = -src[(y-1)*w+(x-1)] - 2*src[(y-1)*w+x] - src[(y-1)*w+(x+1)]
+              +src[(y+1)*w+(x-1)]  + 2*src[(y+1)*w+x]  + src[(y+1)*w+(x+1)];
+      mag[y * w + x] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  return { mag: mag, width: w, height: h };
+}
+
+function thresholdEdges(mag, w, h) {
+  var sum = 0, sum2 = 0, n = w * h;
+  for (var i = 0; i < n; i++) { sum += mag[i]; sum2 += mag[i] * mag[i]; }
+  var mean = sum / n;
+  var std = Math.sqrt(sum2 / n - mean * mean);
+  var thresh = mean + 1.0 * std;
+  var binary = new Uint8Array(w * h);
+  for (var i = 0; i < n; i++) {
+    binary[i] = mag[i] > thresh ? 1 : 0;
+  }
+  return binary;
+}
+
+function dilate(binary, w, h) {
+  var out = new Uint8Array(w * h);
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      if (binary[(y-1)*w+(x-1)] || binary[(y-1)*w+x] || binary[(y-1)*w+(x+1)] ||
+          binary[y*w+(x-1)]     || binary[y*w+x]     || binary[y*w+(x+1)] ||
+          binary[(y+1)*w+(x-1)] || binary[(y+1)*w+x] || binary[(y+1)*w+(x+1)]) {
+        out[y * w + x] = 1;
+      }
+    }
+  }
+  return out;
+}
+
+function findBoundingBoxes(binary, w, h) {
+  var visited = new Uint8Array(w * h);
+  var boxes = [];
+
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      if (binary[y * w + x] && !visited[y * w + x]) {
+        var minX = x, maxX = x, minY = y, maxY = y;
+        var pixelCount = 0;
+        var queue = [[x, y]];
+        visited[y * w + x] = 1;
+        while (queue.length > 0) {
+          var p = queue.shift();
+          var px = p[0], py = p[1];
+          pixelCount++;
+          if (px < minX) minX = px;
+          if (px > maxX) maxX = px;
+          if (py < minY) minY = py;
+          if (py > maxY) maxY = py;
+          var neighbors = [[px-1,py],[px+1,py],[px,py-1],[px,py+1]];
+          for (var ni = 0; ni < neighbors.length; ni++) {
+            var nx = neighbors[ni][0], ny = neighbors[ni][1];
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h && binary[ny * w + nx] && !visited[ny * w + nx]) {
+              visited[ny * w + nx] = 1;
+              queue.push([nx, ny]);
+            }
+          }
+        }
+        var bw = maxX - minX + 1;
+        var bh = maxY - minY + 1;
+        if (bw > 20 && bh > 20) {
+          boxes.push({ x: minX, y: minY, w: bw, h: bh, pixels: pixelCount });
+        }
+      }
+    }
+  }
+  return boxes;
+}
+
+function borderEdgeDensity(binary, w, h, box) {
+  var total = 0, edgePixels = 0;
+  var margin = 3;
+  for (var x = box.x; x < box.x + box.w; x++) {
+    for (var dy = 0; dy < margin; dy++) {
+      var ty = box.y + dy;
+      var by = box.y + box.h - 1 - dy;
+      if (ty >= 0 && ty < h && x >= 0 && x < w) { total++; if (binary[ty * w + x]) edgePixels++; }
+      if (by >= 0 && by < h && x >= 0 && x < w) { total++; if (binary[by * w + x]) edgePixels++; }
+    }
+  }
+  for (var y = box.y; y < box.y + box.h; y++) {
+    for (var dx = 0; dx < margin; dx++) {
+      var lx = box.x + dx;
+      var rx = box.x + box.w - 1 - dx;
+      if (y >= 0 && y < h && lx >= 0 && lx < w) { total++; if (binary[y * w + lx]) edgePixels++; }
+      if (y >= 0 && y < h && rx >= 0 && rx < w) { total++; if (binary[y * w + rx]) edgePixels++; }
+    }
+  }
+  return total > 0 ? edgePixels / total : 0;
+}
+
+// Main card detection pipeline
+function runCardDetection(videoOrCanvas) {
+  var start = performance.now();
+
+  var scale = 0.5;
+  var srcW, srcH;
+  if (videoOrCanvas.videoWidth) {
+    srcW = videoOrCanvas.videoWidth;
+    srcH = videoOrCanvas.videoHeight;
+  } else {
+    srcW = videoOrCanvas.width;
+    srcH = videoOrCanvas.height;
+  }
+  var procW = Math.round(srcW * scale);
+  var procH = Math.round(srcH * scale);
+
+  var tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = procW;
+  tmpCanvas.height = procH;
+  var tmpCtx = tmpCanvas.getContext('2d');
+  tmpCtx.drawImage(videoOrCanvas, 0, 0, procW, procH);
+
+  var imageData = tmpCtx.getImageData(0, 0, procW, procH);
+
+  // 1. Grayscale
+  var gray = toGrayscale(imageData);
+
+  // 2. Gaussian blur
+  var blurred = gaussianBlur3x3(gray);
+
+  // 3. Sobel edge detection
+  var edges = sobelGradient(blurred);
+
+  // 4. Threshold edges
+  var binary = thresholdEdges(edges.mag, procW, procH);
+
+  // 5. Dilate to connect edges
+  binary = dilate(binary, procW, procH);
+
+  // 6. Find bounding boxes of connected edge regions
+  var boxes = findBoundingBoxes(binary, procW, procH);
+
+  var frameArea = procW * procH;
+
+  // 7. Filter and score candidate rectangles
+  var candidates = [];
+  for (var i = 0; i < boxes.length; i++) {
+    var box = boxes[i];
+    var boxArea = box.w * box.h;
+    var areaFrac = boxArea / frameArea;
+
+    if (areaFrac < CARD_MIN_AREA_FRACTION || areaFrac > CARD_MAX_AREA_FRACTION) continue;
+
+    var aspectRatio = box.w > box.h ? box.w / box.h : box.h / box.w;
+    var ratioDiff = Math.abs(aspectRatio - CARD_ASPECT_RATIO);
+    if (ratioDiff > CARD_RATIO_TOLERANCE * CARD_ASPECT_RATIO) continue;
+
+    var edgeDensity = borderEdgeDensity(binary, procW, procH, box);
+
+    var ratioScore = 1.0 - (ratioDiff / (CARD_RATIO_TOLERANCE * CARD_ASPECT_RATIO));
+    var sizeScore = Math.min(areaFrac / 0.15, 1.0);
+    var confidence = ratioScore * 0.4 + edgeDensity * 0.35 + sizeScore * 0.25;
+
+    candidates.push({
+      x: Math.round(box.x / scale),
+      y: Math.round(box.y / scale),
+      w: Math.round(box.w / scale),
+      h: Math.round(box.h / scale),
+      aspectRatio: aspectRatio,
+      areaFraction: areaFrac,
+      edgeDensity: edgeDensity,
+      confidence: Math.min(confidence, 1.0)
+    });
+  }
+
+  candidates.sort(function(a, b) { return b.confidence - a.confidence; });
+
+  var elapsed = performance.now() - start;
+  var best = candidates.length > 0 ? candidates[0] : null;
+
+  // Classify card type by aspect ratio heuristic
+  var cardType = '--';
+  if (best) {
+    var ar = best.aspectRatio;
+    if (ar >= 1.35 && ar <= 1.45) {
+      cardType = 'Passport (Pasaport)';
+    } else if (ar >= 1.45 && ar <= 1.65) {
+      cardType = 'ID Card (Kimlik / Ehliyet)';
+    } else if (ar >= 1.65 && ar <= 1.85) {
+      cardType = 'ID Card (Wide Format)';
+    } else {
+      cardType = 'Card-like Object';
+    }
+  }
+
+  return {
+    detected: best !== null && best.confidence > 0.35,
+    bestCandidate: best,
+    cardType: cardType,
+    candidateCount: candidates.length,
+    elapsed: elapsed,
+    frameWidth: srcW,
+    frameHeight: srcH
+  };
+}
+
+function drawCardOverlay(result) {
+  var oc = document.getElementById('cardCanvas');
+  var ctx = oc.getContext('2d');
+  ctx.clearRect(0, 0, oc.width, oc.height);
+
+  if (result.detected && result.bestCandidate) {
+    var c = result.bestCandidate;
+    var conf = c.confidence;
+
+    var color;
+    if (conf > 0.65) color = '#3fb950';
+    else if (conf > 0.45) color = '#d29922';
+    else color = '#f85149';
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
+    ctx.strokeRect(c.x, c.y, c.w, c.h);
+
+    // Corner markers
+    var cornerLen = Math.min(c.w, c.h) * 0.1;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = color;
+    ctx.beginPath(); ctx.moveTo(c.x, c.y + cornerLen); ctx.lineTo(c.x, c.y); ctx.lineTo(c.x + cornerLen, c.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x + c.w - cornerLen, c.y); ctx.lineTo(c.x + c.w, c.y); ctx.lineTo(c.x + c.w, c.y + cornerLen); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x, c.y + c.h - cornerLen); ctx.lineTo(c.x, c.y + c.h); ctx.lineTo(c.x + cornerLen, c.y + c.h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x + c.w - cornerLen, c.y + c.h); ctx.lineTo(c.x + c.w, c.y + c.h); ctx.lineTo(c.x + c.w, c.y + c.h - cornerLen); ctx.stroke();
+
+    // Label
+    ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
+    var label = result.cardType + ' (' + (conf * 100).toFixed(0) + '%)';
+    var labelW = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(c.x, c.y - 22, labelW + 10, 20);
+    ctx.fillStyle = color;
+    ctx.fillText(label, c.x + 5, c.y - 6);
+  }
+}
+
+function updateCardStats(result) {
+  document.getElementById('cardStats').style.display = 'grid';
+  document.getElementById('cardStat-detected').textContent = result.detected ? 'YES' : 'NO';
+  document.getElementById('cardStat-detected').style.color = result.detected ? 'var(--green)' : 'var(--red)';
+  document.getElementById('cardStat-type').textContent = result.cardType;
+  document.getElementById('cardStat-confidence').textContent = result.bestCandidate
+    ? (result.bestCandidate.confidence * 100).toFixed(1) + '%' : '--';
+  document.getElementById('cardStat-time').textContent = formatMs(result.elapsed);
+  document.getElementById('cardStat-ratio').textContent = result.bestCandidate
+    ? result.bestCandidate.aspectRatio.toFixed(3) : '--';
+  document.getElementById('cardStat-area').textContent = result.bestCandidate
+    ? (result.bestCandidate.areaFraction * 100).toFixed(1) + '% of frame' : '--';
+
+  document.getElementById('cardOverlay').textContent = result.detected
+    ? result.cardType + ' (' + (result.bestCandidate.confidence * 100).toFixed(0) + '%) — ' + formatMs(result.elapsed)
+    : 'No card detected — ' + formatMs(result.elapsed);
+}
+
+function cropDetectedCard(result) {
+  if (!result.detected || !result.bestCandidate) return;
+  var video = document.getElementById('cardVideo');
+  var c = result.bestCandidate;
+  var cropCanvas = document.getElementById('cardCropCanvas');
+  cropCanvas.width = c.w;
+  cropCanvas.height = c.h;
+  var ctx = cropCanvas.getContext('2d');
+  ctx.drawImage(video, c.x, c.y, c.w, c.h, 0, 0, c.w, c.h);
+  document.getElementById('cardCropContainer').style.display = 'block';
 }
 
 async function captureAndDetectCard() {
@@ -1634,73 +1988,34 @@ async function captureAndDetectCard() {
     return;
   }
 
-  var c = document.createElement('canvas');
-  c.width = video.videoWidth;
-  c.height = video.videoHeight;
-  c.getContext('2d').drawImage(video, 0, 0);
-
   document.getElementById('cardOverlay').textContent = 'Detecting...';
   document.getElementById('cardDetectBtn').disabled = true;
 
-  c.toBlob(async function(blob) {
-    var formData = new FormData();
-    formData.append('file', blob, 'card.jpg');
+  var result = runCardDetection(video);
+  drawCardOverlay(result);
+  updateCardStats(result);
 
-    var start = performance.now();
-    try {
-      var token = getToken();
-      var res = await fetch(getApiUrl() + '/api/v1/biometric/card-detect', {
-        method: 'POST',
-        headers: token ? { 'Authorization': 'Bearer ' + token } : {},
-        body: formData
-      });
-      var elapsed = performance.now() - start;
-      var data = await res.json().catch(function() { return null; });
-      addLogEntry('POST', '/api/v1/biometric/card-detect', res.status, elapsed, '(multipart image)', data);
+  if (result.detected) {
+    cropDetectedCard(result);
+  }
 
-      document.getElementById('cardStats').style.display = 'grid';
-      document.getElementById('cardDetectBtn').disabled = false;
+  document.getElementById('cardDetectBtn').disabled = false;
 
-      if (res.ok && data) {
-        var detected = data.detected;
-        var className = data.class_name || '--';
-        var classId = data.class_id != null ? data.class_id : '--';
-        var confidence = data.confidence != null ? (data.confidence * 100).toFixed(1) + '%' : '--';
-
-        // Friendly card type names
-        var friendlyNames = {
-          'tc_kimlik': 'Turkish ID Card (TC Kimlik)',
-          'ehliyet': 'Driver\'s License (Ehliyet)',
-          'pasaport': 'Passport (Pasaport)',
-          'ogrenci_karti': 'Student Card',
-          'akademisyen_karti': 'Academic Card'
-        };
-        var displayName = friendlyNames[className] || className;
-
-        document.getElementById('cardStat-detected').textContent = detected ? 'YES' : 'NO';
-        document.getElementById('cardStat-detected').style.color = detected ? 'var(--green)' : 'var(--red)';
-        document.getElementById('cardStat-type').textContent = displayName;
-        document.getElementById('cardStat-classid').textContent = classId;
-        document.getElementById('cardStat-confidence').textContent = confidence;
-        document.getElementById('cardOverlay').textContent = detected
-          ? displayName + ' (' + confidence + ')'
-          : 'No card detected — try again';
-
-        showResult('cardDetectResult',
-          (detected ? 'CARD DETECTED!' : 'No card detected.') +
-          ' (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), detected);
-      } else {
-        document.getElementById('cardOverlay').textContent = 'Detection failed — try again';
-        showResult('cardDetectResult',
-          'Detection failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(data, null, 2), false);
-      }
-    } catch (e) {
-      document.getElementById('cardDetectBtn').disabled = false;
-      document.getElementById('cardOverlay').textContent = 'Error — try again';
-      showResult('cardDetectResult', 'Detection error: ' + e.message, false);
-      addLogEntry('POST', '/api/v1/biometric/card-detect', 'ERR', performance.now() - start, null, e.message);
-    }
-  }, 'image/jpeg', 0.92);
+  var detailLines = [
+    result.detected ? 'CARD DETECTED!' : 'No card detected.',
+    'Processing time: ' + formatMs(result.elapsed) + ' (client-side)',
+    'Candidates found: ' + result.candidateCount,
+  ];
+  if (result.bestCandidate) {
+    detailLines.push('Best candidate:');
+    detailLines.push('  Bounding box: (' + result.bestCandidate.x + ', ' + result.bestCandidate.y + ') ' + result.bestCandidate.w + 'x' + result.bestCandidate.h);
+    detailLines.push('  Aspect ratio: ' + result.bestCandidate.aspectRatio.toFixed(3) + ' (target: ' + CARD_ASPECT_RATIO.toFixed(3) + ')');
+    detailLines.push('  Edge density: ' + (result.bestCandidate.edgeDensity * 100).toFixed(1) + '%');
+    detailLines.push('  Confidence: ' + (result.bestCandidate.confidence * 100).toFixed(1) + '%');
+    detailLines.push('  Card type: ' + result.cardType);
+    detailLines.push('  Area: ' + (result.bestCandidate.areaFraction * 100).toFixed(1) + '% of frame');
+  }
+  showResult('cardDetectResult', detailLines.join('\n'), result.detected);
 }
 
 // ── Face Landmark Detection Helpers ──────────────────────────────────
@@ -2281,6 +2596,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnHwVerify': hwVerify,
     'cardStartBtn': startCardCamera,
     'cardDetectBtn': captureAndDetectCard,
+    'cardLiveToggle': toggleCardLiveDetection,
     'cardStopBtn': stopCardCamera,
     'btnClearLog': clearLog
   };
