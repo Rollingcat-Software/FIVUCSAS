@@ -710,7 +710,7 @@ function captureFace() {
     var cropH = Math.min(h - cropY, Math.ceil(bbH + padY * 2));
 
     // Resize to max 720px to prevent "multiple faces" on high-res mobile cameras
-    var maxDim = 720;
+    var maxDim = 640;
     var scale = 1;
     if (cropW > maxDim || cropH > maxDim) {
       scale = maxDim / Math.max(cropW, cropH);
@@ -723,7 +723,7 @@ function captureFace() {
       ' from ' + w + 'x' + h + ' (crop ' + cropW + 'x' + cropH + ', scale ' + scale.toFixed(2) + ')');
   } else {
     // Fallback: capture full frame, resize if needed
-    var maxFull = 720;
+    var maxFull = 640;
     var fullScale = Math.min(1, maxFull / Math.max(w, h));
     c.width = Math.round(w * fullScale);
     c.height = Math.round(h * fullScale);
@@ -2525,7 +2525,7 @@ function captureFullFrameAsBlob() {
     var video = document.getElementById('faceVideo');
     var c = document.createElement('canvas');
     var w = video.videoWidth, h = video.videoHeight;
-    var maxDim = 720;
+    var maxDim = 640;
     var scale = Math.min(1, maxDim / Math.max(w, h));
     c.width = Math.round(w * scale);
     c.height = Math.round(h * scale);
