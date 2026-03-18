@@ -1448,7 +1448,9 @@ async function enrollVoice() {
     var resp = await apiCall('POST', '/api/v1/biometric/voice/enroll/' + userId, {
       voiceData: voiceBase64Data
     });
-    showResult('voiceResult', 'Voice enrollment: ' + JSON.stringify(resp, null, 2), resp.verified !== false);
+    var d = resp.data || resp;
+    var ok = d.verified !== false && resp.ok !== false;
+    showResult('voiceResult', (ok ? 'Voice enrolled!' : 'Voice enrollment failed.') + '\n\n' + JSON.stringify(resp, null, 2), ok);
   } catch (e) {
     showResult('voiceResult', 'Voice enrollment failed: ' + e.message, false);
   }
@@ -1464,8 +1466,12 @@ async function verifyVoice() {
     var resp = await apiCall('POST', '/api/v1/biometric/voice/verify/' + userId, {
       voiceData: voiceBase64Data
     });
-    var verified = (resp.data && resp.data.verified === true) || resp.verified === true;
-    showResult('voiceResult', 'Voice verification: ' + JSON.stringify(resp, null, 2), verified);
+    var d = resp.data || resp;
+    var verified = d.verified === true || d.confidence > 0;
+    var confStr = d.confidence != null ? ' (confidence: ' + d.confidence + ')' : '';
+    showResult('voiceResult',
+      (verified ? 'Voice VERIFIED!' : 'Voice NOT verified.') + confStr + '\n\n' +
+      JSON.stringify(resp, null, 2), verified);
   } catch (e) {
     showResult('voiceResult', 'Voice verification failed: ' + e.message, false);
   }
@@ -2850,8 +2856,12 @@ async function startBankEnrollment() {
     });
     var elapsed = performance.now() - start;
 
-    // If multi-enroll not available (404), fall back to single enroll with each image
-    if (res.status === 404) {
+    // If multi-enroll fails (404, 500, or success:false), fall back to sequential single enrolls
+    var multiData = await res.json().catch(function() { return null; });
+    addLogEntry('POST', enrollUrl, res.status, elapsed, '(multipart: 3 angle images)', multiData);
+    var multiOk = res.ok && multiData && multiData.success !== false && !multiData.message?.includes('rejected');
+    if (!multiOk) {
+      showResult('faceResult', 'Multi-enroll returned error, falling back to sequential single enrollments...', false);
       showResult('faceResult', 'Multi-enroll endpoint not available, falling back to sequential single enrollments...', false);
       var lastData = null;
       for (var k = 0; k < capturedBlobs.length; k++) {
@@ -2871,10 +2881,7 @@ async function startBankEnrollment() {
       document.getElementById('faceOverlay').textContent = 'Bank enrollment complete (fallback mode)';
       document.getElementById('faceOverlay').style.color = '#3fb950';
     } else {
-      var data = await res.json().catch(function() { return null; });
-      addLogEntry('POST', enrollUrl, res.status, elapsed, '(multipart: 3 angle images)', data);
-
-      if (res.ok && data) {
+      if (multiData) {
         document.getElementById('faceOverlay').textContent = 'BANK ENROLLMENT SUCCESS!';
         document.getElementById('faceOverlay').style.color = '#3fb950';
         showResult('faceResult',
