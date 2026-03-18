@@ -1,6 +1,6 @@
 # FIVUCSAS — Comprehensive Production Roadmap V2
 
-> **Created**: 2026-03-17 | **Revised**: 2026-03-18
+> **Created**: 2026-03-17 | **Revised**: 2026-03-18 (final)
 > **Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
 > **Philosophy**: Browser handles everything it can. What it can't → client-app acts as authenticator bridge.
 > **Server**: CPU-only (no GPU needed) — Hetzner VPS + Hostinger
@@ -24,6 +24,9 @@
 - **FP-Embedded**: confirmed on mobile phone (WebAuthn)
 - **QR scanner**: working (html5-qrcode + debounce)
 - **Email OTP + TOTP (QR code)**: working
+- **iOS platform layer**: complete (Keychain, AVFoundation, NSLog, Koin DI, NoOp stubs for NFC/Push)
+- **MobileFaceNet ONNX pipeline**: added to auth-test/app.js (neural embedding with landmark fallback)
+- **Twilio setup script**: `scripts/setup-twilio.sh` (interactive setup + config check)
 
 ### Stats:
 - **Auth-test**: 3302 lines (app.js), 11 auth method sections + YOLO card detection
@@ -94,13 +97,13 @@
 | # | Item | Files to Change | Effort |
 |---|------|----------------|--------|
 | 11 | **YOLO nano model** — Current 99MB model takes ~7s/frame in WASM. Train YOLOv8n (6MB) for real-time detection | Training script + replace model file in auth-test | Large |
-| 12 | **MobileFaceNet ONNX** — Replace landmark-based 512-dim embedding with proper MobileFaceNet ONNX model in browser | Export model + update auth-test/app.js embedding code | Medium |
+| 12 | **MobileFaceNet ONNX** — Pipeline code added to auth-test/app.js. Tries to load `/auth-test/mobilefacenet.onnx`, falls back to landmark-based. Drop model file to activate. | ~~Export model + update auth-test/app.js embedding code~~ PIPELINE DONE | Small (model file needed) |
 | 13 | **Web-app E2E tests** — CardDetectionPage and FaceSearchPage have no Playwright tests | `web-app/e2e/card-detection.spec.ts`, `face-search.spec.ts` (new) | Medium |
 | 14 | **Client-apps unit tests** — Only 3 test files exist (AdminViewModelTest, KioskViewModelTest, LoginViewModelTest) | `client-apps/shared/src/commonTest/` — add tests for all 18 ViewModels | Large |
-| 15 | **SMS OTP activation** — Twilio account needs activation and test phone number | Twilio dashboard + `.env.prod` update | Small |
+| 15 | **SMS OTP activation** — Twilio account needs activation. Setup script created: `./scripts/setup-twilio.sh` | Twilio dashboard + run setup script | Small |
 | 16 | **Hardware token E2E test** — Needs physical YubiKey to verify full flow | Manual testing only | Small |
 | 17 | **Client-apps: bank enrollment** — No 3-angle face capture (frontal + left + right) like auth-test has | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add multi-angle capture | Medium |
-| 18 | **iOS target** — client-apps has no iosMain implementation yet | `client-apps/iosApp/` — Swift/SwiftUI wrappers, Core NFC, LocalAuthentication | Large |
+| 18 | **iOS target** — iosMain platform layer complete (IosSecureStorage/Keychain, IosCameraService/AVFoundation, IosLogger/NSLog, FingerprintPlatform/LocalAuthentication stub, NoOp NFC/Push, DefaultNetworkMonitor, Koin DI module). Needs Swift/SwiftUI wrappers for UI. | `client-apps/iosApp/` — SwiftUI wrappers, Core NFC activation, LocalAuthentication real impl | Medium |
 
 #### P3 (Future/stretch)
 
@@ -465,8 +468,12 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [ ] Production penetration test
 
 ### Phase 7: iOS + Desktop (Week 7-9)
-- [ ] iOS NFC reader (Core NFC framework)
-- [ ] iOS biometric (LocalAuthentication)
+- [x] iOS platform layer: IosSecureStorage (Keychain), IosCameraService (AVFoundation), IosLogger (NSLog)
+- [x] iOS Koin DI module: all bindings (camera, storage, logger, fingerprint, push, network, NFC)
+- [x] iOS FingerprintPlatform: stub (LocalAuthentication ready to wire)
+- [ ] iOS SwiftUI wrappers (iosApp target)
+- [ ] iOS NFC reader (Core NFC framework — NoOpNfcService in place)
+- [ ] iOS biometric (LocalAuthentication — real implementation)
 - [ ] Desktop fingerprint (Windows Hello via JNA)
 - [ ] Desktop NFC (USB readers via javax.smartcardio)
 

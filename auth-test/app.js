@@ -1047,6 +1047,147 @@ function computeLandmarkEmbedding(landmarks) {
   return embedding;
 }
 
+// ── MobileFaceNet ONNX Neural Embedding Pipeline ─────────────────────
+
+var faceOnnxSession = null;
+var faceModelLoaded = false;
+var faceModelLoading = false;
+
+/**
+ * Attempt to load MobileFaceNet ONNX model for neural face embeddings.
+ * Falls back gracefully to landmark-based embeddings if model is unavailable.
+ */
+async function loadFaceEmbeddingModel() {
+  if (faceModelLoaded || faceModelLoading) return;
+  faceModelLoading = true;
+  try {
+    // Check if model file exists before downloading
+    var resp = await fetch('/auth-test/mobilefacenet.onnx', { method: 'HEAD' });
+    if (!resp.ok) {
+      console.log('MobileFaceNet ONNX not available (HTTP ' + resp.status + '), using landmark-based embeddings.');
+      faceModelLoading = false;
+      return;
+    }
+
+    console.log('Loading MobileFaceNet ONNX model...');
+    faceOnnxSession = await ort.InferenceSession.create('/auth-test/mobilefacenet.onnx', {
+      executionProviders: ['wasm']
+    });
+    faceModelLoaded = true;
+    faceModelLoading = false;
+    console.log('MobileFaceNet ONNX loaded successfully (WASM backend).');
+  } catch (e) {
+    faceModelLoading = false;
+    console.log('MobileFaceNet ONNX load failed: ' + e.message + '. Using landmark-based embeddings.');
+  }
+}
+
+/**
+ * Crop and align face region from video using landmarks.
+ * Returns an ImageData of size x size pixels centered on the face.
+ *
+ * @param {HTMLVideoElement} video - The video element with the face
+ * @param {Array} landmarks - MediaPipe face landmarks (478 points)
+ * @param {number} size - Target size (default 112 for MobileFaceNet)
+ * @returns {ImageData} Cropped and resized face image
+ */
+function cropFaceForEmbedding(video, landmarks, size) {
+  size = size || 112;
+  var vw = video.videoWidth;
+  var vh = video.videoHeight;
+
+  // Find face bounding box from landmarks
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (var i = 0; i < landmarks.length; i++) {
+    var lm = landmarks[i];
+    if (lm.x < minX) minX = lm.x;
+    if (lm.y < minY) minY = lm.y;
+    if (lm.x > maxX) maxX = lm.x;
+    if (lm.y > maxY) maxY = lm.y;
+  }
+
+  // Convert normalized coords to pixels with 20% margin
+  var faceW = (maxX - minX) * vw;
+  var faceH = (maxY - minY) * vh;
+  var margin = Math.max(faceW, faceH) * 0.2;
+
+  var cropX = Math.max(0, Math.floor(minX * vw - margin));
+  var cropY = Math.max(0, Math.floor(minY * vh - margin));
+  var cropW = Math.min(vw - cropX, Math.ceil(faceW + margin * 2));
+  var cropH = Math.min(vh - cropY, Math.ceil(faceH + margin * 2));
+
+  // Make square (take larger dimension)
+  var side = Math.max(cropW, cropH);
+  var cx = cropX + cropW / 2;
+  var cy = cropY + cropH / 2;
+  cropX = Math.max(0, Math.floor(cx - side / 2));
+  cropY = Math.max(0, Math.floor(cy - side / 2));
+  cropW = Math.min(vw - cropX, Math.ceil(side));
+  cropH = Math.min(vh - cropY, Math.ceil(side));
+
+  // Draw cropped face to canvas and resize
+  var canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, size, size);
+
+  return ctx.getImageData(0, 0, size, size);
+}
+
+/**
+ * Compute 128-dim neural face embedding using MobileFaceNet ONNX.
+ * Falls back to landmark-based embedding if ONNX model is not loaded.
+ *
+ * @param {HTMLVideoElement} video - The video element
+ * @param {Array} landmarks - MediaPipe face landmarks
+ * @returns {Object} { embedding: Float32Array, method: string }
+ */
+async function computeNeuralEmbedding(video, landmarks) {
+  if (!faceOnnxSession) {
+    return { embedding: computeLandmarkEmbedding(landmarks), method: 'landmark' };
+  }
+
+  try {
+    var crop = cropFaceForEmbedding(video, landmarks, 112);
+    var pixels = crop.data;
+    var size = 112;
+
+    // NCHW format with ImageNet normalization: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    var input = new Float32Array(3 * size * size);
+    for (var i = 0; i < size * size; i++) {
+      input[i]                     = (pixels[i * 4]     / 255.0 - 0.485) / 0.229; // R
+      input[size * size + i]       = (pixels[i * 4 + 1] / 255.0 - 0.456) / 0.224; // G
+      input[2 * size * size + i]   = (pixels[i * 4 + 2] / 255.0 - 0.406) / 0.225; // B
+    }
+
+    var tensor = new ort.Tensor('float32', input, [1, 3, size, size]);
+    var results = await faceOnnxSession.run({ input: tensor });
+    var outputKey = Object.keys(results)[0];
+    var raw = results[outputKey].data;
+
+    // L2 normalize the embedding
+    var embedding = new Float32Array(raw.length);
+    var norm = 0;
+    for (var j = 0; j < raw.length; j++) {
+      norm += raw[j] * raw[j];
+    }
+    norm = Math.sqrt(norm);
+    if (norm > 0) {
+      for (var k = 0; k < raw.length; k++) {
+        embedding[k] = raw[k] / norm;
+      }
+    } else {
+      embedding = new Float32Array(raw);
+    }
+
+    return { embedding: embedding, method: 'neural (MobileFaceNet)' };
+  } catch (e) {
+    console.warn('Neural embedding failed, falling back to landmarks:', e.message);
+    return { embedding: computeLandmarkEmbedding(landmarks), method: 'landmark (neural fallback)' };
+  }
+}
+
 function cosineSimilarity(a, b) {
   if (!a || !b || a.length !== b.length) return 0;
   var dot = 0, normA = 0, normB = 0;
@@ -1061,18 +1202,26 @@ function cosineSimilarity(a, b) {
   return dot / (normA * normB);
 }
 
-function computeAndShowEmbedding() {
+async function computeAndShowEmbedding() {
   if (!lastFaceLandmarks || lastFaceLandmarks.length < 468) {
     showResult('faceResult', 'No face landmarks available. Start camera and detect a face first.', false);
     return;
   }
 
+  // Try to load MobileFaceNet on first use (non-blocking on subsequent calls)
+  if (!faceModelLoaded && !faceModelLoading) {
+    loadFaceEmbeddingModel(); // fire and forget — will be ready on next click
+  }
+
   var start = performance.now();
-  var embedding = computeLandmarkEmbedding(lastFaceLandmarks);
+  var video = document.getElementById('faceVideo');
+  var result = await computeNeuralEmbedding(video, lastFaceLandmarks);
+  var embedding = result.embedding;
+  var method = result.method;
   var elapsed = performance.now() - start;
 
   if (!embedding) {
-    showResult('faceResult', 'Failed to compute embedding from landmarks.', false);
+    showResult('faceResult', 'Failed to compute embedding.', false);
     return;
   }
 
@@ -1085,6 +1234,12 @@ function computeAndShowEmbedding() {
   statsEl.style.display = 'grid';
   document.getElementById('embStat-dim').textContent = embedding.length + '-dim';
   document.getElementById('embStat-time').textContent = formatMs(elapsed);
+
+  var methodEl = document.getElementById('embStat-method');
+  if (methodEl) {
+    methodEl.textContent = method;
+    methodEl.style.color = method.indexOf('neural') !== -1 ? 'var(--green)' : 'var(--yellow)';
+  }
 
   var preview = [];
   for (var i = 0; i < 5; i++) {
@@ -1107,9 +1262,10 @@ function computeAndShowEmbedding() {
   document.getElementById('embStat-similarity').textContent = simText;
 
   // Result text
-  var resultLines = 'Landmark Embedding computed in ' + formatMs(elapsed) + '\n';
+  var resultLines = 'Embedding computed in ' + formatMs(elapsed) + '\n';
+  resultLines += 'Method: ' + method + '\n';
   resultLines += 'Dimension: ' + embedding.length + '\n';
-  resultLines += 'Source: MediaPipe 478 landmarks (geometry-based)\n';
+  resultLines += 'Source: ' + (method.indexOf('neural') !== -1 ? 'MobileFaceNet ONNX (112x112 face crop)' : 'MediaPipe 478 landmarks (geometry-based)') + '\n';
   resultLines += 'First 10: [' + Array.from(embedding.slice(0, 10)).map(function(v) { return v.toFixed(4); }).join(', ') + ']\n';
   resultLines += 'L2 norm: ' + Math.sqrt(Array.from(embedding).reduce(function(s, v) { return s + v * v; }, 0)).toFixed(4) + '\n';
 

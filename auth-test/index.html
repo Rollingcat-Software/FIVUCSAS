@@ -122,11 +122,12 @@
       </div>
       <div class="stats" id="embeddingStats" style="display:none;">
         <div class="stat"><div class="stat-label">Embedding</div><div class="stat-value" id="embStat-dim">--</div></div>
+        <div class="stat"><div class="stat-label">Method</div><div class="stat-value" id="embStat-method">--</div></div>
         <div class="stat"><div class="stat-label">Compute Time</div><div class="stat-value" id="embStat-time">--</div></div>
         <div class="stat"><div class="stat-label">Similarity</div><div class="stat-value" id="embStat-similarity">--</div></div>
         <div class="stat"><div class="stat-label">First 5 Values</div><div class="stat-value" id="embStat-preview" style="font-size:0.65rem;">--</div></div>
       </div>
-      <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion. Compute Embedding extracts a 512-dim face descriptor from landmark geometry (client-side, no server needed).</p>
+      <p class="info-text">Uses MediaPipe Face Landmarker (478 landmarks) via CDN. Liveness Puzzle detects blink/smile/turn via landmark geometry. Bank Enrollment captures 3 angles for stronger template fusion. Compute Embedding extracts a face descriptor client-side: tries MobileFaceNet ONNX (128-dim neural) first, falls back to 512-dim landmark geometry if model not available.</p>
       <div class="result-box" id="faceResult" style="display:none;"></div>
     </div>
   </div>
