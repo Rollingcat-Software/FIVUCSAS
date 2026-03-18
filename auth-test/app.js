@@ -1464,7 +1464,8 @@ async function verifyVoice() {
     var resp = await apiCall('POST', '/api/v1/biometric/voice/verify/' + userId, {
       voiceData: voiceBase64Data
     });
-    showResult('voiceResult', 'Voice verification: ' + JSON.stringify(resp, null, 2), resp.verified === true);
+    var verified = (resp.data && resp.data.verified === true) || resp.verified === true;
+    showResult('voiceResult', 'Voice verification: ' + JSON.stringify(resp, null, 2), verified);
   } catch (e) {
     showResult('voiceResult', 'Voice verification failed: ' + e.message, false);
   }
@@ -2468,6 +2469,16 @@ function detectNod(landmarks) {
   return { nod: offset > 0.15, lookUp: offset < -0.05, offset: offset };
 }
 
+function captureFullFrameAsBlob() {
+  return new Promise(function(resolve) {
+    var video = document.getElementById('faceVideo');
+    var c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.92);
+  });
+}
+
 function captureFrameAsBlob() {
   return new Promise(function(resolve) {
     var video = document.getElementById('faceVideo');
@@ -2798,7 +2809,7 @@ async function startBankEnrollment() {
       if (detected) {
         // Hold steady for a moment, then capture
         await new Promise(function(r) { setTimeout(r, 300); });
-        var blob = await captureFrameAsBlob();
+        var blob = await captureFullFrameAsBlob();
         capturedBlobs.push(blob);
         document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' captured!';
         document.getElementById('faceOverlay').style.color = '#3fb950';
@@ -2807,7 +2818,7 @@ async function startBankEnrollment() {
         document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' timed out - capturing anyway';
         document.getElementById('faceOverlay').style.color = '#f85149';
         showResult('faceResult', 'Pose timeout for step ' + (i + 1) + ', capturing current frame.', false);
-        var fallbackBlob = await captureFrameAsBlob();
+        var fallbackBlob = await captureFullFrameAsBlob();
         capturedBlobs.push(fallbackBlob);
       }
 
