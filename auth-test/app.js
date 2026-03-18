@@ -713,7 +713,7 @@ function captureFace() {
     c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
     console.log('[captureFace] Cropped to face region: ' + cropW + 'x' + cropH +
-      ' from ' + w + 'x' + h + ' (padding 30%)');
+      ' from ' + w + 'x' + h + ' (padding 60%)');
   } else {
     // Fallback: capture full frame
     c.width = w; c.height = h;
@@ -1750,7 +1750,7 @@ async function setupTotp() {
   var res = await apiCall('POST', '/api/v1/totp/setup/' + uid, null);
   var infoEl = document.getElementById('totpSetupInfo');
   if (res.ok && res.data) {
-    var qrUri = res.data.qrCodeUri || res.data.otpauthUrl || res.data.uri || res.data.secretUri || '';
+    var qrUri = res.data.otpAuthUri || res.data.qrCodeUri || res.data.otpauthUrl || res.data.uri || res.data.secretUri || '';
     var secret = res.data.secret || res.data.secretKey || '';
     // Build info display
     while (infoEl.firstChild) infoEl.removeChild(infoEl.firstChild);
@@ -2887,13 +2887,13 @@ async function startBankEnrollment() {
         showResult('faceResult',
           'MULTI-ANGLE ENROLLMENT COMPLETE! (' + formatMs(elapsed) + ')\n' +
           capturedBlobs.length + ' angles fused into template.\n\n' +
-          JSON.stringify(data, null, 2), true);
+          JSON.stringify(multiData, null, 2), true);
       } else {
         document.getElementById('faceOverlay').textContent = 'Enrollment failed';
         document.getElementById('faceOverlay').style.color = '#f85149';
         showResult('faceResult',
           'Bank enrollment failed (' + (res.status || 'ERR') + '): ' +
-          JSON.stringify(data, null, 2), false);
+          JSON.stringify(multiData, null, 2), false);
       }
     }
   } catch (e) {
