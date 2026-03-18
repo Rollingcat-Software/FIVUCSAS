@@ -382,6 +382,7 @@ function detectFaceLoop() {
 
     if (result.faceLandmarks && result.faceLandmarks.length > 0) {
       var landmarks = result.faceLandmarks[0]; // 478 landmarks
+      lastFaceLandmarks = landmarks; // Store for face cropping on capture
 
       // Compute bounding box from landmarks
       var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -501,6 +502,7 @@ function detectFaceLoop() {
       document.getElementById('faceOverlay').style.color = boxColor;
       document.getElementById('faceStat-model').textContent = (faceRatio * 100).toFixed(1) + '% of frame';
     } else {
+      lastFaceLandmarks = null;
       document.getElementById('faceStat-status').textContent = 'No face';
       document.getElementById('faceStat-status').style.color = 'var(--red)';
       document.getElementById('faceStat-confidence').textContent = '--';
@@ -516,6 +518,7 @@ function stopFaceDetection() {
   if (faceAnimFrame) cancelAnimationFrame(faceAnimFrame);
   if (faceStream) { faceStream.getTracks().forEach(function(t) { t.stop(); }); faceStream = null; }
   if (faceDetector) { faceDetector.close(); faceDetector = null; }
+  lastFaceLandmarks = null;
   document.getElementById('faceContainer').style.display = 'none';
   document.getElementById('faceStartBtn').disabled = false;
   document.getElementById('faceStopBtn').disabled = true;
@@ -526,18 +529,58 @@ function stopFaceDetection() {
 
 var lastFaceBlob = null;
 
+// Store last detected face landmarks for cropping
+var lastFaceLandmarks = null;
+
 function captureFace() {
   var video = document.getElementById('faceVideo');
   var c = document.createElement('canvas');
-  c.width = video.videoWidth; c.height = video.videoHeight;
-  c.getContext('2d').drawImage(video, 0, 0);
+  var w = video.videoWidth, h = video.videoHeight;
+
+  // If we have face landmarks, crop to just the face region with 30% padding
+  // This prevents "multiple faces" errors from background faces (photos on walls, monitors)
+  if (lastFaceLandmarks && lastFaceLandmarks.length > 0) {
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    lastFaceLandmarks.forEach(function(lm) {
+      var lx = lm.x * w, ly = lm.y * h;
+      if (lx < minX) minX = lx; if (ly < minY) minY = ly;
+      if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
+    });
+    var bbW = maxX - minX, bbH = maxY - minY;
+    var padX = bbW * 0.3, padY = bbH * 0.3;
+    var cropX = Math.max(0, Math.floor(minX - padX));
+    var cropY = Math.max(0, Math.floor(minY - padY));
+    var cropW = Math.min(w - cropX, Math.ceil(bbW + padX * 2));
+    var cropH = Math.min(h - cropY, Math.ceil(bbH + padY * 2));
+
+    c.width = cropW; c.height = cropH;
+    c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    console.log('[captureFace] Cropped to face region: ' + cropW + 'x' + cropH +
+      ' from ' + w + 'x' + h + ' (padding 30%)');
+  } else {
+    // Fallback: capture full frame
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(video, 0, 0);
+    console.log('[captureFace] No landmarks available, capturing full frame: ' + w + 'x' + h);
+  }
+
   c.toBlob(function(blob) {
     lastFaceBlob = blob;
-    document.getElementById('btnFaceEnroll').disabled = false;
-    document.getElementById('btnFaceVerify').disabled = false;
-    document.getElementById('btnFaceSearch').disabled = false;
+    // Enable all face action buttons
+    var faceButtons = ['btnFaceEnroll', 'btnFaceVerify', 'btnFaceSearch', 'btnLivenessPuzzle', 'btnBankEnroll'];
+    faceButtons.forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = false;
+      } else {
+        console.warn('[captureFace] Button not found: ' + id);
+      }
+    });
+    var cropped = lastFaceLandmarks ? ' (face-cropped)' : ' (full frame)';
     showResult('faceResult',
-      'Captured frame: ' + formatBytes(blob.size) + ' JPEG\nResolution: ' + c.width + 'x' + c.height +
+      'Captured frame: ' + formatBytes(blob.size) + ' JPEG' + cropped +
+      '\nResolution: ' + c.width + 'x' + c.height +
       '\n\nReady — click Enroll or Verify below.', true);
   }, 'image/jpeg', 0.92);
 }
@@ -1533,7 +1576,30 @@ function detectSmile(landmarks) {
   var mouthWidth = landmarkDist(landmarks, 61, 291);
   var mouthHeight = landmarkDist(landmarks, 13, 14);
   var ratio = mouthHeight > 0 ? mouthWidth / mouthHeight : 0;
-  return { detected: ratio > 3.5, ratio: ratio };
+  return { detected: ratio > 2.8, ratio: ratio };
+}
+
+function detectOpenMouth(landmarks) {
+  // Upper inner lip (13) to lower inner lip (14) distance
+  // Normalized by face height (forehead 10 to chin 152)
+  var mouthOpen = landmarkDist(landmarks, 13, 14);
+  var faceHeight = landmarkDist(landmarks, 10, 152);
+  var ratio = faceHeight > 0 ? mouthOpen / faceHeight : 0;
+  // Mouth is "open" when ratio > 0.08 (about 8% of face height)
+  return { detected: ratio > 0.08, ratio: ratio };
+}
+
+function detectRaiseEyebrows(landmarks) {
+  // Left eyebrow center (105) to left eye top (159)
+  // Right eyebrow center (334) to right eye top (386)
+  // Normalize by face height
+  var leftDist = landmarkDist(landmarks, 105, 159);
+  var rightDist = landmarkDist(landmarks, 334, 386);
+  var avgDist = (leftDist + rightDist) / 2;
+  var faceHeight = landmarkDist(landmarks, 10, 152);
+  var ratio = faceHeight > 0 ? avgDist / faceHeight : 0;
+  // Eyebrows raised when ratio > 0.065 (normal ~0.05)
+  return { detected: ratio > 0.065, ratio: ratio };
 }
 
 function detectHeadTurn(landmarks) {
@@ -1569,9 +1635,29 @@ function captureFrameAsBlob() {
   return new Promise(function(resolve) {
     var video = document.getElementById('faceVideo');
     var c = document.createElement('canvas');
-    c.width = video.videoWidth;
-    c.height = video.videoHeight;
-    c.getContext('2d').drawImage(video, 0, 0);
+    var w = video.videoWidth, h = video.videoHeight;
+
+    // Crop to face region if landmarks are available
+    if (lastFaceLandmarks && lastFaceLandmarks.length > 0) {
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      lastFaceLandmarks.forEach(function(lm) {
+        var lx = lm.x * w, ly = lm.y * h;
+        if (lx < minX) minX = lx; if (ly < minY) minY = ly;
+        if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
+      });
+      var bbW = maxX - minX, bbH = maxY - minY;
+      var padX = bbW * 0.3, padY = bbH * 0.3;
+      var cropX = Math.max(0, Math.floor(minX - padX));
+      var cropY = Math.max(0, Math.floor(minY - padY));
+      var cropW = Math.min(w - cropX, Math.ceil(bbW + padX * 2));
+      var cropH = Math.min(h - cropY, Math.ceil(bbH + padY * 2));
+      c.width = cropW; c.height = cropH;
+      c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    } else {
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(video, 0, 0);
+    }
+
     c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.92);
   });
 }
@@ -1713,7 +1799,9 @@ function getActionInstruction(action) {
     'turn_left': 'Turn your head LEFT',
     'turn_right': 'Turn your head RIGHT',
     'nod': 'Nod your head down',
-    'look_up': 'Look up'
+    'look_up': 'Look up',
+    'open_mouth': 'Open your mouth wide',
+    'raise_eyebrows': 'Raise your eyebrows'
   };
   return map[action] || ('Perform: ' + action);
 }
@@ -1758,6 +1846,12 @@ function waitForAction(action, timeoutMs) {
               break;
             case 'look_up':
               actionDetected = detectNod(landmarks).lookUp;
+              break;
+            case 'open_mouth':
+              actionDetected = detectOpenMouth(landmarks).detected;
+              break;
+            case 'raise_eyebrows':
+              actionDetected = detectRaiseEyebrows(landmarks).detected;
               break;
             default:
               actionDetected = false;
