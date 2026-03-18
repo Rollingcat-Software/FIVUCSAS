@@ -1189,12 +1189,33 @@ async function setupTotp() {
     box.style.display = 'block';
     box.style.wordBreak = 'break-all';
 
-    var lines = 'TOTP Setup successful! (' + formatMs(res.elapsed) + ')\n\n';
-    if (secret) lines += 'Secret Key: ' + secret + '\n';
-    if (qrUri) lines += 'OTPAuth URI: ' + qrUri + '\n';
-    lines += '\nScan this URI in your authenticator app, then enter the 6-digit code below to verify.\n';
-    lines += '\nFull response:\n' + JSON.stringify(res.data, null, 2);
-    box.textContent = lines;
+    var title = document.createElement('div');
+    title.textContent = 'TOTP Setup successful! (' + formatMs(res.elapsed) + ')';
+    title.style.marginBottom = '8px';
+    box.appendChild(title);
+
+    if (qrUri) {
+      var qrImg = document.createElement('img');
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUri);
+      qrImg.alt = 'TOTP QR Code';
+      qrImg.style.display = 'block';
+      qrImg.style.marginBottom = '8px';
+      box.appendChild(qrImg);
+    }
+
+    if (secret) {
+      var secretEl = document.createElement('div');
+      secretEl.textContent = 'Secret Key: ' + secret;
+      secretEl.style.fontFamily = 'monospace';
+      secretEl.style.marginBottom = '8px';
+      box.appendChild(secretEl);
+    }
+
+    var hint = document.createElement('div');
+    hint.textContent = 'Scan the QR code with your authenticator app, then enter the 6-digit code below.';
+    hint.style.color = 'var(--text-secondary)';
+    box.appendChild(hint);
+
     infoEl.appendChild(box);
 
     showResult('totpResult', 'TOTP setup complete! Enter the code from your authenticator app to verify.', true);
@@ -1641,8 +1662,8 @@ async function startLivenessPuzzle() {
 
     var formData = new FormData();
     formData.append('challengeId', challengeId);
-    for (var j = 0; j < capturedFrames.length; j++) {
-      formData.append('frames', capturedFrames[j].blob, 'step_' + j + '.jpg');
+    for (var j = 0; j < capturedFrames.length && j < 3; j++) {
+      formData.append('frame_' + j, capturedFrames[j].blob, 'frame_' + j + '.jpg');
     }
 
     var token = getToken();

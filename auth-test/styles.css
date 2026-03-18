@@ -274,9 +274,10 @@ input::placeholder { color: var(--text-muted); }
   color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-all;
-  max-height: 200px;
+  max-height: 600px;
   overflow-y: auto;
 }
+.result-box img { max-width: 200px; border-radius: 4px; }
 .result-box.success { border-color: rgba(63,185,80,0.4); }
 .result-box.error { border-color: rgba(248,81,73,0.4); }
 .info-text {
