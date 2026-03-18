@@ -411,6 +411,7 @@ async function startFaceDetection() {
   document.getElementById('faceCaptureBtn').disabled = false;
   document.getElementById('btnLivenessPuzzle').disabled = false;
   document.getElementById('btnBankEnroll').disabled = false;
+  document.getElementById('btnFaceEmbedding').disabled = false;
   container.style.display = 'block';
   statsEl.style.display = 'grid';
 
@@ -664,6 +665,7 @@ function stopFaceDetection() {
   document.getElementById('faceCaptureBtn').disabled = true;
   document.getElementById('btnLivenessPuzzle').disabled = true;
   document.getElementById('btnBankEnroll').disabled = true;
+  document.getElementById('btnFaceEmbedding').disabled = true;
 }
 
 var lastFaceBlob = null;
@@ -867,6 +869,259 @@ async function deleteFaceEnrollment() {
   showResult('faceResult', res.ok
     ? 'Enrollment deleted. You can now enroll a different face.'
     : 'Delete failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(res.data, null, 2), res.ok);
+}
+
+// ── Client-Side Face Embedding (512-dim from landmarks) ─────────────
+
+var lastFaceEmbedding = null;
+var previousFaceEmbedding = null;
+
+// Key landmark indices for geometric face descriptor
+var EMBEDDING_LANDMARK_PAIRS = (function() {
+  var leftEye = [33, 160, 158, 133, 153, 144];
+  var rightEye = [362, 385, 387, 263, 373, 380];
+  var nose = [1, 2, 4, 5, 6, 195, 197, 98, 327];
+  var mouth = [61, 291, 0, 17, 13, 14, 78, 308, 82, 312, 87, 317];
+  var jaw = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
+  var eyebrowL = [46, 53, 52, 65, 55, 70, 63, 105, 66, 107];
+  var eyebrowR = [276, 283, 282, 295, 285, 300, 293, 334, 296, 336];
+  var forehead = [10, 67, 109, 338, 297];
+  var cheeks = [116, 123, 147, 187, 345, 352, 376, 411];
+  var chin = [152, 148, 377, 400, 378, 379];
+  var all = [].concat(leftEye, rightEye, nose, mouth, jaw, eyebrowL, eyebrowR, forehead, cheeks, chin);
+  var pairs = [];
+  for (var i = 0; i < all.length; i++) {
+    for (var j = i + 1; j < all.length; j++) {
+      pairs.push([all[i], all[j]]);
+    }
+  }
+  return pairs;
+})();
+
+var EMBEDDING_ANGLE_TRIPLETS = [
+  [33, 1, 263],    // left eye corner - nose tip - right eye corner
+  [133, 1, 362],   // inner eye corners through nose
+  [70, 33, 147],   // left eyebrow - left eye - left cheek
+  [300, 263, 376], // right eyebrow - right eye - right cheek
+  [98, 1, 327],    // nose wings through nose tip
+  [2, 0, 17],      // nose bridge - upper lip - lower lip
+  [127, 152, 356], // jaw corners through chin
+  [234, 152, 454], // wider jaw measurement
+  [10, 1, 152],    // forehead top - nose - chin
+  [33, 61, 263],   // left eye - left mouth - right eye
+  [33, 291, 263],  // left eye - right mouth - right eye
+  [33, 4, 133],    // around left eye through nose
+  [362, 4, 263],   // around right eye through nose
+  [61, 13, 291],   // mouth corners through upper lip center
+  [61, 14, 291],   // mouth corners through lower lip center
+  [78, 13, 308],   // inner mouth corners through center
+  [58, 152, 288],  // jaw points through chin
+  [132, 377, 361], // cross-jaw angles
+  [46, 1, 276],    // eyebrow inner corners through nose
+  [105, 4, 334],   // eyebrow outer corners through nose
+  [116, 1, 345],   // cheek-nose-cheek
+  [187, 152, 411], // lower cheek through chin
+  [10, 33, 152],   // forehead-eye-chin
+  [10, 263, 152],  // forehead-eye-chin (right)
+  [10, 61, 152],   // forehead-mouth-chin
+  [10, 4, 61],     // forehead-nose-mouth
+  [4, 61, 152],    // nose-mouth-chin
+  [4, 291, 152],   // nose-mouth-chin (right)
+  [127, 10, 356],  // temple-forehead-temple
+  [234, 1, 454],   // ear-nose-ear
+  [93, 4, 323],    // mid-face width at nose
+  [58, 17, 288]    // jaw width at lower lip
+];
+
+function computeLandmarkEmbedding(landmarks) {
+  if (!landmarks || landmarks.length < 468) return null;
+
+  var embedding = new Float32Array(512);
+  var idx = 0;
+
+  // 1. Compute face bounding box for normalization
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  var minZ = Infinity, maxZ = -Infinity;
+  for (var i = 0; i < landmarks.length; i++) {
+    var lm = landmarks[i];
+    if (lm.x < minX) minX = lm.x;
+    if (lm.y < minY) minY = lm.y;
+    if (lm.x > maxX) maxX = lm.x;
+    if (lm.y > maxY) maxY = lm.y;
+    if (lm.z !== undefined) {
+      if (lm.z < minZ) minZ = lm.z;
+      if (lm.z > maxZ) maxZ = lm.z;
+    }
+  }
+  var faceW = maxX - minX;
+  var faceH = maxY - minY;
+  var faceZ = (maxZ !== -Infinity) ? (maxZ - minZ) : 1;
+  if (faceW < 0.001) faceW = 0.001;
+  if (faceH < 0.001) faceH = 0.001;
+  if (faceZ < 0.001) faceZ = 0.001;
+  var faceCx = (minX + maxX) / 2;
+  var faceCy = (minY + maxY) / 2;
+
+  // 2. Pairwise distances between key landmarks (normalized by face size)
+  var numDistances = Math.min(220, EMBEDDING_LANDMARK_PAIRS.length);
+  for (var p = 0; p < numDistances; p++) {
+    var pair = EMBEDDING_LANDMARK_PAIRS[p];
+    var a = landmarks[pair[0]];
+    var b = landmarks[pair[1]];
+    if (!a || !b) { embedding[idx++] = 0; continue; }
+    var dx = (a.x - b.x) / faceW;
+    var dy = (a.y - b.y) / faceH;
+    var dz = ((a.z || 0) - (b.z || 0)) / faceZ;
+    embedding[idx++] = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
+  // 3. Angles between key triplets (normalized to [-1, 1] via cosine)
+  var numAngles = Math.min(32, EMBEDDING_ANGLE_TRIPLETS.length);
+  for (var t = 0; t < numAngles; t++) {
+    var triplet = EMBEDDING_ANGLE_TRIPLETS[t];
+    var p1 = landmarks[triplet[0]];
+    var p2 = landmarks[triplet[1]];
+    var p3 = landmarks[triplet[2]];
+    if (!p1 || !p2 || !p3) { embedding[idx++] = 0; continue; }
+    var v1x = (p1.x - p2.x) / faceW;
+    var v1y = (p1.y - p2.y) / faceH;
+    var v2x = (p3.x - p2.x) / faceW;
+    var v2y = (p3.y - p2.y) / faceH;
+    var dot = v1x * v2x + v1y * v2y;
+    var mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
+    var mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
+    embedding[idx++] = (mag1 > 0 && mag2 > 0) ? dot / (mag1 * mag2) : 0;
+  }
+
+  // 4. Normalized coordinates of key landmarks relative to face center
+  var coordLandmarks = [
+    33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246,
+    362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398,
+    468, 473,
+    46, 53, 52, 65, 55, 70, 63, 105, 66, 107,
+    276, 283, 282, 295, 285, 300, 293, 334, 296, 336,
+    1, 2, 4, 5, 6, 195, 197, 98, 327, 168,
+    61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185,
+    78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95,
+    10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109
+  ];
+  var remaining = 512 - idx;
+  var numCoords = Math.min(Math.floor(remaining / 2), coordLandmarks.length);
+  for (var c = 0; c < numCoords; c++) {
+    var li = coordLandmarks[c];
+    var lm = landmarks[li];
+    if (!lm) { embedding[idx++] = 0; embedding[idx++] = 0; continue; }
+    embedding[idx++] = (lm.x - faceCx) / faceW;
+    embedding[idx++] = (lm.y - faceCy) / faceH;
+  }
+
+  // Fill remaining with depth features
+  while (idx < 512) {
+    var depthIdx = idx % landmarks.length;
+    embedding[idx] = ((landmarks[depthIdx].z || 0) - minZ) / faceZ;
+    idx++;
+  }
+
+  // 5. L2 normalize
+  var norm = 0;
+  for (var n = 0; n < 512; n++) {
+    norm += embedding[n] * embedding[n];
+  }
+  norm = Math.sqrt(norm);
+  if (norm > 0) {
+    for (var n = 0; n < 512; n++) {
+      embedding[n] = embedding[n] / norm;
+    }
+  }
+
+  return embedding;
+}
+
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  var dot = 0, normA = 0, normB = 0;
+  for (var i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  normA = Math.sqrt(normA);
+  normB = Math.sqrt(normB);
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (normA * normB);
+}
+
+function computeAndShowEmbedding() {
+  if (!lastFaceLandmarks || lastFaceLandmarks.length < 468) {
+    showResult('faceResult', 'No face landmarks available. Start camera and detect a face first.', false);
+    return;
+  }
+
+  var start = performance.now();
+  var embedding = computeLandmarkEmbedding(lastFaceLandmarks);
+  var elapsed = performance.now() - start;
+
+  if (!embedding) {
+    showResult('faceResult', 'Failed to compute embedding from landmarks.', false);
+    return;
+  }
+
+  // Store for comparison
+  previousFaceEmbedding = lastFaceEmbedding;
+  lastFaceEmbedding = embedding;
+
+  // Show stats
+  var statsEl = document.getElementById('embeddingStats');
+  statsEl.style.display = 'grid';
+  document.getElementById('embStat-dim').textContent = embedding.length + '-dim';
+  document.getElementById('embStat-time').textContent = formatMs(elapsed);
+
+  var preview = [];
+  for (var i = 0; i < 5; i++) {
+    preview.push(embedding[i].toFixed(4));
+  }
+  document.getElementById('embStat-preview').textContent = '[' + preview.join(', ') + ', ...]';
+
+  // Similarity with previous embedding
+  var simText = '--';
+  if (previousFaceEmbedding) {
+    var sim = cosineSimilarity(embedding, previousFaceEmbedding);
+    var simPct = (sim * 100).toFixed(1);
+    simText = simPct + '%';
+    var simColor = sim > 0.85 ? 'var(--green)' : (sim > 0.6 ? 'var(--yellow)' : 'var(--red)');
+    document.getElementById('embStat-similarity').style.color = simColor;
+  } else {
+    simText = 'Capture again to compare';
+    document.getElementById('embStat-similarity').style.color = 'var(--text-muted)';
+  }
+  document.getElementById('embStat-similarity').textContent = simText;
+
+  // Result text
+  var resultLines = 'Landmark Embedding computed in ' + formatMs(elapsed) + '\n';
+  resultLines += 'Dimension: ' + embedding.length + '\n';
+  resultLines += 'Source: MediaPipe 478 landmarks (geometry-based)\n';
+  resultLines += 'First 10: [' + Array.from(embedding.slice(0, 10)).map(function(v) { return v.toFixed(4); }).join(', ') + ']\n';
+  resultLines += 'L2 norm: ' + Math.sqrt(Array.from(embedding).reduce(function(s, v) { return s + v * v; }, 0)).toFixed(4) + '\n';
+
+  if (previousFaceEmbedding) {
+    var sim2 = cosineSimilarity(embedding, previousFaceEmbedding);
+    resultLines += '\nComparison with previous embedding:\n';
+    resultLines += 'Cosine similarity: ' + (sim2 * 100).toFixed(1) + '%\n';
+    if (sim2 > 0.85) {
+      resultLines += 'Verdict: SAME PERSON (high similarity)\n';
+    } else if (sim2 > 0.6) {
+      resultLines += 'Verdict: UNCERTAIN (moderate similarity)\n';
+    } else {
+      resultLines += 'Verdict: DIFFERENT PERSON (low similarity)\n';
+    }
+  } else {
+    resultLines += '\nClick Compute Embedding again with a different pose or person to compare.';
+  }
+
+  var embeddingBytes = embedding.length * 4;
+  resultLines += '\nEmbedding size: ' + formatBytes(embeddingBytes) + ' (vs ~100-500KB JPEG image)';
+
+  showResult('faceResult', resultLines, true);
 }
 
 // ── 3. NFC ───────────────────────────────────────────────────────────
@@ -2733,6 +2988,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnFaceDelete': deleteFaceEnrollment,
     'btnLivenessPuzzle': startLivenessPuzzle,
     'btnBankEnroll': startBankEnrollment,
+    'btnFaceEmbedding': computeAndShowEmbedding,
     'faceStopBtn': stopFaceDetection,
     'voiceRecordBtn': toggleVoiceRecording,
     'btnVoiceEnroll': enrollVoice,
