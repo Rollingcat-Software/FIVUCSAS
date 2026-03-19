@@ -519,7 +519,7 @@ function App() {
               <div className="text-xs text-slate-500 mt-1">Swagger UI</div>
             </a>
             <a
-              href="mailto:ahabgu@gmail.com"
+              href="mailto:rollingcat.help@gmail.com"
               className="p-6 rounded-2xl bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 transition-all duration-300 group"
             >
               <svg className="w-8 h-8 mx-auto mb-3 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
