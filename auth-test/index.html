@@ -376,12 +376,7 @@
         <div class="stat" role="listitem"><div class="stat-label">WebAuthn Support</div><div class="stat-value" id="hwStat-available">Checking...</div></div>
       </div>
       <p class="info-text" style="margin-top:0;margin-bottom:12px;">Insert your YubiKey or security key and tap when prompted. This uses WebAuthn with <code>authenticatorAttachment: "cross-platform"</code> for USB/NFC/BLE security keys (not built-in biometrics).</p>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="hwUsername">Username (for registration)</label>
-          <input type="text" id="hwUsername" placeholder="testuser" autocomplete="username">
-        </div>
-      </div>
+      <input type="hidden" id="hwUsername" value="">
       <div class="form-actions">
         <button class="btn btn-primary" id="btnHwRegister">Register Key</button>
         <button class="btn btn-success" id="btnHwVerify">Verify Key</button>

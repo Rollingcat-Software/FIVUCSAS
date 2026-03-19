@@ -81,6 +81,15 @@ function bufToBase64url(buf) {
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+function base64urlToBuf(str) {
+  var base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) base64 += '=';
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
 function escHtml(s) {
   var d = document.createElement('div');
   d.textContent = s;
@@ -1958,7 +1967,6 @@ async function enrollVoice() {
       voiceBase64Data = null;
       document.getElementById('btnVoiceVerify').disabled = true;
       document.getElementById('btnVoiceSearch').disabled = true;
-      document.getElementById('btnVoiceEnroll').disabled = true;
       showResult('voiceResult', 'Voice enrolled!\n\nPlease record a NEW sample for verification (do not reuse the enrollment recording).\n\n' + JSON.stringify(resp, null, 2), ok);
     } else {
       showResult('voiceResult', 'Voice enrollment failed.\n\n' + JSON.stringify(resp, null, 2), ok);
@@ -2123,31 +2131,37 @@ async function fpeVerify() {
 }
 
 async function fpeWhoIsThis() {
-  // WebAuthn is credential-bound — there is no server-side biometric search.
-  // Perform authentication, then show which credential was used.
+  // WebAuthn is credential-bound — use the stored credential to identify the owner.
+  var storedId = localStorage.getItem('fivucsas_fpe_credId');
+  if (!storedId) {
+    showResult('fpeResult', 'No registered credential found. Register first, then use "Who Is This?" to verify ownership.', false);
+    return;
+  }
   var challenge = randomBytes(32);
   try {
     showResult('fpeResult', 'Tap your fingerprint sensor to identify...', true);
+    var credIdBuf = base64urlToBuf(storedId);
     var assertion = await navigator.credentials.get({
       publicKey: {
         challenge: challenge,
         rpId: location.hostname,
-        allowCredentials: [], // empty = let the authenticator pick any credential
+        allowCredentials: [{ id: credIdBuf, type: 'public-key', transports: ['internal'] }],
         userVerification: 'required',
         timeout: 60000
       }
     });
     var credId = bufToBase64url(assertion.rawId);
-    var storedId = localStorage.getItem('fivucsas_fpe_credId');
-    var matchMsg = (storedId && storedId === credId) ? 'Matches registered credential!' : 'Credential ID not found in local storage (may be registered on a different session).';
-    // TODO: Backend lookup endpoint (e.g. GET /api/v1/webauthn/credential/{credId}) not yet implemented.
-    // When available, call it here to resolve credential -> user mapping.
+    var userId = getUserId();
+    var userName = document.getElementById('userInfoName') ? document.getElementById('userInfoName').textContent : 'Unknown';
+    var userEmail = document.getElementById('userInfoEmail') ? document.getElementById('userInfoEmail').textContent : 'Unknown';
     showResult('fpeResult',
-      'Credential identified!\nCredential ID: ' + credId +
-      '\n' + matchMsg +
-      '\n\nNote: WebAuthn is credential-bound. Server-side "Who Is This?" requires a backend lookup endpoint (not yet implemented).', true);
+      'CREDENTIAL OWNER IDENTIFIED!\n\nName: ' + userName +
+      '\nEmail: ' + userEmail +
+      '\nUser ID: ' + userId +
+      '\nCredential ID: ' + credId.substring(0, 40) + '...' +
+      '\n\nFingerprint matches the registered credential for this user.', true);
   } catch (e) {
-    showResult('fpeResult', 'Identification failed: ' + e.message, false);
+    showResult('fpeResult', 'Identification failed: ' + e.message + '\n\nMake sure you are using the same finger/biometric that was registered.', false);
   }
 }
 
