@@ -426,9 +426,13 @@ async function startFaceDetection() {
   statsEl.style.display = 'grid';
 
   try {
-    faceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 4096 }, height: { ideal: 2160 } } });
+    faceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
     video.srcObject = faceStream;
     video.addEventListener('loadedmetadata', function() {
+      // Sync canvas dimensions to actual video dimensions (critical for mobile)
+      var canvas = document.getElementById('faceCanvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       document.getElementById('faceOverlay').textContent = 'Camera: ' + video.videoWidth + 'x' + video.videoHeight;
     });
     document.getElementById('faceStat-status').textContent = 'Camera OK';
@@ -695,6 +699,116 @@ var lastFaceBlob = null;
 // Store last detected face landmarks for cropping
 var lastFaceLandmarks = null;
 
+/**
+ * CLAHE-like contrast enhancement for face images (mirrors server-side preprocessing).
+ * Operates on canvas ImageData: converts to grayscale-like LAB L-channel enhancement,
+ * applies adaptive histogram equalization to improve face recognition in poor lighting.
+ */
+function applyContrastEnhancement(canvas) {
+  var ctx = canvas.getContext('2d');
+  var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  var data = imageData.data;
+  var w = canvas.width, h = canvas.height;
+
+  // Tile-based CLAHE approximation
+  // 1. Compute per-tile histograms and CDFs for the luminance channel
+  var tileW = Math.ceil(w / 8);
+  var tileH = Math.ceil(h / 8);
+  var clipLimit = 2.0; // matches server CLAHE clipLimit
+
+  // For each pixel, compute luminance (Y from RGB)
+  var lum = new Uint8Array(w * h);
+  for (var i = 0; i < w * h; i++) {
+    var idx = i * 4;
+    lum[i] = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+  }
+
+  // Build tile CDFs
+  var numTilesX = 8, numTilesY = 8;
+  var tileCDFs = [];
+  for (var ty = 0; ty < numTilesY; ty++) {
+    tileCDFs[ty] = [];
+    for (var tx = 0; tx < numTilesX; tx++) {
+      var hist = new Float32Array(256);
+      var count = 0;
+      var startX = tx * tileW, startY = ty * tileH;
+      var endX = Math.min(startX + tileW, w), endY = Math.min(startY + tileH, h);
+      for (var y = startY; y < endY; y++) {
+        for (var x = startX; x < endX; x++) {
+          hist[lum[y * w + x]]++;
+          count++;
+        }
+      }
+      // Clip histogram
+      if (count > 0) {
+        var clipCount = clipLimit * count / 256;
+        var excess = 0;
+        for (var b = 0; b < 256; b++) {
+          if (hist[b] > clipCount) {
+            excess += hist[b] - clipCount;
+            hist[b] = clipCount;
+          }
+        }
+        var redistrib = excess / 256;
+        for (var b = 0; b < 256; b++) {
+          hist[b] += redistrib;
+        }
+        // Build CDF
+        var cdf = new Float32Array(256);
+        cdf[0] = hist[0];
+        for (var b = 1; b < 256; b++) {
+          cdf[b] = cdf[b - 1] + hist[b];
+        }
+        var cdfMin = cdf[0];
+        for (var b = 0; b < 256; b++) {
+          cdf[b] = Math.round(((cdf[b] - cdfMin) / (count - cdfMin)) * 255);
+          cdf[b] = Math.max(0, Math.min(255, cdf[b]));
+        }
+        tileCDFs[ty][tx] = cdf;
+      } else {
+        var identity = new Float32Array(256);
+        for (var b = 0; b < 256; b++) identity[b] = b;
+        tileCDFs[ty][tx] = identity;
+      }
+    }
+  }
+
+  // Apply with bilinear interpolation between tiles
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      var px = lum[y * w + x];
+
+      // Find tile coordinates
+      var ftx = (x / tileW) - 0.5;
+      var fty = (y / tileH) - 0.5;
+      var tx0 = Math.max(0, Math.floor(ftx));
+      var ty0 = Math.max(0, Math.floor(fty));
+      var tx1 = Math.min(numTilesX - 1, tx0 + 1);
+      var ty1 = Math.min(numTilesY - 1, ty0 + 1);
+      var fx = ftx - tx0;
+      var fy = fty - ty0;
+      fx = Math.max(0, Math.min(1, fx));
+      fy = Math.max(0, Math.min(1, fy));
+
+      // Bilinear interpolation of mapped values
+      var v00 = tileCDFs[ty0][tx0][px];
+      var v10 = tileCDFs[ty0][tx1][px];
+      var v01 = tileCDFs[ty1][tx0][px];
+      var v11 = tileCDFs[ty1][tx1][px];
+      var newLum = (1 - fy) * ((1 - fx) * v00 + fx * v10) + fy * ((1 - fx) * v01 + fx * v11);
+
+      // Scale RGB channels proportionally
+      var scale = px > 0 ? newLum / px : 1;
+      var idx = (y * w + x) * 4;
+      data[idx] = Math.max(0, Math.min(255, Math.round(data[idx] * scale)));
+      data[idx + 1] = Math.max(0, Math.min(255, Math.round(data[idx + 1] * scale)));
+      data[idx + 2] = Math.max(0, Math.min(255, Math.round(data[idx + 2] * scale)));
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
 function captureFace() {
   // Quality gate — block capture if quality is too poor
   if (lastQuality) {
@@ -751,6 +865,15 @@ function captureFace() {
     c.height = Math.round(h * fullScale);
     c.getContext('2d').drawImage(video, 0, 0, w, h, 0, 0, c.width, c.height);
     console.log('[captureFace] Full frame resized: ' + c.width + 'x' + c.height + ' from ' + w + 'x' + h);
+  }
+
+  // Apply CLAHE-like contrast enhancement (mirrors server-side preprocessing)
+  // Improves face recognition accuracy in poor/uneven lighting (especially mobile)
+  try {
+    applyContrastEnhancement(c);
+    console.log('[captureFace] CLAHE contrast enhancement applied');
+  } catch (e) {
+    console.warn('[captureFace] CLAHE enhancement failed, using raw image:', e.message);
   }
 
   c.toBlob(function(blob) {
@@ -1508,13 +1631,15 @@ async function nfcEnrollCard() {
     });
     // apiCall returns { ok, status, data, elapsed }
     // Backend returns 201 on success — check res.ok (covers 2xx) or res.data fields
-    if (res.ok || res.status === 201) {
+    if (res.status === 409) {
+      showResult('nfcResult', 'Card already enrolled for serial: ' + lastNfcSerial + '\n\nUse "Whose Card?" to see who it belongs to, or "Delete Card" to re-enroll.', false);
+    } else if (!res.ok) {
+      var errMsg = (res.data && (res.data.message || res.data.error)) || 'HTTP ' + res.status;
+      showResult('nfcResult', 'Enrollment failed: ' + errMsg, false);
+    } else {
       var d = res.data || {};
       var cardId = d.cardId || d.id || d.enrollmentId || '';
       showResult('nfcResult', 'Card enrolled! (' + formatMs(res.elapsed) + ')\nSerial: ' + lastNfcSerial + '\nCard ID: ' + cardId + '\n\n' + JSON.stringify(d, null, 2), true);
-    } else {
-      var errMsg = (res.data && (res.data.message || res.data.error)) || JSON.stringify(res.data, null, 2);
-      showResult('nfcResult', 'Enrollment failed (' + (res.status || 'ERR') + '): ' + errMsg, false);
     }
   } catch (e) {
     showResult('nfcResult', 'Enrollment error: ' + (e.message || e), false);
@@ -1663,6 +1788,7 @@ var voiceAnimFrame = null;
 var voiceStartTime = 0;
 var voiceAudioCtx = null;
 var voiceBase64Data = null; // stored after recording for enroll/verify
+var voiceRecordingUsed = false; // set true after enroll — must record again before verify/search
 
 async function toggleVoiceRecording() {
   var btn = document.getElementById('voiceRecordBtn');
@@ -1687,6 +1813,7 @@ async function toggleVoiceRecording() {
     source.connect(voiceAnalyser);
 
     voiceChunks = [];
+    voiceRecordingUsed = false; // new recording resets the flag
     voiceRecorder = new MediaRecorder(voiceStream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 128000 });
     voiceRecorder.ondataavailable = function(e) { if (e.data.size > 0) voiceChunks.push(e.data); };
     voiceRecorder.onstop = function() {
@@ -1825,7 +1952,17 @@ async function enrollVoice() {
     });
     var d = resp.data || resp;
     var ok = d.verified !== false && resp.ok !== false;
-    showResult('voiceResult', (ok ? 'Voice enrolled!' : 'Voice enrollment failed.') + '\n\n' + JSON.stringify(resp, null, 2), ok);
+    if (ok) {
+      // Mark recording as used — must record again before verify/search
+      voiceRecordingUsed = true;
+      voiceBase64Data = null;
+      document.getElementById('btnVoiceVerify').disabled = true;
+      document.getElementById('btnVoiceSearch').disabled = true;
+      document.getElementById('btnVoiceEnroll').disabled = true;
+      showResult('voiceResult', 'Voice enrolled!\n\nPlease record a NEW sample for verification (do not reuse the enrollment recording).\n\n' + JSON.stringify(resp, null, 2), ok);
+    } else {
+      showResult('voiceResult', 'Voice enrollment failed.\n\n' + JSON.stringify(resp, null, 2), ok);
+    }
   } catch (e) {
     showResult('voiceResult', 'Voice enrollment failed: ' + e.message, false);
   }
@@ -1834,7 +1971,7 @@ async function enrollVoice() {
 async function verifyVoice() {
   var userId = getUserId();
   if (!userId) { showResult('voiceResult', 'Login first to get a user ID.', false); return; }
-  if (!voiceBase64Data) { showResult('voiceResult', 'Record audio first.', false); return; }
+  if (voiceRecordingUsed || !voiceBase64Data) { showResult('voiceResult', 'Record a NEW audio sample first. The previous recording was used for enrollment and cannot be reused.', false); return; }
 
   showResult('voiceResult', 'Verifying voice...', true);
   try {
@@ -1853,7 +1990,7 @@ async function verifyVoice() {
 }
 
 async function searchVoice() {
-  if (!voiceBase64Data) { showResult('voiceResult', 'Record voice first.', false); return; }
+  if (voiceRecordingUsed || !voiceBase64Data) { showResult('voiceResult', 'Record a NEW audio sample first. The previous recording was used for enrollment and cannot be reused.', false); return; }
   showResult('voiceResult', 'Searching voice...', true);
   var token = getToken();
   var start = performance.now();

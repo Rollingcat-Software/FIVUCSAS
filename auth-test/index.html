@@ -206,12 +206,7 @@
       <div class="stats" style="margin-bottom:12px;" role="list" aria-label="Platform authenticator status">
         <div class="stat" role="listitem"><div class="stat-label">Platform Auth</div><div class="stat-value" id="fpeStat-available">Checking...</div></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="fpeUsername">Username (for registration)</label>
-          <input type="text" id="fpeUsername" placeholder="testuser" autocomplete="username" readonly style="opacity:0.7;cursor:not-allowed;">
-        </div>
-      </div>
+      <input type="hidden" id="fpeUsername" value="">
       <div class="form-actions">
         <button class="btn btn-primary" id="btnFpeRegister">Register</button>
         <button class="btn btn-success" id="btnFpeVerify">Verify</button>
