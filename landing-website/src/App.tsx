@@ -176,9 +176,9 @@ function App() {
       <section className="py-16 px-4 border-y border-slate-700/30">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           <StatCard value={10} suffix="" label="Auth Methods" />
-          <StatCard value={46} suffix="+" label="API Endpoints" />
-          <StatCard value={500} suffix="+" label="Tests Passing" />
-          <StatCard value={6} suffix="" label="Microservices" />
+          <StatCard value={180} suffix="+" label="API Endpoints" />
+          <StatCard value={900} suffix="+" label="Tests Passing" />
+          <StatCard value={6} suffix="" label="Services" />
         </div>
       </section>
 
@@ -468,7 +468,7 @@ function App() {
             viewport={{ once: true }}
           >
             <p className="text-slate-400">
-              <strong>Supervisor:</strong> Prof. Dr.
+              <strong>Supervisor:</strong> Marmara University Faculty
             </p>
             <p className="text-sm text-slate-500 mt-2">
               CSE4297/CSE4197 Engineering Project - 2025-2026
@@ -519,7 +519,7 @@ function App() {
               <div className="text-xs text-slate-500 mt-1">Swagger UI</div>
             </a>
             <a
-              href="mailto:contact@rollingcatsoftware.com"
+              href="mailto:ahabgu@gmail.com"
               className="p-6 rounded-2xl bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 transition-all duration-300 group"
             >
               <svg className="w-8 h-8 mx-auto mb-3 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
