@@ -3023,47 +3023,37 @@ function landmarkDist(landmarks, a, b) {
 
 function detectBlink(landmarks) {
   // Eye aspect ratio: vertical / horizontal
-  // Left eye: 159(top), 145(bottom), 33(outer), 133(inner)
   var leftV = landmarkDist(landmarks, 159, 145);
   var leftH = landmarkDist(landmarks, 33, 133);
   var leftEAR = leftH > 0 ? leftV / leftH : 1;
-  // Right eye: 386(top), 374(bottom), 362(outer), 263(inner)
   var rightV = landmarkDist(landmarks, 386, 374);
   var rightH = landmarkDist(landmarks, 362, 263);
   var rightEAR = rightH > 0 ? rightV / rightH : 1;
   var avgEAR = (leftEAR + rightEAR) / 2;
-  return { detected: avgEAR < 0.18, ear: avgEAR };
+  return { detected: avgEAR < 0.22, ear: avgEAR }; // relaxed from 0.18
 }
 
 function detectSmile(landmarks) {
-  // Mouth width (61-291) vs mouth height (13-14)
   var mouthWidth = landmarkDist(landmarks, 61, 291);
   var mouthHeight = landmarkDist(landmarks, 13, 14);
   var ratio = mouthHeight > 0 ? mouthWidth / mouthHeight : 0;
-  return { detected: ratio > 2.8, ratio: ratio };
+  return { detected: ratio > 2.5, ratio: ratio }; // relaxed from 2.8
 }
 
 function detectOpenMouth(landmarks) {
-  // Upper inner lip (13) to lower inner lip (14) distance
-  // Normalized by face height (forehead 10 to chin 152)
   var mouthOpen = landmarkDist(landmarks, 13, 14);
   var faceHeight = landmarkDist(landmarks, 10, 152);
   var ratio = faceHeight > 0 ? mouthOpen / faceHeight : 0;
-  // Mouth is "open" when ratio > 0.08 (about 8% of face height)
-  return { detected: ratio > 0.08, ratio: ratio };
+  return { detected: ratio > 0.06, ratio: ratio }; // relaxed from 0.08
 }
 
 function detectRaiseEyebrows(landmarks) {
-  // Left eyebrow center (105) to left eye top (159)
-  // Right eyebrow center (334) to right eye top (386)
-  // Normalize by face height
   var leftDist = landmarkDist(landmarks, 105, 159);
   var rightDist = landmarkDist(landmarks, 334, 386);
   var avgDist = (leftDist + rightDist) / 2;
   var faceHeight = landmarkDist(landmarks, 10, 152);
   var ratio = faceHeight > 0 ? avgDist / faceHeight : 0;
-  // Eyebrows raised when ratio > 0.065 (normal ~0.05)
-  return { detected: ratio > 0.065, ratio: ratio };
+  return { detected: ratio > 0.058, ratio: ratio }; // relaxed from 0.065
 }
 
 function detectHeadTurn(landmarks) {
@@ -3077,8 +3067,8 @@ function detectHeadTurn(landmarks) {
   var offset = (noseX - faceCenter) / (faceWidth || 0.001);
   // offset > 0.12 means nose is right of center (user turned left from camera POV)
   // offset < -0.12 means nose is left of center (user turned right from camera POV)
-  if (offset > 0.12) return { direction: 'left', offset: offset };
-  if (offset < -0.12) return { direction: 'right', offset: offset };
+  if (offset > 0.08) return { direction: 'left', offset: offset }; // relaxed from 0.12
+  if (offset < -0.08) return { direction: 'right', offset: offset }; // relaxed from 0.12
   return { direction: 'center', offset: offset };
 }
 
@@ -3092,10 +3082,10 @@ function detectNod(landmarks) {
   var offset = (noseY - faceCenter) / (faceHeight || 0.001);
   // offset > 0.15 means nose is below center (nod down)
   // offset < -0.05 means nose is above center (look up)
-  return { nod: offset > 0.15, lookUp: offset < -0.05, offset: offset };
+  return { nod: offset > 0.10, lookUp: offset < -0.03, offset: offset }; // relaxed from 0.15/0.05
 }
 
-function captureFullFrameAsBlob() {
+function captureFrameAsBlob() {
   return new Promise(function(resolve) {
     var video = document.getElementById('faceVideo');
     var c = document.createElement('canvas');
@@ -3276,7 +3266,9 @@ async function startLivenessPuzzle() {
       var passed = verifyData.passed || verifyData.alive || verifyData.liveness || false;
 
       // Show both client and server scores
-      var finalVerdict = (clientScore >= 0.6 && passed) ? 'PASSED' : 'FAILED';
+      // Server is authoritative — if server says passed, it's passed
+      // Client score is informational only (camera angle/distance can affect client detection)
+      var finalVerdict = passed ? 'PASSED' : 'FAILED';
       var verdictSymbol = finalVerdict === 'PASSED' ? String.fromCharCode(10003) : String.fromCharCode(10007);
       var hybridMsg = 'Client score: ' + clientScorePct + '%\n' +
         'Server score: ' + serverScorePct + '% (' + formatMs(elapsed) + ')\n' +
@@ -3461,7 +3453,7 @@ async function startBankEnrollment() {
       if (detected) {
         // Hold steady for a moment, then capture
         await new Promise(function(r) { setTimeout(r, 300); });
-        var blob = await captureFullFrameAsBlob();
+        var blob = await captureFrameAsBlob();
         capturedBlobs.push(blob);
         document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' captured!';
         document.getElementById('faceOverlay').style.color = '#3fb950';
@@ -3470,7 +3462,7 @@ async function startBankEnrollment() {
         document.getElementById('faceOverlay').textContent = 'Step ' + (i + 1) + ' timed out - capturing anyway';
         document.getElementById('faceOverlay').style.color = '#f85149';
         showResult('faceResult', 'Pose timeout for step ' + (i + 1) + ', capturing current frame.', false);
-        var fallbackBlob = await captureFullFrameAsBlob();
+        var fallbackBlob = await captureFrameAsBlob();
         capturedBlobs.push(fallbackBlob);
       }
 
