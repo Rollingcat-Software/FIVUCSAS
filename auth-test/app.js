@@ -3845,4 +3845,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', bindings[id]);
   });
+
+  // Keyboard navigation for card headers (moved from inline script)
+  document.querySelectorAll('.card-header[role="button"]').forEach(function(header) {
+    header.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        header.click();
+      }
+    });
+  });
 });

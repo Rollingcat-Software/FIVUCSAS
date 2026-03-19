@@ -449,16 +449,5 @@
 <script src="biometric-engine.iife.js"></script>
 <script src="app.js"></script>
 
-<!-- Keyboard navigation for card headers -->
-<script>
-document.querySelectorAll('.card-header[role="button"]').forEach(function(header) {
-  header.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      header.click();
-    }
-  });
-});
-</script>
 </body>
 </html>
