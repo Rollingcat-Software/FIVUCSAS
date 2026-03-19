@@ -1965,8 +1965,7 @@ async function enrollVoice() {
       // Mark recording as used — must record again before verify/search
       voiceRecordingUsed = true;
       voiceBase64Data = null;
-      document.getElementById('btnVoiceVerify').disabled = true;
-      document.getElementById('btnVoiceSearch').disabled = true;
+      // Buttons stay enabled — user is informed to re-record via message
       showResult('voiceResult', 'Voice enrolled!\n\nPlease record a NEW sample for verification (do not reuse the enrollment recording).\n\n' + JSON.stringify(resp, null, 2), ok);
     } else {
       showResult('voiceResult', 'Voice enrollment failed.\n\n' + JSON.stringify(resp, null, 2), ok);
