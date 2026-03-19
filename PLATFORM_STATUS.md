@@ -52,7 +52,7 @@ University project (Marmara University, CSE4297/CSE4197) building a **multi-tena
 
 | Service | Tech | Port | Status |
 |---------|------|------|--------|
-| identity-core-api | Spring Boot 4.0.2 / Java 21 | 8080 | ✅ Running (Hetzner VPS) |
+| identity-core-api | Spring Boot 3.2.0 / Java 21 | 8080 | ✅ Running (Hetzner VPS) |
 | biometric-processor | FastAPI / Python 3.11 | 8001 | ✅ Running (Local Docker) |
 | web-app | React 18 + TypeScript + Vite | Hostinger | ✅ Live — https://ica-fivucsas.rollingcatsoftware.com |
 | client-apps | Kotlin Multiplatform | — | 70% |
@@ -210,7 +210,7 @@ TenantContextFilter
 | QR Code step | POST /sessions/{id}/steps/{n} | ✅ Implemented | Cross-device delegation |
 | Fingerprint step | POST /sessions/{id}/steps/{n} | ⚠️ Stub | biometric-processor stub always fails |
 | Voice step | POST /sessions/{id}/steps/{n} | ⚠️ Stub | biometric-processor stub always fails |
-| NFC Document step | POST /sessions/{id}/steps/{n} | ❌ Broken | Hardcoded failure |
+| NFC Document step | POST /sessions/{id}/steps/{n} | ✅ Working | Database lookup + verification |
 | Hardware Key (WebAuthn) | POST /sessions/{id}/steps/{n} | ✅ Implemented | FIDO2 |
 | Step-Up Auth (ECDSA P-256) | POST /api/v1/step-up/* | ✅ Working | V17, deployed to Hetzner |
 
@@ -366,7 +366,7 @@ TenantContextFilter
 
 | Issue | Location | Severity | Fix Complexity |
 |-------|----------|----------|----------------|
-| NfcDocumentAuthHandler hardcoded failure | handler/NfcDocumentAuthHandler.java:37-41 | Medium | Low — needs real NFC logic |
+| ~~NfcDocumentAuthHandler~~ | ~~handler/NfcDocumentAuthHandler.java~~ | ~~Fixed~~ | ✅ Wired to NfcController verify with DB lookup |
 | FingerprintAuthHandler hits stub | biometric-processor is stub | Medium | High — needs platform SDK |
 | VoiceAuthHandler hits stub | biometric-processor is stub | Medium | High — needs voice model |
 | UserController in-memory pagination | UserController.getAllUsers() | Low | Medium — add DB-level pageable |

@@ -21,7 +21,7 @@
 
 | Component | Technology | Port |
 |-----------|-----------|------|
-| Identity Core API | Spring Boot 4.0.2 (Java 21) | 8080 |
+| Identity Core API | Spring Boot 3.2.0 (Java 21) | 8080 |
 | Biometric Processor | FastAPI (Python 3.11+) | 8001 |
 | Web Dashboard | React 18 + TypeScript | 5173 |
 | Mobile/Desktop | Kotlin Multiplatform | - |
@@ -69,7 +69,7 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - **Firewall**: UFW — 22/80/443 open
 
 **Running Containers on Hetzner (deploy user, /opt/projects/fivucsas/):**
-- `identity-core-api` (port 8080, healthy) — Spring Boot 4.0.2 / Java 21
+- `identity-core-api` (port 8080, healthy) — Spring Boot 3.2.0 / Java 21
 - `biometric-api` (port 8001, healthy) — FastAPI, CPU mode, Resemblyzer + DeepFace
 - `shared-redis` (port 6379, internal only)
 - `shared-postgres` with pgvector (port 5432, internal only) — biometric_db: face_embeddings, voice_enrollments

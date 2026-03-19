@@ -61,13 +61,13 @@
 | SMS OTP | DONE | DONE (step) | DONE (SmsOtpScreen) | DONE (Twilio ready) | N/A |
 | Hardware Token | DONE | DONE (step) | N/A (cross-platform) | DONE (WebAuthn) | N/A |
 | Card Detection | DONE (YOLO) | DONE (CardDetectionPage) | MISSING | DONE | DONE |
-| NFC Auth Flow | DONE (browser) | DONE (step) | DONE (read) | STUB (returns failure) | N/A |
+| NFC Auth Flow | DONE (browser) | DONE (step) | DONE (read) | DONE (DB lookup + verify) | N/A |
 
 **Coverage %:**
 - Auth-test: 100% (reference implementation)
 - Web-app: ~90% (missing voice search page, liveness puzzle page as standalone)
 - Client-apps: ~80% (missing voice verify, face liveness, bank enroll, card detection)
-- Backend: ~95% (NfcDocumentAuthHandler stubbed, FP-External stub)
+- Backend: ~97% (FP-External stub)
 - Biometric-processor: ~95% (fingerprint endpoints return 501)
 
 ### Specific Remaining Items
@@ -76,7 +76,7 @@
 
 | # | Item | Files to Change | Effort |
 |---|------|----------------|--------|
-| 1 | **NfcDocumentAuthHandler**: Currently always returns failure. Wire it to NfcController's verify endpoint so NFC cards enrolled via REST can be used in auth flows | `identity-core-api/.../handler/NfcDocumentAuthHandler.java` | Small |
+| ~~1~~ | ~~**NfcDocumentAuthHandler**: Wired to NfcController's verify endpoint with database lookup and verification. NFC cards enrolled via REST can be used in auth flows.~~ | `identity-core-api/.../handler/NfcDocumentAuthHandler.java` | ✅ DONE |
 | 2 | **WebAuthn registration endpoint**: FingerprintStep and HardwareKeyStep do client-side WebAuthn but there's no backend endpoint to save the credential. Need `POST /api/v1/webauthn/register` that stores to `webauthn_credentials` table (V18 migration exists) | `identity-core-api` — new WebAuthnController.java or extend StepUpController | Medium |
 | 3 | **WebAuthn assertion endpoint**: Need `POST /api/v1/webauthn/authenticate` to verify assertions during login flow | Same controller as #2 | Medium |
 
@@ -419,7 +419,7 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [x] V22 Flyway migration: `nfc_card_enrollments` table
 - [x] Browser NDEF fallback in auth-test (Chrome Android)
 - [ ] Web browser: "Scan with FIVUCSAS app" flow (QR → app → push result)
-- [ ] NfcDocumentAuthHandler: wire to NfcController verify (currently stubbed)
+- [x] NfcDocumentAuthHandler: wired to NfcController verify with database lookup and verification
 
 ### Phase 3: Voice — Full Pipeline (Week 3-4) — ✅ COMPLETE
 **Goal**: Voice enrollment + verification with pgvector storage.
