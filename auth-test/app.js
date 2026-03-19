@@ -1,3 +1,46 @@
+// === BIOMETRIC ENGINE AVAILABLE ===
+// The engine library is loaded via biometric-engine.iife.js (IIFE bundle).
+// Access via: window.FIVUCSAS
+//
+// Available classes & namespaces:
+//   FIVUCSAS.BiometricEngine       — Singleton orchestrator (getInstance / initialize)
+//   FIVUCSAS.BiometricEngineBuilder — Builder pattern for custom configuration
+//   FIVUCSAS.FaceDetector           — MediaPipe FaceLandmarker wrapper
+//   FIVUCSAS.QualityAssessor        — Face image quality scoring
+//   FIVUCSAS.HeadPoseEstimator      — Yaw/pitch estimation from landmarks
+//   FIVUCSAS.FaceTracker            — Multi-face tracking across frames
+//   FIVUCSAS.FaceMetricsCalculator  — EAR, MAR, smile, eyebrow metrics
+//   FIVUCSAS.BiometricPuzzle        — Liveness challenge puzzle orchestrator
+//   FIVUCSAS.FrameProcessor         — Detection loop (video → FrameResult)
+//   FIVUCSAS.EnrollmentController   — Multi-angle enrollment state machine
+//   FIVUCSAS.PassiveLivenessDetector — Texture/color-based liveness scoring
+//   FIVUCSAS.EmbeddingComputer      — Face embedding (MobileFaceNet ONNX / landmark geometry)
+//   FIVUCSAS.ChallengeType          — Enum: BLINK, SMILE, TURN_LEFT, etc.
+//   FIVUCSAS.EnrollmentState        — Enum: IDLE, DETECTING, CAPTURING, etc.
+//   FIVUCSAS.challenges.*           — Individual challenge detectors (BlinkDetector, etc.)
+//   FIVUCSAS.constants.*            — All thresholds & landmark indices
+//   FIVUCSAS.imageUtils.*           — toGrayscale, computeLaplacianVariance, etc.
+//
+// Example usage (replace inline detection code):
+//   const engine = FIVUCSAS.BiometricEngine.getInstance();
+//   await engine.initialize();
+//   const processor = engine.frameProcessor;
+//   processor.start(videoEl, (result) => {
+//     // result.faces — detected faces with landmarks
+//     // result.quality — QualityReport
+//     // result.pose — HeadPose
+//     // result.liveness — LivenessResult
+//   });
+//
+// Example: Replace inline blink detection with engine metrics:
+//   const metrics = new FIVUCSAS.FaceMetricsCalculator();
+//   const ear = metrics.calculateEAR(landmarks, FIVUCSAS.constants.LEFT_EYE);
+//   const isBlinking = ear < FIVUCSAS.constants.EAR_THRESHOLD;
+//
+// Migration: Each section of app.js can be incrementally refactored to
+// delegate to the engine. No big-bang rewrite needed.
+// =====================================================================
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function getApiUrl() {
