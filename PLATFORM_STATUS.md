@@ -62,7 +62,7 @@ University project (Marmara University, CSE4297/CSE4197) building a **multi-tena
 | identity-core-api | Spring Boot 3.2.0 / Java 21 | 8080 | ✅ Running (Hetzner VPS) |
 | biometric-processor | FastAPI / Python 3.11 | 8001 | ✅ Running (Local Docker) |
 | web-app | React 18 + TypeScript + Vite | Hostinger | ✅ Live — https://ica-fivucsas.rollingcatsoftware.com |
-| client-apps | Kotlin Multiplatform | — | 70% |
+| client-apps | Kotlin Multiplatform | — | 75% |
 | api-gateway | NGINX | 8000 | ✅ Running (Local Docker) |
 | postgres | PostgreSQL 16 + pgvector | 5432 | ✅ Running |
 | redis | Redis 7 | 6379 | ✅ Running |
@@ -459,7 +459,7 @@ The biometric-processor needs a GPU to run DeepFace at acceptable speed:
 - Compose Multiplatform for UI
 
 ### What's missing
-- Full implementation (currently 70%)
+- Full implementation (currently 75% — 3 new screens added 2026-03-19: VoiceVerifyScreen, FaceLivenessScreen, CardDetectionScreen)
 - Tests require Android SDK to run (`./gradlew :shared:test`)
 - Step-up public key registration from mobile side
 - Need to verify P-256 key format compatibility with backend
@@ -493,7 +493,7 @@ The biometric-processor needs a GPU to run DeepFace at acceptable speed:
 | Gap | Effort | Priority |
 |-----|--------|----------|
 | Fingerprint biometric (biometric-processor stub) | High | Medium |
-| Voice biometric (biometric-processor stub) | High | Low |
+| ~~Voice biometric (biometric-processor stub)~~ | ~~High~~ | ✅ Done (Resemblyzer) |
 | NFC Document auth | Very High | Low |
 | Mobile apps (70% done) | High | High |
 | Cloudflare Tunnel for GPU biometric | Low | Medium |

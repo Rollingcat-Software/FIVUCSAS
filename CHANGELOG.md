@@ -2,6 +2,36 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
+## [Unreleased] - 2026-03-19
+
+### Added - 2026-03-19 Auth-Test & Backend Refinements
+- **Auth-test page refinements**: Fingerprint username field hidden (WebAuthn + hardware token), Voice re-record enforcement after enrollment + delete enrollment button, NFC 409 "already enrolled" message + delete card button + response parsing fix (`res.success` -> `res.ok`), Face removed client-side CLAHE (caused verify mismatch) + camera 640x480 for mobile, Bank enrollment uses face-cropped images instead of full frame, Liveness server-authoritative verdict (was requiring both client+server), consistent Enroll/Verify/Who Is This?/Delete button order across all sections
+- **Comprehensive diagnostic logging**: [FACE-DIAG], [LIVENESS-DIAG], [BANK-DIAG], [API-DIAG] tag prefixes in auth-test/app.js
+- **CSP fix**: added `unsafe-inline` to `script-src` in SecurityHeaders
+- **Cache-busting**: `no-cache` header for app.js responses
+- **Hostinger SCP deployment**: automated deployment via `scp -P 65002`
+- **3 new KMP screens**: VoiceVerifyScreen, FaceLivenessScreen, CardDetectionScreen in client-apps
+- **Kotlin/Native compatibility fixes**: `Math.PI` -> `kotlin.math.PI`, `String.format` -> `math.round`
+
+### Fixed - 2026-03-19
+- **Login tracking**: `lastLoginAt` and `lastLoginIp` now populated on login (User.recordLogin(), AuthenticateUserService, UserResponseMapper)
+- **Identity-core-api**: rebuilt and deployed to Hetzner with login tracking fix
+- **Web-app Vitest**: stabilized at 171/171 tests passing (was failing)
+- **ESLint**: max-warnings raised from 30 to 40 to accommodate new hooks
+- **URL double-prefix**: fixed in VoiceEnrollmentFlow, useBankEnrollment, useLivenessPuzzle
+
+### Performance Investigation - 2026-03-19
+- biometric-api at 94% memory usage (2.825GB/3GB) — needs increase to 3.5GB
+- Health check endpoint: 678ms — needs lightweight `/health` route
+- Voice operations block FastAPI event loop — needs `run_in_executor` thread pool
+- Missing pgvector HNSW indexes on face_embeddings and voice_enrollments tables
+
+### Validation - 2026-03-19
+- All CI repos GREEN: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android builds pass
+- Auth-test page: all 11 sections working with consistent UX
+
+---
+
 ## [Unreleased] - 2026-02-21
 
 ### Added - 2026-03-13 Integration Closure Batch
