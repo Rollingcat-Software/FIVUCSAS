@@ -1,5 +1,5 @@
 # FIVUCSAS — Platform Status, Analysis & Roadmap
-> Last updated: 2026-03-16
+> Last updated: 2026-03-19
 > Generated from deep codebase analysis across all submodules
 
 ---
@@ -40,6 +40,13 @@
 | 2026-03-16 | Configure Hostinger SMTP for email OTP | ✅ Done — smtp.hostinger.com:587 |
 | 2026-03-16 | Firebase FCM credentials | ✅ Done — firebase-adminsdk.json mounted |
 | 2026-03-16 | Full UI/UX audit via Playwright | ✅ Done — see web-app/UI_UX_AUDIT_REPORT.md |
+| 2026-03-19 | Auth-test page refinements (FP, Voice, NFC, Face, Bank, Liveness) | ✅ Done — all sections polished, consistent UX |
+| 2026-03-19 | Fix lastLoginAt/lastLoginIp not populated | ✅ Done — User.recordLogin(), AuthenticateUserService, UserResponseMapper |
+| 2026-03-19 | 3 new KMP screens (VoiceVerify, FaceLiveness, CardDetection) | ✅ Done — Kotlin/Native compatibility fixed |
+| 2026-03-19 | Web-app Vitest stabilized (171/171) | ✅ Done — ESLint max-warnings 30->40, URL double-prefix fix |
+| 2026-03-19 | Performance investigation (biometric-api) | ✅ Done — 94% memory, 678ms health check, event loop blocking found |
+| 2026-03-19 | Hostinger SCP deployment automated | ✅ Done |
+| 2026-03-19 | Identity-core-api rebuilt and deployed | ✅ Done |
 
 ---
 
@@ -209,7 +216,7 @@ TenantContextFilter
 | TOTP step | POST /sessions/{id}/steps/{n} | ✅ Implemented | |
 | QR Code step | POST /sessions/{id}/steps/{n} | ✅ Implemented | Cross-device delegation |
 | Fingerprint step | POST /sessions/{id}/steps/{n} | ⚠️ Stub | biometric-processor stub always fails |
-| Voice step | POST /sessions/{id}/steps/{n} | ⚠️ Stub | biometric-processor stub always fails |
+| Voice step | POST /sessions/{id}/steps/{n} | ✅ Working | Resemblyzer 256-dim, 490-585ms (via biometric-processor) |
 | NFC Document step | POST /sessions/{id}/steps/{n} | ✅ Working | Database lookup + verification |
 | Hardware Key (WebAuthn) | POST /sessions/{id}/steps/{n} | ✅ Implemented | FIDO2 |
 | Step-Up Auth (ECDSA P-256) | POST /api/v1/step-up/* | ✅ Working | V17, deployed to Hetzner |
@@ -260,8 +267,8 @@ TenantContextFilter
 | Face verification | POST /api/v1/biometric/verify/{userId} | ✅ Working |
 | Fingerprint enrollment | POST /api/v1/biometric/fingerprint/enroll/{userId} | ⚠️ Stub |
 | Fingerprint verification | POST /api/v1/biometric/fingerprint/verify/{userId} | ⚠️ Stub |
-| Voice enrollment | POST /api/v1/biometric/voice/enroll/{userId} | ⚠️ Stub |
-| Voice verification | POST /api/v1/biometric/voice/verify/{userId} | ⚠️ Stub |
+| Voice enrollment | POST /api/v1/biometric/voice/enroll/{userId} | ✅ Working (Resemblyzer 256-dim) |
+| Voice verification | POST /api/v1/biometric/voice/verify/{userId} | ✅ Working (490-585ms) |
 | Anti-spoofing (liveness) | (internal, face pipeline) | ✅ DeepFace 0.0.98 |
 | Enrollment management | GET/DELETE /api/v1/enrollments | ✅ Working |
 | Per-user enrollment | GET/DELETE /api/v1/users/{id}/enrollments | ✅ Working |
@@ -368,7 +375,7 @@ TenantContextFilter
 |-------|----------|----------|----------------|
 | ~~NfcDocumentAuthHandler~~ | ~~handler/NfcDocumentAuthHandler.java~~ | ~~Fixed~~ | ✅ Wired to NfcController verify with DB lookup |
 | FingerprintAuthHandler hits stub | biometric-processor is stub | Medium | High — needs platform SDK |
-| VoiceAuthHandler hits stub | biometric-processor is stub | Medium | High — needs voice model |
+| ~~VoiceAuthHandler hits stub~~ | ~~biometric-processor is stub~~ | ~~Fixed~~ | ✅ Resemblyzer 256-dim deployed on Hetzner |
 | UserController in-memory pagination | UserController.getAllUsers() | Low | Medium — add DB-level pageable |
 | WebAuthn no frontend enrollment UI | web-app missing | Low | Medium |
 | TOTP enrollment not connected to frontend | web-app TotpEnrollment component | Low | Low |
@@ -392,9 +399,15 @@ TenantContextFilter
 
 ### What's missing / Broken
 - **Fingerprint endpoint** — stub, always returns failure
-- **Voice endpoint** — stub, always returns failure
+- ~~**Voice endpoint** — stub, always returns failure~~ ✅ FIXED — Resemblyzer 256-dim, 490-585ms
 - **Deployment** — Cloudflare Tunnel to laptop GPU not set up (scripts ready in `scripts/deploy/`)
 - **Production URL** — `bpa-fivucsas.rollingcatsoftware.com` pending (tunnel not running)
+
+### Performance Issues (discovered 2026-03-19)
+- **Memory**: biometric-api at 94% (2.825GB/3GB) — needs increase to 3.5GB
+- **Health check**: 678ms — needs lightweight `/health` endpoint
+- **Event loop**: Voice operations block FastAPI event loop — need `run_in_executor` thread pool
+- **Indexes**: Missing pgvector HNSW indexes on face_embeddings and voice_enrollments tables
 
 ### Why GPU deployment matters
 The biometric-processor needs a GPU to run DeepFace at acceptable speed:

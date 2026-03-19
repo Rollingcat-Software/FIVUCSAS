@@ -1,6 +1,6 @@
 # FIVUCSAS — Comprehensive Production Roadmap V2
 
-> **Created**: 2026-03-17 | **Revised**: 2026-03-18 (final)
+> **Created**: 2026-03-17 | **Revised**: 2026-03-19
 > **Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
 > **Philosophy**: Browser handles everything it can. What it can't → client-app acts as authenticator bridge.
 > **Server**: CPU-only (no GPU needed) — Hetzner VPS + Hostinger
@@ -37,6 +37,28 @@
 
 ---
 
+## Session 2026-03-19 Results
+
+### Completed:
+- **Auth-test page refinements**: FP username hidden, Voice re-record + delete, NFC 409 + delete + response parsing fix, Face CLAHE removed + 640x480 camera, Bank uses cropped images, Liveness server-authoritative, consistent button order
+- **Diagnostic logging**: [FACE-DIAG], [LIVENESS-DIAG], [BANK-DIAG], [API-DIAG] tags
+- **CSP**: added `unsafe-inline` to `script-src`; cache-busting `no-cache` header for app.js
+- **Login tracking**: `lastLoginAt`/`lastLoginIp` fixed (User.recordLogin(), AuthenticateUserService, UserResponseMapper)
+- **identity-core-api** rebuilt and deployed to Hetzner
+- **Client-apps**: 3 new KMP screens (VoiceVerifyScreen, FaceLivenessScreen, CardDetectionScreen)
+- **Kotlin/Native compat**: `Math.PI` -> `kotlin.math.PI`, `String.format` -> `math.round`
+- **Web-app**: Vitest 171/171, ESLint max-warnings 30->40, URL double-prefix fix
+- **Hostinger deployment**: SCP automated
+- **CI/CD**: All repos green (Sarnic 456, web-app 171, client-apps iOS+Android)
+
+### Performance findings (to address):
+- biometric-api at 94% memory (2.825GB/3GB) — needs 3.5GB
+- Health check 678ms — needs lightweight endpoint
+- Voice ops block event loop — need thread pool
+- Missing pgvector HNSW indexes
+
+---
+
 ## Remaining Work for 100% Coverage
 
 ### Coverage Matrix (as of 2026-03-18)
@@ -47,10 +69,10 @@
 | Face Enroll | DONE | DONE (step) | DONE (BiometricEnrollScreen) | DONE | DONE |
 | Face Verify | DONE | DONE (step) | DONE (BiometricVerifyScreen) | DONE | DONE |
 | Face Search | DONE | DONE (FaceSearchPage) | DONE (IdentifyTenantScreen) | DONE | DONE |
-| Face Liveness | DONE | DONE (hooks) | MISSING | DONE | DONE |
+| Face Liveness | DONE | DONE (hooks) | DONE (FaceLivenessScreen) | DONE | DONE |
 | Face Bank Enroll | DONE | DONE (hook) | MISSING | DONE | DONE |
 | Voice Enroll | DONE | DONE (step) | DONE (VoiceEnrollScreen) | DONE | DONE |
-| Voice Verify | DONE | DONE (step) | MISSING (screen) | DONE | DONE |
+| Voice Verify | DONE | DONE (step) | DONE (VoiceVerifyScreen) | DONE | DONE |
 | Voice Search | DONE | MISSING (no page) | MISSING | DONE | DONE |
 | NFC Read | DONE | DONE (step) | DONE (NfcReadScreen) | DONE (5 endpoints) | N/A |
 | FP-Embedded | DONE | DONE (step+WebAuthn) | DONE (FingerprintAuthenticator) | DONE (StepUp) | N/A |
@@ -60,13 +82,13 @@
 | TOTP | DONE | DONE (step+settings) | DONE (TotpEnrollScreen) | DONE | N/A |
 | SMS OTP | DONE | DONE (step) | DONE (SmsOtpScreen) | DONE (Twilio ready) | N/A |
 | Hardware Token | DONE | DONE (step) | N/A (cross-platform) | DONE (WebAuthn) | N/A |
-| Card Detection | DONE (YOLO) | DONE (CardDetectionPage) | MISSING | DONE | DONE |
+| Card Detection | DONE (YOLO) | DONE (CardDetectionPage) | DONE (CardDetectionScreen) | DONE | DONE |
 | NFC Auth Flow | DONE (browser) | DONE (step) | DONE (read) | DONE (DB lookup + verify) | N/A |
 
 **Coverage %:**
 - Auth-test: 100% (reference implementation)
 - Web-app: ~90% (missing voice search page, liveness puzzle page as standalone)
-- Client-apps: ~80% (missing voice verify, face liveness, bank enroll, card detection)
+- Client-apps: ~90% (missing bank enroll; voice verify, face liveness, card detection added 2026-03-19)
 - Backend: ~97% (FP-External stub)
 - Biometric-processor: ~95% (fingerprint endpoints return 501)
 
@@ -84,9 +106,9 @@
 
 | # | Item | Files to Change | Effort |
 |---|------|----------------|--------|
-| 4 | **Client-apps: Voice verify screen** — VoiceEnrollScreen exists (382 lines) but no VoiceVerifyScreen for login-time voice verification | `client-apps/androidApp/.../screen/VoiceVerifyScreen.kt` (new), wire in navigation | Small |
-| 5 | **Client-apps: Face liveness screen** — BiometricEnrollScreen captures face but doesn't do liveness puzzle (head turn, blink) like auth-test does | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add liveness challenge UI | Medium |
-| 6 | **Client-apps: Card detection** — No visual card detection in mobile app (only NFC). Could use CameraX + ML Kit or server YOLO fallback | New screen + ViewModel | Large |
+| ~~4~~ | ~~**Client-apps: Voice verify screen** — VoiceEnrollScreen exists (382 lines) but no VoiceVerifyScreen for login-time voice verification~~ | `client-apps/androidApp/.../screen/VoiceVerifyScreen.kt` | ✅ DONE (2026-03-19) |
+| ~~5~~ | ~~**Client-apps: Face liveness screen** — BiometricEnrollScreen captures face but doesn't do liveness puzzle (head turn, blink) like auth-test does~~ | `client-apps/androidApp/.../screen/FaceLivenessScreen.kt` | ✅ DONE (2026-03-19) |
+| ~~6~~ | ~~**Client-apps: Card detection** — No visual card detection in mobile app (only NFC). Could use CameraX + ML Kit or server YOLO fallback~~ | `client-apps/androidApp/.../screen/CardDetectionScreen.kt` | ✅ DONE (2026-03-19) |
 | 7 | **Web-app: Voice search page** — useFaceSearch hook exists but no useVoiceSearch hook or VoiceSearchPage for 1:N speaker identification | `web-app/src/hooks/useVoiceSearch.ts` + `web-app/src/pages/VoiceSearchPage.tsx` (new) | Small |
 | 8 | **Client-apps: Push notification (FCM)** — No Firebase Cloud Messaging integration for push-based auth approval | `client-apps/androidApp/build.gradle.kts` + new FCM service + manifest | Large |
 | 9 | **Web-app: Enrollment page NFC flow** — EnrollmentPage lists NFC_DOCUMENT but clicking it shows generic "requires mobile" message; should show QR code to open app | `web-app/.../EnrollmentPage.tsx` — improve NFC enrollment UX | Small |
@@ -104,6 +126,16 @@
 | 16 | **Hardware token E2E test** — Needs physical YubiKey to verify full flow | Manual testing only | Small |
 | 17 | **Client-apps: bank enrollment** — No 3-angle face capture (frontal + left + right) like auth-test has | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add multi-angle capture | Medium |
 | 18 | **iOS target** — iosMain platform layer complete (IosSecureStorage/Keychain, IosCameraService/AVFoundation, IosLogger/NSLog, FingerprintPlatform/LocalAuthentication stub, NoOp NFC/Push, DefaultNetworkMonitor, Koin DI module). Needs Swift/SwiftUI wrappers for UI. | `client-apps/iosApp/` — SwiftUI wrappers, Core NFC activation, LocalAuthentication real impl | Medium |
+
+#### P1.5 (Performance — discovered 2026-03-19)
+
+| # | Item | Details | Effort |
+|---|------|---------|--------|
+| 25 | **biometric-api memory** — at 94% (2.825GB/3GB), needs increase to 3.5GB | Docker Compose memory limit | Small |
+| 26 | **Health check latency** — 678ms, needs lightweight `/health` endpoint | biometric-processor new route | Small |
+| 27 | **Voice event loop blocking** — voice operations block FastAPI event loop, need thread pool | `run_in_executor` wrapping | Medium |
+| 28 | **pgvector HNSW indexes** — missing on face_embeddings and voice_enrollments | SQL migration | Small |
+| 29 | **Liveness threshold rewrite** — server-authoritative verdict working, thresholds need alignment with local demo | biometric-processor config | Medium |
 
 #### P3 (Future/stretch)
 
