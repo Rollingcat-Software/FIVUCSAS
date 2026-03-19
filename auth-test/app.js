@@ -708,116 +708,6 @@ var lastFaceBlob = null;
 // Store last detected face landmarks for cropping
 var lastFaceLandmarks = null;
 
-/**
- * CLAHE-like contrast enhancement for face images (mirrors server-side preprocessing).
- * Operates on canvas ImageData: converts to grayscale-like LAB L-channel enhancement,
- * applies adaptive histogram equalization to improve face recognition in poor lighting.
- */
-function applyContrastEnhancement(canvas) {
-  var ctx = canvas.getContext('2d');
-  var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  var data = imageData.data;
-  var w = canvas.width, h = canvas.height;
-
-  // Tile-based CLAHE approximation
-  // 1. Compute per-tile histograms and CDFs for the luminance channel
-  var tileW = Math.ceil(w / 8);
-  var tileH = Math.ceil(h / 8);
-  var clipLimit = 2.0; // matches server CLAHE clipLimit
-
-  // For each pixel, compute luminance (Y from RGB)
-  var lum = new Uint8Array(w * h);
-  for (var i = 0; i < w * h; i++) {
-    var idx = i * 4;
-    lum[i] = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
-  }
-
-  // Build tile CDFs
-  var numTilesX = 8, numTilesY = 8;
-  var tileCDFs = [];
-  for (var ty = 0; ty < numTilesY; ty++) {
-    tileCDFs[ty] = [];
-    for (var tx = 0; tx < numTilesX; tx++) {
-      var hist = new Float32Array(256);
-      var count = 0;
-      var startX = tx * tileW, startY = ty * tileH;
-      var endX = Math.min(startX + tileW, w), endY = Math.min(startY + tileH, h);
-      for (var y = startY; y < endY; y++) {
-        for (var x = startX; x < endX; x++) {
-          hist[lum[y * w + x]]++;
-          count++;
-        }
-      }
-      // Clip histogram
-      if (count > 0) {
-        var clipCount = clipLimit * count / 256;
-        var excess = 0;
-        for (var b = 0; b < 256; b++) {
-          if (hist[b] > clipCount) {
-            excess += hist[b] - clipCount;
-            hist[b] = clipCount;
-          }
-        }
-        var redistrib = excess / 256;
-        for (var b = 0; b < 256; b++) {
-          hist[b] += redistrib;
-        }
-        // Build CDF
-        var cdf = new Float32Array(256);
-        cdf[0] = hist[0];
-        for (var b = 1; b < 256; b++) {
-          cdf[b] = cdf[b - 1] + hist[b];
-        }
-        var cdfMin = cdf[0];
-        for (var b = 0; b < 256; b++) {
-          cdf[b] = Math.round(((cdf[b] - cdfMin) / (count - cdfMin)) * 255);
-          cdf[b] = Math.max(0, Math.min(255, cdf[b]));
-        }
-        tileCDFs[ty][tx] = cdf;
-      } else {
-        var identity = new Float32Array(256);
-        for (var b = 0; b < 256; b++) identity[b] = b;
-        tileCDFs[ty][tx] = identity;
-      }
-    }
-  }
-
-  // Apply with bilinear interpolation between tiles
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      var px = lum[y * w + x];
-
-      // Find tile coordinates
-      var ftx = (x / tileW) - 0.5;
-      var fty = (y / tileH) - 0.5;
-      var tx0 = Math.max(0, Math.floor(ftx));
-      var ty0 = Math.max(0, Math.floor(fty));
-      var tx1 = Math.min(numTilesX - 1, tx0 + 1);
-      var ty1 = Math.min(numTilesY - 1, ty0 + 1);
-      var fx = ftx - tx0;
-      var fy = fty - ty0;
-      fx = Math.max(0, Math.min(1, fx));
-      fy = Math.max(0, Math.min(1, fy));
-
-      // Bilinear interpolation of mapped values
-      var v00 = tileCDFs[ty0][tx0][px];
-      var v10 = tileCDFs[ty0][tx1][px];
-      var v01 = tileCDFs[ty1][tx0][px];
-      var v11 = tileCDFs[ty1][tx1][px];
-      var newLum = (1 - fy) * ((1 - fx) * v00 + fx * v10) + fy * ((1 - fx) * v01 + fx * v11);
-
-      // Scale RGB channels proportionally
-      var scale = px > 0 ? newLum / px : 1;
-      var idx = (y * w + x) * 4;
-      data[idx] = Math.max(0, Math.min(255, Math.round(data[idx] * scale)));
-      data[idx + 1] = Math.max(0, Math.min(255, Math.round(data[idx + 1] * scale)));
-      data[idx + 2] = Math.max(0, Math.min(255, Math.round(data[idx + 2] * scale)));
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-}
-
 function captureFace() {
   // Quality gate — block capture if quality is too poor
   if (lastQuality) {
@@ -876,14 +766,8 @@ function captureFace() {
     console.log('[captureFace] Full frame resized: ' + c.width + 'x' + c.height + ' from ' + w + 'x' + h);
   }
 
-  // Apply CLAHE-like contrast enhancement (mirrors server-side preprocessing)
-  // Improves face recognition accuracy in poor/uneven lighting (especially mobile)
-  try {
-    applyContrastEnhancement(c);
-    console.log('[captureFace] CLAHE contrast enhancement applied');
-  } catch (e) {
-    console.warn('[captureFace] CLAHE enhancement failed, using raw image:', e.message);
-  }
+  // No client-side preprocessing — server handles CLAHE/normalization to ensure
+  // consistent embeddings between enroll and verify (avoids double-preprocessing)
 
   c.toBlob(function(blob) {
     lastFaceBlob = blob;
@@ -3561,30 +3445,38 @@ async function startBankEnrollment() {
     });
     var elapsed = performance.now() - start;
 
-    // If multi-enroll fails (404, 500, or success:false), fall back to sequential single enrolls
+    // If multi-enroll fails (404, 500, or success:false), fall back to single enroll with front-facing image
     var multiData = await res.json().catch(function() { return null; });
     addLogEntry('POST', enrollUrl, res.status, elapsed, '(multipart: 3 angle images)', multiData);
-    var multiOk = res.ok && multiData && multiData.success !== false && !multiData.message?.includes('rejected');
+    var multiOk = res.ok && multiData && multiData.success !== false;
     if (!multiOk) {
-      showResult('faceResult', 'Multi-enroll returned error, falling back to sequential single enrollments...', false);
-      showResult('faceResult', 'Multi-enroll endpoint not available, falling back to sequential single enrollments...', false);
-      var lastData = null;
-      for (var k = 0; k < capturedBlobs.length; k++) {
-        var singleForm = new FormData();
-        singleForm.append('image', capturedBlobs[k], 'face_' + k + '.jpg');
-        var singleStart = performance.now();
-        var singleRes = await fetch(getApiUrl() + '/api/v1/biometric/enroll/' + uid, {
-          method: 'POST',
-          headers: token ? { 'Authorization': 'Bearer ' + token } : {},
-          body: singleForm
-        });
-        var singleElapsed = performance.now() - singleStart;
-        lastData = await singleRes.json().catch(function() { return null; });
-        addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, singleRes.status, singleElapsed, '(angle ' + (k + 1) + ')', lastData);
-        showResult('faceResult', 'Angle ' + (k + 1) + ' enrolled: ' + (singleRes.ok ? 'OK' : 'FAILED') + ' (' + formatMs(singleElapsed) + ')', singleRes.ok);
+      var multiMsg = multiData && multiData.message ? multiData.message : ('HTTP ' + res.status);
+      showResult('faceResult', 'Multi-enroll failed (' + multiMsg + '), falling back to single enrollment with front-facing image...', false);
+      // Only enroll the first (front-facing) image — sending all 3 sequentially
+      // causes 400 errors on angles 2 and 3 because the single-enroll endpoint
+      // does not support multi-angle fusion
+      var singleForm = new FormData();
+      singleForm.append('image', capturedBlobs[0], 'face_front.jpg');
+      var singleStart = performance.now();
+      var singleRes = await fetch(getApiUrl() + '/api/v1/biometric/enroll/' + uid, {
+        method: 'POST',
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+        body: singleForm
+      });
+      var singleElapsed = performance.now() - singleStart;
+      var singleData = await singleRes.json().catch(function() { return null; });
+      addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, singleRes.status, singleElapsed, '(front-facing fallback)', singleData);
+      if (singleRes.ok) {
+        document.getElementById('faceOverlay').textContent = 'Enrollment complete (single image fallback)';
+        document.getElementById('faceOverlay').style.color = '#3fb950';
+        showResult('faceResult', 'Single-image enrollment OK (' + formatMs(singleElapsed) + ')\n' +
+          JSON.stringify(singleData, null, 2), true);
+      } else {
+        document.getElementById('faceOverlay').textContent = 'Enrollment failed';
+        document.getElementById('faceOverlay').style.color = '#f85149';
+        showResult('faceResult', 'Single-image enrollment also failed (' + singleRes.status + '): ' +
+          JSON.stringify(singleData, null, 2), false);
       }
-      document.getElementById('faceOverlay').textContent = 'Bank enrollment complete (fallback mode)';
-      document.getElementById('faceOverlay').style.color = '#3fb950';
     } else {
       if (multiData) {
         document.getElementById('faceOverlay').textContent = 'BANK ENROLLMENT SUCCESS!';
