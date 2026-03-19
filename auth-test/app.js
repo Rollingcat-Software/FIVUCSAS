@@ -257,6 +257,12 @@ async function doLogin() {
     if (res.data.user && res.data.user.id) {
       localStorage.setItem('fivucsas_user_id', res.data.user.id);
       showUserPanel(res.data.user);
+      // Auto-fill fingerprint & hardware token username fields with logged-in email
+      var userEmail = res.data.user.email || '';
+      if (userEmail) {
+        document.getElementById('fpeUsername').value = userEmail;
+        document.getElementById('hwUsername').value = userEmail;
+      }
     }
     showResult('loginResult',
       'Login successful (' + formatMs(res.elapsed) + ')\n\n' + JSON.stringify(res.data, null, 2), true);
@@ -377,13 +383,17 @@ function assessQuality(video, landmarks) {
       if (lx > maxX) maxX = lx; if (ly > maxY) maxY = ly;
     });
     faceSizePx = Math.min(maxX - minX, maxY - minY);
-    // Face size score: < 80px = 0, > 250px = 100
-    if (faceSizePx <= 80) {
+    // Face size score: scale thresholds relative to image size for mobile compatibility
+    // On a 640px wide image, min=80, max=250. Scale proportionally for other resolutions.
+    var refDim = Math.min(w, h);
+    var sizeMin = Math.max(40, refDim * 0.125);  // ~80px at 640px
+    var sizeMax = Math.max(100, refDim * 0.39);   // ~250px at 640px
+    if (faceSizePx <= sizeMin) {
       faceSizeScore = 0;
-    } else if (faceSizePx >= 250) {
+    } else if (faceSizePx >= sizeMax) {
       faceSizeScore = 100;
     } else {
-      faceSizeScore = ((faceSizePx - 80) / (250 - 80)) * 100;
+      faceSizeScore = ((faceSizePx - sizeMin) / (sizeMax - sizeMin)) * 100;
     }
   }
 
@@ -483,12 +493,24 @@ function detectFaceLoop() {
 
     var cx = canvas.width / 2, cy = canvas.height / 2;
 
-    // Draw centering guide oval
+    // Draw centering guide oval — scale based on shorter dimension for mobile
+    // On mobile, video may be portrait (tall), so use width-based scaling
+    var ovalRadiusX, ovalRadiusY;
+    var minDim = Math.min(canvas.width, canvas.height);
+    if (canvas.width < canvas.height) {
+      // Portrait mode (mobile front camera)
+      ovalRadiusX = minDim * 0.35;
+      ovalRadiusY = ovalRadiusX * 1.35;
+    } else {
+      // Landscape mode (desktop webcam)
+      ovalRadiusX = canvas.width * 0.22;
+      ovalRadiusY = canvas.height * 0.38;
+    }
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
-    ctx.ellipse(cx, cy, canvas.width * 0.22, canvas.height * 0.38, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, ovalRadiusX, ovalRadiusY, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1332,8 +1354,18 @@ function initNfc() {
     whoseBtn.id = 'nfcWhoseBtn';
     whoseBtn.textContent = "Whose Card?";
     whoseBtn.disabled = true;
+    whoseBtn.style.background = 'var(--purple)';
+    whoseBtn.style.color = '#fff';
     whoseBtn.addEventListener('click', nfcWhoseCard);
     actionsDiv.appendChild(whoseBtn);
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-danger';
+    deleteBtn.id = 'nfcDeleteBtn';
+    deleteBtn.textContent = 'Delete Card';
+    deleteBtn.disabled = true;
+    deleteBtn.addEventListener('click', nfcDeleteCard);
+    actionsDiv.appendChild(deleteBtn);
 
     el.appendChild(actionsDiv);
 
@@ -1441,10 +1473,12 @@ async function scanNfc() {
       var enrollBtn = document.getElementById('nfcEnrollBtn');
       var verifyBtn = document.getElementById('nfcVerifyBtn');
       var whoseBtn = document.getElementById('nfcWhoseBtn');
+      var deleteBtn2 = document.getElementById('nfcDeleteBtn');
       var enrollOpts = document.getElementById('nfcEnrollOptions');
       if (enrollBtn) enrollBtn.disabled = false;
       if (verifyBtn) verifyBtn.disabled = false;
       if (whoseBtn) whoseBtn.disabled = false;
+      if (deleteBtn2) deleteBtn2.disabled = false;
       if (enrollOpts) enrollOpts.style.display = 'flex';
     });
     reader.addEventListener('readingerror', function() {
@@ -1472,10 +1506,15 @@ async function nfcEnrollCard() {
       cardSerial: lastNfcSerial,
       cardType: cardType
     });
-    if (res.success) {
-      showResult('nfcResult', 'Card enrolled!\nSerial: ' + lastNfcSerial + '\nCard ID: ' + res.cardId, true);
+    // apiCall returns { ok, status, data, elapsed }
+    // Backend returns 201 on success — check res.ok (covers 2xx) or res.data fields
+    if (res.ok || res.status === 201) {
+      var d = res.data || {};
+      var cardId = d.cardId || d.id || d.enrollmentId || '';
+      showResult('nfcResult', 'Card enrolled! (' + formatMs(res.elapsed) + ')\nSerial: ' + lastNfcSerial + '\nCard ID: ' + cardId + '\n\n' + JSON.stringify(d, null, 2), true);
     } else {
-      showResult('nfcResult', 'Enrollment failed: ' + (res.message || 'Unknown error'), false);
+      var errMsg = (res.data && (res.data.message || res.data.error)) || JSON.stringify(res.data, null, 2);
+      showResult('nfcResult', 'Enrollment failed (' + (res.status || 'ERR') + '): ' + errMsg, false);
     }
   } catch (e) {
     showResult('nfcResult', 'Enrollment error: ' + (e.message || e), false);
@@ -1495,10 +1534,11 @@ async function nfcVerifyCard() {
     var res = await apiCall('POST', '/api/v1/nfc/verify', {
       cardSerial: lastNfcSerial
     });
-    if (res.enrolled) {
-      showResult('nfcResult', 'Card is ENROLLED\nOwner: ' + res.userName + '\nEmail: ' + res.email + '\nType: ' + res.cardType + '\nEnrolled: ' + res.enrolledAt, true);
+    var d = res.data || {};
+    if (res.ok && (d.enrolled !== false)) {
+      showResult('nfcResult', 'Card is ENROLLED (' + formatMs(res.elapsed) + ')\nOwner: ' + (d.userName || d.user_name || '--') + '\nEmail: ' + (d.email || '--') + '\nType: ' + (d.cardType || d.card_type || '--') + '\nEnrolled: ' + (d.enrolledAt || d.enrolled_at || '--') + '\n\n' + JSON.stringify(d, null, 2), true);
     } else {
-      showResult('nfcResult', 'Card is NOT enrolled. Serial: ' + lastNfcSerial, false);
+      showResult('nfcResult', 'Card is NOT enrolled. Serial: ' + lastNfcSerial + '\n\n' + JSON.stringify(d, null, 2), false);
     }
   } catch (e) {
     showResult('nfcResult', 'Verify error: ' + (e.message || e), false);
@@ -1516,17 +1556,41 @@ async function nfcWhoseCard() {
   }
   try {
     var res = await apiCall('GET', '/api/v1/nfc/search/' + encodeURIComponent(lastNfcSerial));
-    if (res.found) {
-      var text = 'Found ' + res.count + ' enrollment(s) for serial: ' + lastNfcSerial;
-      (res.results || []).forEach(function(r) {
-        text += '\n  - ' + r.userName + ' (' + r.email + ') [' + r.cardType + '] Active: ' + r.isActive;
+    var d = res.data || {};
+    if (res.ok && (d.found || (d.results && d.results.length > 0))) {
+      var results = d.results || [];
+      var text = 'Found ' + (d.count || results.length) + ' enrollment(s) for serial: ' + lastNfcSerial;
+      results.forEach(function(r) {
+        text += '\n  - ' + (r.userName || r.user_name || '--') + ' (' + (r.email || '--') + ') [' + (r.cardType || r.card_type || '--') + '] Active: ' + (r.isActive !== undefined ? r.isActive : r.is_active);
       });
-      showResult('nfcResult', text, true);
+      showResult('nfcResult', text + '\n\n' + JSON.stringify(d, null, 2), true);
     } else {
-      showResult('nfcResult', 'No enrollments found for serial: ' + lastNfcSerial, false);
+      showResult('nfcResult', 'No enrollments found for serial: ' + lastNfcSerial + '\n\n' + JSON.stringify(d, null, 2), false);
     }
   } catch (e) {
     showResult('nfcResult', 'Search error: ' + (e.message || e), false);
+  }
+}
+
+async function nfcDeleteCard() {
+  if (!lastNfcSerial) {
+    showResult('nfcResult', 'No card scanned yet. Tap "Scan NFC Tag" first.', false);
+    return;
+  }
+  if (!getToken()) {
+    showResult('nfcResult', 'Please log in first to delete a card.', false);
+    return;
+  }
+  showResult('nfcResult', 'Deleting NFC card enrollment...', true);
+  // Try primary endpoint, then fallback
+  var res = await apiCall('DELETE', '/api/v1/nfc/enroll/' + encodeURIComponent(lastNfcSerial), null);
+  if (!res.ok && res.status === 404) {
+    res = await apiCall('DELETE', '/api/v1/nfc/card/' + encodeURIComponent(lastNfcSerial), null);
+  }
+  if (res.ok) {
+    showResult('nfcResult', 'NFC card deleted! (' + formatMs(res.elapsed) + ')\nSerial: ' + lastNfcSerial + '\n\n' + JSON.stringify(res.data, null, 2), true);
+  } else {
+    showResult('nfcResult', 'Delete failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(res.data, null, 2), false);
   }
 }
 
@@ -1830,6 +1894,22 @@ async function searchVoice() {
   }
 }
 
+async function deleteVoiceEnrollment() {
+  var userId = getUserId();
+  if (!userId) { showResult('voiceResult', 'Login first to get a user ID.', false); return; }
+  showResult('voiceResult', 'Deleting voice enrollment...', true);
+  // Try primary endpoint first, then fallback
+  var res = await apiCall('DELETE', '/api/v1/biometric/voice/enroll/' + userId, null);
+  if (!res.ok && res.status === 404) {
+    res = await apiCall('DELETE', '/api/v1/biometric/voice/delete/' + userId, null);
+  }
+  if (res.ok) {
+    showResult('voiceResult', 'Voice enrollment deleted. (' + formatMs(res.elapsed) + ')\n\n' + JSON.stringify(res.data, null, 2), true);
+  } else {
+    showResult('voiceResult', 'Delete failed (' + (res.status || 'ERR') + '): ' + JSON.stringify(res.data, null, 2), false);
+  }
+}
+
 // ── 5a. Fingerprint Embedded ─────────────────────────────────────────
 
 async function checkPlatformAuth() {
@@ -1903,6 +1983,49 @@ async function fpeVerify() {
   } catch (e) {
     showResult('fpeResult', 'Verification failed: ' + e.message, false);
   }
+}
+
+async function fpeWhoIsThis() {
+  // WebAuthn is credential-bound — there is no server-side biometric search.
+  // Perform authentication, then show which credential was used.
+  var challenge = randomBytes(32);
+  try {
+    showResult('fpeResult', 'Tap your fingerprint sensor to identify...', true);
+    var assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge,
+        rpId: location.hostname,
+        allowCredentials: [], // empty = let the authenticator pick any credential
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    var credId = bufToBase64url(assertion.rawId);
+    var storedId = localStorage.getItem('fivucsas_fpe_credId');
+    var matchMsg = (storedId && storedId === credId) ? 'Matches registered credential!' : 'Credential ID not found in local storage (may be registered on a different session).';
+    // TODO: Backend lookup endpoint (e.g. GET /api/v1/webauthn/credential/{credId}) not yet implemented.
+    // When available, call it here to resolve credential -> user mapping.
+    showResult('fpeResult',
+      'Credential identified!\nCredential ID: ' + credId +
+      '\n' + matchMsg +
+      '\n\nNote: WebAuthn is credential-bound. Server-side "Who Is This?" requires a backend lookup endpoint (not yet implemented).', true);
+  } catch (e) {
+    showResult('fpeResult', 'Identification failed: ' + e.message, false);
+  }
+}
+
+function fpeDeleteKey() {
+  var storedId = localStorage.getItem('fivucsas_fpe_credId');
+  if (!storedId) {
+    showResult('fpeResult', 'No registered fingerprint credential found in localStorage.', false);
+    return;
+  }
+  localStorage.removeItem('fivucsas_fpe_credId');
+  // TODO: If backend endpoint exists (e.g. DELETE /api/v1/webauthn/credential/{credId}), call it here.
+  showResult('fpeResult',
+    'Fingerprint credential removed from localStorage.\nCredential ID was: ' + storedId +
+    '\n\nNote: The credential still exists on the authenticator hardware. ' +
+    'To fully remove, manage credentials in your OS/browser settings.', true);
 }
 
 // ── 5b. Fingerprint External ─────────────────────────────────────────
@@ -2271,6 +2394,20 @@ async function hwVerify() {
       showResult('hwResult', 'Verification failed: ' + e.message, false);
     }
   }
+}
+
+function hwDeleteKey() {
+  var storedId = localStorage.getItem('fivucsas_hw_credId');
+  if (!storedId) {
+    showResult('hwResult', 'No registered hardware key credential found in localStorage.', false);
+    return;
+  }
+  localStorage.removeItem('fivucsas_hw_credId');
+  // TODO: If backend endpoint exists (e.g. DELETE /api/v1/webauthn/credential/{credId}), call it here.
+  showResult('hwResult',
+    'Hardware key credential removed from localStorage.\nCredential ID was: ' + storedId +
+    '\n\nNote: The credential still exists on the hardware key itself. ' +
+    'To fully remove, manage credentials through your security key management tool.', true);
 }
 
 // ── 11. Card Detection (Client-Side YOLO ONNX) ─────────────────────
@@ -3430,8 +3567,11 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnVoiceEnroll': enrollVoice,
     'btnVoiceVerify': verifyVoice,
     'btnVoiceSearch': searchVoice,
+    'btnVoiceDelete': deleteVoiceEnrollment,
     'btnFpeRegister': fpeRegister,
     'btnFpeVerify': fpeVerify,
+    'btnFpeWhoIsThis': fpeWhoIsThis,
+    'btnFpeDelete': fpeDeleteKey,
     'btnCheckScanner': checkExternalFP,
     'qrStartBtn': startQrScan,
     'qrStopBtn': stopQrScan,
@@ -3445,6 +3585,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'btnVerifySms': verifySmsOtp,
     'btnHwRegister': hwRegister,
     'btnHwVerify': hwVerify,
+    'btnHwDelete': hwDeleteKey,
     'cardStartBtn': startCardCamera,
     'cardDetectBtn': captureAndDetectCard,
     'cardLiveToggle': toggleCardLiveDetection,
