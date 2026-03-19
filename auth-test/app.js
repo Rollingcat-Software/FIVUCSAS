@@ -213,10 +213,12 @@ async function apiCall(method, path, body, extraHeaders) {
     var text = await res.text();
     var resData;
     try { resData = JSON.parse(text); } catch(e) { resData = text; }
+    console.log('[API-DIAG] ' + method + ' ' + path + ' → ' + res.status + ' (' + elapsed.toFixed(0) + 'ms)', typeof resData === 'object' ? resData : { raw: String(resData).substring(0, 200) });
     addLogEntry(method, path, res.status, elapsed, body, resData);
     return { ok: res.ok, status: res.status, data: resData, elapsed: elapsed };
   } catch (err) {
     var elapsed2 = performance.now() - start;
+    console.error('[API-DIAG] ' + method + ' ' + path + ' → ERROR (' + elapsed2.toFixed(0) + 'ms):', err.message);
     addLogEntry(method, path, 'ERR', elapsed2, body, err.message);
     return { ok: false, status: 0, data: null, error: err.message, elapsed: elapsed2 };
   }
@@ -435,13 +437,23 @@ async function startFaceDetection() {
   statsEl.style.display = 'grid';
 
   try {
-    faceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
+    var constraints = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } };
+    console.log('[FACE-DIAG] Requesting camera with constraints:', JSON.stringify(constraints));
+    faceStream = await navigator.mediaDevices.getUserMedia(constraints);
+    var track = faceStream.getVideoTracks()[0];
+    var settings = track.getSettings();
+    console.log('[FACE-DIAG] Camera granted:', {
+      label: track.label,
+      width: settings.width, height: settings.height,
+      frameRate: settings.frameRate, facingMode: settings.facingMode,
+      deviceId: settings.deviceId ? settings.deviceId.substring(0,8) + '...' : 'N/A'
+    });
     video.srcObject = faceStream;
     video.addEventListener('loadedmetadata', function() {
-      // Sync canvas dimensions to actual video dimensions (critical for mobile)
       var canvas = document.getElementById('faceCanvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      console.log('[FACE-DIAG] Video metadata loaded: videoWidth=' + video.videoWidth + ' videoHeight=' + video.videoHeight + ' canvas=' + canvas.width + 'x' + canvas.height);
       document.getElementById('faceOverlay').textContent = 'Camera: ' + video.videoWidth + 'x' + video.videoHeight;
     });
     document.getElementById('faceStat-status').textContent = 'Camera OK';
@@ -655,6 +667,15 @@ function detectFaceLoop() {
         lastQualityUpdateTime = now;
         lastQuality = assessQuality(video, landmarks);
         var q = lastQuality;
+        console.log('[FACE-DIAG] Quality:', {
+          overall: q.overall, blur: q.blur, blurVar: q.blurVariance,
+          lighting: q.lighting, brightness: q.brightness,
+          faceSize: q.faceSize + 'px', faceSizeScore: q.faceSizeScore,
+          faceBB: bbW.toFixed(0) + 'x' + bbH.toFixed(0),
+          faceRatio: (faceRatio * 100).toFixed(1) + '%',
+          centered: isCentered, ready: isReady,
+          canvas: canvas.width + 'x' + canvas.height
+        });
 
         // Color coding: green (>70), yellow (40-70), red (<40)
         var qualityColor = q.overall > 70 ? 'var(--green)' : (q.overall >= 40 ? 'var(--yellow)' : 'var(--red)');
@@ -754,8 +775,10 @@ function captureFace() {
     c.height = Math.round(cropH * scale);
     c.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
 
-    console.log('[captureFace] Cropped+resized: ' + c.width + 'x' + c.height +
-      ' from ' + w + 'x' + h + ' (crop ' + cropW + 'x' + cropH + ', scale ' + scale.toFixed(2) + ')');
+    console.log('[FACE-DIAG] Capture: cropped ' + c.width + 'x' + c.height +
+      ' from ' + w + 'x' + h + ' | crop region: x=' + cropX + ' y=' + cropY + ' w=' + cropW + ' h=' + cropH +
+      ' | face BB: ' + bbW.toFixed(0) + 'x' + bbH.toFixed(0) + ' | padding: ' + padX.toFixed(0) + ',' + padY.toFixed(0) +
+      ' | scale: ' + scale.toFixed(2) + ' | quality: ' + (lastQuality ? lastQuality.overall : 'N/A'));
   } else {
     // Fallback: capture full frame, resize if needed
     var maxFull = 640;
@@ -771,6 +794,12 @@ function captureFace() {
 
   c.toBlob(function(blob) {
     lastFaceBlob = blob;
+    console.log('[FACE-DIAG] Blob created:', {
+      size: blob.size, type: blob.type,
+      resolution: c.width + 'x' + c.height,
+      cropped: !!lastFaceLandmarks,
+      quality: lastQuality ? lastQuality.overall : 'N/A'
+    });
     // Enable all face action buttons
     var faceButtons = ['btnFaceEnroll', 'btnFaceVerify', 'btnFaceSearch', 'btnLivenessPuzzle', 'btnBankEnroll'];
     faceButtons.forEach(function(id) {
@@ -778,7 +807,7 @@ function captureFace() {
       if (btn) {
         btn.disabled = false;
       } else {
-        console.warn('[captureFace] Button not found: ' + id);
+        console.warn('[FACE-DIAG] Button not found: ' + id);
       }
     });
     var cropped = lastFaceLandmarks ? ' (face-cropped)' : ' (full frame)';
@@ -809,12 +838,15 @@ async function enrollFace() {
     var data = await res.json().catch(function() { return null; });
     addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, res.status, elapsed, '(multipart image)', data);
 
+    console.log('[FACE-DIAG] Enroll response:', { status: res.status, elapsed: elapsed.toFixed(0) + 'ms', blobSize: lastFaceBlob.size, data: data });
     if (res.ok && data) {
       showResult('faceResult', 'Face enrolled! (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), true);
     } else {
+      console.error('[FACE-DIAG] Enroll FAILED:', { status: res.status, data: data, headers: Object.fromEntries(res.headers.entries()) });
       showResult('faceResult', 'Enrollment failed (' + res.status + '): ' + JSON.stringify(data, null, 2), false);
     }
   } catch (e) {
+    console.error('[FACE-DIAG] Enroll exception:', e);
     showResult('faceResult', 'Enrollment error: ' + e.message, false);
     addLogEntry('POST', '/api/v1/biometric/enroll/' + uid, 'ERR', performance.now() - start, null, e.message);
   }
@@ -840,15 +872,18 @@ async function verifyFace() {
     var data = await res.json().catch(function() { return null; });
     addLogEntry('POST', '/api/v1/biometric/verify/' + uid, res.status, elapsed, '(multipart image)', data);
 
+    console.log('[FACE-DIAG] Verify response:', { status: res.status, elapsed: elapsed.toFixed(0) + 'ms', verified: data ? data.verified : null, confidence: data ? data.confidence : null, blobSize: lastFaceBlob.size });
     if (res.ok && data) {
       var msg = data.verified
         ? 'VERIFIED! Confidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%'
         : 'NOT VERIFIED. Confidence: ' + ((data.confidence || 0) * 100).toFixed(1) + '%';
       showResult('faceResult', msg + ' (' + formatMs(elapsed) + ')\n\n' + JSON.stringify(data, null, 2), data.verified);
     } else {
+      console.error('[FACE-DIAG] Verify FAILED:', { status: res.status, data: data });
       showResult('faceResult', 'Verification failed (' + res.status + '): ' + JSON.stringify(data, null, 2), false);
     }
   } catch (e) {
+    console.error('[FACE-DIAG] Verify exception:', e);
     showResult('faceResult', 'Verification error: ' + e.message, false);
     addLogEntry('POST', '/api/v1/biometric/verify/' + uid, 'ERR', performance.now() - start, null, e.message);
   }
@@ -3317,38 +3352,60 @@ function waitForAction(action, timeoutMs) {
           var landmarks = result.faceLandmarks[0];
           var actionDetected = false;
 
+          var actionDetail = {};
           switch (action) {
             case 'blink':
-              actionDetected = detectBlink(landmarks).detected;
+              actionDetail = detectBlink(landmarks);
+              actionDetected = actionDetail.detected;
               break;
             case 'smile':
-              actionDetected = detectSmile(landmarks).detected;
+              actionDetail = detectSmile(landmarks);
+              actionDetected = actionDetail.detected;
               break;
             case 'turn_left':
-              actionDetected = detectHeadTurn(landmarks).direction === 'left';
+              actionDetail = detectHeadTurn(landmarks);
+              actionDetected = actionDetail.direction === 'left';
               break;
             case 'turn_right':
-              actionDetected = detectHeadTurn(landmarks).direction === 'right';
+              actionDetail = detectHeadTurn(landmarks);
+              actionDetected = actionDetail.direction === 'right';
               break;
             case 'nod':
-              actionDetected = detectNod(landmarks).nod;
+              actionDetail = detectNod(landmarks);
+              actionDetected = actionDetail.nod;
               break;
             case 'look_up':
-              actionDetected = detectNod(landmarks).lookUp;
+              actionDetail = detectNod(landmarks);
+              actionDetected = actionDetail.lookUp;
               break;
             case 'open_mouth':
-              actionDetected = detectOpenMouth(landmarks).detected;
+              actionDetail = detectOpenMouth(landmarks);
+              actionDetected = actionDetail.detected;
               break;
             case 'raise_eyebrows':
-              actionDetected = detectRaiseEyebrows(landmarks).detected;
+              actionDetail = detectRaiseEyebrows(landmarks);
+              actionDetected = actionDetail.detected;
               break;
             default:
               actionDetected = false;
           }
 
+          // Log every 500ms to avoid flooding
+          var elapsedSinceStart = performance.now() - startTime;
+          if (!check._lastLog || elapsedSinceStart - check._lastLog > 500) {
+            check._lastLog = elapsedSinceStart;
+            console.log('[LIVENESS-DIAG] action=' + action +
+              ' | detected=' + actionDetected +
+              ' | streak=' + detectedCount + '/' + requiredCount +
+              ' | elapsed=' + (elapsedSinceStart / 1000).toFixed(1) + 's' +
+              ' | metrics=' + JSON.stringify(actionDetail) +
+              ' | thresholds: blink<0.18, smile>2.8, mouth>0.08, brow>0.065, turn>0.12, nod>0.15');
+          }
+
           if (actionDetected) {
             detectedCount++;
             if (detectedCount >= requiredCount) {
+              console.log('[LIVENESS-DIAG] ✓ ACTION DETECTED: ' + action + ' after ' + (elapsedSinceStart / 1000).toFixed(1) + 's, metrics=' + JSON.stringify(actionDetail));
               resolve({ detected: true, elapsedMs: performance.now() - startTime });
               return;
             }
@@ -3522,9 +3579,21 @@ function waitForPose(detectFn, timeoutMs) {
         var result = faceDetector.detectForVideo(video, performance.now());
         if (result.faceLandmarks && result.faceLandmarks.length > 0) {
           var landmarks = result.faceLandmarks[0];
-          if (detectFn(landmarks)) {
+          var poseDetected = detectFn(landmarks);
+          var headTurn = detectHeadTurn(landmarks);
+          var elapsedPose = performance.now() - startTime;
+          // Log every 1s
+          if (!check._lastPoseLog || elapsedPose - check._lastPoseLog > 1000) {
+            check._lastPoseLog = elapsedPose;
+            console.log('[BANK-DIAG] pose check: detected=' + poseDetected +
+              ' | stable=' + stableCount + '/' + requiredStable +
+              ' | head=' + headTurn.direction + ' (offset=' + headTurn.offset.toFixed(3) + ')' +
+              ' | elapsed=' + (elapsedPose / 1000).toFixed(1) + 's');
+          }
+          if (poseDetected) {
             stableCount++;
             if (stableCount >= requiredStable) {
+              console.log('[BANK-DIAG] ✓ Pose confirmed: head=' + headTurn.direction + ' offset=' + headTurn.offset.toFixed(3));
               resolve(true);
               return;
             }
