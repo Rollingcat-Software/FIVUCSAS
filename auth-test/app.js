@@ -3021,39 +3021,119 @@ function landmarkDist(landmarks, a, b) {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+// MediaPipe landmark indices (matching local demo BiometricPuzzle)
+var LEFT_EYE_IDX = [362, 385, 387, 263, 373, 380];
+var RIGHT_EYE_IDX = [33, 160, 158, 133, 153, 144];
+var LEFT_EYEBROW_IDX = [70, 63, 105, 66, 107];
+var RIGHT_EYEBROW_IDX = [300, 293, 334, 296, 336];
+var UPPER_LIP = 13, LOWER_LIP = 14, MOUTH_LEFT = 61, MOUTH_RIGHT = 291;
+var NOSE_TIP = 1, CHIN = 152;
+
+// Thresholds (matching local demo)
+var EAR_THRESHOLD = 0.22;        // Above = eye open
+var EAR_CLOSED_THRESHOLD = 0.17; // Must go BELOW this for closed
+var SMILE_CORNER_THRESHOLD = 0.05;
+var SMILE_WIDTH_THRESHOLD = 0.60;
+var MOUTH_OPEN_THRESHOLD = 0.12;
+var EYEBROW_RAISE_THRESHOLD = 1.20;
+var HEAD_TURN_THRESHOLD = 0.10;
+var HEAD_NOD_THRESHOLD = 0.12;
+
+// Baseline state for eyebrow detection
+var _baselineEyebrowDist = null;
+
+function calculateEAR(landmarks, eyeIndices) {
+  // EAR = (|p2-p6| + |p3-p5|) / (2 * |p1-p4|) — 6-point formula
+  var p1 = landmarks[eyeIndices[0]];
+  var p2 = landmarks[eyeIndices[1]];
+  var p3 = landmarks[eyeIndices[2]];
+  var p4 = landmarks[eyeIndices[3]];
+  var p5 = landmarks[eyeIndices[4]];
+  var p6 = landmarks[eyeIndices[5]];
+  var vertical1 = landmarkDist(landmarks, eyeIndices[1], eyeIndices[5]);
+  var vertical2 = landmarkDist(landmarks, eyeIndices[2], eyeIndices[4]);
+  var horizontal = landmarkDist(landmarks, eyeIndices[0], eyeIndices[3]);
+  if (horizontal === 0) return 0.3; // default open
+  return (vertical1 + vertical2) / (2.0 * horizontal);
+}
+
 function detectBlink(landmarks) {
-  // Eye aspect ratio: vertical / horizontal
-  var leftV = landmarkDist(landmarks, 159, 145);
-  var leftH = landmarkDist(landmarks, 33, 133);
-  var leftEAR = leftH > 0 ? leftV / leftH : 1;
-  var rightV = landmarkDist(landmarks, 386, 374);
-  var rightH = landmarkDist(landmarks, 362, 263);
-  var rightEAR = rightH > 0 ? rightV / rightH : 1;
+  // Proper 6-point EAR for both eyes
+  var leftEAR = calculateEAR(landmarks, LEFT_EYE_IDX);
+  var rightEAR = calculateEAR(landmarks, RIGHT_EYE_IDX);
   var avgEAR = (leftEAR + rightEAR) / 2;
-  return { detected: avgEAR < 0.22, ear: avgEAR }; // relaxed from 0.18
+  return { detected: avgEAR < EAR_CLOSED_THRESHOLD, ear: avgEAR, leftEAR: leftEAR, rightEAR: rightEAR };
 }
 
 function detectSmile(landmarks) {
-  var mouthWidth = landmarkDist(landmarks, 61, 291);
-  var mouthHeight = landmarkDist(landmarks, 13, 14);
-  var ratio = mouthHeight > 0 ? mouthWidth / mouthHeight : 0;
-  return { detected: ratio > 2.5, ratio: ratio }; // relaxed from 2.8
+  // Dual check: corner_raise_ratio AND width_ratio (matching local demo)
+  var leftCorner = landmarks[MOUTH_LEFT];
+  var rightCorner = landmarks[MOUTH_RIGHT];
+  var upperLip = landmarks[UPPER_LIP];
+  var lowerLip = landmarks[LOWER_LIP];
+  var noseTip = landmarks[NOSE_TIP];
+  var chin = landmarks[CHIN];
+
+  var faceHeight = landmarkDist(landmarks, NOSE_TIP, CHIN);
+  if (faceHeight === 0) return { detected: false, cornerRaise: 0, widthRatio: 0 };
+
+  // Mouth center Y
+  var mouthCenterY = (upperLip.y + lowerLip.y) / 2;
+
+  // Corner raise = how much corners are above mouth center (lower Y = higher)
+  var leftRaise = mouthCenterY - leftCorner.y;
+  var rightRaise = mouthCenterY - rightCorner.y;
+  var avgRaise = (leftRaise + rightRaise) / 2;
+  var cornerRaiseRatio = avgRaise / faceHeight;
+
+  // Mouth width ratio
+  var mouthWidth = landmarkDist(landmarks, MOUTH_LEFT, MOUTH_RIGHT);
+  var widthRatio = mouthWidth / faceHeight;
+
+  var detected = cornerRaiseRatio > SMILE_CORNER_THRESHOLD && widthRatio > SMILE_WIDTH_THRESHOLD;
+  return { detected: detected, cornerRaise: cornerRaiseRatio, widthRatio: widthRatio };
 }
 
 function detectOpenMouth(landmarks) {
-  var mouthOpen = landmarkDist(landmarks, 13, 14);
-  var faceHeight = landmarkDist(landmarks, 10, 152);
-  var ratio = faceHeight > 0 ? mouthOpen / faceHeight : 0;
-  return { detected: ratio > 0.06, ratio: ratio }; // relaxed from 0.08
+  // MAR = vertical / horizontal (matching local demo)
+  var vertical = landmarkDist(landmarks, UPPER_LIP, LOWER_LIP);
+  var horizontal = landmarkDist(landmarks, MOUTH_LEFT, MOUTH_RIGHT);
+  var mar = horizontal > 0 ? vertical / horizontal : 0;
+  return { detected: mar > MOUTH_OPEN_THRESHOLD, mar: mar };
 }
 
 function detectRaiseEyebrows(landmarks) {
-  var leftDist = landmarkDist(landmarks, 105, 159);
-  var rightDist = landmarkDist(landmarks, 334, 386);
+  // Baseline-relative detection (matching local demo)
+  // Average eyebrow Y position
+  var leftBrowY = 0, rightBrowY = 0;
+  for (var i = 0; i < LEFT_EYEBROW_IDX.length; i++) leftBrowY += landmarks[LEFT_EYEBROW_IDX[i]].y;
+  for (var j = 0; j < RIGHT_EYEBROW_IDX.length; j++) rightBrowY += landmarks[RIGHT_EYEBROW_IDX[j]].y;
+  leftBrowY /= LEFT_EYEBROW_IDX.length;
+  rightBrowY /= RIGHT_EYEBROW_IDX.length;
+
+  // Average eye Y position
+  var leftEyeY = 0, rightEyeY = 0;
+  for (var k = 0; k < LEFT_EYE_IDX.length; k++) leftEyeY += landmarks[LEFT_EYE_IDX[k]].y;
+  for (var m = 0; m < RIGHT_EYE_IDX.length; m++) rightEyeY += landmarks[RIGHT_EYE_IDX[m]].y;
+  leftEyeY /= LEFT_EYE_IDX.length;
+  rightEyeY /= RIGHT_EYE_IDX.length;
+
+  // Distance from eyebrow to eye (larger = raised more, in normalized coords)
+  var leftDist = leftEyeY - leftBrowY;
+  var rightDist = rightEyeY - rightBrowY;
   var avgDist = (leftDist + rightDist) / 2;
-  var faceHeight = landmarkDist(landmarks, 10, 152);
-  var ratio = faceHeight > 0 ? avgDist / faceHeight : 0;
-  return { detected: ratio > 0.058, ratio: ratio }; // relaxed from 0.065
+
+  // Set baseline on first call (reset when liveness puzzle starts)
+  if (_baselineEyebrowDist === null) {
+    _baselineEyebrowDist = { left: leftDist, right: rightDist, avg: avgDist };
+    return { detected: false, ratio: 1.0, leftRatio: 1.0, rightRatio: 1.0 };
+  }
+
+  var bothRatio = _baselineEyebrowDist.avg > 0 ? avgDist / _baselineEyebrowDist.avg : 1.0;
+  var leftRatio = _baselineEyebrowDist.left > 0 ? leftDist / _baselineEyebrowDist.left : 1.0;
+  var rightRatio = _baselineEyebrowDist.right > 0 ? rightDist / _baselineEyebrowDist.right : 1.0;
+
+  return { detected: bothRatio > EYEBROW_RAISE_THRESHOLD, ratio: bothRatio, leftRatio: leftRatio, rightRatio: rightRatio };
 }
 
 function detectHeadTurn(landmarks) {
@@ -3067,8 +3147,8 @@ function detectHeadTurn(landmarks) {
   var offset = (noseX - faceCenter) / (faceWidth || 0.001);
   // offset > 0.12 means nose is right of center (user turned left from camera POV)
   // offset < -0.12 means nose is left of center (user turned right from camera POV)
-  if (offset > 0.08) return { direction: 'left', offset: offset }; // relaxed from 0.12
-  if (offset < -0.08) return { direction: 'right', offset: offset }; // relaxed from 0.12
+  if (offset > 0.10) return { direction: 'left', offset: offset };
+  if (offset < -0.10) return { direction: 'right', offset: offset };
   return { direction: 'center', offset: offset };
 }
 
@@ -3080,9 +3160,9 @@ function detectNod(landmarks) {
   var faceCenter = (foreheadY + chinY) / 2;
   var faceHeight = Math.abs(chinY - foreheadY);
   var offset = (noseY - faceCenter) / (faceHeight || 0.001);
-  // offset > 0.15 means nose is below center (nod down)
-  // offset < -0.05 means nose is above center (look up)
-  return { nod: offset > 0.10, lookUp: offset < -0.03, offset: offset }; // relaxed from 0.15/0.05
+  // offset > 0.12 means nose is below center (nod down)
+  // offset < -0.12 means nose is above center (look up)
+  return { nod: offset > 0.12, lookUp: offset < -0.12, offset: offset };
 }
 
 function captureFrameAsBlob() {
@@ -3141,6 +3221,7 @@ async function startLivenessPuzzle() {
   }
   if (livenessActive) return;
   livenessActive = true;
+  _baselineEyebrowDist = null; // Reset eyebrow baseline for new puzzle
 
   var btn = document.getElementById('btnLivenessPuzzle');
   btn.disabled = true;
@@ -3325,8 +3406,9 @@ function getActionInstruction(action) {
 function waitForAction(action, timeoutMs) {
   return new Promise(function(resolve) {
     var startTime = performance.now();
-    var detectedCount = 0;
-    var requiredCount = 3; // Need 3 consecutive frames to confirm
+    var holdStartTime = 0;       // When continuous detection started
+    var holdActive = false;      // Whether we're currently in a hold
+    var HOLD_DURATION_MS = 600;  // 0.6 seconds of continuous detection required
 
     function check() {
       if (!faceStream || !faceDetector) { resolve({ detected: false, elapsedMs: performance.now() - startTime }); return; }
@@ -3382,27 +3464,48 @@ function waitForAction(action, timeoutMs) {
               actionDetected = false;
           }
 
-          // Log every 500ms to avoid flooding
-          var elapsedSinceStart = performance.now() - startTime;
+          // Time-based hold: require 0.6s of continuous detection
+          var now = performance.now();
+          var holdElapsed = 0;
+
+          if (actionDetected) {
+            if (!holdActive) {
+              holdStartTime = now;
+              holdActive = true;
+            }
+            holdElapsed = now - holdStartTime;
+
+            if (holdElapsed >= HOLD_DURATION_MS) {
+              var elapsedTotal = (now - startTime) / 1000;
+              console.log('[LIVENESS-DIAG] ACTION CONFIRMED: ' + action +
+                ' | held=' + (holdElapsed / 1000).toFixed(2) + 's' +
+                ' | total=' + elapsedTotal.toFixed(1) + 's' +
+                ' | metrics=' + JSON.stringify(actionDetail));
+              resolve({ detected: true, elapsedMs: now - startTime });
+              return;
+            }
+          } else {
+            // Detection lost, reset hold timer
+            holdActive = false;
+            holdStartTime = 0;
+            holdElapsed = 0;
+          }
+
+          // Comprehensive LIVENESS-DIAG logging every 500ms
+          var elapsedSinceStart = now - startTime;
           if (!check._lastLog || elapsedSinceStart - check._lastLog > 500) {
             check._lastLog = elapsedSinceStart;
             console.log('[LIVENESS-DIAG] action=' + action +
               ' | detected=' + actionDetected +
-              ' | streak=' + detectedCount + '/' + requiredCount +
+              ' | hold=' + (holdActive ? (holdElapsed / 1000).toFixed(2) + 's/' + (HOLD_DURATION_MS / 1000).toFixed(1) + 's' : 'none') +
               ' | elapsed=' + (elapsedSinceStart / 1000).toFixed(1) + 's' +
               ' | metrics=' + JSON.stringify(actionDetail) +
-              ' | thresholds: blink<0.18, smile>2.8, mouth>0.08, brow>0.065, turn>0.12, nod>0.15');
-          }
-
-          if (actionDetected) {
-            detectedCount++;
-            if (detectedCount >= requiredCount) {
-              console.log('[LIVENESS-DIAG] ✓ ACTION DETECTED: ' + action + ' after ' + (elapsedSinceStart / 1000).toFixed(1) + 's, metrics=' + JSON.stringify(actionDetail));
-              resolve({ detected: true, elapsedMs: performance.now() - startTime });
-              return;
-            }
-          } else {
-            detectedCount = Math.max(0, detectedCount - 1);
+              ' | thresholds: EAR_closed<' + EAR_CLOSED_THRESHOLD +
+              ' smile_corner>' + SMILE_CORNER_THRESHOLD + '+width>' + SMILE_WIDTH_THRESHOLD +
+              ' MAR>' + MOUTH_OPEN_THRESHOLD +
+              ' brow>' + EYEBROW_RAISE_THRESHOLD + 'x' +
+              ' turn>' + HEAD_TURN_THRESHOLD +
+              ' nod>' + HEAD_NOD_THRESHOLD);
           }
         }
       } catch (e) { /* skip frame */ }
