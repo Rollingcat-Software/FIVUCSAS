@@ -228,7 +228,7 @@ function App() {
             viewport={{ once: true }}
           >
             <p className="text-slate-400">
-              <strong>Supervisor:</strong> Prof. Dr. Advisor Name
+              <strong>Supervisor:</strong> Prof. Dr.
             </p>
             <p className="text-sm text-slate-500 mt-2">
               CSE4297/CSE4197 Engineering Project - 2025-2026
@@ -308,7 +308,7 @@ const techStack = [
   { icon: '🐘', name: 'PostgreSQL', description: 'Primary Database' },
   { icon: '🔴', name: 'Redis', description: 'Cache & Queue' },
   { icon: '🐳', name: 'Docker', description: 'Containerization' },
-  { icon: '☁️', name: 'GCP', description: 'Cloud Platform' },
+  { icon: '☁️', name: 'Hetzner Cloud', description: 'Cloud Platform' },
 ]
 
 const services = [
@@ -333,10 +333,10 @@ const services = [
 ]
 
 const team = [
-  { name: 'Student 1', initials: 'S1', role: 'Backend Developer' },
-  { name: 'Student 2', initials: 'S2', role: 'ML Engineer' },
-  { name: 'Student 3', initials: 'S3', role: 'Frontend Developer' },
-  { name: 'Student 4', initials: 'S4', role: 'DevOps Engineer' },
+  { name: 'Ahmet Abdullah Gültekin', initials: 'AG', role: 'Full-Stack Developer' },
+  { name: 'Team Member 2', initials: 'T2', role: 'ML Engineer' },
+  { name: 'Team Member 3', initials: 'T3', role: 'Frontend Developer' },
+  { name: 'Team Member 4', initials: 'T4', role: 'DevOps Engineer' },
 ]
 
 export default App
