@@ -395,7 +395,7 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 
 ### In Progress
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
-- Mobile/Desktop Apps (80%) - Production URLs configured, Android APK GREEN, Android+iOS CI workflows added
+- Mobile/Desktop Apps (90%) - APK v1.0.0 released, Android+iOS CI workflows GREEN, production URLs configured
 - **Performance optimization needed** (discovered 2026-03-19):
   - biometric-api memory — needs increase to 3.5GB+
   - Health check 678ms — needs lightweight endpoint
