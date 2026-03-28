@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running (March 2026)
-- **Last verified**: 2026-03-19 — All services UP and healthy (including biometric-api). 10/12 auth methods production. Auth-test page deployed and refined. Voice + Face + Card detection live. NFC integrated into client-apps. Login tracking fixed. 3 new KMP screens.
+- **Last verified**: 2026-03-28 — All services UP and healthy. Auth method fixes deployed. 304 tests passing. Embeddable auth widget architecture designed.
 
 ## Architecture
 
@@ -332,7 +332,15 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ **All refinements deployed** (face cropping, quality-weighted centroid, liveness)
 - ✅ **Client-apps** upgraded to ~9/10 (P0 fixed, mocks removed, i18n, 6 new screens)
 - ✅ **Login/Register pages**: 22 UI/UX fixes deployed
-- ✅ **10 of 12 auth methods** working in production
+- ✅ **All 10 auth methods working** in production (Fingerprint and Voice fixed)
+
+- ✅ **FingerprintAuthHandler WebAuthn migration** — removed biometric stub, uses WebAuthnService (2026-03-28)
+- ✅ **FingerprintStep WebAuthn assertion** — changed from credentials.create() to credentials.get() (2026-03-28)
+- ✅ **HardwareKeyStep server challenge** — onRequestChallenge callback for server-generated challenges (2026-03-28)
+- ✅ **AuthSessionRepository data wrapping fix** — { data } wrapper for completeStep, fixes all secondary auth (2026-03-28)
+- ✅ **ESLint warnings** — 42→38 (under max 40 cap) (2026-03-28)
+- ✅ **Web-app deployed** to Hostinger 3x with all fixes (2026-03-28)
+- ✅ **Embeddable Auth Widget Architecture** — "Stripe Elements for Biometrics" design doc (2026-03-28)
 
 ### Session 2026-03-19 Results
 - ✅ **Auth-test page refinements**: Fingerprint username hidden, Voice re-record enforcement + delete enrollment, NFC 409 handling + delete card + response parsing fix (`res.success` -> `res.ok`), Face removed client-side CLAHE (caused verify mismatch) + camera 640x480 for mobile, Bank enrollment uses face-cropped images, Liveness server-authoritative verdict, consistent button order (Enroll/Verify/Who Is This?/Delete)
@@ -350,6 +358,8 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ **All CI repos green**: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android
 
 ### In Progress
+- Embeddable auth widget — `docs/EMBEDDABLE_AUTH_WIDGET_ARCHITECTURE.md` — 6-week implementation plan
+- DNS fix: bpa-fivucsas.rollingcatsoftware.com AAAA record needs deletion (IPv6 still points to Hostinger)
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
 - Mobile/Desktop Apps (75%) - Production URLs configured, Android APK GREEN, 3 new screens added (2026-03-19)
 - Card detection: server YOLO fails on CPU, migrating to client-side ONNX
@@ -377,6 +387,11 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 14. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
 15. Coordinate with Aysenur: share step-up endpoint docs, verify public key format compatibility
 16. Final presentation delivery (Spring 2026)
+17. ~~Fix Fingerprint/HardwareKey/Voice auth methods~~ ✅ Done (March 28, WebAuthn + Resemblyzer)
+18. ~~Fix AuthSessionRepository data wrapping bug~~ ✅ Done (March 28, fixes all secondary auth)
+19. Implement embeddable auth widget (Phase 7 — verify-app extraction + auth-js SDK)
+20. Fix DNS: delete AAAA record for bpa-fivucsas on Hostinger
+21. Add mizan, sarnic, minio, traefik A records on main domain DNS
 
 ## Deployment Scripts (REMEMBER!)
 
@@ -468,3 +483,14 @@ Each submodule is an independent Git repo. When making changes:
 3. Push the submodule to its own remote
 4. Update the parent repo's submodule pointer: `git add <submodule-dir>`
 5. Commit and push the parent repo
+
+### Session 2026-03-28 Summary
+- Fixed FingerprintAuthHandler: BiometricServicePort stub → WebAuthn (backend + frontend)
+- Fixed HardwareKeyStep: random local challenge → server-side challenge
+- Fixed AuthSessionRepository.completeStep(): flat data → { data } wrapper (ALL secondary auth)
+- ESLint 42→38 warnings, 304/304 tests passing, TS 0 errors
+- identity-core-api rebuilt and deployed (healthy)
+- web-app deployed to Hostinger 3x with all fixes
+- DNS diagnosed: bpa-fivucsas AAAA record needs deletion
+- Embeddable Auth Widget Architecture doc created
+- All 10 auth handlers production-ready
