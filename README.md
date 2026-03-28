@@ -161,31 +161,31 @@ cd client-apps && ./gradlew :shared:test
 
 ## Project Status (March 2026)
 
-### Completed
+### Completed (Phases 0-8 All Done)
 - [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
 - [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 17 Flyway migrations
+- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 28 Flyway migrations (V1-V28)
 - [x] Comprehensive Documentation (100%)
 - [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on Hetzner
 - [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
 - [x] Multi-Modal Auth System - 10 auth handlers, device constraints, configurable auth flows
 - [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
 - [x] Anti-Spoofing Integration - DeepFace 0.0.98 built-in + config for MiniFASNet
-- [x] CI/CD Pipeline - GitHub Actions for all 3 services
-- [x] E2E Testing - 224 Playwright tests (217 pass, 7 skipped) against production
-- [x] Mobile App Backend Integration - Production API URLs configured
-- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on Hetzner VPS (V17)
-- [x] 528+ Unit Tests - including step-up, auth handlers, TestContainers integration
-- [x] Auth Flow Contract Alignment - backend-driven auth method sourcing and typed operation contracts in web-app
-- [x] QR Auth Runtime Integration - QR token generation wired to backend in multi-step flow with manual fallback
-- [x] WebAuthn Settings Integration - platform authenticator and hardware key enrollment dialogs added to Settings
-- [x] Auth Flow Guardrails Hardened - required-step restrictions expanded for unsupported methods (NFC/Fingerprint/Voice)
+- [x] CI/CD Pipeline - GitHub Actions for all services (backend, web, Android, iOS)
+- [x] E2E Testing - 28 Playwright spec files + 103 automated API tests (Health/CRUD/RBAC/Verification)
+- [x] Mobile App Backend Integration - Production API URLs configured, Android+iOS CI workflows
+- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on Hetzner VPS
+- [x] 304 Unit Tests + 103 API Tests - including step-up, auth handlers, TestContainers, verification pipeline
+- [x] Embeddable Auth Widget - verify-app, @fivucsas/auth-js SDK, @fivucsas/auth-react, OAuth 2.0/OIDC
+- [x] **Identity Verification Pipeline** - Full IVP with 9 step types, 7 industry templates (Banking KYC, Healthcare, Education, Government, Fintech, Telecom, Gig Economy)
+- [x] Document Processing - YOLO card detection, Tesseract OCR, MRZ parser (TD1/TD3), TC Kimlik extraction
+- [x] Face-to-Document Matching - DeepFace cosine similarity, liveness pipeline, threshold config per tenant
+- [x] Verification Admin UI - Flow builder, dashboard, session detail, template selector
+- [x] Video Interview Step - WebRTC recording with admin review queue (V28)
 
 ### In Progress
-- [ ] Mobile/Desktop Apps (70%) - 7 test files ready, need Android SDK to run
-- [ ] Biometric Processor deployment - Cloudflare Tunnel scripts ready, WSL2 setup pending
-- [ ] Full web-app Vitest stabilization - legacy e2e/service tests still contain baseline failures
-- [ ] biometric-processor submodule fast-forward blocked by local untracked-file conflict (`uniface_liveness_detector.py`)
+- [ ] Mobile/Desktop Apps (80%) - Android APK GREEN, iOS CI added, need SwiftUI wrappers
+- [ ] Performance optimization - biometric-api memory, pgvector HNSW indexes, voice thread pool
 
 ## Team
 

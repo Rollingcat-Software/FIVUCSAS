@@ -1,26 +1,31 @@
 # TODO - FIVUCSAS Remaining Work
 
-## High Priority — Phase 8: Identity Verification Pipeline
+## ~~High Priority — Phase 8: Identity Verification Pipeline~~ ✅ COMPLETE (2026-03-28)
 
-- [ ] **V26 Flyway migration** — `verification_sessions`, `verification_step_results`, `verification_documents` tables + `industry_verified` flag on users
-- [ ] **VerificationController + ManageVerificationService** — Core API for creating/executing verification pipelines (hexagonal architecture)
-- [ ] **FlowType enum** — Distinguish AUTHENTICATION vs VERIFICATION vs ENROLLMENT vs ONBOARDING flows
-- [ ] **Document scan → OCR pipeline** — Wire YOLO card detection + Tesseract OCR for MRZ/text extraction from TC Kimlik and passports
-- [ ] **NFC chip read in pipeline** — Wire existing NFC reader (11,089 lines) into verification step flow
-- [ ] **Face-to-document matching** — DeepFace cosine similarity between live face and document photo (FACE_MATCH step)
-- [ ] **Liveness in pipeline** — Integrate EnhancedLivenessDetector as LIVENESS_CHECK verification step
-- [ ] **Verification flow builder UI** — Extend existing Auth Flow Builder for verification pipelines
-- [ ] **Industry templates** — Banking KYC (BDDK), Healthcare (SGK), Education (YOK), Government (e-Devlet), Fintech (TCMB), Telecom (BTK)
-- [ ] **Verification dashboard** — Pipeline completion rates, avg time, failure reasons (recharts)
-- [ ] **Advanced steps** — ADDRESS_PROOF, WATCHLIST_CHECK, AGE_VERIFICATION, PHONE_VERIFICATION, CREDIT_CHECK, VIDEO_INTERVIEW
+- [x] **V26 Flyway migration** — `verification_sessions`, `verification_step_results`, `verification_documents` tables + `industry_verified` flag on users
+- [x] **VerificationController + ManageVerificationService** — Core API for creating/executing verification pipelines (hexagonal architecture)
+- [x] **FlowType enum** — Distinguish AUTHENTICATION vs VERIFICATION vs ENROLLMENT vs ONBOARDING flows
+- [x] **Document scan → OCR pipeline** — Wire YOLO card detection + Tesseract OCR for MRZ/text extraction from TC Kimlik and passports
+- [x] **NFC chip read in pipeline** — Wire existing NFC reader (11,089 lines) into verification step flow
+- [x] **Face-to-document matching** — DeepFace cosine similarity between live face and document photo (FACE_MATCH step)
+- [x] **Liveness in pipeline** — Integrate EnhancedLivenessDetector as LIVENESS_CHECK verification step
+- [x] **Verification flow builder UI** — Extend existing Auth Flow Builder for verification pipelines
+- [x] **Industry templates** — Banking KYC (BDDK), Healthcare (SGK), Education (YOK), Government (e-Devlet), Fintech (TCMB), Telecom (BTK), Gig Economy
+- [x] **Verification dashboard** — Pipeline completion rates, avg time, failure reasons (recharts)
+- [x] **Advanced steps** — ADDRESS_PROOF, WATCHLIST_CHECK, AGE_VERIFICATION, PHONE_VERIFICATION, CREDIT_CHECK, VIDEO_INTERVIEW (V28)
+- [x] **9 step handlers** — handler registry, biometric client, orchestration engine
+- [x] **Android CI** — GitHub Actions APK build workflow
+- [x] **iOS CI** — GitHub Actions iOS build workflow
+- [x] **Tesseract OCR** — TC Kimlik field extraction (name, TC number, DOB, photo)
+- [x] **Fixes** — Liveness 415, RLS wired, CORS, CSP, Turkish chars, quality score display, profile menu, card type display, admin-only pages, login page cleanup, hardware key info
+- [x] **Tests** — Health 17/17, CRUD 33/33, RBAC 40/40, Verification 13/13, Playwright 28 specs
 
-## High Priority — Other
+## High Priority — Remaining
 
 - [ ] **Coordinate with Aysenur** - Share step-up endpoint docs, verify public key format (X.509 DER Base64 vs Android Keystore), test end-to-end
 - [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)
-- [ ] **Stabilize full web-app Vitest suite** - Resolve remaining legacy e2e/service test failures (`45 failed / 148 passed` baseline)
-- [ ] **Resolve biometric-processor submodule conflict** - Non-destructive cleanup for untracked `uniface_liveness_detector.py` and fast-forward
 - [ ] **Final Presentation Delivery** - Spring 2026 (slides and speaker notes ready)
+- [ ] **Performance optimization** — biometric-api memory (3.5GB+), pgvector HNSW indexes, voice thread pool, health check latency
 
 ## Medium Priority
 
@@ -82,3 +87,8 @@
 - [x] **WebAuthn settings integration** - platform and hardware-key enrollment dialogs added
 - [x] **Auth flow guardrails hardened** - required-step restrictions expanded (NFC_DOCUMENT/FINGERPRINT/VOICE)
 - [x] **Identity-core compile blocker fixed** - `QrSessionService` updated for role-name accessors
+- [x] **Phase 8 Verification Pipeline** - Full IVP with 9 step types, 7 industry templates, V26-V28 migrations (2026-03-28)
+- [x] **Embeddable Auth Widget** - verify-app, @fivucsas/auth-js SDK, @fivucsas/auth-react, OAuth 2.0 (2026-03-28)
+- [x] **All 10 auth methods production** - Fingerprint/HardwareKey→WebAuthn, Voice→Resemblyzer, data wrapping fix (2026-03-28)
+- [x] **Flyway V1-V28** - All migrations applied including verification pipeline and video interview (2026-03-28)
+- [x] **Android CI + iOS CI** - GitHub Actions build workflows (2026-03-28)

@@ -540,7 +540,7 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 
 **Entry:** Phase 7 exit gate passed. Authentication platform is complete with SDK, OAuth 2.0, and embeddable widget. The platform now evolves from authentication-only to a full Identity Verification Platform (IVP).
 
-### 8A. Schema + Core API (Week 1-2)
+### 8A. Schema + Core API (Week 1-2) — ✅ COMPLETE (2026-03-28)
 
 **What:** Database schema for verification sessions, step results, and documents. Core API for creating, managing, and executing verification pipelines. Industry-specific templates (Banking KYC, Healthcare, Education, etc.) with Turkish regulatory context.
 
@@ -550,13 +550,13 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 - `biometric-processor`: no changes yet (Phase 8B-8C)
 
 **Exit gate:**
-- [ ] V26 migration applies cleanly (verification_sessions, verification_step_results, verification_documents)
-- [ ] `mvn clean compile` passes with new domain classes
-- [ ] GET /api/v1/verification/templates returns industry template list
-- [ ] POST /api/v1/verification/sessions creates a new verification session
-- [ ] FlowType enum distinguishes AUTHENTICATION vs VERIFICATION flows
+- [x] V26 migration applies cleanly (verification_sessions, verification_step_results, verification_documents)
+- [x] `mvn clean compile` passes with new domain classes
+- [x] GET /api/v1/verification/templates returns industry template list
+- [x] POST /api/v1/verification/sessions creates a new verification session
+- [x] FlowType enum distinguishes AUTHENTICATION vs VERIFICATION flows
 
-### 8B. Document Processing (Week 3-4)
+### 8B. Document Processing (Week 3-4) — ✅ COMPLETE (2026-03-28)
 
 **What:** Wire existing YOLO card detection and NFC reader into the verification pipeline. Add Tesseract OCR for text extraction from identity documents. Turkish ID card (TC Kimlik) specific parsing.
 
@@ -566,12 +566,12 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 - `client-apps`: NFC reading (already integrated, 11,089 lines)
 
 **Exit gate:**
-- [ ] DOCUMENT_SCAN step accepts image and returns detected card boundaries
-- [ ] DATA_EXTRACT step extracts name, TC number, DOB, photo from TC Kimlik image
-- [ ] NFC_CHIP_READ step reads chip data via existing NFC infrastructure
-- [ ] Turkish ID card parser handles both front and back sides
+- [x] DOCUMENT_SCAN step accepts image and returns detected card boundaries
+- [x] DATA_EXTRACT step extracts name, TC number, DOB, photo from TC Kimlik image
+- [x] NFC_CHIP_READ step reads chip data via existing NFC infrastructure
+- [x] Turkish ID card parser handles both front and back sides
 
-### 8C. Face-to-Document Matching (Week 5-6)
+### 8C. Face-to-Document Matching (Week 5-6) — ✅ COMPLETE (2026-03-28)
 
 **What:** Compare live face against document photo using existing DeepFace infrastructure. Integrate liveness detection into verification pipeline. Cross-reference extracted data against user profile.
 
@@ -581,12 +581,12 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 - `identity-core-api`: pipeline orchestrator chains steps, short-circuits on failure, stores results
 
 **Exit gate:**
-- [ ] FACE_MATCH returns confidence score comparing live face to document photo
-- [ ] LIVENESS_CHECK integrated into pipeline (not just standalone)
-- [ ] Full pipeline: scan → extract → match face → liveness → verified status
-- [ ] Threshold configuration per tenant (face match >= 85%, liveness >= 90%)
+- [x] FACE_MATCH returns confidence score comparing live face to document photo
+- [x] LIVENESS_CHECK integrated into pipeline (not just standalone)
+- [x] Full pipeline: scan → extract → match face → liveness → verified status
+- [x] Threshold configuration per tenant (face match >= 85%, liveness >= 90%)
 
-### 8D. Admin UI + Templates (Week 7-8)
+### 8D. Admin UI + Templates (Week 7-8) — ✅ COMPLETE (2026-03-28)
 
 **What:** Verification Flow Builder UI, industry template selector, verification dashboard with analytics.
 
@@ -596,12 +596,12 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 - `identity-core-api`: dashboard statistics endpoints (completion rates, avg time, failure reasons)
 
 **Exit gate:**
-- [ ] Tenant admin can create a Banking KYC pipeline from template
-- [ ] Verification Dashboard shows completion rates, avg verification time, failure reasons
-- [ ] Per-step threshold configuration works (sliders for face match %, liveness %)
-- [ ] Verification session detail view shows step-by-step results with confidence scores
+- [x] Tenant admin can create a Banking KYC pipeline from template
+- [x] Verification Dashboard shows completion rates, avg verification time, failure reasons
+- [x] Per-step threshold configuration works (sliders for face match %, liveness %)
+- [x] Verification session detail view shows step-by-step results with confidence scores
 
-### 8E. Advanced Integrations (Week 9-12)
+### 8E. Advanced Integrations (Week 9-12) — ✅ COMPLETE (2026-03-28)
 
 **What:** Additional verification step types — address proof, watchlist screening, age verification, phone verification, credit check interface, video interview recording.
 
@@ -610,18 +610,18 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 - `identity-core-api`: WATCHLIST_CHECK (mock + interface for real provider), AGE_VERIFICATION (DOB calculation), PHONE_VERIFICATION (wire existing Twilio SMS OTP), CREDIT_CHECK (interface only)
 
 **Exit gate:**
-- [ ] All 9 verification step types functional (at minimum mock implementations)
-- [ ] PHONE_VERIFICATION reuses existing Twilio SMS OTP infrastructure
-- [ ] WATCHLIST_CHECK has clear interface for future real sanctions/PEP provider
-- [ ] E2E test covers full Banking KYC pipeline from start to verified status
+- [x] All 9 verification step types functional (at minimum mock implementations)
+- [x] PHONE_VERIFICATION reuses existing Twilio SMS OTP infrastructure
+- [x] WATCHLIST_CHECK has clear interface for future real sanctions/PEP provider
+- [x] E2E test covers full Banking KYC pipeline from start to verified status
 
-### Phase 8 Exit Gate (Overall):
-- [ ] Complete verification pipeline: document scan → OCR → NFC → face match → liveness → verified
-- [ ] 7 industry templates with Turkish regulatory context
-- [ ] Admin UI for creating, monitoring, and configuring verification flows
-- [ ] All 9 step types implemented (real or mock)
-- [ ] `industry_verified` flag set on users who complete verification
-- [ ] Playwright E2E tests cover verification flow builder and dashboard
+### Phase 8 Exit Gate (Overall): ✅ ALL MET (2026-03-28)
+- [x] Complete verification pipeline: document scan → OCR → NFC → face match → liveness → verified
+- [x] 7 industry templates with Turkish regulatory context
+- [x] Admin UI for creating, monitoring, and configuring verification flows
+- [x] All 9 step types implemented (real or mock)
+- [x] `industry_verified` flag set on users who complete verification
+- [x] Playwright E2E tests cover verification flow builder and dashboard
 
 ---
 
@@ -636,10 +636,10 @@ Phase 4 — Biometric Stubs             [x] COMPLETE (liveness wired, FP via Web
 Phase 5 — Web App Integration Gaps    [x] COMPLETE (TOTP, QR, sidebar, WebAuthn enrolled)
 Phase 6 — Domain Model Restructure    [x] COMPLETE (domain/JPA separation, adapters, RLS)
 Phase 7 — Client Integration Story    [x] COMPLETE (SDK, OAuth 2.0, widget, demo)
-Phase 8 — Verification Pipeline       [ ] NOT STARTED
+Phase 8 — Verification Pipeline       [x] COMPLETE (V26-V28, 9 step types, 7 templates, UI)
 ```
 
-**Next: Phase 8 — Identity Verification Pipeline.**
+**All phases 0-8 COMPLETE. Remaining: iOS/Desktop (Phase 9), performance optimization, production pen test.**
 
 ---
 
@@ -683,13 +683,13 @@ Phase 8 — Verification Pipeline       [ ] NOT STARTED
 │              │ • React bindings (@fivucsas/auth-react) ✅           │
 │              │ • Embeddable auth widget (verify-app) ✅             │
 ├──────────────┼──────────────────────────────────────────────────────┤
-│ Phase 8      │ • Verification pipeline orchestration (ICA)          │
-│ (NEXT)       │ • Document scan + OCR (biometric-processor)          │
-│              │ • Face-to-document matching (biometric-processor)     │
-│              │ • Verification flow builder UI (web-app)             │
-│              │ • Industry templates — Banking/Healthcare/Education  │
-│              │ • Watchlist/sanctions screening (interface + mock)    │
-│              │ • Video interview recording (WebRTC)                 │
+│ DONE (Ph8)   │ • Verification pipeline orchestration (ICA) ✅        │
+│              │ • Document scan + OCR (biometric-processor) ✅        │
+│              │ • Face-to-document matching (biometric-processor) ✅   │
+│              │ • Verification flow builder UI (web-app) ✅           │
+│              │ • Industry templates — Banking/Healthcare/Education ✅│
+│              │ • Watchlist/sanctions screening (interface + mock) ✅  │
+│              │ • Video interview recording (WebRTC, V28) ✅          │
 ├──────────────┼──────────────────────────────────────────────────────┤
 │ FUTURE       │ • Notification service (email/SMS as separate svc)   │
 │              │ • Admin API keys (for tenant developers)             │
@@ -700,11 +700,9 @@ Phase 8 — Verification Pipeline       [ ] NOT STARTED
 
 ## NEXT IMMEDIATE ACTION
 
-**Start Phase 0. Do not touch anything else until these 4 fixes are done and verified:**
+**All phases 0-8 COMPLETE (2026-03-28).** Remaining work:
 
-1. `biometric-processor/app/api/routes/fingerprint.py` → return 501
-2. `biometric-processor/app/api/routes/voice.py` → return 501
-3. `client-apps/LoginViewModel.kt` → real backend login
-4. `identity-core-api/LogoutUserService.java` + `JwtAuthenticationFilter.java` → token blacklist
-
-**Ready to start? Say "start Phase 0" and we execute each fix, test it, then check the gate.**
+1. **Phase 9: iOS + Desktop** — SwiftUI wrappers, Core NFC, LocalAuthentication, Windows Hello
+2. **Performance optimization** — biometric-api memory, pgvector HNSW indexes, voice thread pool
+3. **Production pen test** — security audit of all endpoints
+4. **Final presentation delivery** — Spring 2026
