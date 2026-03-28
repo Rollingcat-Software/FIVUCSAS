@@ -1,7 +1,8 @@
 # FIVUCSAS — Comprehensive Production Roadmap V2
 
-> **Created**: 2026-03-17 | **Revised**: 2026-03-19
-> **Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
+> **Created**: 2026-03-17 | **Revised**: 2026-03-28
+> **Goal**: Full Identity Verification Platform (IVP) — authentication + verification pipeline
+> **Previous Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
 > **Philosophy**: Browser handles everything it can. What it can't → client-app acts as authenticator bridge.
 > **Server**: CPU-only (no GPU needed) — Hetzner VPS + Hostinger
 
@@ -513,7 +514,64 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [x] **Demo third-party app**: Acme Bank demo (`docs/demo/third-party-demo.html`)
 - [x] **Widget dogfooding**: SecondaryAuthFlow + WidgetDemoPage use the SDK internally
 
-### Phase 8: iOS + Desktop (Week 8-10)
+### Phase 8: Identity Verification Pipeline (Week 8-20, ~8-12 weeks)
+**Goal**: Evolve from authentication-only to full Identity Verification Platform (IVP). Build a configurable verification pipeline that chains document scanning, OCR, face-to-document matching, liveness, and compliance checks into tenant-customizable flows.
+
+#### Phase 8A: Schema + Core API (Week 1-2)
+- [ ] V26 Flyway migration: `verification_sessions`, `verification_step_results`, `verification_documents` tables
+- [ ] FlowType enum: AUTHENTICATION, VERIFICATION, ENROLLMENT, ONBOARDING
+- [ ] VerificationController + ManageVerificationService (hexagonal, same pattern as auth flows)
+- [ ] 9 new verification step types in `auth_methods`: DOCUMENT_SCAN, DATA_EXTRACT, NFC_CHIP_READ, FACE_MATCH, LIVENESS_CHECK, ADDRESS_PROOF, WATCHLIST_CHECK, AGE_VERIFICATION, VIDEO_INTERVIEW
+- [ ] `industry_verified` flag on `users` table
+- [ ] Industry verification templates: Banking KYC, Healthcare, Education, Government, Fintech
+- [ ] **Exit gate**: `mvn clean compile` passes, V26 migration applies cleanly, GET /api/v1/verification/templates returns template list
+
+#### Phase 8B: Document Processing (Week 3-4)
+- [ ] DOCUMENT_SCAN step: integrate existing YOLO card detection into verification pipeline
+- [ ] DATA_EXTRACT step: add Tesseract OCR for MRZ/text extraction from identity documents
+- [ ] NFC_CHIP_READ step: wire existing NFC reader (11,089 lines, 43 files) into pipeline flow
+- [ ] Turkish ID card (TC Kimlik) specific parser: extract TC number, name, DOB, photo from both sides
+- [ ] Document type detection: TC Kimlik, passport (TD3), driving license, residence permit
+- [ ] **Exit gate**: scan a TC Kimlik → extract name, TC number, DOB, photo via OCR + NFC
+
+#### Phase 8C: Face-to-Document Matching (Week 5-6)
+- [ ] FACE_MATCH step: compare live face against document photo using DeepFace cosine similarity
+- [ ] LIVENESS_CHECK step: integrate existing liveness detection (EnhancedLivenessDetector) into pipeline
+- [ ] Cross-reference: verify extracted name matches user profile data
+- [ ] Confidence scoring and threshold configuration per tenant (e.g., face match >= 85%, liveness >= 90%)
+- [ ] Pipeline orchestrator: chain steps with short-circuit on failure
+- [ ] **Exit gate**: full pipeline — scan document → extract data → match face → liveness → verified
+
+#### Phase 8D: Admin UI + Templates (Week 7-8)
+- [ ] Verification Flow Builder page (extend existing Auth Flow Builder component)
+- [ ] Industry template selector with preview and customization
+- [ ] Verification Dashboard: pipeline completion rates, avg time, failure reasons (recharts)
+- [ ] Per-step threshold configuration UI (e.g., face match >= 85%, liveness >= 90%)
+- [ ] Verification session detail view: step-by-step results with confidence scores
+- [ ] **Exit gate**: tenant admin can create a Banking KYC pipeline from template and run it
+
+#### Phase 8E: Advanced Integrations (Week 9-12)
+- [ ] ADDRESS_PROOF step: utility bill upload + address extraction via OCR
+- [ ] WATCHLIST_CHECK step: sanctions/PEP list screening (mock implementation, real API interface defined)
+- [ ] AGE_VERIFICATION step: calculate age from document DOB, enforce minimum age per industry
+- [ ] PHONE_VERIFICATION step: wire existing SMS OTP (Twilio) into verification pipeline
+- [ ] CREDIT_CHECK step: interface definition only (no real integration, ready for future provider)
+- [ ] VIDEO_INTERVIEW step: WebRTC recording for manual review queue
+- [ ] **Exit gate**: all step types functional with at least mock implementations, E2E test covers full KYC flow
+
+#### Turkish Industry Templates
+
+| Template | Steps | Regulatory Context |
+|----------|-------|--------------------|
+| **Banking KYC** (BDDK/BRSA) | DOCUMENT_SCAN → DATA_EXTRACT → NFC_CHIP_READ → FACE_MATCH → LIVENESS_CHECK → WATCHLIST_CHECK | BDDK (Banking Regulation and Supervision Agency) requires full KYC for account opening |
+| **Healthcare** (SGK) | DOCUMENT_SCAN → DATA_EXTRACT → FACE_MATCH → LIVENESS_CHECK | SGK (Social Security Institution) patient identity verification |
+| **Education** (YOK) | DOCUMENT_SCAN → DATA_EXTRACT → FACE_MATCH → AGE_VERIFICATION | YOK (Council of Higher Education) student enrollment verification |
+| **Government** (e-Devlet) | NFC_CHIP_READ → DATA_EXTRACT → FACE_MATCH → LIVENESS_CHECK → WATCHLIST_CHECK | e-Devlet integration pathway for government services |
+| **Fintech** (TCMB) | DOCUMENT_SCAN → DATA_EXTRACT → NFC_CHIP_READ → FACE_MATCH → LIVENESS_CHECK → WATCHLIST_CHECK → CREDIT_CHECK | TCMB (Central Bank) regulations for payment institutions |
+| **Telecom** (BTK) | DOCUMENT_SCAN → DATA_EXTRACT → FACE_MATCH → AGE_VERIFICATION | BTK (Information Technologies Authority) SIM registration |
+| **Gig Economy** | DOCUMENT_SCAN → FACE_MATCH → LIVENESS_CHECK → ADDRESS_PROOF | Courier/driver onboarding verification |
+
+### Phase 9: iOS + Desktop (Week 20-22)
 - [x] iOS platform layer: IosSecureStorage (Keychain), IosCameraService (AVFoundation), IosLogger (NSLog)
 - [x] iOS Koin DI module: all bindings (camera, storage, logger, fingerprint, push, network, NFC)
 - [x] iOS FingerprintPlatform: stub (LocalAuthentication ready to wire)
@@ -645,17 +703,19 @@ CameraX → ML Kit barcode scanning → Decode QR
 
 ## Timeline
 
-| Phase | Scope | Duration | Deliverable |
-|-------|-------|----------|-------------|
-| **0** | Auth test HTML page | 3 days | Production test console |
-| **1** | Face full pipeline | 2 weeks | Browser face auth working |
-| **2** | NFC integration | 1.5 weeks | eID reading via app |
-| **3** | Voice full pipeline | 1.5 weeks | Voice enroll + verify |
-| **4** | Fingerprint dual-mode | 1.5 weeks | WebAuthn + app bridge |
-| **5** | Client-app as authenticator | 1.5 weeks | Push approval, TOTP, NFC |
-| **6** | Security & polish | 1 week | Hardened, tested |
-| **7** | iOS + Desktop | 2 weeks | Cross-platform |
-| **Total** | | **~11 weeks** | Full biometric platform |
+| Phase | Scope | Duration | Deliverable | Status |
+|-------|-------|----------|-------------|--------|
+| **0** | Auth test HTML page | 3 days | Production test console | ✅ COMPLETE |
+| **1** | Face full pipeline | 2 weeks | Browser face auth working | ✅ COMPLETE |
+| **2** | NFC integration | 1.5 weeks | eID reading via app | ✅ COMPLETE |
+| **3** | Voice full pipeline | 1.5 weeks | Voice enroll + verify | ✅ COMPLETE |
+| **4** | Fingerprint dual-mode | 1.5 weeks | WebAuthn + app bridge | PARTIAL |
+| **5** | Client-app as authenticator | 1.5 weeks | Push approval, TOTP, NFC | PARTIAL |
+| **6** | Security & polish | 1 week | Hardened, tested | PARTIAL |
+| **7** | Client integration story | 2 weeks | SDK + OAuth 2.0 + widget | ✅ COMPLETE |
+| **8** | Identity Verification Pipeline | 8-12 weeks | Full IVP with KYC templates | NOT STARTED |
+| **9** | iOS + Desktop | 2 weeks | Cross-platform | PARTIAL |
+| **Total** | | **~23 weeks** | Full Identity Verification Platform |
 
 ---
 

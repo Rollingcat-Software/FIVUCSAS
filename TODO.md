@@ -1,6 +1,20 @@
 # TODO - FIVUCSAS Remaining Work
 
-## High Priority
+## High Priority — Phase 8: Identity Verification Pipeline
+
+- [ ] **V26 Flyway migration** — `verification_sessions`, `verification_step_results`, `verification_documents` tables + `industry_verified` flag on users
+- [ ] **VerificationController + ManageVerificationService** — Core API for creating/executing verification pipelines (hexagonal architecture)
+- [ ] **FlowType enum** — Distinguish AUTHENTICATION vs VERIFICATION vs ENROLLMENT vs ONBOARDING flows
+- [ ] **Document scan → OCR pipeline** — Wire YOLO card detection + Tesseract OCR for MRZ/text extraction from TC Kimlik and passports
+- [ ] **NFC chip read in pipeline** — Wire existing NFC reader (11,089 lines) into verification step flow
+- [ ] **Face-to-document matching** — DeepFace cosine similarity between live face and document photo (FACE_MATCH step)
+- [ ] **Liveness in pipeline** — Integrate EnhancedLivenessDetector as LIVENESS_CHECK verification step
+- [ ] **Verification flow builder UI** — Extend existing Auth Flow Builder for verification pipelines
+- [ ] **Industry templates** — Banking KYC (BDDK), Healthcare (SGK), Education (YOK), Government (e-Devlet), Fintech (TCMB), Telecom (BTK)
+- [ ] **Verification dashboard** — Pipeline completion rates, avg time, failure reasons (recharts)
+- [ ] **Advanced steps** — ADDRESS_PROOF, WATCHLIST_CHECK, AGE_VERIFICATION, PHONE_VERIFICATION, CREDIT_CHECK, VIDEO_INTERVIEW
+
+## High Priority — Other
 
 - [ ] **Coordinate with Aysenur** - Share step-up endpoint docs, verify public key format (X.509 DER Base64 vs Android Keystore), test end-to-end
 - [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)

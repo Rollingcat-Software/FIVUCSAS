@@ -536,20 +536,110 @@ A standalone page at `auth.fivucsas.com` that any app can redirect to for authen
 
 ---
 
+## PHASE 8 — IDENTITY VERIFICATION PIPELINE (~8-12 weeks)
+
+**Entry:** Phase 7 exit gate passed. Authentication platform is complete with SDK, OAuth 2.0, and embeddable widget. The platform now evolves from authentication-only to a full Identity Verification Platform (IVP).
+
+### 8A. Schema + Core API (Week 1-2)
+
+**What:** Database schema for verification sessions, step results, and documents. Core API for creating, managing, and executing verification pipelines. Industry-specific templates (Banking KYC, Healthcare, Education, etc.) with Turkish regulatory context.
+
+**Component responsibilities:**
+- `identity-core-api`: VerificationController, ManageVerificationService, V26 migration, FlowType enum, industry templates
+- `web-app`: no changes yet (Phase 8D)
+- `biometric-processor`: no changes yet (Phase 8B-8C)
+
+**Exit gate:**
+- [ ] V26 migration applies cleanly (verification_sessions, verification_step_results, verification_documents)
+- [ ] `mvn clean compile` passes with new domain classes
+- [ ] GET /api/v1/verification/templates returns industry template list
+- [ ] POST /api/v1/verification/sessions creates a new verification session
+- [ ] FlowType enum distinguishes AUTHENTICATION vs VERIFICATION flows
+
+### 8B. Document Processing (Week 3-4)
+
+**What:** Wire existing YOLO card detection and NFC reader into the verification pipeline. Add Tesseract OCR for text extraction from identity documents. Turkish ID card (TC Kimlik) specific parsing.
+
+**Component responsibilities:**
+- `biometric-processor`: DOCUMENT_SCAN endpoint (YOLO), DATA_EXTRACT endpoint (Tesseract OCR), MRZ parser
+- `identity-core-api`: pipeline step orchestration, NFC_CHIP_READ step (delegates to existing NfcController)
+- `client-apps`: NFC reading (already integrated, 11,089 lines)
+
+**Exit gate:**
+- [ ] DOCUMENT_SCAN step accepts image and returns detected card boundaries
+- [ ] DATA_EXTRACT step extracts name, TC number, DOB, photo from TC Kimlik image
+- [ ] NFC_CHIP_READ step reads chip data via existing NFC infrastructure
+- [ ] Turkish ID card parser handles both front and back sides
+
+### 8C. Face-to-Document Matching (Week 5-6)
+
+**What:** Compare live face against document photo using existing DeepFace infrastructure. Integrate liveness detection into verification pipeline. Cross-reference extracted data against user profile.
+
+**Component responsibilities:**
+- `biometric-processor`: FACE_MATCH endpoint (DeepFace cosine similarity between live face and document photo)
+- `biometric-processor`: LIVENESS_CHECK via existing EnhancedLivenessDetector
+- `identity-core-api`: pipeline orchestrator chains steps, short-circuits on failure, stores results
+
+**Exit gate:**
+- [ ] FACE_MATCH returns confidence score comparing live face to document photo
+- [ ] LIVENESS_CHECK integrated into pipeline (not just standalone)
+- [ ] Full pipeline: scan → extract → match face → liveness → verified status
+- [ ] Threshold configuration per tenant (face match >= 85%, liveness >= 90%)
+
+### 8D. Admin UI + Templates (Week 7-8)
+
+**What:** Verification Flow Builder UI, industry template selector, verification dashboard with analytics.
+
+**Component responsibilities:**
+- `web-app`: VerificationFlowBuilderPage, VerificationDashboardPage, VerificationSessionDetailPage
+- `web-app`: template selector component, per-step threshold configuration
+- `identity-core-api`: dashboard statistics endpoints (completion rates, avg time, failure reasons)
+
+**Exit gate:**
+- [ ] Tenant admin can create a Banking KYC pipeline from template
+- [ ] Verification Dashboard shows completion rates, avg verification time, failure reasons
+- [ ] Per-step threshold configuration works (sliders for face match %, liveness %)
+- [ ] Verification session detail view shows step-by-step results with confidence scores
+
+### 8E. Advanced Integrations (Week 9-12)
+
+**What:** Additional verification step types — address proof, watchlist screening, age verification, phone verification, credit check interface, video interview recording.
+
+**Component responsibilities:**
+- `biometric-processor`: ADDRESS_PROOF (OCR on utility bills), VIDEO_INTERVIEW (WebRTC recording storage)
+- `identity-core-api`: WATCHLIST_CHECK (mock + interface for real provider), AGE_VERIFICATION (DOB calculation), PHONE_VERIFICATION (wire existing Twilio SMS OTP), CREDIT_CHECK (interface only)
+
+**Exit gate:**
+- [ ] All 9 verification step types functional (at minimum mock implementations)
+- [ ] PHONE_VERIFICATION reuses existing Twilio SMS OTP infrastructure
+- [ ] WATCHLIST_CHECK has clear interface for future real sanctions/PEP provider
+- [ ] E2E test covers full Banking KYC pipeline from start to verified status
+
+### Phase 8 Exit Gate (Overall):
+- [ ] Complete verification pipeline: document scan → OCR → NFC → face match → liveness → verified
+- [ ] 7 industry templates with Turkish regulatory context
+- [ ] Admin UI for creating, monitoring, and configuring verification flows
+- [ ] All 9 step types implemented (real or mock)
+- [ ] `industry_verified` flag set on users who complete verification
+- [ ] Playwright E2E tests cover verification flow builder and dashboard
+
+---
+
 ## CURRENT PHASE STATUS
 
 ```
-Phase 0 — Critical Bug Fixes          [ ] NOT STARTED
-Phase 1 — Architecture Fixes          [ ] NOT STARTED
-Phase 2 — CRUD + RBAC Verification    [ ] NOT STARTED
-Phase 3 — Mobile Backend Connection   [ ] PARTIAL (step-up done, login mocked)
-Phase 4 — Biometric Stubs             [ ] PARTIAL (501 not done yet)
-Phase 5 — Web App Integration Gaps    [ ] NOT STARTED
-Phase 6 — Domain Model Restructure    [ ] NOT STARTED
-Phase 7 — Client Integration Story    [ ] NOT STARTED
+Phase 0 — Critical Bug Fixes          [x] COMPLETE (fingerprint/voice 501, login fixed, token blacklist)
+Phase 1 — Architecture Fixes          [x] COMPLETE (pagination, ports, controller consolidation)
+Phase 2 — CRUD + RBAC Verification    [x] COMPLETE (all CRUD working, RBAC enforced)
+Phase 3 — Mobile Backend Connection   [x] COMPLETE (real login, face, step-up, multi-tenancy)
+Phase 4 — Biometric Stubs             [x] COMPLETE (liveness wired, FP via WebAuthn, idempotency)
+Phase 5 — Web App Integration Gaps    [x] COMPLETE (TOTP, QR, sidebar, WebAuthn enrolled)
+Phase 6 — Domain Model Restructure    [x] COMPLETE (domain/JPA separation, adapters, RLS)
+Phase 7 — Client Integration Story    [x] COMPLETE (SDK, OAuth 2.0, widget, demo)
+Phase 8 — Verification Pipeline       [ ] NOT STARTED
 ```
 
-**We are in Phase 0. Do not proceed until Phase 0 exit gate is fully met.**
+**Next: Phase 8 — Identity Verification Pipeline.**
 
 ---
 
@@ -588,9 +678,20 @@ Phase 7 — Client Integration Story    [ ] NOT STARTED
 │              │ • QR code scanning                                   │
 │              │ • Push notification handling                         │
 ├──────────────┼──────────────────────────────────────────────────────┤
-│ MISSING      │ • OAuth2 authorization server (no OIDC/OAuth2)       │
-│              │ • JavaScript SDK for third-party web apps            │
-│              │ • Notification service (email/SMS as separate svc)   │
+│ DONE (Ph7)   │ • OAuth2 authorization server (OIDC/OAuth2) ✅        │
+│              │ • JavaScript SDK (@fivucsas/auth-js) ✅              │
+│              │ • React bindings (@fivucsas/auth-react) ✅           │
+│              │ • Embeddable auth widget (verify-app) ✅             │
+├──────────────┼──────────────────────────────────────────────────────┤
+│ Phase 8      │ • Verification pipeline orchestration (ICA)          │
+│ (NEXT)       │ • Document scan + OCR (biometric-processor)          │
+│              │ • Face-to-document matching (biometric-processor)     │
+│              │ • Verification flow builder UI (web-app)             │
+│              │ • Industry templates — Banking/Healthcare/Education  │
+│              │ • Watchlist/sanctions screening (interface + mock)    │
+│              │ • Video interview recording (WebRTC)                 │
+├──────────────┼──────────────────────────────────────────────────────┤
+│ FUTURE       │ • Notification service (email/SMS as separate svc)   │
 │              │ • Admin API keys (for tenant developers)             │
 └──────────────┴──────────────────────────────────────────────────────┘
 ```
