@@ -23,7 +23,7 @@
 |-----------|-----------|------|
 | Identity Core API | Spring Boot 3.2.0 (Java 21) | 8080 |
 | Biometric Processor | FastAPI (Python 3.11+) | 8001 |
-| Web Dashboard | React 18 + TypeScript | 5173 |
+| Web Dashboard | React 18 + TypeScript 5 + Vite 8 | 5173 |
 | Mobile/Desktop | Kotlin Multiplatform | - |
 | Database | PostgreSQL 16 + pgvector | 5432 |
 | Cache/Queue | Redis 7 | 6379 |
@@ -63,7 +63,7 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 
 **Hetzner VPS Details:**
 - **IP**: `116.203.222.213`
-- **Type**: CX33 (8GB RAM), Nuremberg, Ubuntu 24.04
+- **Type**: CX43 (16GB RAM, 8 vCPU, 150GB disk), Nuremberg, Ubuntu 24.04
 - **SSH key**: `~/.ssh/hetzner_ed25519`
 - **Docker**: 29.3.0, Docker Compose v5.1.0
 - **Firewall**: UFW — 22/80/443 open
@@ -73,6 +73,16 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - `biometric-api` (port 8001, healthy) — FastAPI, CPU mode, Resemblyzer + DeepFace
 - `shared-redis` (port 6379, internal only)
 - `shared-postgres` with pgvector (port 5432, internal only) — biometric_db: face_embeddings, voice_enrollments
+
+**Shared Infrastructure (all FIVUCSAS services + Mizan + Sarnic share these):**
+- PostgreSQL 17 with pgvector — shared instance, per-service databases
+- Redis 7.4 — shared instance, per-service database numbers
+- Deployment via `docker-compose.prod.yml` + `.env.prod` per service
+
+**CI/CD:**
+- Self-hosted runner `hetzner-cx43` — unlimited free CI minutes
+- GitHub Actions workflows optimized with path filters, caching, concurrency groups
+- Dependabot configured: weekly schedule, grouped updates, limit 5 PRs
 
 **Rebuild & restart identity-core-api:**
 ```bash
@@ -289,7 +299,7 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - ✅ Multi-modal auth system architecture (10 documents in docs/09-auth-flows/)
 - ✅ Phase 1: Backend foundation (V16 migration, 8 entities, 8 repos, 5 services, 6 controllers)
 - ✅ Phase 2: Core auth handlers (Password, Face, Email OTP, QR Code) + EmailService + unit tests
-- ✅ CI/CD Pipeline (GitHub Actions: Java 21 + Python 3.11 + Node 20)
+- ✅ CI/CD Pipeline (GitHub Actions on self-hosted runner `hetzner-cx43`: Java 21 + Python 3.11 + Node 20)
 - ✅ Mobile app production API URLs configured
 - ✅ **All 10 auth handlers** (TOTP, SMS OTP, Fingerprint, Voice, Hardware Key, NFC Document)
 - ✅ **Device constraint enforcement** (PASSWORD mandatory for APP_LOGIN/API_ACCESS, full freedom for DOOR_ACCESS etc.)

@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-Near%20Production-orange.svg)
+![Status](https://img.shields.io/badge/status-Production-brightgreen.svg)
 
 ## Overview
 
@@ -46,7 +46,7 @@ Our unique **active liveness detection algorithm** requires users to perform a r
 | **Backend Core** | Spring Boot 3.2+ (Java 21) | Identity & Auth Management |
 | **AI/ML Service** | FastAPI (Python 3.11+) | Biometric Processing |
 | **Mobile App** | Kotlin Multiplatform + Compose | Cross-platform (Android/iOS) |
-| **Web Dashboard** | React 18 + TypeScript | Admin Panel |
+| **Web Dashboard** | React 18 + TypeScript 5 + Vite 8 | Admin Panel |
 | **Desktop Client** | Kotlin Multiplatform + Compose | Kiosk Mode |
 | **Database** | PostgreSQL 16 + pgvector | Data & Vector Storage |
 | **Cache/Queue** | Redis 7 | Session & Messaging |
