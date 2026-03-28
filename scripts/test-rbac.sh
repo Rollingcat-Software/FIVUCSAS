@@ -138,6 +138,7 @@ cleanup() {
     log_section "Cleanup"
 
     # Re-acquire admin token for cleanup
+    sleep 1  # brief pause to avoid rate limiting on login endpoint
     ADMIN_TOKEN=$(login_as "$ADMIN_EMAIL" "$ADMIN_PASS" 2>/dev/null) || true
 
     if [[ -z "$ADMIN_TOKEN" ]]; then
@@ -346,6 +347,7 @@ log_section "Phase 5 — TENANT_ADMIN Access"
 
 TENANT_ADMIN_TOKEN=""
 if [[ -n "$USER_ADMIN_ID" ]]; then
+    sleep 1  # brief pause to avoid rate limiting on login endpoint
     TENANT_ADMIN_TOKEN=$(login_as "rbac-admin-${RUN_ID}@test.local" "Test@123")
 fi
 
@@ -426,6 +428,7 @@ log_section "Phase 6 — TENANT_MEMBER Access"
 
 TENANT_MEMBER_TOKEN=""
 if [[ -n "$USER_MEMBER_ID" ]]; then
+    sleep 1  # brief pause to avoid rate limiting on login endpoint
     TENANT_MEMBER_TOKEN=$(login_as "rbac-member-${RUN_ID}@test.local" "Test@123")
 fi
 
@@ -596,7 +599,7 @@ if [[ -n "$TENANT_MEMBER_TOKEN" ]]; then
 
     # TENANT_MEMBER should not be able to modify system roles
     api PUT "/api/v1/roles/20000000-0000-0000-0000-000000000005" "$TENANT_MEMBER_TOKEN" \
-        "{\"name\":\"HACKED\",\"description\":\"Hacked\",\"tenantId\":\"00000000-0000-0000-0000-000000000000\"}"
+        "{\"name\":\"HACKED\",\"description\":\"Hacked\",\"active\":true}"
     if [[ "$HTTP_STATUS" == "403" ]]; then
         log_pass "TENANT_MEMBER cannot modify system roles (HTTP 403)"
     elif [[ "$HTTP_STATUS" == "200" ]]; then

@@ -138,7 +138,8 @@ cleanup() {
     get_token 2>/dev/null || true
 
     if [[ -n "$CREATED_FLOW_ID" ]]; then
-        api DELETE "/api/v1/auth-flows/$CREATED_FLOW_ID"
+        local cleanup_tenant="${CREATED_TENANT_ID:-00000000-0000-0000-0000-000000000000}"
+        api DELETE "/api/v1/tenants/${cleanup_tenant}/auth-flows/$CREATED_FLOW_ID"
         log_info "Deleted test auth flow $CREATED_FLOW_ID (HTTP $HTTP_STATUS)"
     fi
     if [[ -n "$CREATED_USER_ID" ]]; then
@@ -198,7 +199,7 @@ assert_status "List tenants" "200"
 # Update
 if [[ -n "$CREATED_TENANT_ID" ]]; then
     api PUT "/api/v1/tenants/$CREATED_TENANT_ID" \
-        "{\"name\":\"CRUDTest-${RUN_ID}-Updated\",\"slug\":\"crud-test-${RUN_ID}\",\"contactEmail\":\"crud-${RUN_ID}@test.local\",\"maxUsers\":20}"
+        "{\"name\":\"CRUDTest-${RUN_ID}-Updated\",\"contactEmail\":\"crud-${RUN_ID}@test.local\",\"maxUsers\":20}"
     assert_status "Update tenant" "200"
 fi
 
@@ -268,7 +269,7 @@ assert_status "List roles" "200"
 # Update
 if [[ -n "$CREATED_ROLE_ID" ]]; then
     api PUT "/api/v1/roles/$CREATED_ROLE_ID" \
-        "{\"name\":\"CRUD_TEST_ROLE_${RUN_ID}_UPD\",\"description\":\"Updated\",\"tenantId\":\"00000000-0000-0000-0000-000000000000\"}"
+        "{\"name\":\"CRUD_TEST_ROLE_${RUN_ID}_UPD\",\"description\":\"Updated\",\"active\":true}"
     assert_status "Update role" "200"
 fi
 
@@ -351,43 +352,28 @@ fi
 # ============================================================================
 log_section "Auth Flows — CRUD"
 
-# Get PASSWORD auth method ID for creating a flow step
-PASSWORD_METHOD_ID=$(curl $CURL_OPTS "$BASE_URL/api/v1/auth-methods" \
-    -H "Authorization: Bearer $TOKEN" 2>/dev/null | python3 -c "
-import sys, json
-try:
-    methods = json.load(sys.stdin)
-    if isinstance(methods, dict): methods = methods.get('content', [])
-    for m in methods:
-        if m.get('type') == 'PASSWORD':
-            print(m['id']); break
-except: print('')
-" 2>/dev/null)
+FLOW_TENANT_ID="${CREATED_TENANT_ID:-00000000-0000-0000-0000-000000000000}"
 
-if [[ -n "$PASSWORD_METHOD_ID" ]]; then
-    # Create
-    api POST "/api/v1/auth-flows" \
-        "{\"name\":\"CRUDTestFlow-${RUN_ID}\",\"description\":\"Test flow\",\"operationType\":\"APP_LOGIN\",\"tenantId\":\"00000000-0000-0000-0000-000000000000\",\"steps\":[{\"stepOrder\":1,\"authMethodId\":\"$PASSWORD_METHOD_ID\",\"isRequired\":true}]}"
-    assert_status "Create auth flow" "201"
-    CREATED_FLOW_ID=$(json_field "id")
-else
-    log_fail "Create auth flow (PASSWORD method not found)"
-fi
+# Create — auth flows are tenant-scoped: POST /api/v1/tenants/{tenantId}/auth-flows
+api POST "/api/v1/tenants/${FLOW_TENANT_ID}/auth-flows" \
+    "{\"name\":\"CRUDTestFlow-${RUN_ID}\",\"description\":\"Test flow\",\"operationType\":\"APP_LOGIN\",\"isDefault\":false,\"steps\":[{\"authMethodType\":\"PASSWORD\",\"stepOrder\":1,\"isRequired\":true,\"timeoutSeconds\":300,\"maxAttempts\":3,\"allowsDelegation\":false}]}"
+assert_status "Create auth flow" "201"
+CREATED_FLOW_ID=$(json_field "id")
 
 # Read (single)
 if [[ -n "$CREATED_FLOW_ID" ]]; then
-    api GET "/api/v1/auth-flows/$CREATED_FLOW_ID"
+    api GET "/api/v1/tenants/${FLOW_TENANT_ID}/auth-flows/$CREATED_FLOW_ID"
     assert_status "Read auth flow by ID" "200"
 fi
 
-# Read (list)
+# Read (list — admin overview endpoint)
 api GET "/api/v1/auth-flows"
 assert_status "List auth flows" "200"
 
 # Update
 if [[ -n "$CREATED_FLOW_ID" ]]; then
-    api PUT "/api/v1/auth-flows/$CREATED_FLOW_ID" \
-        "{\"name\":\"CRUDTestFlow-${RUN_ID}-Updated\",\"description\":\"Updated\",\"operationType\":\"APP_LOGIN\",\"tenantId\":\"00000000-0000-0000-0000-000000000000\",\"steps\":[{\"stepOrder\":1,\"authMethodId\":\"$PASSWORD_METHOD_ID\",\"isRequired\":true}]}"
+    api PUT "/api/v1/tenants/${FLOW_TENANT_ID}/auth-flows/$CREATED_FLOW_ID" \
+        "{\"name\":\"CRUDTestFlow-${RUN_ID}-Updated\",\"description\":\"Updated\"}"
     assert_status "Update auth flow" "200"
 fi
 
@@ -457,7 +443,7 @@ assert_status "List auth sessions" "200"
 log_section "Delete Operations"
 
 if [[ -n "$CREATED_FLOW_ID" ]]; then
-    api DELETE "/api/v1/auth-flows/$CREATED_FLOW_ID"
+    api DELETE "/api/v1/tenants/${FLOW_TENANT_ID}/auth-flows/$CREATED_FLOW_ID"
     assert_status "Delete auth flow" "204"
     CREATED_FLOW_ID=""  # prevent double-delete in cleanup
 fi
