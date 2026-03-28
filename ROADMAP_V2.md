@@ -499,7 +499,21 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [ ] Rate limiting on auth endpoints
 - [ ] Production penetration test
 
-### Phase 7: iOS + Desktop (Week 7-9)
+### Phase 7: Client Integration Story (Week 7-8) --- COMPLETE (2026-03-28)
+- [x] **verify-app**: standalone iframe auth widget at `/verify/` (extracted from web-app)
+- [x] **@fivucsas/auth-js SDK**: FivucsasAuth class, 9.5KB IIFE + 12KB ESM, zero dependencies
+- [x] **@fivucsas/auth-react**: FivucsasProvider, VerifyButton, useVerification hook
+- [x] **`<fivucsas-verify>` Web Component**: declarative custom element with Shadow DOM
+- [x] **OAuth 2.0 / OIDC**: authorization code flow (authorize, token, userinfo) + discovery + JWKS
+- [x] **V24 migration**: `oauth2_clients` table for client registration
+- [x] **DeveloperPortalPage**: `/developer-portal` with SDK docs and integration guide
+- [x] **WidgetDemoPage**: `/widget-demo` with live preview
+- [x] **postMessage bridge**: ready/step-change/complete/error/cancel/resize events
+- [x] **Integration Guide**: comprehensive developer docs (`docs/INTEGRATION_GUIDE.md`)
+- [x] **Demo third-party app**: Acme Bank demo (`docs/demo/third-party-demo.html`)
+- [x] **Widget dogfooding**: SecondaryAuthFlow + WidgetDemoPage use the SDK internally
+
+### Phase 8: iOS + Desktop (Week 8-10)
 - [x] iOS platform layer: IosSecureStorage (Keychain), IosCameraService (AVFoundation), IosLogger (NSLog)
 - [x] iOS Koin DI module: all bindings (camera, storage, logger, fingerprint, push, network, NFC)
 - [x] iOS FingerprintPlatform: stub (LocalAuthentication ready to wire)
