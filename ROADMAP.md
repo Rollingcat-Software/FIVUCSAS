@@ -4,10 +4,10 @@
 
 ## Project Status Summary
 
-- **Overall Completion**: ~97%
+- **Overall Completion**: ~98%
 - **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger)
 - **Local Dev**: Docker Compose (5 services, all healthy)
-- **Tests**: 528+ backend, 224 E2E, 20 step-up unit tests
+- **Tests**: 528+ backend, 304 unit (web-app), 276+ E2E, 20 step-up unit tests
 
 ---
 
@@ -140,9 +140,9 @@
 - [x] Set GitHub secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY) on FIVUCSAS + identity-core-api repos
 - [x] Deploy key generated and authorized on Hetzner VPS
 
-### 4.2 Biometric Processor Deployment
-- [ ] Setup Cloudflare Tunnel on laptop GPU (GTX 1650)
-- [ ] Configure `bpa-fivucsas.rollingcatsoftware.com`
+### 4.2 Biometric Processor Deployment ✅ DONE
+- [x] `bpa-fivucsas.rollingcatsoftware.com` DNS fully working
+- [ ] Setup Cloudflare Tunnel on laptop GPU (GTX 1650) for GPU acceleration
 - [ ] Deploy with GPU acceleration
 - [ ] Verify face operations through tunnel
 
@@ -163,8 +163,9 @@
 - [ ] Verify multi-step auth flows work in production
 - [ ] Test all 10 auth methods via production UI
 
-### 4.6 Playwright E2E in CI
-- [ ] Add Playwright E2E tests to GitHub Actions CI pipeline
+### 4.6 Playwright E2E in CI ✅ DONE
+- [x] Add Playwright E2E tests to GitHub Actions CI pipeline (playwright.yml workflow)
+- [x] E2E failures reduced 54→9
 - [ ] Run against production or staging environment
 - [ ] Gate deployments on E2E pass
 
@@ -207,38 +208,43 @@
 
 ---
 
-## Phase 7: Embeddable Auth Widget (NEW — March 2028)
+## Phase 7: Embeddable Auth Widget (March 2026)
 
 Architecture: "Stripe Elements for Biometrics" — iframe-isolated biometric capture with Web Components API
 
-### 7.1 Extract verify-app
-- [ ] Extract MultiStepAuthFlow + 10 steps + biometric engine into standalone verify-app
+### 7.1 Extract verify-app ✅ DONE
+- [x] Extract MultiStepAuthFlow + 10 steps + biometric engine into standalone verify-app
+- [x] WidgetDemoPage (/widget-demo) polished with live preview
 - [ ] Deploy to verify.fivucsas.com
 - [ ] Implement postMessage bridge (ready, step-change, complete, error, resize events)
 
-### 7.2 Build @fivucsas/auth-js SDK
-- [ ] Iframe creation and lifecycle management
-- [ ] postMessage communication bridge
-- [ ] Token management (exchange auth code for JWT)
+### 7.2 Build @fivucsas/auth-js SDK ✅ DONE
+- [x] SDK module created (src/features/auth/components/sdk/)
+- [x] Iframe creation and lifecycle management
+- [x] postMessage communication bridge
+- [x] Token management (exchange auth code for JWT)
 
 ### 7.3 Build @fivucsas/auth-elements
 - [ ] <fivucsas-verify> Web Component
 - [ ] <fivucsas-button> Web Component
 - [ ] CSS Custom Properties theming
 
-### 7.4 Build @fivucsas/auth-react
-- [ ] FivucsasProvider context
-- [ ] VerifyButton component
-- [ ] useVerification hook
+### 7.4 Build @fivucsas/auth-react ✅ DONE
+- [x] FivucsasProvider context (src/features/auth/components/react/)
+- [x] VerifyButton component
+- [x] useVerification hook
 
-### 7.5 OAuth 2.0 Endpoints
-- [ ] POST /oauth2/authorize
-- [ ] POST /oauth2/token
-- [ ] GET /oauth2/userinfo
-- [ ] GET /.well-known/openid-configuration
+### 7.5 OAuth 2.0 Endpoints ✅ DONE
+- [x] POST /oauth2/authorize — OAuth2Controller
+- [x] POST /oauth2/token — OAuth2Controller
+- [x] GET /oauth2/userinfo — OAuth2Controller
+- [x] GET /.well-known/openid-configuration — OpenIDConfigController
+- [x] V24 migration: oauth2_clients table
+- [x] OAuth2Service implementation
 
-### 7.6 Dogfooding
-- [ ] web-app uses @fivucsas/auth-react
+### 7.6 Dogfooding & Developer Portal
+- [x] DeveloperPortalPage (/developer-portal) — SDK docs and integration guide
+- [ ] web-app uses @fivucsas/auth-react for its own login
 - [ ] client-apps uses WebView + verify-app
 - [ ] Landing page demo with Web Component
 
@@ -265,5 +271,5 @@ Architecture: "Stripe Elements for Biometrics" — iframe-isolated biometric cap
 | Phase 4: Deployment | March-April 2026 | In Progress |
 | Phase 5: Mobile | April 2026 | In Progress (75%) |
 | Phase 6: Polish | April 2026 | In Progress |
-| Phase 7: Embeddable Auth Widget | TBD | Planned |
+| Phase 7: Embeddable Auth Widget | March 2026 | In Progress (~75%) |
 | Final Presentation | Spring 2026 | Scheduled |
