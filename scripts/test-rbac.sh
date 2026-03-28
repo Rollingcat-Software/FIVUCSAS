@@ -304,7 +304,7 @@ fi
 # Create TENANT_ADMIN user in Tenant A
 if [[ -n "$TENANT_A_ID" ]]; then
     api POST "/api/v1/users" "$ADMIN_TOKEN" \
-        "{\"email\":\"rbac-admin-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantAdmin\",\"lastName\":\"${RUN_ID}\",\"tenantId\":\"$TENANT_A_ID\",\"role\":\"TENANT_ADMIN\"}"
+        "{\"email\":\"rbac-admin-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantAdmin\",\"lastName\":\"Testuser\",\"tenantId\":\"$TENANT_A_ID\",\"role\":\"TENANT_ADMIN\"}"
     if [[ "$HTTP_STATUS" == "201" ]]; then
         USER_ADMIN_ID=$(json_field "id")
         log_pass "Created TENANT_ADMIN user in Tenant A"
@@ -317,7 +317,7 @@ fi
 # Create TENANT_MEMBER user in Tenant A
 if [[ -n "$TENANT_A_ID" ]]; then
     api POST "/api/v1/users" "$ADMIN_TOKEN" \
-        "{\"email\":\"rbac-member-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantMember\",\"lastName\":\"${RUN_ID}\",\"tenantId\":\"$TENANT_A_ID\",\"role\":\"TENANT_MEMBER\"}"
+        "{\"email\":\"rbac-member-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantMember\",\"lastName\":\"Testuser\",\"tenantId\":\"$TENANT_A_ID\",\"role\":\"TENANT_MEMBER\"}"
     if [[ "$HTTP_STATUS" == "201" ]]; then
         USER_MEMBER_ID=$(json_field "id")
         log_pass "Created TENANT_MEMBER user in Tenant A"
@@ -330,7 +330,7 @@ fi
 # Create user in Tenant B (for cross-tenant isolation tests)
 if [[ -n "$TENANT_B_ID" ]]; then
     api POST "/api/v1/users" "$ADMIN_TOKEN" \
-        "{\"email\":\"rbac-b-user-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantBUser\",\"lastName\":\"${RUN_ID}\",\"tenantId\":\"$TENANT_B_ID\",\"role\":\"TENANT_MEMBER\"}"
+        "{\"email\":\"rbac-b-user-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"TenantBUser\",\"lastName\":\"Testuser\",\"tenantId\":\"$TENANT_B_ID\",\"role\":\"TENANT_MEMBER\"}"
     if [[ "$HTTP_STATUS" == "201" ]]; then
         USER_B_ID=$(json_field "id")
         log_pass "Created user in Tenant B"
@@ -576,7 +576,7 @@ if [[ -n "$TENANT_MEMBER_TOKEN" ]]; then
     # TENANT_MEMBER should not be able to escalate own role
     if [[ -n "$USER_MEMBER_ID" ]]; then
         api PUT "/api/v1/users/$USER_MEMBER_ID" "$TENANT_MEMBER_TOKEN" \
-            "{\"firstName\":\"TenantMember\",\"lastName\":\"${RUN_ID}\",\"email\":\"rbac-member-${RUN_ID}@test.local\",\"role\":\"SUPER_ADMIN\"}"
+            "{\"firstName\":\"TenantMember\",\"lastName\":\"Testuser\",\"email\":\"rbac-member-${RUN_ID}@test.local\",\"role\":\"SUPER_ADMIN\"}"
         if [[ "$HTTP_STATUS" == "403" ]]; then
             log_pass "TENANT_MEMBER cannot escalate to SUPER_ADMIN (HTTP 403)"
         elif [[ "$HTTP_STATUS" == "200" ]]; then

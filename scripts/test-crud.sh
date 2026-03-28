@@ -213,7 +213,7 @@ TENANT_ID="${CREATED_TENANT_ID:-00000000-0000-0000-0000-000000000000}"
 
 # Create
 api POST "/api/v1/users" \
-    "{\"email\":\"crud-user-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"CRUD\",\"lastName\":\"User${RUN_ID}\",\"tenantId\":\"$TENANT_ID\",\"role\":\"TENANT_MEMBER\"}"
+    "{\"email\":\"crud-user-${RUN_ID}@test.local\",\"password\":\"Test@123\",\"firstName\":\"CRUD\",\"lastName\":\"Testuser\",\"tenantId\":\"$TENANT_ID\",\"role\":\"TENANT_MEMBER\"}"
 assert_status "Create user" "201"
 CREATED_USER_ID=$(json_field "id")
 
@@ -236,7 +236,7 @@ assert_status "List users (paginated)" "200"
 # Update
 if [[ -n "$CREATED_USER_ID" ]]; then
     api PUT "/api/v1/users/$CREATED_USER_ID" \
-        "{\"firstName\":\"CRUDUpdated\",\"lastName\":\"User${RUN_ID}\",\"email\":\"crud-user-${RUN_ID}@test.local\"}"
+        "{\"firstName\":\"CRUDUpdated\",\"lastName\":\"Testuser\",\"email\":\"crud-user-${RUN_ID}@test.local\"}"
     assert_status "Update user" "200"
 fi
 
