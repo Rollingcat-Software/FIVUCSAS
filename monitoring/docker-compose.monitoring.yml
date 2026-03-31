@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Prometheus Server
   prometheus:
@@ -18,7 +16,7 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     networks:
       - fivucsas-network
     depends_on:
@@ -36,7 +34,7 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     networks:
       - fivucsas-network
 
@@ -47,7 +45,7 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
@@ -56,7 +54,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - fivucsas-network
     depends_on:
@@ -70,7 +68,7 @@ services:
     environment:
       - DATA_SOURCE_NAME=postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres_dev_password}@postgres:5432/${DB_NAME:-identity_core_db}?sslmode=disable
     ports:
-      - "9187:9187"
+      - "127.0.0.1:9187:9187"
     networks:
       - fivucsas-network
 
@@ -83,7 +81,7 @@ services:
       - REDIS_ADDR=redis:6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_dev_password}
     ports:
-      - "9121:9121"
+      - "127.0.0.1:9121:9121"
     networks:
       - fivucsas-network
 
@@ -102,7 +100,7 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     ports:
-      - "9100:9100"
+      - "127.0.0.1:9100:9100"
     networks:
       - fivucsas-network
 

@@ -256,12 +256,12 @@ async function apiCall(method, path, body, extraHeaders) {
     var text = await res.text();
     var resData;
     try { resData = JSON.parse(text); } catch(e) { resData = text; }
-    console.log('[API-DIAG] ' + method + ' ' + path + ' → ' + res.status + ' (' + elapsed.toFixed(0) + 'ms)', typeof resData === 'object' ? resData : { raw: String(resData).substring(0, 200) });
+    console.log(`[API-DIAG] ${method} ${path} → ${res.status} (${elapsed.toFixed(0)}ms)`, typeof resData === 'object' ? resData : { raw: String(resData).substring(0, 200) });
     addLogEntry(method, path, res.status, elapsed, body, resData);
     return { ok: res.ok, status: res.status, data: resData, elapsed: elapsed };
   } catch (err) {
     var elapsed2 = performance.now() - start;
-    console.error('[API-DIAG] ' + method + ' ' + path + ' → ERROR (' + elapsed2.toFixed(0) + 'ms):', err.message);
+    console.error(`[API-DIAG] ${method} ${path} → ERROR (${elapsed2.toFixed(0)}ms):`, err.message);
     addLogEntry(method, path, 'ERR', elapsed2, body, err.message);
     return { ok: false, status: 0, data: null, error: err.message, elapsed: elapsed2 };
   }
@@ -1975,22 +1975,30 @@ async function searchVoice() {
 
     if (res.ok && data && data.matches && data.matches.length > 0) {
       var lines = 'SPEAKER IDENTIFIED! (' + formatMs(elapsed) + ')\n\n';
-      data.matches.forEach(function(m, i) {
-        lines += '#' + (i + 1) + ' User: ' + m.user_id + ' | Similarity: ' + ((m.similarity || 0) * 100).toFixed(1) + '%\n';
-      });
+      // Resolve user details for all matches in parallel
+      var userDetails = {};
       try {
-        var topId = data.matches[0].user_id;
-        var userRes = await fetch(getApiUrl() + '/api/v1/users/' + topId, {
-          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        var fetches = data.matches.map(function(m) {
+          return fetch(getApiUrl() + '/api/v1/users/' + m.user_id, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          }).then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(u) { if (u) userDetails[m.user_id] = u; })
+            .catch(function() {});
         });
-        if (userRes.ok) {
-          var user = await userRes.json();
-          lines += '\n--- Top Match ---\n';
-          lines += 'Name: ' + (user.firstName || '') + ' ' + (user.lastName || '') + '\n';
-          lines += 'Email: ' + (user.email || '--') + '\n';
-          lines += 'Role: ' + (user.role || '--');
+        await Promise.all(fetches);
+      } catch (e) { /* best-effort */ }
+      data.matches.forEach(function(m, i) {
+        var u = userDetails[m.user_id];
+        var sim = ((m.similarity || 0) * 100).toFixed(1) + '%';
+        if (u) {
+          var name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || '--';
+          var email = u.email || '--';
+          lines += '#' + (i + 1) + ' ' + name + ' (' + email + ') | Similarity: ' + sim + '\n';
+          lines += '    ID: ' + m.user_id + '\n';
+        } else {
+          lines += '#' + (i + 1) + ' User: ' + m.user_id + ' | Similarity: ' + sim + '\n';
         }
-      } catch (e) { /* optional */ }
+      });
       showResult('voiceResult', lines, true);
     } else {
       showResult('voiceResult', 'No speaker match found. (' + formatMs(elapsed) + ')\n' + JSON.stringify(data, null, 2), false);

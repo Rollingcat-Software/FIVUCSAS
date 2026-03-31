@@ -47,24 +47,24 @@
 | **Landing Website** | https://fivucsas.rollingcatsoftware.com | ✅ Live |
 | **Biometric API** | Hetzner VPS (port 8001, internal) | ✅ Running |
 
-## ⚠️ IMPORTANT: Hetzner VPS Access (REMEMBER!)
+## Hetzner VPS Access
 
 **SSH directly with key:**
 ```bash
 # Check running containers
-ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213 "docker ps"
+ssh -i <YOUR_SSH_KEY_PATH> root@<YOUR_SERVER_IP> "docker ps"
 
 # Interactive SSH
-ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213
+ssh -i <YOUR_SSH_KEY_PATH> root@<YOUR_SERVER_IP>
 
 # Copy files to server
-scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core-api/
+scp -i <YOUR_SSH_KEY_PATH> LOCAL_FILE root@<YOUR_SERVER_IP>:/opt/identity-core-api/
 ```
 
 **Hetzner VPS Details:**
-- **IP**: `116.203.222.213`
+- **IP**: See `.env.prod` or infrastructure docs
 - **Type**: CX43 (16GB RAM, 8 vCPU, 150GB disk), Nuremberg, Ubuntu 24.04
-- **SSH key**: `~/.ssh/hetzner_ed25519`
+- **SSH key**: `<YOUR_SSH_KEY_PATH>`
 - **Docker**: 29.3.0, Docker Compose v5.1.0
 - **Firewall**: UFW — 22/80/443 open
 
@@ -260,19 +260,9 @@ REDIS_PASSWORD=<secure-password>
 JWT_SECRET=<256-bit-key>
 ```
 
-## ⚠️ Test Credentials (REMEMBER!)
+## Test Credentials
 
-**Production Admin User:**
-- Email: `admin@fivucsas.local`
-- Password: `Test@123`
-- Tenant: `system`
-
-**Test Login:**
-```bash
-curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
-```
+See `.env.example` for test credentials setup. Do not commit real credentials to version control.
 
 ## Useful Paths
 
@@ -282,6 +272,8 @@ curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
 - API Integration: `./docs/04-api/`
 - Architecture: `./docs/02-architecture/`
 - Implementation Status: `./docs/07-status/IMPLEMENTATION_STATUS_REPORT.md`
+- Security Audit Report: `./docs/audit/AUDIT-2026-03-31.md`
+- Custom Commands: `/security-audit`, `/arch-review`, `/test-gaps`, `/docker-review`, `/perf-review` (defined in `.claude/commands/`)
 
 ## Current Focus Areas
 
@@ -447,7 +439,7 @@ cd landing-website && npm install && npm run build
 **Hostinger SCP deployment (automated):**
 ```bash
 # Deploy auth-test to Hostinger via SCP
-scp -P 65002 -r auth-test/* hostinger:~/public_html/auth-test/
+scp -P 65002 -r auth-test/* <YOUR_HOSTINGER_USER>@<YOUR_HOSTINGER_IP>:~/public_html/auth-test/
 ```
 
 ### Identity Core API (Maven, not Gradle!)
@@ -484,10 +476,10 @@ mvn clean package -DskipTests
 # Health check
 curl https://auth.rollingcatsoftware.com/actuator/health
 
-# Login (get JWT token)
+# Login (get JWT token) — use credentials from .env.example
 curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@fivucsas.local","password":"Test@123"}'
+  -d '{"email":"<ADMIN_EMAIL>","password":"<ADMIN_PASSWORD>"}'
 
 # Use token for authenticated requests
 curl https://auth.rollingcatsoftware.com/api/v1/users \
@@ -531,3 +523,13 @@ Each submodule is an independent Git repo. When making changes:
 - Test results: Health 17/17, CRUD 33/33, RBAC 40/40, Verification 13/13
 - Flyway migrations: V1-V28
 - Overall project: Phases 0-8 COMPLETE
+
+### Security Audit & Remediation (March 2026)
+- ✅ **4 security tools installed**: Semgrep 1.156.0, Trivy 0.69.3, Hadolint 2.12.0, ShellCheck 0.9.0
+- ✅ **5 custom review commands created**: `/security-audit`, `/arch-review`, `/test-gaps`, `/docker-review`, `/perf-review`
+- ✅ **Audit results**: 9 critical + 34 high findings identified across dependencies, code, Dockerfiles, and shell scripts
+- ✅ **All fixed except 1 CVE** (CVE-2026-22732 — Spring Security 6.5.x not yet compatible with Spring Boot 3.4.x)
+- ✅ **Dependency upgrades**: Spring Boot 3.4.5→3.4.7, Spring Security→6.4.13, Tomcat→10.1.53, Netty→4.1.132, PostgreSQL JDBC→42.7.7, Commons-IO→2.21.0
+- ✅ **Code fixes**: JWT tokens removed from config, shell=True→False, SRI hashes on CDN scripts, template literals
+- ✅ **Infrastructure hardening**: Docker no-new-privileges + read_only, Nginx header fix, Dockerfile consolidation
+- ✅ **Full audit report**: `docs/audit/AUDIT-2026-03-31.md`

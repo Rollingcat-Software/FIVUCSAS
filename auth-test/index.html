@@ -366,7 +366,7 @@
     <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="card-hw-body">
       <div class="card-header-left">
         <span class="card-number" aria-hidden="true">10</span>
-        <span class="card-title">Hardware Token (WebAuthn Cross-Platform)</span>
+        <span class="card-title">Hardware Token (WebAuthn Cross-Platform) <span style="color:#f59e0b;font-size:0.75em;font-weight:600;vertical-align:middle;">(Optional / İsteğe Bağlı)</span></span>
         <span class="card-badge badge-webauthn">WebAuthn</span>
       </div>
       <span class="card-chevron" aria-hidden="true">&#9654;</span>
@@ -375,7 +375,7 @@
       <div class="stats" style="margin-bottom:12px;" role="list" aria-label="WebAuthn support status">
         <div class="stat" role="listitem"><div class="stat-label">WebAuthn Support</div><div class="stat-value" id="hwStat-available">Checking...</div></div>
       </div>
-      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Insert your YubiKey or security key and tap when prompted. This uses WebAuthn with <code>authenticatorAttachment: "cross-platform"</code> for USB/NFC/BLE security keys (not built-in biometrics).</p>
+      <p class="info-text" style="margin-top:0;margin-bottom:12px;">Bu bölüm USB güvenlik anahtarı (YubiKey vb.) ile kimlik doğrulama içindir. Güvenlik anahtarınız yoksa bu bölümü atlayabilirsiniz.<br>This section is for authentication with a USB security key (YubiKey etc.). You can skip this section if you don't have a security key.</p>
       <input type="hidden" id="hwUsername" value="">
       <div class="form-actions">
         <button class="btn btn-primary" id="btnHwRegister">Register Key</button>
@@ -444,8 +444,8 @@
 
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" integrity="sha384-c9d8RFSL+u3exBOJ4Yp3HUJXS4znl9f+z66d1y54ig+ea249SpqR+w1wyvXz/lk+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.min.js" integrity="sha384-Ou/sKQMKkV+paff5KGVBnyXqj0KDkfCNmSuD6Io+ztT1yUUH1ZW9L7aSbslN0lzY" crossorigin="anonymous"></script>
 <script src="biometric-engine.iife.js"></script>
 <script src="app.js"></script>
 
