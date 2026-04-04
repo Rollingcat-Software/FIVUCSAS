@@ -389,24 +389,29 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 - ✅ **URL double-prefix fix** in VoiceEnrollmentFlow, useBankEnrollment, useLivenessPuzzle
 - ✅ **All CI repos green**: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android
 
+### Session 2026-04-04 (continued) — Performance + Platform + WebAuthn
+- ✅ **WebAuthn backend endpoints** — 4 new endpoints (register-options, register, authenticate-options, authenticate) + 22 tests
+- ✅ **iOS real implementations** — AVFoundation camera, LocalAuthentication (Face ID/Touch ID), WebAuthn passkeys (iOS 16+)
+- ✅ **Desktop WebAuthn** — Software ECDSA authenticator + PKCS12 keystore + persistent credential store
+- ✅ **Client-apps Phase 2 complete** (8/8)
+- ✅ **W20-W22, W25-W26 fixed** — mobile responsive, 2FA crash, i18n audit (~40+ strings), date formatting
+- ✅ **Performance: `/ping` endpoint** — instant health check (0ms vs 678ms)
+- ✅ **Performance: pgvector HNSW indexes** — face_embeddings + voice_enrollments
+- ✅ **Performance: biometric-api memory** already at 4GB, voice thread pool already in place
+
 ### In Progress
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
-- Mobile/Desktop Apps (95%) - APK releases, Android+iOS CI GREEN, Phase 1 complete (FIDO2/WebAuthn), production URLs configured
-- **Performance optimization needed** (discovered 2026-03-19):
-  - biometric-api memory — needs increase to 3.5GB+
-  - Health check 678ms — needs lightweight endpoint
-  - Voice operations block event loop — need thread pool
-  - Missing pgvector HNSW indexes on embeddings
+- Client-apps Phase 3: test coverage, CSV export, E2E framework, Gradle 10
 
 ### Next Steps (Priority Order)
 1. ~~Phases 0-8 all complete~~ ✅ Done (March 28)
-2. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
-3. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
-4. Coordinate with Aysenur: share step-up endpoint docs, verify public key format compatibility
-5. Final presentation delivery (Spring 2026)
-6. iOS SwiftUI wrappers and real LocalAuthentication
-7. Desktop NFC (javax.smartcardio) and Windows Hello (JNA)
-8. Performance optimization: biometric-api memory, pgvector HNSW indexes
+2. ~~iOS real implementations~~ ✅ Done (April 4)
+3. ~~Desktop WebAuthn~~ ✅ Done (April 4)
+4. ~~WebAuthn backend endpoints~~ ✅ Done (April 4)
+5. ~~Performance optimization~~ ✅ Done (April 4)
+6. Client-apps Phase 3 (test coverage 60%+, CSV export, E2E framework, Gradle 10)
+7. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
+8. Final presentation delivery (Spring 2026)
 9. Production penetration test
 
 ## Deployment Scripts (REMEMBER!)
