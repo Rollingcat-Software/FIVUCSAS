@@ -337,6 +337,7 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 - ✅ **Fixes**: Liveness 415 (explicit multipart header), RLS wired, CORS, CSP, Turkish chars, quality score display, profile menu, card type display, admin-only pages, login page cleanup, hardware key info
 
 ### Recently Completed
+- ✅ **Client-apps Phase 1 complete** (2026-04-04): build fixes, deprecated APIs, RECORD_AUDIO permission, FIDO2/WebAuthn integration (1,058 lines, 19 files)
 - ✅ **Enrollment page 10-bug fix** (2026-04-04): enrollment status (PENDING→ENROLLED auto-complete), face mobile UX (timeout+relaxed thresholds), WebAuthn delete (UUID endpoint), floating Snackbar, human-readable messages, TOTP/WebAuthn enrollment records
 
 ### Recently Completed (March 2026)
@@ -390,7 +391,7 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 
 ### In Progress
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
-- Mobile/Desktop Apps (90%) - APK v1.0.0 released, Android+iOS CI workflows GREEN, production URLs configured
+- Mobile/Desktop Apps (95%) - APK releases, Android+iOS CI GREEN, Phase 1 complete (FIDO2/WebAuthn), production URLs configured
 - **Performance optimization needed** (discovered 2026-03-19):
   - biometric-api memory — needs increase to 3.5GB+
   - Health check 678ms — needs lightweight endpoint
