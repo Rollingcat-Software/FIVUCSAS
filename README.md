@@ -1,8 +1,12 @@
 # FIVUCSAS - Face and Identity Verification Using Cloud-based SaaS
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-Production-brightgreen.svg)
+![Java](https://img.shields.io/badge/Java-21-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.13-yellow.svg)
+![React](https://img.shields.io/badge/React-18-blue.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0-purple.svg)
 
 ## Overview
 
@@ -111,6 +115,15 @@ docker-compose logs -f
 | Swagger UI (Spring) | http://localhost:8080/swagger-ui.html |
 | API Docs (FastAPI) | http://localhost:8001/docs |
 
+### Production URLs
+
+| Service | URL |
+|---------|-----|
+| Identity Core API | https://auth.rollingcatsoftware.com |
+| Swagger UI | https://auth.rollingcatsoftware.com/swagger-ui.html |
+| Web Admin Dashboard | https://ica-fivucsas.rollingcatsoftware.com |
+| Landing Page | https://fivucsas.rollingcatsoftware.com |
+
 ## Development
 
 ### Running Individual Services
@@ -159,33 +172,22 @@ cd client-apps && ./gradlew :shared:test
 - [Implementation Status](./docs/IMPLEMENTATION_STATUS_REPORT.md)
 - [Multi-Modal Auth Architecture](./docs/09-auth-flows/README.md)
 
-## Project Status (March 2026)
+## Project Status (April 2026)
 
-### Completed (Phases 0-8 All Done)
-- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
-- [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 28 Flyway migrations (V1-V28)
-- [x] Comprehensive Documentation (100%)
-- [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on Hetzner
-- [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
-- [x] Multi-Modal Auth System - 10 auth handlers, device constraints, configurable auth flows
-- [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
-- [x] Anti-Spoofing Integration - DeepFace 0.0.98 built-in + config for MiniFASNet
-- [x] CI/CD Pipeline - GitHub Actions for all services (backend, web, Android, iOS)
-- [x] E2E Testing - 28 Playwright spec files + 103 automated API tests (Health/CRUD/RBAC/Verification)
-- [x] Mobile App Backend Integration - Production API URLs configured, Android+iOS CI workflows
-- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on Hetzner VPS
-- [x] 304 Unit Tests + 103 API Tests - including step-up, auth handlers, TestContainers, verification pipeline
-- [x] Embeddable Auth Widget - verify-app, @fivucsas/auth-js SDK, @fivucsas/auth-react, OAuth 2.0/OIDC
-- [x] **Identity Verification Pipeline** - Full IVP with 9 step types, 7 industry templates (Banking KYC, Healthcare, Education, Government, Fintech, Telecom, Gig Economy)
-- [x] Document Processing - YOLO card detection, Tesseract OCR, MRZ parser (TD1/TD3), TC Kimlik extraction
-- [x] Face-to-Document Matching - DeepFace cosine similarity, liveness pipeline, threshold config per tenant
-- [x] Verification Admin UI - Flow builder, dashboard, session detail, template selector
-- [x] Video Interview Step - WebRTC recording with admin review queue (V28)
+**All 9 phases (0-8) complete. Platform is production-deployed and running.**
 
-### In Progress
-- [ ] Mobile/Desktop Apps (80%) - Android APK GREEN, iOS CI added, need SwiftUI wrappers
-- [ ] Performance optimization - biometric-api memory, pgvector HNSW indexes, voice thread pool
+### Highlights
+
+- [x] **Identity Core API** -- Spring Boot 3.4, JWT auth, RBAC, multi-tenancy, all 10 auth handlers, 28 Flyway migrations, deployed on Hetzner VPS
+- [x] **Biometric Processor** -- FastAPI, DeepFace 0.0.98, face/voice/fingerprint enrollment and verification, liveness detection, document scan (YOLO, MRZ, OCR)
+- [x] **Web Admin Dashboard** -- React 18 + TypeScript 5, Clean Architecture, 16+ pages, deployed to Hostinger
+- [x] **Client Apps** -- KMP (Android/iOS/Desktop), FIDO2/WebAuthn, APK v2.0.0 released
+- [x] **Identity Verification Pipeline** -- 9 step types, 7 industry templates, document-to-face matching
+- [x] **Embeddable Auth Widget** -- verify-app, @fivucsas/auth-js SDK, @fivucsas/auth-react, OAuth 2.0/OIDC
+- [x] **CI/CD** -- GitHub Actions on self-hosted runner for all services (backend, web, Android, iOS)
+- [x] **Testing** -- 304 unit + 103 API + 28 Playwright E2E tests
+- [x] **Performance** -- pgvector HNSW indexes, /ping endpoint, 4GB biometric-api memory
+- [x] **Security Audit** -- 9 critical + 34 high findings fixed, dependency upgrades, Docker hardening
 
 ## Team
 
@@ -201,7 +203,7 @@ cd client-apps && ./gradlew :shared:test
 
 ## License
 
-Copyright 2025 FIVUCSAS Team. Licensed under the MIT License.
+Copyright 2025-2026 FIVUCSAS Team. Licensed under the MIT License.
 
 ---
 
