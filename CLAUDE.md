@@ -336,6 +336,9 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 - ✅ **Test results**: Health 17/17, CRUD 33/33, RBAC 40/40, Verification 13/13, Playwright 28 specs, 304 unit tests
 - ✅ **Fixes**: Liveness 415 (explicit multipart header), RLS wired, CORS, CSP, Turkish chars, quality score display, profile menu, card type display, admin-only pages, login page cleanup, hardware key info
 
+### Recently Completed
+- ✅ **Enrollment page 10-bug fix** (2026-04-04): enrollment status (PENDING→ENROLLED auto-complete), face mobile UX (timeout+relaxed thresholds), WebAuthn delete (UUID endpoint), floating Snackbar, human-readable messages, TOTP/WebAuthn enrollment records
+
 ### Recently Completed (March 2026)
 - ✅ **Auth-test page** live at `/auth-test/` — 11 sections complete
 - ✅ **biometric-processor deployed** on Hetzner (CPU mode, biometric-api container, port 8001)
