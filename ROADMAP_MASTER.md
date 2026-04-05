@@ -165,6 +165,23 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 | W23 | Terms/Privacy placeholder pages | 2026-04-04 |
 | W24 | Settings duplicate enrollment removed | 2026-04-05 |
 | W25-W26 | Dashboard translation + notification date formatting | 2026-04-04 |
+| -- | 2FA login flow (admin-controlled, EMAIL_OTP) | 2026-04-05 |
+| -- | Multi-method 2FA dispatcher (TOTP, Face, Voice, etc.) | 2026-04-05 |
+| -- | My Profile page (6 sections, data export, KVKK/GDPR) | 2026-04-05 |
+| -- | BYS demo site (bys-demo.rollingcatsoftware.com) | 2026-04-05 |
+| -- | BlazeFace on-device face detection (134KB, <50ms) | 2026-04-05 |
+| -- | OAuth 2.0 compliance: PKCE, nonce, ID token claims | 2026-04-05 |
+| -- | PostMessage origin security fix (wildcard → referrer) | 2026-04-05 |
+| -- | Widget auth light theme (dark mode fix) | 2026-04-05 |
+| -- | Global footer (DashboardLayout + PublicLayout) | 2026-04-05 |
+| -- | PublicLayout for widget-demo/developer-portal | 2026-04-05 |
+| -- | DashboardLayout overflow fix (mobile English) | 2026-04-05 |
+| -- | Cache-busting .htaccess + chunk error auto-reload | 2026-04-05 |
+| -- | Auth page dark mode fixes (6 pages) | 2026-04-05 |
+| -- | CI/CD: 17 fixes across 3 repos, all pipelines green | 2026-04-05 |
+| -- | +269 tests (1,479 total across all modules) | 2026-04-05 |
+| -- | Master roadmap consolidation (ROADMAP_MASTER.md) | 2026-04-05 |
+| -- | 6 design documents (3,000+ lines in docs/plans/) | 2026-04-05 |
 | -- | WebAuthn backend: 4 REST endpoints + 22 tests | 2026-04-04 |
 | -- | iOS real: AVFoundation, Face ID/Touch ID, WebAuthn passkeys | 2026-04-04 |
 | -- | Desktop: ECDSA authenticator + credential store | 2026-04-04 |
@@ -177,7 +194,7 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 |------|--------|-------|
 | W1: Face enrollment slow on mobile | Known | MediaPipe fails, timeout fallback |
 | W6: Istanbul card misclassified as ehliyet | Known | YOLO training data needed |
-| SMS OTP | Blocked | Twilio credentials not yet configured |
+| SMS OTP | Ready | Twilio coded, $15.50 trial credit available |
 | FP-External (USB scanner) | Future | Requires vendor SDK (SecuGen) |
 | iOS SwiftUI wrappers | Pending | Platform layer done, UI wrappers needed |
 
