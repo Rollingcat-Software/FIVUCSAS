@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marmara BYS - Authentication</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a237e'/><text x='16' y='22' text-anchor='middle' fill='%23ffd700' font-size='18' font-weight='900'>M</text></svg>">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+        <div class="navbar-logo">MU</div>
+        <div>
+            <div class="navbar-title">Marmara University</div>
+            <div class="navbar-subtitle">Student Information System (BYS)</div>
+        </div>
+    </a>
+</nav>
+
+<!-- Callback Processing -->
+<div class="callback-container">
+    <div class="card callback-card" id="callback-card">
+        <div class="card-body">
+            <!-- Loading State -->
+            <div id="loading-state">
+                <div class="spinner"></div>
+                <h2 style="margin-bottom: 0.5rem;">Processing Authentication</h2>
+                <p style="color: var(--text-light);">Verifying your identity with FIVUCSAS...</p>
+            </div>
+
+            <!-- Success State (hidden initially) -->
+            <div id="success-state" style="display: none;">
+                <div class="success-icon" style="color: var(--success);">&#x2705;</div>
+                <h2 style="margin-bottom: 0.5rem;">Authentication Successful</h2>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Identity verified via FIVUCSAS</p>
+
+                <dl class="token-info" id="token-info"></dl>
+
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
+                    Redirecting to dashboard in <span id="countdown">3</span> seconds...
+                </p>
+            </div>
+
+            <!-- Error State (hidden initially) -->
+            <div id="error-state" style="display: none;">
+                <div class="success-icon" style="color: var(--danger);">&#x274C;</div>
+                <h2 style="margin-bottom: 0.5rem;">Authentication Failed</h2>
+                <p id="error-message" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
+                <a href="index.html" class="btn btn-primary">Try Again</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var authData = null;
+
+    // Check for auth data from the widget (stored in sessionStorage by index.html)
+    try {
+        var stored = sessionStorage.getItem('fivucsas_auth');
+        if (stored) {
+            authData = JSON.parse(stored);
+        }
+    } catch(e) {
+        // ignore
+    }
+
+    // Also check URL params (OAuth authorization code flow)
+    var params = new URLSearchParams(window.location.search);
+    var authCode = params.get('code');
+    var error = params.get('error');
+
+    if (error) {
+        showError('OAuth error: ' + (params.get('error_description') || error));
+        return;
+    }
+
+    if (authCode && !authData) {
+        // Authorization code received from OAuth redirect
+        authData = {
+            success: true,
+            authCode: authCode,
+            displayName: 'OAuth User',
+            email: 'student@marmara.edu.tr',
+            sessionId: 'oauth-' + Date.now(),
+            completedMethods: ['password'],
+            timestamp: Date.now()
+        };
+        sessionStorage.setItem('fivucsas_auth', JSON.stringify(authData));
+    }
+
+    if (!authData || !authData.success) {
+        showError('No authentication data received. Please try logging in again.');
+        return;
+    }
+
+    // Show success
+    showSuccess(authData);
+
+    function showSuccess(data) {
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+
+        // Display token info
+        var info = document.getElementById('token-info');
+        var fields = [
+            ['User', data.displayName || 'N/A'],
+            ['Email', data.email || 'N/A'],
+            ['Session ID', data.sessionId || 'N/A'],
+            ['Methods', (data.completedMethods || []).join(', ') || 'N/A'],
+            ['Timestamp', data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A']
+        ];
+
+        if (data.authCode) {
+            fields.push(['Auth Code', data.authCode.substring(0, 20) + '...']);
+        }
+        if (data.accessToken) {
+            fields.push(['Access Token', data.accessToken.substring(0, 30) + '...']);
+        }
+
+        fields.forEach(function(f) {
+            var dt = document.createElement('dt');
+            dt.textContent = f[0];
+            var dd = document.createElement('dd');
+            dd.textContent = f[1];
+            info.appendChild(dt);
+            info.appendChild(dd);
+        });
+
+        // Countdown redirect
+        var count = 3;
+        var countEl = document.getElementById('countdown');
+        var timer = setInterval(function() {
+            count--;
+            countEl.textContent = count;
+            if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = 'dashboard.html';
+            }
+        }, 1000);
+    }
+
+    function showError(msg) {
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('error-state').style.display = 'block';
+        document.getElementById('error-message').textContent = msg;
+    }
+})();
+</script>
+
+</body>
+</html>
