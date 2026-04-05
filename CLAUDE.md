@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running (March 2026)
-- **Last verified**: 2026-03-28 — All services UP and healthy. Phases 0-8 complete. 304 unit + 28 Playwright + 103 automated API tests. Verification pipeline live (V28, 9 step types, 7 industry templates). Embeddable auth widget (verify-app, auth-js SDK, auth-react, OAuth 2.0).
+- **Last verified**: 2026-04-05 — All services UP and healthy. Phases 0-8 complete. Client-apps Phases 1-3 complete. 304 unit + 28 Playwright + 103 automated API tests. W14/W16/W24 resolved. Widget-demo & developer-portal public. Biometric-processor on Python 3.12 (TF compat).
 
 ## Architecture
 
@@ -399,9 +399,18 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 - ✅ **Performance: pgvector HNSW indexes** — face_embeddings + voice_enrollments
 - ✅ **Performance: biometric-api memory** already at 4GB, voice thread pool already in place
 
+### Session 2026-04-05 Results
+- ✅ **W14 GitHub repos cleanup** — all 8 repos tagged and organized
+- ✅ **W16 Cross-device sessions UI** — SessionsSection added to Settings page, i18n EN+TR
+- ✅ **W24 Settings duplicate enrollment removed** — Continuous Face Verification section removed from Settings
+- ✅ **Widget-demo & developer-portal made public** — removed AdminRoute wrapper, accessible without login
+- ✅ **OAuth endpoints verified working** — authorization code flow confirmed
+- ✅ **Biometric-processor reverted to Python 3.12** — TensorFlow compatibility (TF does not support 3.13)
+- ✅ **Web-app deployed to Hostinger** — latest build live at ica-fivucsas.rollingcatsoftware.com
+- ✅ **All services healthy** — identity-core-api, biometric-api, shared-postgres, shared-redis
+
 ### In Progress
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
-- Client-apps Phase 3: test coverage, CSV export, E2E framework, Gradle 10
 
 ### Next Steps (Priority Order)
 1. ~~Phases 0-8 all complete~~ ✅ Done (March 28)
@@ -409,10 +418,11 @@ See `.env.example` for test credentials setup. Do not commit real credentials to
 3. ~~Desktop WebAuthn~~ ✅ Done (April 4)
 4. ~~WebAuthn backend endpoints~~ ✅ Done (April 4)
 5. ~~Performance optimization~~ ✅ Done (April 4)
-6. Client-apps Phase 3 (test coverage 60%+, CSV export, E2E framework, Gradle 10)
-7. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
-8. Final presentation delivery (Spring 2026)
-9. Production penetration test
+6. ~~Client-apps Phase 3~~ ✅ Done (April 4)
+7. ~~W14/W16/W24 cleanup~~ ✅ Done (April 5)
+8. Setup Cloudflare Tunnel for biometric-processor on laptop GPU
+9. Final presentation delivery (Spring 2026)
+10. Production penetration test
 
 ## Deployment Scripts (REMEMBER!)
 
