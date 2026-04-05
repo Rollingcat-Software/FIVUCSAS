@@ -22,8 +22,6 @@
 
 ## High Priority — Remaining
 
-- [ ] **Coordinate with Aysenur** - Share step-up endpoint docs, verify public key format (X.509 DER Base64 vs Android Keystore), test end-to-end
-- [ ] **Cloudflare Tunnel for Biometric Processor** - Setup tunnel from laptop GPU (GTX 1650) to `bpa-fivucsas.rollingcatsoftware.com` (scripts ready in deploy/)
 - [ ] **Final Presentation Delivery** - Spring 2026 (slides and speaker notes ready)
 - [ ] **Performance optimization** — biometric-api memory (3.5GB+), pgvector HNSW indexes, voice thread pool, health check latency
 
