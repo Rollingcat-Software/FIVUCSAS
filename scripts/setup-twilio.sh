@@ -17,8 +17,8 @@
 #
 # HOW IT WORKS:
 #   The Identity Core API has TwilioSmsService configured with
-#   @ConditionalOnProperty(name = "twilio.enabled", havingValue = "true").
-#   When twilio.enabled=false (default), NoOpSmsService is used instead.
+#   @ConditionalOnProperty(name = "sms.enabled", havingValue = "true").
+#   When sms.enabled=false (default), NoOpSmsService is used instead.
 #   This script activates Twilio by setting the required env vars in .env.prod.
 #
 # ============================================================================
@@ -49,16 +49,16 @@ show_help() {
   echo "  4. Run this script with those 3 values"
   echo ""
   echo "ENVIRONMENT VARIABLES SET:"
-  echo "  TWILIO_ENABLED=true"
+  echo "  SMS_ENABLED=true"
   echo "  TWILIO_ACCOUNT_SID=ACxxxxxx"
   echo "  TWILIO_AUTH_TOKEN=your_auth_token"
   echo "  TWILIO_FROM_NUMBER=+1234567890"
   echo ""
   echo "SPRING BOOT PROPERTIES (mapped from env vars):"
-  echo "  twilio.enabled=\${TWILIO_ENABLED:false}"
-  echo "  twilio.account-sid=\${TWILIO_ACCOUNT_SID:}"
-  echo "  twilio.auth-token=\${TWILIO_AUTH_TOKEN:}"
-  echo "  twilio.from-number=\${TWILIO_FROM_NUMBER:}"
+  echo "  sms.enabled=\${SMS_ENABLED:false}"
+  echo "  sms.twilio.account-sid=\${TWILIO_ACCOUNT_SID:}"
+  echo "  sms.twilio.auth-token=\${TWILIO_AUTH_TOKEN:}"
+  echo "  sms.twilio.from-number=\${TWILIO_FROM_NUMBER:}"
 }
 
 check_config() {
@@ -73,13 +73,13 @@ check_config() {
     return
   fi
 
-  if grep -q "TWILIO_ENABLED=true" "$ENV_FILE" 2>/dev/null; then
+  if grep -q "SMS_ENABLED=true" "$ENV_FILE" 2>/dev/null; then
     info "Twilio is ENABLED in .env.prod"
-    grep "TWILIO_" "$ENV_FILE" | sed 's/TWILIO_AUTH_TOKEN=.*/TWILIO_AUTH_TOKEN=****REDACTED****/'
-  elif grep -q "TWILIO_ENABLED" "$ENV_FILE" 2>/dev/null; then
-    warn "Twilio is DISABLED in .env.prod (TWILIO_ENABLED != true)"
+    grep -E "SMS_ENABLED|TWILIO_" "$ENV_FILE" | sed 's/TWILIO_AUTH_TOKEN=.*/TWILIO_AUTH_TOKEN=****REDACTED****/'
+  elif grep -q "SMS_ENABLED" "$ENV_FILE" 2>/dev/null; then
+    warn "Twilio is DISABLED in .env.prod (SMS_ENABLED != true)"
   else
-    warn "No TWILIO_ variables found in .env.prod"
+    warn "No SMS/TWILIO variables found in .env.prod"
     echo "  Run: ./scripts/setup-twilio.sh    to configure"
   fi
 
@@ -143,14 +143,15 @@ interactive_setup() {
   echo ""
   info "Adding Twilio configuration to .env.prod..."
 
-  # Remove existing TWILIO_ lines if any
+  # Remove existing SMS/TWILIO lines if any
+  sed -i '/^SMS_ENABLED/d' "$ENV_FILE"
   sed -i '/^TWILIO_/d' "$ENV_FILE"
 
   # Append Twilio config
   cat >> "$ENV_FILE" <<EOF
 
 # Twilio SMS OTP Configuration (added by setup-twilio.sh)
-TWILIO_ENABLED=true
+SMS_ENABLED=true
 TWILIO_ACCOUNT_SID=$ACCOUNT_SID
 TWILIO_AUTH_TOKEN=$AUTH_TOKEN
 TWILIO_FROM_NUMBER=$FROM_NUMBER

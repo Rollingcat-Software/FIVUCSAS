@@ -63,16 +63,16 @@ FIVUCSAS is a multi-tenant, cloud-based biometric authentication and identity ve
 
 | Component | Completion | Key Metric |
 |-----------|-----------|------------|
-| **Identity Core API** | 100% | 25 controllers, 28 migrations, 528 tests |
-| **Biometric Processor** | 100% | 46+ endpoints, face/voice/card/OCR/liveness |
-| **Web Dashboard** | 100% | 17 pages, 304 unit + 28 E2E tests |
-| **Client Apps (Android)** | 100% | 31 screens, 277 tests, APK v3.0.0 |
-| **Client Apps (iOS)** | 85% | Platform layer done, SwiftUI wrappers pending |
+| **Identity Core API** | 100% | 21 controllers, 30 migrations, 633 tests |
+| **Biometric Processor** | 100% | 77 endpoints, face/voice/card/OCR/liveness |
+| **Web Dashboard** | 100% | 30 pages, 619 unit + 27 E2E tests |
+| **Client Apps (Android)** | 100% | 78 screens, 401 tests, APK v4.0.0 |
+| **Client Apps (iOS)** | 80% | 11 platform files in iosMain, no SwiftUI app target |
 | **Client Apps (Desktop)** | 90% | WebAuthn + ECDSA done, NFC pending |
 | **Auth Widget + SDK** | 100% | JS SDK, React bindings, Web Component, OAuth 2.0 |
 | **Verification Pipeline** | 100% | 9 step types, 7 industry templates |
 | **CI/CD** | 100% | Self-hosted runner, Android + iOS + Playwright CI |
-| **Infrastructure** | 95% | 16 containers healthy, daily backups, VPN |
+| **Infrastructure** | 95% | 19 containers healthy, daily backups, VPN |
 
 ---
 
@@ -192,11 +192,13 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 
 | Item | Status | Notes |
 |------|--------|-------|
-| W1: Face enrollment slow on mobile | Known | MediaPipe fails, timeout fallback |
+| W1: Face enrollment slow on mobile | Known | MediaPipe fails, timeout fallback. BlazeFace added to web-app only |
 | W6: Istanbul card misclassified as ehliyet | Known | YOLO training data needed |
-| SMS OTP | Ready | Twilio coded, $15.50 trial credit available |
+| SMS OTP | Ready | Twilio coded, awaiting credentials ($50 GitHub Student Pack or $15.50 trial) |
 | FP-External (USB scanner) | Future | Requires vendor SDK (SecuGen) |
-| iOS SwiftUI wrappers | Pending | Platform layer done, UI wrappers needed |
+| iOS SwiftUI wrappers | Pending | 11 platform files in iosMain, no iosApp SwiftUI target yet |
+| BlazeFace client-apps | Not started | Web-app only; KMP/Android/iOS needs TFLite integration |
+| APK v4.0.0 tag | Missing | Code has versionCode 4 but git tag not created |
 
 ---
 
@@ -335,14 +337,14 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 
 | Module | Type | Count | Framework |
 |--------|------|-------|-----------|
-| Identity Core API | Unit + Integration | 528 | JUnit 5 + TestContainers |
+| Identity Core API | Unit + Integration | 633 | JUnit 5 + TestContainers |
 | Identity Core API | API (automated) | 103 | curl scripts (Health 17, CRUD 33, RBAC 40, Verification 13) |
-| Web Dashboard | Unit | 304 | Vitest |
-| Web Dashboard | E2E | 28 specs | Playwright |
-| Client Apps | Unit + ViewModel | 277 | Kotlin Test + Compose UI |
+| Web Dashboard | Unit | 619 | Vitest |
+| Web Dashboard | E2E | 27 specs | Playwright |
+| Client Apps | Unit + ViewModel | 401 | Kotlin Test + Compose UI |
 | Client Apps | Instrumented | 17 | Android Compose UI Test |
 | Biometric Processor | Unit | -- | pytest |
-| **Total** | | **1,250+** | |
+| **Total** | | **1,800+** | |
 
 ---
 
@@ -395,17 +397,17 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 
 | Metric | Value |
 |--------|-------|
-| Total codebase | ~15,000+ lines of application code |
-| API endpoints | 132 (across 25 controllers) |
-| Flyway migrations | 28 (V1-V28) |
+| Total codebase | ~224,000 lines (Java 33K + TS 63K + Kotlin 75K + Python 53K) |
+| API endpoints | 77 biometric + identity controllers (across 21 REST controllers) |
+| Flyway migrations | 30 (V0-V30) |
 | Auth methods | 10 (all production-ready) |
 | Verification step types | 9 |
 | Industry templates | 7 (Turkish regulatory context) |
-| Supported platforms | Web, Android, iOS, Desktop |
-| Tests | 1,250+ (unit, integration, E2E, API) |
-| Docker containers | 16 (production) |
+| Supported platforms | Web, Android, iOS (platform layer), Desktop |
+| Tests | 1,800+ (unit, integration, E2E, API) |
+| Docker containers | 19 (production) |
 | Submodules | 6 (identity-core-api, biometric-processor, web-app, client-apps, docs, practice-and-test) |
-| APK releases | v3.0.0 (latest) |
+| APK releases | v4.0.0 (latest) |
 | Production uptime | Since March 2026 |
 
 ---

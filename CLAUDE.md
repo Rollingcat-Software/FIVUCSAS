@@ -4,7 +4,7 @@
 **FIVUCSAS** (Face and Identity Verification Using Cloud-based SaaS)
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
-**Status**: Production deployed. Phases 0-8 complete. 1,479+ tests. All services healthy.
+**Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
 **Last verified**: 2026-04-05
 
 ## Architecture
@@ -89,7 +89,7 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 ## Database
 
-- Flyway migrations V1-V29
+- Flyway migrations V0-V30 (30 total)
 - Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions
 - pgvector HNSW indexes on face_embeddings + voice_enrollments
 
@@ -97,11 +97,11 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 | Module | Tests |
 |--------|-------|
-| Identity Core API (Java) | 628 |
-| Web-app (Vitest) | 431 |
-| Client-apps (Kotlin) | 386 |
-| Playwright E2E | 34 specs |
-| **Total** | **~1,479** |
+| Identity Core API (Java) | 633 |
+| Web-app (Vitest) | 619 |
+| Client-apps (Kotlin) | 401 |
+| Playwright E2E | 27 specs |
+| **Total** | **~1,800+** |
 
 ## CI/CD
 
@@ -119,6 +119,7 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 | VOICE_STT_PLAN.md | Speech-to-text verification |
 | BAAS_RENTAL_MODEL.md | BaaS pricing model |
 | PRODUCTION_HARDENING_PLAN.md | Security + performance |
+| MULTI_METHOD_2FA_DESIGN.md | Multi-method 2FA dispatcher |
 | OAUTH2_COMPLIANCE_AUDIT.md | RFC 6749/OIDC audit results |
 
 ## Coding Standards
