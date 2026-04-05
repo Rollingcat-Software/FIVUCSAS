@@ -5,57 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Ogrenci Bilgi Sistemi</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a237e'/><text x='16' y='22' text-anchor='middle' fill='%23ffd700' font-size='18' font-weight='900'>M</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23ffd700' font-size='18' font-weight='900'>M</text></svg>">
 </head>
-<body>
+<body class="login-page">
 
-<!-- Navbar -->
-<nav class="navbar">
-    <a href="index.html" class="navbar-brand">
-        <div class="navbar-logo">MU</div>
-        <div>
-            <div class="navbar-title">Marmara University</div>
-            <div class="navbar-subtitle">Student Information System (BYS)</div>
-        </div>
-    </a>
-</nav>
-
-<!-- Login Hero -->
-<section class="login-hero">
-    <div class="login-card">
-        <div class="university-crest">M</div>
-        <h1>Marmara University</h1>
-        <h2>Student Information System</h2>
-
-        <!-- FIVUCSAS Login Button -->
-        <button class="fivucsas-login-btn" id="fivucsas-login-btn" onclick="startFivucsasLogin()">
-            <span class="shield-icon">&#x1f6e1;</span>
-            <div>
-                <div>Login with FIVUCSAS</div>
-                <div class="btn-sublabel">Biometric Identity Verification</div>
+<!-- Top Navbar -->
+<nav class="top-navbar">
+    <div class="top-navbar-inner">
+        <a href="index.html" class="top-navbar-brand">
+            <div class="mu-logo-sm">
+                <svg viewBox="0 0 40 40" width="36" height="36">
+                    <circle cx="20" cy="20" r="19" fill="#003366" stroke="#c8a84e" stroke-width="1.5"/>
+                    <text x="20" y="15" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="700" font-family="serif">MARMARA</text>
+                    <text x="20" y="28" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="serif">M</text>
+                    <text x="20" y="36" text-anchor="middle" fill="#c8a84e" font-size="5" font-weight="600" font-family="serif">1883</text>
+                </svg>
             </div>
-        </button>
-
-        <div class="login-divider">or</div>
-
-        <!-- Traditional login (disabled for demo) -->
-        <form onsubmit="return false;" style="opacity: 0.5; pointer-events: none;">
-            <div style="margin-bottom: 0.75rem;">
-                <input type="text" placeholder="Student Number" style="width:100%; padding:0.7rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.9rem;">
-            </div>
-            <div style="margin-bottom: 0.75rem;">
-                <input type="password" placeholder="Password" style="width:100%; padding:0.7rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.9rem;">
-            </div>
-            <button class="btn btn-primary" style="width:100%; opacity:0.6;" disabled>Traditional Login (Disabled)</button>
-        </form>
-
-        <div class="demo-notice">
-            <strong>Demo:</strong> This is a demonstration showing how FIVUCSAS biometric identity
-            verification integrates into a university student information system as a third-party
-            authentication provider. Click "Login with FIVUCSAS" to try the OAuth widget flow.
+            <span class="top-navbar-title">Marmara Universitesi Ogrenci Bilgi Sistemi</span>
+        </a>
+        <div class="top-navbar-links">
+            <a href="#" class="top-nav-link" onclick="return false;">Destek</a>
+            <a href="#" class="top-nav-link" onclick="return false;">SSS</a>
+            <span class="top-nav-separator">|</span>
+            <a href="#" class="top-nav-link lang-toggle" onclick="return false;">English</a>
         </div>
     </div>
-</section>
+</nav>
+
+<!-- Main Content -->
+<main class="login-main">
+    <div class="login-container">
+
+        <!-- University Logo / Crest -->
+        <div class="university-header">
+            <div class="mu-crest">
+                <svg viewBox="0 0 100 100" width="80" height="80">
+                    <circle cx="50" cy="50" r="48" fill="#003366" stroke="#c8a84e" stroke-width="2"/>
+                    <text x="50" y="30" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="serif" letter-spacing="1">MARMARA</text>
+                    <text x="50" y="42" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="600" font-family="serif">UNIVERSITESI</text>
+                    <text x="50" y="65" text-anchor="middle" fill="#fff" font-size="28" font-weight="900" font-family="serif">M</text>
+                    <text x="50" y="82" text-anchor="middle" fill="#c8a84e" font-size="8" font-weight="600" font-family="serif">1883</text>
+                </svg>
+            </div>
+            <h1 class="bys-title">Ogrenci Bilgi Sistemi</h1>
+            <p class="bys-subtitle">Marmara Universitesi</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+
+            <!-- Traditional Login Form -->
+            <form class="login-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="username">Kullanici Adi</label>
+                    <input type="text" id="username" placeholder="Ogrenci numarasi veya kullanici adi" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Sifre</label>
+                    <input type="password" id="password" placeholder="Sifrenizi giriniz" autocomplete="current-password">
+                </div>
+
+                <!-- Fake CAPTCHA -->
+                <div class="captcha-area">
+                    <label>Guvenlik Kodu</label>
+                    <div class="captcha-row">
+                        <div class="captcha-image">
+                            <svg viewBox="0 0 150 50" width="150" height="50">
+                                <rect width="150" height="50" fill="#e8e8e8" rx="4"/>
+                                <line x1="0" y1="15" x2="150" y2="35" stroke="#ccc" stroke-width="1"/>
+                                <line x1="0" y1="35" x2="150" y2="10" stroke="#ddd" stroke-width="1"/>
+                                <line x1="20" y1="0" x2="130" y2="50" stroke="#d5d5d5" stroke-width="1"/>
+                                <text x="12" y="35" fill="#556" font-size="22" font-weight="bold" font-family="monospace" transform="rotate(-5,12,35)">7</text>
+                                <text x="38" y="32" fill="#665" font-size="20" font-weight="bold" font-family="monospace" transform="rotate(8,38,32)">X</text>
+                                <text x="62" y="36" fill="#546" font-size="24" font-weight="bold" font-family="monospace" transform="rotate(-3,62,36)">k</text>
+                                <text x="88" y="30" fill="#456" font-size="19" font-weight="bold" font-family="monospace" transform="rotate(6,88,30)">9</text>
+                                <text x="112" y="34" fill="#564" font-size="22" font-weight="bold" font-family="monospace" transform="rotate(-7,112,34)">P</text>
+                            </svg>
+                        </div>
+                        <button type="button" class="captcha-refresh" title="Yenile" onclick="return false;">&#x21bb;</button>
+                        <input type="text" class="captcha-input" placeholder="Kodu giriniz">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-giris" disabled>Giris</button>
+            </form>
+
+            <!-- Help Links -->
+            <div class="help-links">
+                <a href="#" onclick="return false;">Sifremi unuttum</a>
+                <span class="link-dot">&middot;</span>
+                <a href="#" onclick="return false;">Kullanici adimi unuttum</a>
+                <span class="link-dot">&middot;</span>
+                <a href="#" onclick="return false;">Ilk sifremi olustur</a>
+            </div>
+
+            <!-- Divider -->
+            <div class="login-divider">
+                <span>veya</span>
+            </div>
+
+            <!-- e-Devlet Button (disabled) -->
+            <button class="btn-edevlet" disabled title="e-Devlet ile giris bu demoda devre disi">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <span>e-Devlet ile Giris</span>
+            </button>
+
+            <!-- Second Divider -->
+            <div class="login-divider">
+                <span>veya</span>
+            </div>
+
+            <!-- FIVUCSAS Login Button -->
+            <button class="fivucsas-login-btn" id="fivucsas-login-btn" onclick="startFivucsasLogin()">
+                <span class="fivucsas-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </span>
+                <div>
+                    <div class="fivucsas-btn-label">FIVUCSAS ile Giris</div>
+                    <div class="fivucsas-btn-sub">Biyometrik Kimlik Dogrulama</div>
+                </div>
+            </button>
+
+        </div><!-- /.login-card -->
+
+    </div><!-- /.login-container -->
+</main>
+
+<!-- Demo Notice Banner -->
+<div class="demo-banner">
+    <strong>Demo:</strong> Bu sayfa, FIVUCSAS biyometrik kimlik dogrulamanin bir universite ogrenci bilgi sistemine nasil entegre oldugunu gosteren bir demonstrasyondur.
+    Geleneksel giris ve e-Devlet bu demoda devre disidir. &ldquo;FIVUCSAS ile Giris&rdquo; butonuna tiklayarak OAuth widget akisini deneyebilirsiniz.
+</div>
+
+<!-- Footer -->
+<footer class="page-footer">
+    <p>&copy; 2026 Marmara Universitesi Bilgi Islem Daire Baskanligi (Demo)</p>
+</footer>
 
 <!-- FIVUCSAS Widget SDK (inline, simplified from @fivucsas/auth-js) -->
 <script>
