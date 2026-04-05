@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Ogrenci Bilgi Sistemi</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23ffd700' font-size='18' font-weight='900'>M</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23c8a84e' font-size='18' font-weight='900'>M</text></svg>">
 </head>
 <body class="login-page">
 
@@ -14,20 +16,39 @@
     <div class="top-navbar-inner">
         <a href="index.html" class="top-navbar-brand">
             <div class="mu-logo-sm">
-                <svg viewBox="0 0 40 40" width="36" height="36">
-                    <circle cx="20" cy="20" r="19" fill="#003366" stroke="#c8a84e" stroke-width="1.5"/>
-                    <text x="20" y="15" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="700" font-family="serif">MARMARA</text>
-                    <text x="20" y="28" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="serif">M</text>
-                    <text x="20" y="36" text-anchor="middle" fill="#c8a84e" font-size="5" font-weight="600" font-family="serif">1883</text>
+                <svg viewBox="0 0 44 44" width="38" height="38">
+                    <defs>
+                        <linearGradient id="crestGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#004080"/>
+                            <stop offset="100%" stop-color="#002244"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="22" cy="22" r="21" fill="url(#crestGrad)" stroke="#c8a84e" stroke-width="1.5"/>
+                    <circle cx="22" cy="22" r="17" fill="none" stroke="#c8a84e" stroke-width="0.5" opacity="0.5"/>
+                    <text x="22" y="15" text-anchor="middle" fill="#c8a84e" font-size="6.5" font-weight="700" font-family="serif" letter-spacing="0.5">MARMARA</text>
+                    <text x="22" y="30" text-anchor="middle" fill="#fff" font-size="16" font-weight="900" font-family="serif">M</text>
+                    <text x="22" y="39" text-anchor="middle" fill="#c8a84e" font-size="5" font-weight="600" font-family="serif">1883</text>
                 </svg>
             </div>
-            <span class="top-navbar-title">Marmara Universitesi Ogrenci Bilgi Sistemi</span>
+            <div class="top-navbar-text">
+                <span class="top-navbar-title">Marmara Universitesi</span>
+                <span class="top-navbar-subtitle">Ogrenci Bilgi Sistemi</span>
+            </div>
         </a>
         <div class="top-navbar-links">
-            <a href="#" class="top-nav-link" onclick="return false;">Destek</a>
-            <a href="#" class="top-nav-link" onclick="return false;">SSS</a>
+            <a href="#" class="top-nav-link" onclick="return false;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+                Destek
+            </a>
+            <a href="#" class="top-nav-link" onclick="return false;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                SSS
+            </a>
             <span class="top-nav-separator">|</span>
-            <a href="#" class="top-nav-link lang-toggle" onclick="return false;">English</a>
+            <a href="#" class="top-nav-link lang-toggle" onclick="return false;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                English
+            </a>
         </div>
     </div>
 </nav>
@@ -39,16 +60,30 @@
         <!-- University Logo / Crest -->
         <div class="university-header">
             <div class="mu-crest">
-                <svg viewBox="0 0 100 100" width="80" height="80">
-                    <circle cx="50" cy="50" r="48" fill="#003366" stroke="#c8a84e" stroke-width="2"/>
-                    <text x="50" y="30" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="serif" letter-spacing="1">MARMARA</text>
-                    <text x="50" y="42" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="600" font-family="serif">UNIVERSITESI</text>
-                    <text x="50" y="65" text-anchor="middle" fill="#fff" font-size="28" font-weight="900" font-family="serif">M</text>
-                    <text x="50" y="82" text-anchor="middle" fill="#c8a84e" font-size="8" font-weight="600" font-family="serif">1883</text>
+                <svg viewBox="0 0 120 120" width="96" height="96">
+                    <defs>
+                        <linearGradient id="bigCrestGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#004080"/>
+                            <stop offset="100%" stop-color="#001a33"/>
+                        </linearGradient>
+                        <filter id="crestShadow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00336640"/>
+                        </filter>
+                    </defs>
+                    <circle cx="60" cy="60" r="56" fill="url(#bigCrestGrad)" stroke="#c8a84e" stroke-width="2.5" filter="url(#crestShadow)"/>
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="#c8a84e" stroke-width="0.7" opacity="0.4"/>
+                    <circle cx="60" cy="60" r="44" fill="none" stroke="#c8a84e" stroke-width="0.3" opacity="0.25"/>
+                    <!-- Decorative arcs -->
+                    <path d="M 20 60 A 40 40 0 0 1 100 60" fill="none" stroke="#c8a84e" stroke-width="0.4" opacity="0.2"/>
+                    <text x="60" y="32" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="2">MARMARA</text>
+                    <text x="60" y="44" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="500" font-family="'Times New Roman',serif" letter-spacing="1">UNIVERSITESI</text>
+                    <text x="60" y="74" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="900" font-family="'Times New Roman',serif">M</text>
+                    <line x1="38" y1="84" x2="82" y2="84" stroke="#c8a84e" stroke-width="0.8" opacity="0.5"/>
+                    <text x="60" y="95" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="3">1883</text>
                 </svg>
             </div>
             <h1 class="bys-title">Ogrenci Bilgi Sistemi</h1>
-            <p class="bys-subtitle">Marmara Universitesi</p>
+            <p class="bys-subtitle">Marmara Universitesi &mdash; BYS</p>
         </div>
 
         <!-- Login Card -->
@@ -58,11 +93,17 @@
             <form class="login-form" onsubmit="return false;">
                 <div class="form-group">
                     <label for="username">Kullanici Adi</label>
-                    <input type="text" id="username" placeholder="Ogrenci numarasi veya kullanici adi" autocomplete="username">
+                    <div class="input-wrapper">
+                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="text" id="username" placeholder="Ogrenci numarasi veya kullanici adi" autocomplete="username">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="password">Sifre</label>
-                    <input type="password" id="password" placeholder="Sifrenizi giriniz" autocomplete="current-password">
+                    <div class="input-wrapper">
+                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        <input type="password" id="password" placeholder="Sifrenizi giriniz" autocomplete="current-password">
+                    </div>
                 </div>
 
                 <!-- Fake CAPTCHA -->
@@ -70,24 +111,30 @@
                     <label>Guvenlik Kodu</label>
                     <div class="captcha-row">
                         <div class="captcha-image">
-                            <svg viewBox="0 0 150 50" width="150" height="50">
-                                <rect width="150" height="50" fill="#e8e8e8" rx="4"/>
-                                <line x1="0" y1="15" x2="150" y2="35" stroke="#ccc" stroke-width="1"/>
-                                <line x1="0" y1="35" x2="150" y2="10" stroke="#ddd" stroke-width="1"/>
-                                <line x1="20" y1="0" x2="130" y2="50" stroke="#d5d5d5" stroke-width="1"/>
-                                <text x="12" y="35" fill="#556" font-size="22" font-weight="bold" font-family="monospace" transform="rotate(-5,12,35)">7</text>
-                                <text x="38" y="32" fill="#665" font-size="20" font-weight="bold" font-family="monospace" transform="rotate(8,38,32)">X</text>
-                                <text x="62" y="36" fill="#546" font-size="24" font-weight="bold" font-family="monospace" transform="rotate(-3,62,36)">k</text>
-                                <text x="88" y="30" fill="#456" font-size="19" font-weight="bold" font-family="monospace" transform="rotate(6,88,30)">9</text>
-                                <text x="112" y="34" fill="#564" font-size="22" font-weight="bold" font-family="monospace" transform="rotate(-7,112,34)">P</text>
+                            <svg viewBox="0 0 160 48" width="160" height="48">
+                                <rect width="160" height="48" fill="#f0f1f3" rx="4"/>
+                                <line x1="0" y1="12" x2="160" y2="38" stroke="#d8d8d8" stroke-width="1"/>
+                                <line x1="10" y1="40" x2="150" y2="8" stroke="#e0e0e0" stroke-width="1"/>
+                                <line x1="40" y1="0" x2="120" y2="48" stroke="#ddd" stroke-width="0.8"/>
+                                <text x="15" y="34" fill="#445" font-size="22" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-6,15,34)">7</text>
+                                <text x="42" y="30" fill="#554" font-size="19" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(10,42,30)">X</text>
+                                <text x="68" y="35" fill="#435" font-size="24" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-4,68,35)">k</text>
+                                <text x="96" y="28" fill="#345" font-size="18" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(7,96,28)">9</text>
+                                <text x="122" y="33" fill="#453" font-size="21" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-8,122,33)">P</text>
+                                <text x="145" y="30" fill="#534" font-size="17" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(5,145,30)">2</text>
                             </svg>
                         </div>
-                        <button type="button" class="captcha-refresh" title="Yenile" onclick="return false;">&#x21bb;</button>
-                        <input type="text" class="captcha-input" placeholder="Kodu giriniz">
+                        <button type="button" class="captcha-refresh" title="Yenile" onclick="return false;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                        </button>
+                        <input type="text" class="captcha-input" placeholder="Kodu giriniz" maxlength="6">
                     </div>
                 </div>
 
-                <button type="submit" class="btn-giris" disabled>Giris</button>
+                <button type="submit" class="btn-giris" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-5-4l5-5-5-5m5 5H3"/></svg>
+                    Giris
+                </button>
             </form>
 
             <!-- Help Links -->
@@ -100,37 +147,31 @@
             </div>
 
             <!-- Divider -->
-            <div class="login-divider">
-                <span>veya</span>
-            </div>
+            <div class="login-divider"><span>veya</span></div>
 
             <!-- e-Devlet Button (disabled) -->
             <button class="btn-edevlet" disabled title="e-Devlet ile giris bu demoda devre disi">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                    <path d="M2 17l10 5 10-5"/>
-                    <path d="M2 12l10 5 10-5"/>
-                </svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                 <span>e-Devlet ile Giris</span>
+                <span class="edevlet-badge">Devre Disi</span>
             </button>
 
             <!-- Second Divider -->
-            <div class="login-divider">
-                <span>veya</span>
-            </div>
+            <div class="login-divider"><span>veya</span></div>
 
             <!-- FIVUCSAS Login Button -->
             <button class="fivucsas-login-btn" id="fivucsas-login-btn" onclick="startFivucsasLogin()">
                 <span class="fivucsas-icon">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         <path d="M9 12l2 2 4-4"/>
                     </svg>
                 </span>
-                <div>
+                <div class="fivucsas-btn-text">
                     <div class="fivucsas-btn-label">FIVUCSAS ile Giris</div>
                     <div class="fivucsas-btn-sub">Biyometrik Kimlik Dogrulama</div>
                 </div>
+                <svg class="fivucsas-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
             </button>
 
         </div><!-- /.login-card -->
@@ -140,13 +181,18 @@
 
 <!-- Demo Notice Banner -->
 <div class="demo-banner">
-    <strong>Demo:</strong> Bu sayfa, FIVUCSAS biyometrik kimlik dogrulamanin bir universite ogrenci bilgi sistemine nasil entegre oldugunu gosteren bir demonstrasyondur.
-    Geleneksel giris ve e-Devlet bu demoda devre disidir. &ldquo;FIVUCSAS ile Giris&rdquo; butonuna tiklayarak OAuth widget akisini deneyebilirsiniz.
+    <div class="demo-banner-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div>
+        <strong>Demonstrasyon Sayfasi</strong> &mdash; Bu sayfa, FIVUCSAS biyometrik kimlik dogrulamanin bir universite BYS'ye nasil entegre edildigini gostermektedir.
+        Geleneksel giris ve e-Devlet bu demoda devre disidir. <strong>&ldquo;FIVUCSAS ile Giris&rdquo;</strong> butonunu kullanarak OAuth widget akisini deneyebilirsiniz.
+    </div>
 </div>
 
 <!-- Footer -->
 <footer class="page-footer">
-    <p>&copy; 2026 Marmara Universitesi Bilgi Islem Daire Baskanligi (Demo)</p>
+    <p>&copy; 2026 Marmara Universitesi &mdash; Bilgi Islem Daire Baskanligi (Demo)</p>
 </footer>
 
 <!-- FIVUCSAS Widget SDK (inline, simplified from @fivucsas/auth-js) -->
@@ -154,38 +200,38 @@
 (function() {
     'use strict';
 
-    // ─── Configuration ───
     const FIVUCSAS_BASE_URL = 'https://ica-fivucsas.rollingcatsoftware.com/widget-auth';
     const FIVUCSAS_API_URL  = 'https://auth.rollingcatsoftware.com/api/v1';
     const CLIENT_ID         = 'marmara-bys-demo';
 
-    // ─── Overlay Styles ───
     const OVERLAY_CSS = `
         .fivucsas-overlay {
             position: fixed; inset: 0; z-index: 2147483647;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-            animation: fivucsas-fade 0.2s ease-out;
+            background: rgba(0,20,40,0.6);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            animation: fivucsas-fade 0.25s ease-out;
         }
         .fivucsas-overlay-inner {
             position: relative; width: 100%; max-width: 440px;
-            max-height: 90vh; border-radius: 12px; overflow: hidden;
-            background: #fff; box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+            max-height: 90vh; border-radius: 16px; overflow: hidden;
+            background: #fff; box-shadow: 0 24px 80px rgba(0,0,0,0.3);
         }
         .fivucsas-close-btn {
-            position: absolute; top: 8px; right: 8px; z-index: 1;
-            width: 32px; height: 32px; border: none; border-radius: 50%;
-            background: rgba(0,0,0,0.06); color: #333; font-size: 18px;
+            position: absolute; top: 10px; right: 10px; z-index: 1;
+            width: 34px; height: 34px; border: none; border-radius: 50%;
+            background: rgba(0,0,0,0.06); color: #333; font-size: 20px;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
         }
         .fivucsas-close-btn:hover { background: rgba(0,0,0,0.12); }
         .fivucsas-iframe {
-            display: block; width: 100%; height: 520px; border: none;
+            display: block; width: 100%; height: 540px; border: none;
         }
         @keyframes fivucsas-fade { from { opacity: 0; } to { opacity: 1; } }
         @media (max-width: 480px) {
             .fivucsas-overlay-inner { max-width: 100%; max-height: 100vh; border-radius: 0; }
+            .fivucsas-iframe { height: 100vh; }
         }
     `;
 
@@ -198,11 +244,8 @@
         stylesInjected = true;
     }
 
-    // ─── Open FIVUCSAS Auth Widget ───
     window.startFivucsasLogin = function() {
         injectStyles();
-
-        // Build iframe URL
         const url = new URL(FIVUCSAS_BASE_URL);
         url.searchParams.set('client_id', CLIENT_ID);
         url.searchParams.set('flow', 'login');
@@ -210,7 +253,6 @@
         url.searchParams.set('api_base_url', FIVUCSAS_API_URL);
         url.searchParams.set('redirect_uri', window.location.origin + '/callback.html');
 
-        // Create overlay
         const overlay = document.createElement('div');
         overlay.className = 'fivucsas-overlay';
 
@@ -234,27 +276,21 @@
         overlay.appendChild(inner);
         document.body.appendChild(overlay);
 
-        // Close on backdrop click
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) cleanup();
         });
 
-        // Close on Escape
         function escHandler(e) {
             if (e.key === 'Escape') cleanup();
         }
         document.addEventListener('keydown', escHandler);
 
-        // Listen for postMessage from widget
         function messageHandler(event) {
-            // Accept messages from the widget origin
             var expectedOrigin = new URL(FIVUCSAS_BASE_URL).origin;
             if (event.origin !== expectedOrigin) return;
-
             var data = event.data;
             if (!data || typeof data !== 'object' || typeof data.type !== 'string') return;
             if (data.type.indexOf('fivucsas:') !== 0) return;
-
             var payload = data.payload || {};
 
             switch (data.type) {
@@ -262,16 +298,13 @@
                     iframe.contentWindow.postMessage({
                         type: 'fivucsas:config',
                         payload: {
-                            theme: 'light',
-                            locale: 'en',
+                            theme: 'light', locale: 'en',
                             apiBaseUrl: FIVUCSAS_API_URL,
                             allowedOrigin: window.location.origin
                         }
                     }, expectedOrigin);
                     break;
-
                 case 'fivucsas:complete':
-                    // Auth successful — store result and redirect to dashboard
                     var result = {
                         success: true,
                         sessionId: payload.sessionId || '',
@@ -287,16 +320,13 @@
                     cleanup();
                     window.location.href = 'callback.html';
                     break;
-
                 case 'fivucsas:error':
                     alert('Authentication failed: ' + (payload.error || 'Unknown error'));
                     cleanup();
                     break;
-
                 case 'fivucsas:cancel':
                     cleanup();
                     break;
-
                 case 'fivucsas:resize':
                     if (typeof payload.height === 'number') {
                         iframe.style.height = payload.height + 'px';
