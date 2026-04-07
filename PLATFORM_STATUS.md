@@ -34,7 +34,7 @@
 | 2026-03-15 | Criticize architectural decisions | ✅ Section 11 |
 | 2026-03-15 | Create living document for all requests/analysis/roadmap | ✅ This file |
 | 2026-03-16 | Fix Muhabbet CI failures (4 cascading issues) | ✅ Done — commits bbd1442..828b07e |
-| 2026-03-16 | Deploy web-app to Hostinger | ✅ Done — ica-fivucsas.rollingcatsoftware.com |
+| 2026-03-16 | Deploy web-app to Hostinger | ✅ Done — app.fivucsas.com |
 | 2026-03-16 | Fix CSP blocking API calls | ✅ Done — vite.config.ts + .htaccess |
 | 2026-03-16 | Fix registration 500 (audit FK) | ✅ Done — AuditLogAdapter propagation fix |
 | 2026-03-16 | Configure Hostinger SMTP for email OTP | ✅ Done — smtp.hostinger.com:587 |
@@ -61,7 +61,7 @@ University project (Marmara University, CSE4297/CSE4197) building a **multi-tena
 |---------|------|------|--------|
 | identity-core-api | Spring Boot 3.2.0 / Java 21 | 8080 | ✅ Running (Hetzner VPS) |
 | biometric-processor | FastAPI / Python 3.11 | 8001 | ✅ Running (Local Docker) |
-| web-app | React 18 + TypeScript + Vite | Hostinger | ✅ Live — https://ica-fivucsas.rollingcatsoftware.com |
+| web-app | React 18 + TypeScript + Vite | Hostinger | ✅ Live — https://app.fivucsas.com |
 | client-apps | Kotlin Multiplatform | — | 75% |
 | api-gateway | NGINX | 8000 | ✅ Running (Local Docker) |
 | postgres | PostgreSQL 16 + pgvector | 5432 | ✅ Running |
@@ -401,7 +401,7 @@ TenantContextFilter
 - **Fingerprint endpoint** — stub, always returns failure
 - ~~**Voice endpoint** — stub, always returns failure~~ ✅ FIXED — Resemblyzer 256-dim, 490-585ms
 - **Deployment** — Cloudflare Tunnel to laptop GPU not set up (scripts ready in `scripts/deploy/`)
-- **Production URL** — `bpa-fivucsas.rollingcatsoftware.com` pending (tunnel not running)
+- **Production URL** — `bio.fivucsas.com` pending (tunnel not running)
 
 ### Performance Issues (discovered 2026-03-19)
 - **Memory**: biometric-api at 94% (2.825GB/3GB) — needs increase to 3.5GB
@@ -419,7 +419,7 @@ The biometric-processor needs a GPU to run DeepFace at acceptable speed:
 
 ## 7. WEB DASHBOARD — ANALYSIS
 
-### What's live at ica-fivucsas.rollingcatsoftware.com
+### What's live at app.fivucsas.com
 
 | Page / Feature | Status |
 |---------------|--------|
@@ -583,7 +583,7 @@ The biometric-processor needs a GPU to run DeepFace at acceptable speed:
 - [ ] GET /api/v1/statistics/users → 200
 
 ### Phase B — Web Dashboard (browser)
-- [ ] Login at https://ica-fivucsas.rollingcatsoftware.com
+- [ ] Login at https://app.fivucsas.com
 - [ ] Navigate all 16 pages without errors
 - [ ] Create new user via form
 - [ ] Create new tenant

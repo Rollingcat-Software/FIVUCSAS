@@ -168,7 +168,7 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 | -- | 2FA login flow (admin-controlled, EMAIL_OTP) | 2026-04-05 |
 | -- | Multi-method 2FA dispatcher (TOTP, Face, Voice, etc.) | 2026-04-05 |
 | -- | My Profile page (6 sections, data export, KVKK/GDPR) | 2026-04-05 |
-| -- | BYS demo site (bys-demo.rollingcatsoftware.com) | 2026-04-05 |
+| -- | BYS demo site (demo.fivucsas.com) | 2026-04-05 |
 | -- | BlazeFace on-device face detection (134KB, <50ms) | 2026-04-05 |
 | -- | OAuth 2.0 compliance: PKCE, nonce, ID token claims | 2026-04-05 |
 | -- | PostMessage origin security fix (wildcard → referrer) | 2026-04-05 |
@@ -352,10 +352,10 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 
 | Service | URL / Host | Status | Technology |
 |---------|-----------|--------|------------|
-| Identity Core API | auth.rollingcatsoftware.com | Healthy | Spring Boot 3.4.7, Java 21 |
-| Biometric Processor | bpa-fivucsas.rollingcatsoftware.com (port 8001) | Healthy | FastAPI, Python 3.12, 4GB RAM |
-| Web Dashboard | ica-fivucsas.rollingcatsoftware.com | Live | React 18, Hostinger |
-| Landing Website | fivucsas.rollingcatsoftware.com | Live | React + Tailwind, Hostinger |
+| Identity Core API | api.fivucsas.com | Healthy | Spring Boot 3.4.7, Java 21 |
+| Biometric Processor | bio.fivucsas.com (port 8001) | Healthy | FastAPI, Python 3.12, 4GB RAM |
+| Web Dashboard | app.fivucsas.com | Live | React 18, Hostinger |
+| Landing Website | fivucsas.com | Live | React + Tailwind, Hostinger |
 | PostgreSQL 17 | Internal (port 5432) | Healthy | pgvector, 4 databases |
 | Redis 7.4 | Internal (port 6379) | Healthy | Sessions, OTP, JWT blacklist |
 | Traefik v3.6.12 | Ports 80/443 | Healthy | Reverse proxy, Let's Encrypt |

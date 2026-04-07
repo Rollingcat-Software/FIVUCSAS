@@ -210,8 +210,8 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 - Identity Core API with JWT authentication, RBAC, multi-tenancy
 - Biometric Processor with 46+ endpoints, 9 ML models
 - Web Admin Dashboard (React 18 + Material UI)
-- Landing Website deployed to `fivucsas.rollingcatsoftware.com`
-- Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
+- Landing Website deployed to `fivucsas.com`
+- Web Dashboard deployed to `app.fivucsas.com`
 - Identity Core API deployed on Hetzner VPS (116.203.222.213)
 - 14 Flyway database migrations
 - Comprehensive documentation

@@ -143,13 +143,13 @@
 - [x] Deploy key generated and authorized on Hetzner VPS
 
 ### 4.2 Biometric Processor Deployment ✅ DONE
-- [x] `bpa-fivucsas.rollingcatsoftware.com` DNS fully working
+- [x] `bio.fivucsas.com` DNS fully working
 - [ ] Setup Cloudflare Tunnel on laptop GPU (GTX 1650) for GPU acceleration
 - [ ] Deploy with GPU acceleration
 - [ ] Verify face operations through tunnel
 
 ### 4.3 Production Sync
-- [x] Identity Core API running on Hetzner VPS (auth.rollingcatsoftware.com)
+- [x] Identity Core API running on Hetzner VPS (api.fivucsas.com)
 - [x] Rebuild and deploy web-app to Hostinger
 - [ ] Run E2E tests against production
 - [ ] Verify all services healthy

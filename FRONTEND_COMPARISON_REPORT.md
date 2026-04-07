@@ -151,7 +151,7 @@
 - **Quality assessment**: Not implemented
 - `TODO persist system settings` comment in SettingsScreen.kt line 288 -- settings don't actually save
 - All three environment URLs (DEV/STAGING/PROD) in ApiConfig.kt point to the same production URL -- there is no real environment separation
-- Biometric API URL points to `bpa-fivucsas.rollingcatsoftware.com` which requires a Cloudflare tunnel that may not be running
+- Biometric API URL points to `bio.fivucsas.com` which requires a Cloudflare tunnel that may not be running
 - 30+ markdown documentation files in the root (100_PERCENT_COMPLETE.md, DAY_4_COMPLETE.md through DAY_9_10_COMPLETE.md, EXECUTIVE_SUMMARY.md, etc.) -- smells like AI-generated progress reports rather than actual documentation
 - No unit tests have been verified to pass (test files exist but `./gradlew :shared:test` has never been run according to CLAUDE.md)
 
@@ -184,10 +184,10 @@
 | Location | Value | Risk |
 |----------|-------|------|
 | auth-test/index.html | `admin@fivucsas.local` / `Test@123` | Low (test page) |
-| auth-test/index.html | `https://auth.rollingcatsoftware.com` | Low (configurable) |
+| auth-test/index.html | `https://api.fivucsas.com` | Low (configurable) |
 | client-apps ApiConfig.kt | All 3 envs point to same prod URL | Medium (no real env separation) |
-| client-apps ApiConfig.kt | `bpa-fivucsas.rollingcatsoftware.com` | Medium (requires tunnel) |
-| web-app .env.production | `VITE_API_BASE_URL=https://auth.rollingcatsoftware.com/api/v1` | Low (correct pattern) |
+| client-apps ApiConfig.kt | `bio.fivucsas.com` | Medium (requires tunnel) |
+| web-app .env.production | `VITE_API_BASE_URL=https://api.fivucsas.com/api/v1` | Low (correct pattern) |
 
 ---
 

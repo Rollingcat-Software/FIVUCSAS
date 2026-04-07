@@ -1,6 +1,6 @@
 # FIVUCSAS Backend Comprehensive Test Plan
 
-**API Base URL:** `https://auth.rollingcatsoftware.com`
+**API Base URL:** `https://api.fivucsas.com`
 **Date:** 2026-02-03
 **Status:** In Progress
 

@@ -77,7 +77,7 @@ function App() {
               <a href="#team" className="text-slate-300 hover:text-white transition-colors">Team</a>
               <a href="#contact" className="text-slate-300 hover:text-white transition-colors">Contact</a>
               <a
-                href="https://ica-fivucsas.rollingcatsoftware.com"
+                href="https://app.fivucsas.com"
                 className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 transition-colors"
               >
                 Admin Dashboard
@@ -120,7 +120,7 @@ function App() {
                 </a>
               ))}
               <a
-                href="https://ica-fivucsas.rollingcatsoftware.com"
+                href="https://app.fivucsas.com"
                 className="block px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-center transition-colors"
               >
                 Admin Dashboard
@@ -156,7 +156,7 @@ function App() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="https://ica-fivucsas.rollingcatsoftware.com"
+                href="https://app.fivucsas.com"
                 className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 font-semibold transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
               >
                 Try Admin Dashboard
@@ -291,7 +291,7 @@ function App() {
                 </div>
                 <div className="flex-1 mx-4">
                   <div className="bg-slate-700/50 rounded-md px-3 py-1 text-xs text-slate-400 text-center">
-                    ica-fivucsas.rollingcatsoftware.com
+                    app.fivucsas.com
                   </div>
                 </div>
               </div>
@@ -311,13 +311,13 @@ function App() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <a
-                      href="https://ica-fivucsas.rollingcatsoftware.com"
+                      href="https://app.fivucsas.com"
                       className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 font-medium transition-all text-sm"
                     >
                       Open Dashboard
                     </a>
                     <a
-                      href="https://auth.rollingcatsoftware.com/swagger-ui.html"
+                      href="https://api.fivucsas.com/swagger-ui.html"
                       className="px-6 py-3 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 font-medium transition-all text-sm"
                     >
                       API Documentation
@@ -509,7 +509,7 @@ function App() {
               <div className="text-xs text-slate-500 mt-1">Source Code</div>
             </a>
             <a
-              href="https://auth.rollingcatsoftware.com/swagger-ui.html"
+              href="https://api.fivucsas.com/swagger-ui.html"
               className="p-6 rounded-2xl bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 transition-all duration-300 group"
             >
               <svg className="w-8 h-8 mx-auto mb-3 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -544,10 +544,10 @@ function App() {
             </div>
 
             <div className="flex items-center gap-6 text-sm text-slate-400">
-              <a href="https://ica-fivucsas.rollingcatsoftware.com" className="hover:text-white transition-colors">
+              <a href="https://app.fivucsas.com" className="hover:text-white transition-colors">
                 Admin Dashboard
               </a>
-              <a href="https://auth.rollingcatsoftware.com/swagger-ui.html" className="hover:text-white transition-colors">
+              <a href="https://api.fivucsas.com/swagger-ui.html" className="hover:text-white transition-colors">
                 API Docs
               </a>
               <a href="https://github.com/Rollingcat-Software/FIVUCSAS" className="hover:text-white transition-colors">

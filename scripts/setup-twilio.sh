@@ -86,7 +86,7 @@ check_config() {
   echo ""
   info "Testing SMS OTP endpoint availability..."
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -X POST "https://auth.rollingcatsoftware.com/api/v1/auth/sms-otp/send" \
+    -X POST "https://api.fivucsas.com/api/v1/auth/sms-otp/send" \
     -H "Content-Type: application/json" \
     -d '{"phoneNumber":"+90000000000"}' 2>/dev/null || echo "000")
 
@@ -183,7 +183,7 @@ EOF
   echo ""
   info "Twilio SMS OTP is now configured."
   info "Test it with:"
-  echo "  curl -X POST https://auth.rollingcatsoftware.com/api/v1/auth/sms-otp/send \\"
+  echo "  curl -X POST https://api.fivucsas.com/api/v1/auth/sms-otp/send \\"
   echo "    -H 'Content-Type: application/json' \\"
   echo "    -H 'Authorization: Bearer <YOUR_JWT>' \\"
   echo "    -d '{\"phoneNumber\":\"+90XXXXXXXXXX\"}'"

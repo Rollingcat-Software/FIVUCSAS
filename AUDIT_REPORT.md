@@ -42,7 +42,7 @@
 ### C-4: Production URLs hardcoded in source
 - **Status**: [ ] FIXED
 - **Files**: `client-apps/.../ApiConfig.kt:26-35`, `landing-website/src/App.tsx:80`
-- **Issue**: Dev/staging/prod all point to same rollingcatsoftware.com URLs
+- **Issue**: Dev/staging/prod all point to same fivucsas.com URLs
 - **Fix**: Use environment-based configuration with example.com defaults
 
 ### C-5: Hardcoded JWT secret in dev config

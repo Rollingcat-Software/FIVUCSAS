@@ -158,7 +158,7 @@
       "Bash(gcloud compute firewall-rules list:*)",
       "Bash(gcloud compute firewall-rules create:*)",
       "Bash(Start-Sleep -Seconds 20)",
-      "WebFetch(domain:ica-fivucsas.rollingcatsoftware.com)",
+      "WebFetch(domain:app.fivucsas.com)",
       "WebFetch(domain:34.116.233.134)",
       "Bash(gcloud compute instances describe:*)",
       "Bash(git log:*)",

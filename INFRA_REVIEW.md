@@ -97,7 +97,7 @@ This is correct -- databases are not accessible from the internet, only via Dock
 
 ### 2.5 SSL/TLS Configuration -- GOOD
 
-Response headers from `auth.rollingcatsoftware.com`:
+Response headers from `api.fivucsas.com`:
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` -- HSTS with preload
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: SAMEORIGIN`

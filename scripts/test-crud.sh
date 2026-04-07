@@ -9,7 +9,7 @@
 #   chmod +x test-crud.sh
 #   ./test-crud.sh [BASE_URL]
 #
-# Default BASE_URL: https://auth.rollingcatsoftware.com
+# Default BASE_URL: https://api.fivucsas.com
 #
 # NOTE: The script creates temporary test data and cleans it up at the end.
 #       If a run is interrupted, leftover test data may remain in the database.
@@ -20,7 +20,7 @@ set -o pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-BASE_URL="${1:-https://auth.rollingcatsoftware.com}"
+BASE_URL="${1:-https://api.fivucsas.com}"
 ADMIN_EMAIL="${FIVUCSAS_ADMIN_EMAIL:-admin@fivucsas.local}"
 ADMIN_PASS="${FIVUCSAS_ADMIN_PASS:-Test@123}"
 CURL_OPTS="-sk --connect-timeout 10 --max-time 15"

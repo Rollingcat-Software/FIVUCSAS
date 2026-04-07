@@ -87,7 +87,7 @@ ACTOR 1: TENANT ADMIN (sets up once)
 ═══════════════════════════════════════════════════════════════
 
 Step 1 — Tenant Setup
-  Admin logs into web-app (ica-fivucsas.rollingcatsoftware.com)
+  Admin logs into web-app (app.fivucsas.com)
   Creates or configures their tenant
   Sets: max users, session timeout, MFA required, biometric enabled
 

@@ -432,7 +432,7 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [x] Email/TOTP/SMS OTP input
 - [x] NFC detection (Chrome Android)
 - [x] Raw API log panel
-- [x] Deploy to `https://ica-fivucsas.rollingcatsoftware.com/auth-test/`
+- [x] Deploy to `https://app.fivucsas.com/auth-test/`
 
 **Deliverable**: ✅ Working test console deployed at production domain.
 
@@ -725,11 +725,11 @@ CameraX → ML Kit barcode scanning → Decode QR
 
 | Service | URL | Status |
 |---------|-----|--------|
-| Identity Core API | https://auth.rollingcatsoftware.com | ✅ Running |
-| Swagger UI | https://auth.rollingcatsoftware.com/swagger-ui.html | ✅ |
-| Web Dashboard | https://ica-fivucsas.rollingcatsoftware.com | ✅ Live |
-| Auth Test Page | https://ica-fivucsas.rollingcatsoftware.com/auth-test/ | ✅ Deployed |
-| Landing Page | https://fivucsas.rollingcatsoftware.com | ✅ Live |
+| Identity Core API | https://api.fivucsas.com | ✅ Running |
+| Swagger UI | https://api.fivucsas.com/swagger-ui.html | ✅ |
+| Web Dashboard | https://app.fivucsas.com | ✅ Live |
+| Auth Test Page | https://app.fivucsas.com/auth-test/ | ✅ Deployed |
+| Landing Page | https://fivucsas.com | ✅ Live |
 | Biometric API | Hetzner VPS (port 8001, internal) | ✅ Running |
 
 ## Test Credentials

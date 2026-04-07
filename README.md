@@ -119,10 +119,10 @@ docker-compose logs -f
 
 | Service | URL |
 |---------|-----|
-| Identity Core API | https://auth.rollingcatsoftware.com |
-| Swagger UI | https://auth.rollingcatsoftware.com/swagger-ui.html |
-| Web Admin Dashboard | https://ica-fivucsas.rollingcatsoftware.com |
-| Landing Page | https://fivucsas.rollingcatsoftware.com |
+| Identity Core API | https://api.fivucsas.com |
+| Swagger UI | https://api.fivucsas.com/swagger-ui.html |
+| Web Admin Dashboard | https://app.fivucsas.com |
+| Landing Page | https://fivucsas.com |
 
 ## Development
 

@@ -5,7 +5,7 @@
 #
 # Purpose:
 #   Run biometric-processor (FastAPI) on your local machine with GPU (GTX 1650)
-#   and expose it via Cloudflare Tunnel as bpa-fivucsas.rollingcatsoftware.com
+#   and expose it via Cloudflare Tunnel as bio.fivucsas.com
 #
 #   This avoids running DeepFace / Resemblyzer on the Hetzner VPS CPU,
 #   giving significantly faster face/voice processing with CUDA acceleration.
@@ -13,7 +13,7 @@
 # Prerequisites:
 #   - NVIDIA GPU with CUDA drivers installed
 #   - biometric-processor running locally on port 8001
-#   - A Cloudflare account with rollingcatsoftware.com zone
+#   - A Cloudflare account with fivucsas.com zone
 #
 # Usage:
 #   ./scripts/cloudflare-tunnel.sh install    # One-time: install cloudflared
@@ -28,7 +28,7 @@
 set -euo pipefail
 
 TUNNEL_NAME="fivucsas-biometric-gpu"
-HOSTNAME="bpa-fivucsas.rollingcatsoftware.com"
+HOSTNAME="bio.fivucsas.com"
 LOCAL_PORT=8001
 LOCAL_URL="http://localhost:${LOCAL_PORT}"
 
@@ -92,7 +92,7 @@ cmd_install() {
 # ---------------------------------------------------------------------------
 cmd_login() {
     log "Logging in to Cloudflare..."
-    log "A browser window will open. Select the rollingcatsoftware.com zone."
+    log "A browser window will open. Select the fivucsas.com zone."
     cloudflared tunnel login
     log "Login successful. Credentials saved to ~/.cloudflared/cert.pem"
 }

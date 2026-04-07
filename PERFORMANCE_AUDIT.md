@@ -170,7 +170,7 @@ All containers have log rotation configured:
 
 ### 3.2 Uptime Kuma
 
-Status page at `status.rollingcatsoftware.com` returns HTTP 302 (redirect to dashboard). Monitoring is active.
+Status page at `status.fivucsas.com` returns HTTP 302 (redirect to dashboard). Monitoring is active.
 
 ### 3.3 Recommended Monitors
 

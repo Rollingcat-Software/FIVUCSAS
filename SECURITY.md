@@ -13,7 +13,7 @@ If you discover a security vulnerability, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email: **security@rollingcatsoftware.com**
+Instead, please email: **security@fivucsas.com**
 
 Include:
 - Description of the vulnerability

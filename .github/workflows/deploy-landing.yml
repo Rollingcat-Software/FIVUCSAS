@@ -35,7 +35,7 @@ jobs:
         with:
           switches: -avz --delete
           path: landing-website/dist/
-          remote_path: ~/domains/fivucsas.rollingcatsoftware.com/public_html/
+          remote_path: ~/domains/fivucsas.com/public_html/
           remote_host: 46.202.158.52
           remote_port: 65002
           remote_user: u349700627

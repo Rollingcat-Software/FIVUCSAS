@@ -21,11 +21,11 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 
 | Service | URL |
 |---------|-----|
-| Identity API | https://auth.rollingcatsoftware.com |
-| Web Dashboard | https://ica-fivucsas.rollingcatsoftware.com |
-| Landing Site | https://fivucsas.rollingcatsoftware.com |
-| BYS Demo | https://bys-demo.rollingcatsoftware.com |
-| Swagger | https://auth.rollingcatsoftware.com/swagger-ui.html |
+| Identity API | https://api.fivucsas.com |
+| Web Dashboard | https://app.fivucsas.com |
+| Landing Site | https://fivucsas.com |
+| BYS Demo | https://demo.fivucsas.com |
+| Swagger | https://api.fivucsas.com/swagger-ui.html |
 
 ## Server (Hetzner CX43)
 
@@ -44,10 +44,10 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d identity-co
 
 # Deploy web-app to Hostinger
 cd /opt/projects/fivucsas/web-app && npm run build
-scp -P 65002 -r dist/* u349700627@46.202.158.52:~/domains/ica-fivucsas.rollingcatsoftware.com/public_html/
+scp -P 65002 -r dist/* u349700627@46.202.158.52:~/domains/app.fivucsas.com/public_html/
 
 # BYS demo deploy
-scp -P 65002 -r /opt/projects/fivucsas/bys-demo/* u349700627@46.202.158.52:~/domains/bys-demo.rollingcatsoftware.com/public_html/
+scp -P 65002 -r /opt/projects/fivucsas/bys-demo/* u349700627@46.202.158.52:~/domains/demo.fivucsas.com/public_html/
 
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"

@@ -8,7 +8,7 @@
 # Usage: ./scripts/test-verification.sh [--base-url URL] [--bio-url URL]
 #
 # Defaults:
-#   Identity API:   https://auth.rollingcatsoftware.com
+#   Identity API:   https://api.fivucsas.com
 #   Biometric API:  http://172.20.1.10:8001 (internal Docker network)
 # =============================================================================
 
@@ -25,7 +25,7 @@ FAIL_COUNT=0
 SKIP_COUNT=0
 
 # Parse args
-AUTH_BASE="${AUTH_BASE:-https://auth.rollingcatsoftware.com}"
+AUTH_BASE="${AUTH_BASE:-https://api.fivucsas.com}"
 BIO_BASE="${BIO_BASE:-}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@fivucsas.local}"
 ADMIN_PASS="${ADMIN_PASS:-Test@123}"
@@ -52,7 +52,7 @@ for name, net in nets.items():
   if [ -n "$BIO_IP" ]; then
     BIO_BASE="http://${BIO_IP}:8001"
   else
-    BIO_BASE="https://bpa-fivucsas.rollingcatsoftware.com"
+    BIO_BASE="https://bio.fivucsas.com"
   fi
 fi
 
