@@ -32,18 +32,62 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": "SoftwareApplication",
       "name": "FIVUCSAS",
+      "applicationCategory": "SecurityApplication",
+      "applicationSubCategory": "Biometric Authentication",
+      "operatingSystem": "Web, Android, iOS",
       "url": "https://fivucsas.com",
-      "logo": "https://fivucsas.com/og-image.png",
-      "description": "Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform.",
-      "founder": {
-        "@type": "Person",
-        "name": "Ahmet Abdullah Gultekin"
+      "description": "Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform with 10 auth methods.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free tier available"
       },
+      "author": {
+        "@type": "Organization",
+        "name": "RollingCat Software",
+        "url": "https://rollingcatsoftware.com",
+        "founder": {
+          "@type": "Person",
+          "name": "Ahmet Abdullah Gultekin"
+        }
+      },
+      "sourceOrganization": {
+        "@type": "EducationalOrganization",
+        "name": "Marmara University",
+        "department": "Computer Science Engineering"
+      },
+      "featureList": [
+        "Face Recognition with Liveness Detection",
+        "Voice Verification",
+        "Fingerprint (WebAuthn/FIDO2)",
+        "Hardware Security Keys",
+        "NFC Document Scanning (Passport, TC Kimlik)",
+        "TOTP, Email OTP, SMS OTP",
+        "QR Code Authentication",
+        "N-Step Multi-Factor Authentication",
+        "OAuth 2.0 / OpenID Connect",
+        "Embeddable Auth Widget",
+        "Multi-Tenant Architecture",
+        "Identity Verification Pipeline"
+      ],
       "sameAs": [
         "https://github.com/Rollingcat-Software"
       ]
+    }
+    </script>
+
+    <!-- JSON-LD WebSite (for sitelinks search box) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FIVUCSAS",
+      "url": "https://fivucsas.com",
+      "description": "Biometric Identity Verification Platform",
+      "inLanguage": ["en", "tr"]
     }
     </script>
 

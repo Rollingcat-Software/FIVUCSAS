@@ -2,8 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://fivucsas.com/</loc>
-    <lastmod>2026-04-07</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://docs.fivucsas.com/</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://docs.fivucsas.com/sdk/</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://demo.fivucsas.com/</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://status.fivucsas.com/status/fivucsas</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>
