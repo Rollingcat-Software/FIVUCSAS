@@ -208,154 +208,41 @@
     <p>&copy; 2026 Marmara Universitesi &mdash; Bilgi Islem Daire Baskanligi (Demo)</p>
 </footer>
 
-<!-- FIVUCSAS Widget SDK (inline, simplified from @fivucsas/auth-js) -->
+<!-- FIVUCSAS Official Auth SDK -->
+<script src="https://verify.fivucsas.com/fivucsas-auth.js"></script>
 <script>
-(function() {
-    'use strict';
+async function startFivucsasLogin() {
+    const auth = new FivucsasAuth({
+        clientId: 'marmara-bys-demo',
+        baseUrl: 'https://verify.fivucsas.com',
+        apiBaseUrl: 'https://api.fivucsas.com/api/v1',
+        locale: 'tr',
+        theme: 'light'
+    });
 
-    const FIVUCSAS_BASE_URL = 'https://app.fivucsas.com/widget-auth';
-    const FIVUCSAS_API_URL  = 'https://api.fivucsas.com/api/v1';
-    const CLIENT_ID         = 'marmara-bys-demo';
-
-    const OVERLAY_CSS = `
-        .fivucsas-overlay {
-            position: fixed; inset: 0; z-index: 2147483647;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0,20,40,0.6);
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            animation: fivucsas-fade 0.25s ease-out;
-        }
-        .fivucsas-overlay-inner {
-            position: relative; width: 100%; max-width: 440px;
-            max-height: 90vh; border-radius: 16px; overflow-y: auto;
-            background: #fff; box-shadow: 0 24px 80px rgba(0,0,0,0.3);
-        }
-        .fivucsas-close-btn {
-            position: absolute; top: 10px; right: 10px; z-index: 1;
-            width: 34px; height: 34px; border: none; border-radius: 50%;
-            background: rgba(0,0,0,0.06); color: #333; font-size: 20px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: background 0.15s;
-        }
-        .fivucsas-close-btn:hover { background: rgba(0,0,0,0.12); }
-        .fivucsas-iframe {
-            display: block; width: 100%; height: 520px; max-height: 85vh; transition: height 0.2s ease; border: none;
-        }
-        @keyframes fivucsas-fade { from { opacity: 0; } to { opacity: 1; } }
-        @media (max-width: 480px) {
-            .fivucsas-overlay-inner { max-width: 100%; max-height: 100vh; border-radius: 0; }
-            .fivucsas-iframe { height: 100vh; }
-        }
-    `;
-
-    let stylesInjected = false;
-    function injectStyles() {
-        if (stylesInjected) return;
-        const s = document.createElement('style');
-        s.textContent = OVERLAY_CSS;
-        document.head.appendChild(s);
-        stylesInjected = true;
-    }
-
-    window.startFivucsasLogin = function() {
-        injectStyles();
-        const url = new URL(FIVUCSAS_BASE_URL);
-        url.searchParams.set('client_id', CLIENT_ID);
-        url.searchParams.set('flow', 'login');
-        url.searchParams.set('locale', 'en');
-        url.searchParams.set('api_base_url', FIVUCSAS_API_URL);
-        url.searchParams.set('redirect_uri', window.location.origin + '/callback.html');
-
-        const overlay = document.createElement('div');
-        overlay.className = 'fivucsas-overlay';
-
-        const inner = document.createElement('div');
-        inner.className = 'fivucsas-overlay-inner';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'fivucsas-close-btn';
-        closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.textContent = '\u00D7';
-        closeBtn.onclick = function() { cleanup(); };
-
-        const iframe = document.createElement('iframe');
-        iframe.className = 'fivucsas-iframe';
-        iframe.src = url.toString();
-        iframe.setAttribute('allow', "camera 'src'; microphone 'src'");
-        iframe.setAttribute('title', 'FIVUCSAS Identity Verification');
-
-        inner.appendChild(closeBtn);
-        inner.appendChild(iframe);
-        overlay.appendChild(inner);
-        document.body.appendChild(overlay);
-
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) cleanup();
+    try {
+        const result = await auth.verify({
+            flow: 'login',
+            onStepChange: (step) => console.log('Step:', step),
+            onError: (err) => console.error('Auth error:', err),
+            onCancel: () => console.log('Auth cancelled')
         });
 
-        function escHandler(e) {
-            if (e.key === 'Escape') cleanup();
+        if (result.success) {
+            sessionStorage.setItem('fivucsas_auth', JSON.stringify({
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                userId: result.userId,
+                completedMethods: result.completedMethods,
+                timestamp: result.timestamp
+            }));
+            window.location.href = 'callback.html';
         }
-        document.addEventListener('keydown', escHandler);
-
-        function messageHandler(event) {
-            var expectedOrigin = new URL(FIVUCSAS_BASE_URL).origin;
-            if (event.origin !== expectedOrigin) return;
-            var data = event.data;
-            if (!data || typeof data !== 'object' || typeof data.type !== 'string') return;
-            if (data.type.indexOf('fivucsas:') !== 0) return;
-            var payload = data.payload || {};
-
-            switch (data.type) {
-                case 'fivucsas:ready':
-                    iframe.contentWindow.postMessage({
-                        type: 'fivucsas:config',
-                        payload: {
-                            theme: 'light', locale: 'en',
-                            apiBaseUrl: FIVUCSAS_API_URL,
-                            allowedOrigin: window.location.origin
-                        }
-                    }, expectedOrigin);
-                    break;
-                case 'fivucsas:complete':
-                    var result = {
-                        success: true,
-                        sessionId: payload.sessionId || '',
-                        userId: payload.userId || '',
-                        email: payload.email || '',
-                        displayName: payload.displayName || '',
-                        completedMethods: payload.completedMethods || [],
-                        accessToken: payload.accessToken || '',
-                        authCode: payload.authCode || '',
-                        timestamp: Date.now()
-                    };
-                    sessionStorage.setItem('fivucsas_auth', JSON.stringify(result));
-                    cleanup();
-                    window.location.href = 'callback.html';
-                    break;
-                case 'fivucsas:error':
-                    alert('Authentication failed: ' + (payload.error || 'Unknown error'));
-                    cleanup();
-                    break;
-                case 'fivucsas:cancel':
-                    cleanup();
-                    break;
-                case 'fivucsas:resize':
-                    if (typeof payload.height === 'number') {
-                        iframe.style.height = payload.height + 'px';
-                    }
-                    break;
-            }
-        }
-        window.addEventListener('message', messageHandler);
-
-        function cleanup() {
-            window.removeEventListener('message', messageHandler);
-            document.removeEventListener('keydown', escHandler);
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        }
-    };
-})();
+    } catch (err) {
+        console.error('Authentication failed:', err);
+        alert('Kimlik dogrulama basarisiz oldu. Lutfen tekrar deneyin.');
+    }
+}
 </script>
 
 </body>

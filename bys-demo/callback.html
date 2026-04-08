@@ -109,7 +109,7 @@
         sessionStorage.setItem('fivucsas_auth', JSON.stringify(authData));
     }
 
-    if (!authData || !authData.success) {
+    if (!authData || (!authData.success && !authData.accessToken)) {
         showError('No authentication data received. Please try logging in again.');
         return;
     }
@@ -124,18 +124,23 @@
         // Display token info
         var info = document.getElementById('token-info');
         var fields = [
-            ['User', data.displayName || 'N/A'],
+            ['User ID', data.userId || data.displayName || 'N/A'],
             ['Email', data.email || 'N/A'],
-            ['Session ID', data.sessionId || 'N/A'],
             ['Methods', (data.completedMethods || []).join(', ') || 'N/A'],
             ['Timestamp', data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A']
         ];
 
-        if (data.authCode) {
-            fields.push(['Auth Code', data.authCode.substring(0, 20) + '...']);
-        }
         if (data.accessToken) {
             fields.push(['Access Token', data.accessToken.substring(0, 30) + '...']);
+        }
+        if (data.refreshToken) {
+            fields.push(['Refresh Token', data.refreshToken.substring(0, 20) + '...']);
+        }
+        if (data.sessionId) {
+            fields.push(['Session ID', data.sessionId]);
+        }
+        if (data.authCode) {
+            fields.push(['Auth Code', data.authCode.substring(0, 20) + '...']);
         }
 
         fields.forEach(function(f) {
