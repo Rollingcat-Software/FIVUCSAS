@@ -24,8 +24,21 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 | Identity API | https://api.fivucsas.com |
 | Web Dashboard | https://app.fivucsas.com |
 | Landing Site | https://fivucsas.com |
+| Auth Widget / SDK | https://verify.fivucsas.com |
 | BYS Demo | https://demo.fivucsas.com |
+| Uptime Monitor | https://status.fivucsas.com |
 | Swagger | https://api.fivucsas.com/swagger-ui.html |
+
+### Internal Services (no public route)
+| Service | Access |
+|---------|--------|
+| Biometric Processor | Docker network only (port 8001), API key required |
+
+### Redirects
+| From | To |
+|------|-----|
+| fivucsas.com.tr | 301 → fivucsas.com |
+| www.fivucsas.com | 301 → fivucsas.com |
 
 ## Server (Hetzner CX43)
 
