@@ -1,34 +1,34 @@
-function u(e) {
+function d(e) {
   "@babel/helpers - typeof";
-  return u = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
+  return d = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
     return typeof t;
   } : function(t) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
-  }, u(e);
+  }, d(e);
 }
-function h(e, t) {
-  if (u(e) != "object" || !e) return e;
+function m(e, t) {
+  if (d(e) != "object" || !e) return e;
   var i = e[Symbol.toPrimitive];
   if (i !== void 0) {
     var r = i.call(e, t || "default");
-    if (u(r) != "object") return r;
+    if (d(r) != "object") return r;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
-function f(e) {
-  var t = h(e, "string");
-  return u(t) == "symbol" ? t : t + "";
+function v(e) {
+  var t = m(e, "string");
+  return d(t) == "symbol" ? t : t + "";
 }
 function o(e, t, i) {
-  return (t = f(t)) in e ? Object.defineProperty(e, t, {
+  return (t = v(t)) in e ? Object.defineProperty(e, t, {
     value: i,
     enumerable: !0,
     configurable: !0,
     writable: !0
   }) : e[t] = i, e;
 }
-var m = "https://verify.fivucsas.com", v = "https://api.fivucsas.com/api/v1", p = "fivucsas-verify-iframe", b = `
+var p = "https://verify.fivucsas.com", b = "https://api.fivucsas.com/api/v1", g = "fivucsas-verify-iframe", y = `
 .fivucsas-overlay {
     position: fixed;
     inset: 0;
@@ -90,25 +90,25 @@ var m = "https://verify.fivucsas.com", v = "https://api.fivucsas.com/api/v1", p 
         border-radius: 0;
     }
 }
-`, d = !1;
-function g() {
-  if (d) return;
+`, h = !1;
+function w() {
+  if (h) return;
   const e = document.createElement("style");
-  e.textContent = b, document.head.appendChild(e), d = !0;
+  e.textContent = y, document.head.appendChild(e), h = !0;
 }
-var y = class {
+var l = class {
   constructor(e) {
     if (o(this, "config", void 0), o(this, "iframe", null), o(this, "overlay", null), o(this, "messageHandler", null), o(this, "activeReject", null), !e.clientId) throw new Error("FivucsasAuth: clientId is required");
     this.config = {
       clientId: e.clientId,
-      baseUrl: e.baseUrl ?? m,
-      apiBaseUrl: e.apiBaseUrl ?? v,
+      baseUrl: e.baseUrl ?? p,
+      apiBaseUrl: e.apiBaseUrl ?? b,
       locale: e.locale ?? "en",
       theme: e.theme ?? {}
     };
   }
   verify(e = {}) {
-    return this.iframe ? Promise.reject(/* @__PURE__ */ new Error("FivucsasAuth: verification already in progress")) : (g(), new Promise((t, i) => {
+    return this.iframe ? Promise.reject(/* @__PURE__ */ new Error("FivucsasAuth: verification already in progress")) : (w(), new Promise((t, i) => {
       this.activeReject = i;
       let r, a = !1;
       if (e.container) {
@@ -130,7 +130,7 @@ var y = class {
   }
   createIframe(e, t) {
     const i = document.createElement("iframe");
-    return i.id = p, i.className = "fivucsas-iframe", i.src = this.buildIframeUrl(t), i.setAttribute("allow", "camera 'src'; microphone 'src'; publickey-credentials-get 'src'"), i.setAttribute("sandbox", "allow-scripts allow-forms allow-same-origin allow-popups allow-modals"), i.setAttribute("title", "FIVUCSAS Identity Verification"), e.appendChild(i), i;
+    return i.id = g, i.className = "fivucsas-iframe", i.src = this.buildIframeUrl(t), i.setAttribute("allow", "camera 'src'; microphone 'src'; publickey-credentials-get 'src'"), i.setAttribute("sandbox", "allow-scripts allow-forms allow-same-origin allow-popups allow-modals"), i.setAttribute("title", "FIVUCSAS Identity Verification"), e.appendChild(i), i;
   }
   createOverlay(e) {
     const t = document.createElement("div");
@@ -177,7 +177,7 @@ var y = class {
           });
           break;
         case "fivucsas:complete": {
-          const l = {
+          const u = {
             success: !0,
             sessionId: String(s.sessionId ?? ""),
             userId: s.userId ? String(s.userId) : void 0,
@@ -189,15 +189,15 @@ var y = class {
             refreshToken: s.refreshToken ? String(s.refreshToken) : void 0,
             timestamp: typeof s.timestamp == "number" ? s.timestamp : void 0
           };
-          this.activeReject = null, this.cleanup(), e(l);
+          this.activeReject = null, this.cleanup(), e(u);
           break;
         }
         case "fivucsas:error": {
-          const l = {
+          const u = {
             code: String(s.code ?? "UNKNOWN"),
             message: String(s.error ?? "Verification failed")
           };
-          i.onError?.(l), this.activeReject = null, this.cleanup(), t(/* @__PURE__ */ new Error(`FivucsasAuth [${l.code}]: ${l.message}`));
+          i.onError?.(u), this.activeReject = null, this.cleanup(), t(/* @__PURE__ */ new Error(`FivucsasAuth [${u.code}]: ${u.message}`));
           break;
         }
         case "fivucsas:cancel":
@@ -212,7 +212,7 @@ var y = class {
   cleanup() {
     this.messageHandler && (window.removeEventListener("message", this.messageHandler), this.messageHandler = null), this.iframe && (this.iframe.remove(), this.iframe = null), this.overlay && (this.overlay.remove(), this.overlay = null);
   }
-}, w = `
+}, E = `
 :host {
     display: inline-block;
 }
@@ -245,7 +245,7 @@ var y = class {
     width: 100%;
     min-height: 200px;
 }
-`, E = class extends HTMLElement {
+`, x = class extends HTMLElement {
   static get observedAttributes() {
     return [
       "client-id",
@@ -273,7 +273,7 @@ var y = class {
     if (!this.verifying) {
       this.verifying = !0;
       try {
-        this.auth = new y(this.buildConfig());
+        this.auth = new l(this.buildConfig());
         const e = this.buildOptions(), t = await this.auth.verify(e);
         return this.dispatchEvent(new CustomEvent("fivucsas-complete", {
           detail: t,
@@ -298,7 +298,7 @@ var y = class {
   }
   render() {
     const e = document.createElement("style");
-    e.textContent = w;
+    e.textContent = E;
     const t = document.createElement("button");
     t.className = "fivucsas-trigger-btn";
     const i = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -353,10 +353,14 @@ var y = class {
     };
   }
 };
-customElements.define("fivucsas-verify", E);
+customElements.define("fivucsas-verify", x);
+if (typeof l == "object" && l.FivucsasAuth) {
+  var f = l.FivucsasAuth;
+  Object.assign(f, l), l = f;
+}
 export {
-  y as FivucsasAuth,
-  E as FivucsasVerifyElement
+  l as FivucsasAuth,
+  x as FivucsasVerifyElement
 };
 
 //# sourceMappingURL=fivucsas-auth.esm.js.map
