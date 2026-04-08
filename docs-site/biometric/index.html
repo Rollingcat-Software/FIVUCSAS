@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biometric Processor API - FIVUCSAS Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --accent: #8b5cf6;
+            --bg: #0f0f23;
+            --bg-card: #1a1a2e;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #2d2d4a;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: var(--primary-light); }
+
+        .page-title { font-size: 1.1rem; font-weight: 600; }
+
+        .tag {
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .banner {
+            max-width: 1400px;
+            margin: 1.5rem auto 0;
+            padding: 0 2rem;
+        }
+
+        .banner-inner {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            padding: 0.875rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--warning);
+        }
+
+        .banner-inner svg { flex-shrink: 0; }
+
+        .swagger-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem 2rem;
+        }
+
+        /* Swagger UI dark theme overrides */
+        .swagger-ui .topbar { display: none; }
+        .swagger-ui { background: transparent; }
+        .swagger-ui .info { margin: 20px 0; }
+        .swagger-ui .info .title { color: var(--text); }
+        .swagger-ui .info .description p { color: var(--text-muted); }
+        .swagger-ui .scheme-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .swagger-ui .opblock-tag { color: var(--text); border-bottom-color: var(--border); }
+        .swagger-ui .opblock { background: var(--bg-card); border-color: var(--border); }
+        .swagger-ui .opblock .opblock-summary { border-color: var(--border); }
+        .swagger-ui .opblock-description-wrapper p { color: var(--text-muted); }
+        .swagger-ui .btn { color: var(--text); }
+        .swagger-ui .parameter__name { color: var(--text); }
+        .swagger-ui .parameter__type { color: var(--text-muted); }
+        .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: var(--text-muted); border-bottom-color: var(--border); }
+        .swagger-ui .response-col_status { color: var(--text); }
+        .swagger-ui .response-col_description__inner p { color: var(--text-muted); }
+        .swagger-ui .model-title { color: var(--text); }
+        .swagger-ui .model { color: var(--text-muted); }
+        .swagger-ui section.models { border-color: var(--border); }
+        .swagger-ui section.models h4 { color: var(--text); border-bottom-color: var(--border); }
+
+        @media (max-width: 768px) {
+            .header-inner { flex-wrap: wrap; }
+            .swagger-container { padding: 1rem; }
+            .banner { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                Docs
+            </a>
+            <span class="page-title">Biometric Processor API</span>
+            <span class="tag">Internal</span>
+        </div>
+    </header>
+
+    <div class="banner">
+        <div class="banner-inner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Internal API &mdash; not publicly accessible. This microservice is used by Identity Core API only and is not exposed to external traffic.</span>
+        </div>
+    </div>
+
+    <div class="swagger-container">
+        <div id="swagger-ui"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+        SwaggerUIBundle({
+            url: '/biometric/openapi.json',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [SwaggerUIBundle.presets.apis],
+            layout: 'BaseLayout',
+            defaultModelsExpandDepth: 1,
+            docExpansion: 'list',
+            filter: true
+        });
+    </script>
+</body>
+</html>
