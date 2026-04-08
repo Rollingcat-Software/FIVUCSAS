@@ -54,7 +54,7 @@
                 <dl class="token-info" id="token-info"></dl>
 
                 <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
-                    Redirecting to dashboard in <span id="countdown">3</span> seconds...
+                    Redirecting to dashboard in <span id="countdown">10</span> seconds...
                 </p>
             </div>
 
@@ -153,8 +153,9 @@
         });
 
         // Countdown redirect
-        var count = 3;
+        var count = 10;
         var countEl = document.getElementById('countdown');
+        countEl.textContent = count;
         var timer = setInterval(function() {
             count--;
             countEl.textContent = count;
