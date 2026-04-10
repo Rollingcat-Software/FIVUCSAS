@@ -4,8 +4,8 @@
 **Organization**: Marmara University -- Computer Engineering Department
 **Course**: CSE4297/CSE4197 Engineering Project
 **Author**: Ahmet Abdullah Gultekin
-**Last Updated**: 2026-04-05
-**Overall Completion**: 95%
+**Last Updated**: 2026-04-10
+**Overall Completion**: 90% (23 mobile QA issues found)
 
 ---
 
@@ -199,6 +199,64 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 | iOS SwiftUI wrappers | Pending | 11 platform files in iosMain, no iosApp SwiftUI target yet |
 | BlazeFace client-apps | Not started | Web-app only; KMP/Android/iOS needs TFLite integration |
 | APK v4.0.0 tag | Missing | Code has versionCode 4 but git tag not created |
+
+---
+
+## Mobile QA Sprint (April 2026)
+
+**Tested**: Chrome Mobile Browser, 2026-04-10
+**Issues Found**: 23 (6 P0 Critical, 6 P1 Important, 6 P2 Polish, 5 P3 Planning)
+
+### P0 — Critical Bugs (Blocking core auth flows)
+
+| ID | Issue | Root Cause | Files |
+|----|-------|-----------|-------|
+| M1 | Face login fails — camera shows solid color box | `srcObject` assignment fails silently; canvas context null returns silently; no error feedback; background `#1e293b` shown | `FaceCaptureStep.tsx:96-99,145,153`, `FaceEnrollmentFlow.tsx:57-58` |
+| M2 | Face login can't capture photo | Same root cause as M1 — video stream not playing, canvas draw fails | Same as M1 |
+| M3 | Enrolled methods (fingerprint, TOTP) shown as "not enrolled" | `AUTO_COMPLETE_TYPES` only has PASSWORD, EMAIL_OTP, QR_CODE; FINGERPRINT/HARDWARE_KEY stay PENDING | `EnrollmentHealthService.java:44-48`, `EnrollmentPage.tsx:781-786` |
+| M4 | Fingerprint registered but unusable in login | Same as M3 — status PENDING, frontend checks `status===ENROLLED` | `EnrollmentPage.tsx:316-322` |
+| M5 | Mobile app hangs on "multi factor auth..." forever | No timeout on `verifyMfaStep()` API call; Verifying state persists if API hangs | `MfaFlowViewModel.kt:84-139`, `MfaFlowScreen.kt:132-139` |
+| M6 | CSP blocks BlazeFace + bio.fivucsas.com DNS fails + audit-log 403 spam | `tfhub.dev` not in CSP connect-src; bio subdomain has no public route; non-admin triggers 403 loop | `vite.config.ts:56`, `.htaccess:29`, `BiometricService.ts:55` |
+
+### P1 — Important Fixes
+
+| ID | Issue | Root Cause | Files |
+|----|-------|-----------|-------|
+| M7 | Voice enrollment issues | No speech validation (only amplitude>0.05); hardcoded English error; no min duration check | `VoiceEnrollmentFlow.tsx:196-287,230`, `VoiceStep.tsx:97-99` |
+| M8 | MFA allows same method for both steps | `MfaSession.addCompletedMethod()` appends without uniqueness check; frontend shows all enrolled methods | `MfaSession.java:98-106`, `AuthController.java:727-730`, `MethodPickerStep.tsx` |
+| M9 | Bad error messages + English shown in Turkish mode | Missing i18n keys (networkError, faceDetectionFailed, timeoutError); mobile uses hardcoded English error mapping | `en.json`, `tr.json`, `MfaFlowViewModel.kt:176-185` |
+| M10 | GitHub PAT "VPS" expires ~2026-04-17 | Token expiring — needs regeneration | `github.com/settings/tokens/3758051420/regenerate` |
+| M11 | SMS OTP setup needed | Twilio coded but no credentials; Netgsm is cheapest Turkey-local option | `TwilioSmsService.java`, `setup-twilio.sh` |
+| M12 | Email OTP setup needed | SMTP provider needed; check Hostinger email plans | Identity Core API mail config |
+
+### P2 — UX and Polish
+
+| ID | Issue | Description |
+|----|-------|-------------|
+| M13 | Redirect-based auth flow | Currently only widget/iframe; add standard OAuth redirect flow |
+| M14 | demo.fivucsas.com doesn't match bys.marmara.edu.tr | Copy BYS HTML/CSS to make demo feel real |
+| M15 | fivucsas.com broken links and missing content | Missing team, supervisor, broken links, poor marketing |
+| M16 | PWA app needed | Add manifest.json, service worker, offline, install prompt |
+| M17 | SEO audit needed | Meta tags, structured data, sitemap, robots.txt, Open Graph |
+| M18 | Polish all domains UX and visuals | Consistent branding, mobile-responsive, loading states, error pages |
+
+### P3 — Planning and Research
+
+| ID | Issue | Description |
+|----|-------|-------------|
+| M19 | Google Ads, Analytics plan | Plan what tracking goes where across all sites |
+| M20 | GitHub repos still messy | Clean, organize, polish docs, archive unused |
+| M21 | Research competitor features | Auth0, Keycloak, FusionAuth — what users want most |
+| M22 | Buy hardware security key | Cheapest FIDO2 key for WebAuthn testing |
+| M23 | Buy external fingerprint reader | USB scanner for desktop fingerprint testing |
+
+### QR Code Issues (Needs Testing)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| QR web↔mobile sync | Needs testing | Backend flow exists (Redis sessions, 5-min TTL, approve/poll). Need to test full flow with mobile scanning web QR |
+| Console 403 spam | Fix needed | audit-logs endpoint called repeatedly by non-admin; hide/gracefully handle |
+| CSP console noise | Fix needed | BlazeFace falls back to MediaPipe (works), but console errors are noisy |
 
 ---
 

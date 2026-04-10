@@ -76,6 +76,8 @@ function App() {
               <a href="#architecture" className="text-slate-300 hover:text-white transition-colors">Architecture</a>
               <a href="#team" className="text-slate-300 hover:text-white transition-colors">Team</a>
               <a href="#contact" className="text-slate-300 hover:text-white transition-colors">Contact</a>
+              <a href="https://demo.fivucsas.com" target="_blank" rel="noopener" className="text-slate-300 hover:text-white transition-colors">Demo</a>
+              <a href="https://status.fivucsas.com" target="_blank" rel="noopener" className="text-slate-300 hover:text-white transition-colors">Status</a>
               <a
                 href="https://app.fivucsas.com"
                 className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 transition-colors"
@@ -162,8 +164,18 @@ function App() {
                 Try Admin Dashboard
               </a>
               <a
-                href="https://github.com/Rollingcat-Software/FIVUCSAS"
+                href="https://demo.fivucsas.com"
+                target="_blank"
+                rel="noopener"
                 className="px-8 py-4 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 font-semibold transition-all"
+              >
+                Live Demo
+              </a>
+              <a
+                href="https://github.com/Rollingcat-Software/FIVUCSAS"
+                target="_blank"
+                rel="noopener"
+                className="px-8 py-4 rounded-xl bg-slate-700/20 hover:bg-slate-700/40 border border-slate-700 font-semibold transition-all text-slate-300"
               >
                 View on GitHub
               </a>
@@ -468,7 +480,7 @@ function App() {
             viewport={{ once: true }}
           >
             <p className="text-slate-400">
-              <strong>Supervisor:</strong> Marmara University Faculty
+              <strong>Supervisor:</strong> Assoc. Prof. Dr. Mustafa Ağaoğlu
             </p>
             <p className="text-sm text-slate-500 mt-2">
               CSE4297/CSE4197 Engineering Project - 2025-2026
@@ -544,15 +556,11 @@ function App() {
             </div>
 
             <div className="flex items-center gap-6 text-sm text-slate-400">
-              <a href="https://app.fivucsas.com" className="hover:text-white transition-colors">
-                Admin Dashboard
-              </a>
-              <a href="https://api.fivucsas.com/swagger-ui.html" className="hover:text-white transition-colors">
-                API Docs
-              </a>
-              <a href="https://github.com/Rollingcat-Software/FIVUCSAS" className="hover:text-white transition-colors">
-                GitHub
-              </a>
+              <a href="https://app.fivucsas.com" className="hover:text-white transition-colors">Dashboard</a>
+              <a href="https://demo.fivucsas.com" className="hover:text-white transition-colors">Demo</a>
+              <a href="https://status.fivucsas.com" className="hover:text-white transition-colors">Status</a>
+              <a href="https://api.fivucsas.com/swagger-ui.html" className="hover:text-white transition-colors">API Docs</a>
+              <a href="https://github.com/Rollingcat-Software/FIVUCSAS" className="hover:text-white transition-colors">GitHub</a>
             </div>
 
             <p className="text-sm text-slate-500">

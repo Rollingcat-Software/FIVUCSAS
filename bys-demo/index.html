@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Ogrenci Bilgi Sistemi | FIVUCSAS Demo</title>
-    <meta name="description" content="FIVUCSAS biyometrik kimlik dogrulama entegrasyonunu gosteren ornek universite ogrenci bilgi sistemi (BYS). OAuth 2.0 widget akisini deneyin.">
+    <meta name="description" content="Marmara Üniversitesi BYS Demo — FIVUCSAS biyometrik kimlik doğrulama entegrasyonu örneği.">
+    <meta name="robots" content="noindex, nofollow">
     <meta property="og:title" content="Marmara BYS - FIVUCSAS Entegrasyon Demosu">
     <meta property="og:description" content="FIVUCSAS biyometrik kimlik dogrulama platformunun bir universite BYS'ye nasil entegre edildigini gosteren canli demo.">
     <meta property="og:type" content="website">
@@ -20,49 +21,103 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23c8a84e' font-size='18' font-weight='900'>M</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%238B0000'/><text x='16' y='22' text-anchor='middle' fill='%23ffffff' font-size='18' font-weight='900'>M</text></svg>">
 </head>
 <body class="login-page">
 
-<!-- Top Navbar -->
-<nav class="top-navbar">
-    <div class="top-navbar-inner">
-        <a href="index.html" class="top-navbar-brand">
-            <div class="mu-logo-sm">
-                <svg viewBox="0 0 44 44" width="38" height="38">
+<!-- Top Utility Bar -->
+<div class="utility-bar">
+    <div class="utility-bar-inner">
+        <div class="utility-bar-left">
+            <span>T.C. Marmara Universitesi</span>
+        </div>
+        <div class="utility-bar-right">
+            <a href="#" onclick="return false;">Iletisim</a>
+            <span class="util-sep">|</span>
+            <a href="#" onclick="return false;">Site Haritasi</a>
+            <span class="util-sep">|</span>
+            <a href="#" onclick="return false;" class="lang-link">EN</a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Header -->
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="index.html" class="header-brand">
+            <div class="mu-crest-sm">
+                <svg viewBox="0 0 44 44" width="52" height="52">
                     <defs>
-                        <linearGradient id="crestGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#004080"/>
-                            <stop offset="100%" stop-color="#002244"/>
+                        <linearGradient id="crestGradSm" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8B0000"/>
+                            <stop offset="100%" stop-color="#5c0000"/>
                         </linearGradient>
                     </defs>
-                    <circle cx="22" cy="22" r="21" fill="url(#crestGrad)" stroke="#c8a84e" stroke-width="1.5"/>
-                    <circle cx="22" cy="22" r="17" fill="none" stroke="#c8a84e" stroke-width="0.5" opacity="0.5"/>
-                    <text x="22" y="15" text-anchor="middle" fill="#c8a84e" font-size="6.5" font-weight="700" font-family="serif" letter-spacing="0.5">MARMARA</text>
-                    <text x="22" y="30" text-anchor="middle" fill="#fff" font-size="16" font-weight="900" font-family="serif">M</text>
-                    <text x="22" y="39" text-anchor="middle" fill="#c8a84e" font-size="5" font-weight="600" font-family="serif">1883</text>
+                    <circle cx="22" cy="22" r="21" fill="url(#crestGradSm)" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="22" cy="22" r="17" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.4"/>
+                    <text x="22" y="14" text-anchor="middle" fill="#ffffff" font-size="5.5" font-weight="700" font-family="serif" letter-spacing="0.5">MARMARA</text>
+                    <text x="22" y="30" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="900" font-family="serif">M</text>
+                    <text x="22" y="39" text-anchor="middle" fill="#ffffff" font-size="4.5" font-weight="600" font-family="serif" letter-spacing="2">1883</text>
                 </svg>
             </div>
-            <div class="top-navbar-text">
-                <span class="top-navbar-title">Marmara Universitesi</span>
-                <span class="top-navbar-subtitle">Ogrenci Bilgi Sistemi</span>
+            <div class="header-brand-text">
+                <div class="header-brand-title">T.C. Marmara Universitesi</div>
+                <div class="header-brand-subtitle">Ogrenci Bilgi Sistemi (BYS)</div>
             </div>
         </a>
-        <div class="top-navbar-links">
-            <a href="#" class="top-nav-link" onclick="return false;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-                Destek
-            </a>
-            <a href="#" class="top-nav-link" onclick="return false;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                SSS
-            </a>
-            <span class="top-nav-separator">|</span>
-            <a href="#" class="top-nav-link lang-toggle" onclick="return false;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                English
-            </a>
+        <div class="header-right">
+            <div class="header-contact-line">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                0216 777 00 00
+            </div>
+            <div class="header-contact-line">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                bilgisistem@marmara.edu.tr
+            </div>
         </div>
+    </div>
+</header>
+
+<!-- Navigation Bar -->
+<nav class="bys-navbar">
+    <div class="bys-navbar-inner">
+        <ul class="bys-nav-list">
+            <li class="bys-nav-item active"><a href="index.html">Ana Sayfa</a></li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Ogrenci Isleri <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Kayit Yenileme</a></li>
+                    <li><a href="#" onclick="return false;">Ders Secimi</a></li>
+                    <li><a href="#" onclick="return false;">Mezuniyet Basvurusu</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Notlar <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Not Goruntuleme</a></li>
+                    <li><a href="#" onclick="return false;">Not Itiraz</a></li>
+                    <li><a href="#" onclick="return false;">Transkript</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Ders Programi <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Haftalik Program</a></li>
+                    <li><a href="#" onclick="return false;">Sinav Tarihleri</a></li>
+                    <li><a href="#" onclick="return false;">Devamsizlik</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Belgeler <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Ogrenci Belgesi</a></li>
+                    <li><a href="#" onclick="return false;">Burs Belgesi</a></li>
+                    <li><a href="#" onclick="return false;">Gecici Mezuniyet</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item"><a href="#" onclick="return false;">Duyurular</a></li>
+            <li class="bys-nav-item"><a href="#" onclick="return false;">Iletisim</a></li>
+        </ul>
     </div>
 </nav>
 
@@ -76,27 +131,26 @@
                 <svg viewBox="0 0 120 120" width="96" height="96">
                     <defs>
                         <linearGradient id="bigCrestGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#004080"/>
-                            <stop offset="100%" stop-color="#001a33"/>
+                            <stop offset="0%" stop-color="#8B0000"/>
+                            <stop offset="100%" stop-color="#4a0000"/>
                         </linearGradient>
                         <filter id="crestShadow" x="-10%" y="-10%" width="120%" height="120%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00336640"/>
+                            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#8B000040"/>
                         </filter>
                     </defs>
-                    <circle cx="60" cy="60" r="56" fill="url(#bigCrestGrad)" stroke="#c8a84e" stroke-width="2.5" filter="url(#crestShadow)"/>
-                    <circle cx="60" cy="60" r="48" fill="none" stroke="#c8a84e" stroke-width="0.7" opacity="0.4"/>
-                    <circle cx="60" cy="60" r="44" fill="none" stroke="#c8a84e" stroke-width="0.3" opacity="0.25"/>
-                    <!-- Decorative arcs -->
-                    <path d="M 20 60 A 40 40 0 0 1 100 60" fill="none" stroke="#c8a84e" stroke-width="0.4" opacity="0.2"/>
-                    <text x="60" y="32" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="2">MARMARA</text>
-                    <text x="60" y="44" text-anchor="middle" fill="#c8a84e" font-size="7" font-weight="500" font-family="'Times New Roman',serif" letter-spacing="1">UNIVERSITESI</text>
+                    <circle cx="60" cy="60" r="56" fill="url(#bigCrestGrad)" stroke="#ffffff" stroke-width="2.5" filter="url(#crestShadow)"/>
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="#ffffff" stroke-width="0.7" opacity="0.4"/>
+                    <circle cx="60" cy="60" r="44" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.25"/>
+                    <path d="M 20 60 A 40 40 0 0 1 100 60" fill="none" stroke="#ffffff" stroke-width="0.4" opacity="0.2"/>
+                    <text x="60" y="32" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="2">MARMARA</text>
+                    <text x="60" y="44" text-anchor="middle" fill="#ffffff" font-size="7" font-weight="500" font-family="'Times New Roman',serif" letter-spacing="1">UNIVERSITESI</text>
                     <text x="60" y="74" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="900" font-family="'Times New Roman',serif">M</text>
-                    <line x1="38" y1="84" x2="82" y2="84" stroke="#c8a84e" stroke-width="0.8" opacity="0.5"/>
-                    <text x="60" y="95" text-anchor="middle" fill="#c8a84e" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="3">1883</text>
+                    <line x1="38" y1="84" x2="82" y2="84" stroke="#ffffff" stroke-width="0.8" opacity="0.5"/>
+                    <text x="60" y="95" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="3">1883</text>
                 </svg>
             </div>
             <h1 class="bys-title">Ogrenci Bilgi Sistemi</h1>
-            <p class="bys-subtitle">Marmara Universitesi &mdash; BYS</p>
+            <p class="bys-subtitle">T.C. Marmara Universitesi &mdash; BYS Giris Portali</p>
         </div>
 
         <!-- Login Card -->
@@ -146,7 +200,7 @@
 
                 <button type="submit" class="btn-giris" disabled>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-5-4l5-5-5-5m5 5H3"/></svg>
-                    Giris
+                    Giris Yap
                 </button>
             </form>
 
@@ -181,7 +235,7 @@
                     </svg>
                 </span>
                 <div class="fivucsas-btn-text">
-                    <div class="fivucsas-btn-label">FIVUCSAS ile Giris</div>
+                    <div class="fivucsas-btn-label">FIVUCSAS ile Guvenli Giris</div>
                     <div class="fivucsas-btn-sub">Biyometrik Kimlik Dogrulama</div>
                 </div>
                 <svg class="fivucsas-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
@@ -199,13 +253,23 @@
     </div>
     <div>
         <strong>Demonstrasyon Sayfasi</strong> &mdash; Bu sayfa, FIVUCSAS biyometrik kimlik dogrulamanin bir universite BYS'ye nasil entegre edildigini gostermektedir.
-        Geleneksel giris ve e-Devlet bu demoda devre disidir. <strong>&ldquo;FIVUCSAS ile Giris&rdquo;</strong> butonunu kullanarak OAuth widget akisini deneyebilirsiniz.
+        Geleneksel giris ve e-Devlet bu demoda devre disidir. <strong>&ldquo;FIVUCSAS ile Guvenli Giris&rdquo;</strong> butonunu kullanarak OAuth widget akisini deneyebilirsiniz.
     </div>
 </div>
 
 <!-- Footer -->
 <footer class="page-footer">
-    <p>&copy; 2026 Marmara Universitesi &mdash; Bilgi Islem Daire Baskanligi (Demo)</p>
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="#" onclick="return false;">Gizlilik Politikasi</a>
+            <span>|</span>
+            <a href="#" onclick="return false;">Erisebilirlik</a>
+            <span>|</span>
+            <a href="#" onclick="return false;">Yardim</a>
+        </div>
+        <p>&copy; 2026 T.C. Marmara Universitesi &mdash; Bilgi Islem Daire Baskanligi</p>
+        <p class="footer-demo-note">Bu bir FIVUCSAS entegrasyon demosudur. <a href="https://fivucsas.com" target="_blank" rel="noopener">fivucsas.com</a></p>
+    </div>
 </footer>
 
 <!-- FIVUCSAS Official Auth SDK -->
