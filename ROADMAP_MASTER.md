@@ -5,7 +5,7 @@
 **Course**: CSE4297/CSE4197 Engineering Project
 **Author**: Ahmet Abdullah Gultekin
 **Last Updated**: 2026-04-10
-**Overall Completion**: 90% (23 mobile QA issues found)
+**Overall Completion**: 93% (23 mobile QA issues found, 15 fixed)
 
 ---
 
@@ -209,74 +209,86 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 
 ### P0 — Critical Bugs (Blocking core auth flows)
 
-| ID | Issue | Root Cause | Files |
-|----|-------|-----------|-------|
-| M1 | Face login fails — camera shows solid color box | `srcObject` assignment fails silently; canvas context null returns silently; no error feedback; background `#1e293b` shown | `FaceCaptureStep.tsx:96-99,145,153`, `FaceEnrollmentFlow.tsx:57-58` |
-| M2 | Face login can't capture photo | Same root cause as M1 — video stream not playing, canvas draw fails | Same as M1 |
-| M3 | Enrolled methods (fingerprint, TOTP) shown as "not enrolled" | `AUTO_COMPLETE_TYPES` only has PASSWORD, EMAIL_OTP, QR_CODE; FINGERPRINT/HARDWARE_KEY stay PENDING | `EnrollmentHealthService.java:44-48`, `EnrollmentPage.tsx:781-786` |
-| M4 | Fingerprint registered but unusable in login | Same as M3 — status PENDING, frontend checks `status===ENROLLED` | `EnrollmentPage.tsx:316-322` |
-| M5 | Mobile app hangs on "multi factor auth..." forever | No timeout on `verifyMfaStep()` API call; Verifying state persists if API hangs | `MfaFlowViewModel.kt:84-139`, `MfaFlowScreen.kt:132-139` |
-| M6 | CSP blocks BlazeFace + bio.fivucsas.com DNS fails + audit-log 403 spam | `tfhub.dev` not in CSP connect-src; bio subdomain has no public route; non-admin triggers 403 loop | `vite.config.ts:56`, `.htaccess:29`, `BiometricService.ts:55` |
+| ID | Issue | Root Cause | Status | Fix |
+|----|-------|-----------|--------|-----|
+| M1 | Face login fails — camera shows solid color box | `srcObject` fails silently; canvas null returns silently; no error feedback | ✅ FIXED | try-catch on srcObject/play, canvas ctx error surfaces to user (`9676f63`) |
+| M2 | Face login can't capture photo | Same root cause as M1 | ✅ FIXED | Same fix as M1 |
+| M3 | Enrolled methods (fingerprint, TOTP) shown as "not enrolled" | `AUTO_COMPLETE_TYPES` missing FINGERPRINT/HARDWARE_KEY | ✅ FIXED | WebAuthn auto-complete in DeviceController + frontend PUT complete (`8042de1`) |
+| M4 | Fingerprint registered but unusable in login | Same as M3 — status PENDING | ✅ FIXED | Same fix as M3 |
+| M5 | Mobile app hangs on "multi factor auth..." forever | No timeout on `verifyMfaStep()` | ✅ FIXED | `withTimeoutOrNull(30s)` + Error state + retry (`c4995ef`) |
+| M6 | CSP blocks BlazeFace + bio.fivucsas.com DNS fails + audit-log 403 spam | `tfhub.dev` not in CSP; bio has no route; non-admin 403 loop | ✅ FIXED | tfhub.dev in CSP, Traefik route for bio, 403 handled gracefully (`9676f63`, infra) |
 
 ### P1 — Important Fixes
 
-| ID | Issue | Root Cause | Files |
-|----|-------|-----------|-------|
-| M7 | Voice enrollment issues | No speech validation (only amplitude>0.05); hardcoded English error; no min duration check | `VoiceEnrollmentFlow.tsx:196-287,230`, `VoiceStep.tsx:97-99` |
-| M8 | MFA allows same method for both steps | `MfaSession.addCompletedMethod()` appends without uniqueness check; frontend shows all enrolled methods | `MfaSession.java:98-106`, `AuthController.java:727-730`, `MethodPickerStep.tsx` |
-| M9 | Bad error messages + English shown in Turkish mode | Missing i18n keys (networkError, faceDetectionFailed, timeoutError); mobile uses hardcoded English error mapping | `en.json`, `tr.json`, `MfaFlowViewModel.kt:176-185` |
-| M10 | GitHub PAT "VPS" expires ~2026-04-17 | Token expiring — needs regeneration | `github.com/settings/tokens/3758051420/regenerate` |
-| M11 | SMS OTP setup needed | Twilio coded but no credentials; Netgsm is cheapest Turkey-local option | `TwilioSmsService.java`, `setup-twilio.sh` |
-| M12 | Email OTP setup needed | SMTP provider needed; check Hostinger email plans | Identity Core API mail config |
+| ID | Issue | Root Cause | Status | Fix |
+|----|-------|-----------|--------|-----|
+| M7 | Voice enrollment issues | No speech validation; hardcoded English error | ✅ FIXED | `t('mfa.voice.noVoiceDetected')` + EN+TR i18n keys (`9676f63`) |
+| M8 | MFA allows same method for both steps | No uniqueness check in `addCompletedMethod()` | ✅ FIXED | Backend HTTP 400 + frontend excludeMethods + mobile usedMethods set (`8042de1`, `9676f63`, `c4995ef`) |
+| M9 | Bad error messages + English in Turkish mode | Missing i18n keys; hardcoded English in mobile | ✅ FIXED | 5 `mfa.errors.*` keys EN+TR; mobile StringKey resources (`9676f63`, `c4995ef`) |
+| M10 | GitHub PAT "VPS" expires ~2026-04-17 | Token expiring | ✅ FIXED | Regenerated — expires 2026-05-10 |
+| M11 | SMS OTP setup needed | Netgsm requires company (blocked); Twilio Verify used instead | 🟡 PARTIAL | TwilioVerifySmsService coded (`e335ba7`); awaiting Auth Token to activate |
+| M12 | Email OTP setup needed | SMTP provider needed | ✅ DONE | Already live — Hostinger SMTP `info@fivucsas.com` |
 
 ### P2 — UX and Polish
 
-| ID | Issue | Description |
-|----|-------|-------------|
-| M13 | Redirect-based auth flow | Currently only widget/iframe; add standard OAuth redirect flow |
-| M14 | demo.fivucsas.com doesn't match bys.marmara.edu.tr | Copy BYS HTML/CSS to make demo feel real |
-| M15 | fivucsas.com broken links and missing content | Missing team, supervisor, broken links, poor marketing |
-| M16 | PWA app needed | Add manifest.json, service worker, offline, install prompt |
-| M17 | SEO audit needed | Meta tags, structured data, sitemap, robots.txt, Open Graph |
-| M18 | Polish all domains UX and visuals | Consistent branding, mobile-responsive, loading states, error pages |
+| ID | Issue | Status | Fix |
+|----|-------|--------|-----|
+| M13 | Redirect-based auth flow | 🔵 PLANNED | Future work — standard OAuth redirect alongside widget |
+| M14 | demo.fivucsas.com doesn't match bys.marmara.edu.tr | ✅ DONE | Full Marmara University portal design (red/dark, navigation, CAPTCHA, e-Devlet) |
+| M15 | fivucsas.com broken links and missing content | ✅ FIXED | Supervisor (Assoc. Prof. Dr. Mustafa Ağaoğlu), Demo/Status nav links, hero CTA |
+| M16 | PWA app needed | ✅ DONE | vite-plugin-pwa with workbox, manifest, offline, service worker |
+| M17 | SEO audit needed | ✅ DONE | Meta tags, OG tags, robots.txt, sitemap.xml, canonical for all sites |
+| M18 | Polish all domains UX and visuals | 🔵 ONGOING | Continuous improvement |
 
 ### P3 — Planning and Research
 
-| ID | Issue | Description |
-|----|-------|-------------|
-| M19 | Google Ads, Analytics plan | Plan what tracking goes where across all sites |
-| M20 | GitHub repos still messy | Clean, organize, polish docs, archive unused |
-| M21 | Research competitor features | Auth0, Keycloak, FusionAuth — what users want most |
-| M22 | Buy hardware security key | Cheapest FIDO2 key for WebAuthn testing |
-| M23 | Buy external fingerprint reader | USB scanner for desktop fingerprint testing |
+| ID | Issue | Status | Notes |
+|----|-------|--------|-------|
+| M19 | Google Ads, Analytics plan | ✅ DONE | `docs/ANALYTICS_PLAN.md` created. Search Console TXT already in DNS. GA4 setup documented. Cookie consent banner HTML ready. |
+| M20 | GitHub repos still messy | ✅ DONE | All 8 repos tagged with descriptions + `fivucsas` topic (Session 2026-04-05). |
+| M21 | Research competitor features | 📋 PLANNED | Auth0, Keycloak, FusionAuth feature comparison — phase 9 / post-graduation |
+| M22 | Buy hardware security key | 📋 PLANNED | SoloKey or YubiKey ~$20-25 AliExpress — needed for real WebAuthn hardware key testing |
+| M23 | Buy external fingerprint reader | 📋 PLANNED | USB fingerprint scanner for desktop platform authenticator testing |
 
 ### QR Code Issues (Needs Testing)
 
 | Item | Status | Notes |
 |------|--------|-------|
-| QR web↔mobile sync | Needs testing | Backend flow exists (Redis sessions, 5-min TTL, approve/poll). Need to test full flow with mobile scanning web QR |
-| Console 403 spam | Fix needed | audit-logs endpoint called repeatedly by non-admin; hide/gracefully handle |
-| CSP console noise | Fix needed | BlazeFace falls back to MediaPipe (works), but console errors are noisy |
+| QR web↔mobile sync | 📋 NEEDS TESTING | Backend flow exists (Redis sessions, 5-min TTL, approve/poll). Need to test full flow with mobile scanning web QR |
+| Console 403 spam | ✅ FIXED | AuditLogRepository returns empty paginated result on 403; hook swallows error silently |
+| CSP console noise | ✅ FIXED | `https://tfhub.dev` added to `connect-src` in `vite.config.ts` + `.htaccess` |
 
 ---
 
 ## Future Roadmap
 
-### Phase 5: SMS and Communication (Ready -- ~1 day)
+### Phase 5: SMS and Communication (Awaiting Auth Token)
 
-**Status**: All code built. Only missing Twilio account credentials.
+**Status**: Twilio Verify account created + credited. Code complete. Awaiting Auth Token to activate.
 
-**What exists**: `TwilioSmsService` (adapter), `NoOpSmsService` (dev fallback), `OtpService` (Redis, 5-min TTL), `SmsOtpAuthHandler`, `setup-twilio.sh` script, 9 unit tests.
+**What exists**:
+- `TwilioVerifySmsService` (Twilio Verify API, `@ConditionalOnProperty(sms.provider=twilio-verify)`)
+- `VerifiableSmsService` interface (native code verification, bypasses Redis OTP store)
+- `SmsOtpAuthHandler` updated to use native Twilio Verify check when provider is `twilio-verify`
+- `NoOpSmsService` (dev fallback, currently active on prod)
+- `.env.prod` has `TWILIO_ACCOUNT_SID`, `TWILIO_VERIFY_SERVICE_SID` — only `TWILIO_AUTH_TOKEN` missing
 
-**Activation steps**:
-1. Claim $50 Twilio credit via GitHub Student Developer Pack
-2. Get Account SID, Auth Token, and phone number from Twilio Console
-3. Run `./scripts/setup-twilio.sh` on server (writes to `.env.prod`, restarts container)
-4. Verify SMS delivery end-to-end
+**Twilio Account**:
+- Account SID: stored in `.env.prod` (never commit)
+- Verify Service SID: stored in `.env.prod` (never commit)
+- Friendly Name: `FIVUCSAS`
+- Phone tested: OTP delivered and verified ✅
 
-**Future option**: Netgsm for Turkey-local SMS (cheaper for domestic numbers).
+**Activation steps** (one command when Auth Token is ready):
+```bash
+# On server:
+cd /opt/projects/fivucsas/identity-core-api
+sed -i 's/SMS_PROVIDER=noop/SMS_PROVIDER=twilio-verify/' .env.prod
+sed -i 's/TWILIO_AUTH_TOKEN=REPLACE_WITH_YOUR_AUTH_TOKEN/TWILIO_AUTH_TOKEN=<actual_token>/' .env.prod
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d identity-core-api
+```
 
-**Effort**: 1 day | **Risk**: Low | **Dependencies**: Twilio account only
+**Effort**: 10 min | **Risk**: Low | **Blocker**: Auth Token (get from Twilio Console → Account Info → Auth Token)
 
 ---
 
