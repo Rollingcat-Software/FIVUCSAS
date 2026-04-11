@@ -82,7 +82,7 @@ FIVUCSAS/                    # Parent repo (submodules)
 ├── landing-website/         # Landing page → Hostinger
 ├── practice-and-test/       # R&D experiments
 ├── scripts/                 # Deploy scripts, setup-twilio.sh
-└── ROADMAP_MASTER.md        # Single source of truth roadmap
+└── ROADMAP.md               # Product roadmap
 ```
 
 ## Auth Methods (10)

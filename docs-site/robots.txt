@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /biometric/openapi.json
-
-Sitemap: https://docs.fivucsas.com/sitemap.xml

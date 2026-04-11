@@ -1,5 +1,3 @@
-> **DEPRECATED** -- This document has been superseded by `ROADMAP_MASTER.md`, which is the single source of truth for the FIVUCSAS project roadmap. This file is kept for historical reference only.
-
 # FIVUCSAS - Product Roadmap
 
 > Last updated: 2026-03-28

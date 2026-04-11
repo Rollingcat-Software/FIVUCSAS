@@ -43,6 +43,5 @@ nul
 /archive/
 /_backup_before_submodules/
 
-# Claude Code
-.claude/settings.local.json
-.claude/worktrees/
+# Claude metadata
+.claude/
