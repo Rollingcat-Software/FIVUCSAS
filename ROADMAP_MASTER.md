@@ -4,8 +4,8 @@
 **Organization**: Marmara University -- Computer Engineering Department
 **Course**: CSE4297/CSE4197 Engineering Project
 **Author**: Ahmet Abdullah Gultekin
-**Last Updated**: 2026-04-10
-**Overall Completion**: 93% (23 mobile QA issues found, 15 fixed)
+**Last Updated**: 2026-04-11
+**Overall Completion**: 95% (23 mobile QA issues + 13 session fixes, i18n complete, NFC/WebAuthn/audit fixed)
 
 ---
 
@@ -249,6 +249,30 @@ Built a configurable verification pipeline transforming FIVUCSAS from authentica
 | M21 | Research competitor features | 📋 PLANNED | Auth0, Keycloak, FusionAuth feature comparison — phase 9 / post-graduation |
 | M22 | Buy hardware security key | 📋 PLANNED | SoloKey or YubiKey ~$20-25 AliExpress — needed for real WebAuthn hardware key testing |
 | M23 | Buy external fingerprint reader | 📋 PLANNED | USB fingerprint scanner for desktop platform authenticator testing |
+
+### Session 2026-04-11 Fixes
+
+| ID | Issue | Status | Notes |
+|----|-------|--------|-------|
+| S1 | Base64 encoding mismatch killed ALL WebAuthn | ✅ FIXED | Frontend `btoa()` = standard base64, Java used URL-safe decoder. Added `decodeBase64()` normalizer. |
+| S2 | 7 MFA auth method field mismatches | ✅ FIXED | Session path handlers now accept both old/new field names (B1-B6). |
+| S3 | Face MFA camera race condition | ✅ FIXED | Stream-attach useEffect + auto-start on mount. |
+| S4 | NFC auto-enrollment missing user_enrollments | ✅ FIXED | NfcController creates enrollment record. NFC_DOCUMENT in AUTO_COMPLETE_TYPES. |
+| S5 | Enrollment page 30+ hardcoded English strings | ✅ FIXED | All METHOD_CONFIGS, METHOD_LABELS, buttons, status chips, snackbar messages use t() i18n. |
+| S6 | Sidebar "Kendi Kaydı" bad Turkish | ✅ FIXED | Changed to "Kimlik Kaydı" (Identity Enrollment). |
+| S7 | NFC MFA verification cross-tenant bug | ✅ FIXED | `findByCardSerialAndUserIdAndIsActiveTrue()` — queries by serial + user + active. |
+| S8 | NFC revoke didn't clean up nfc_cards | ✅ FIXED | `cleanupMethodData()` deactivates NFC cards, deletes WebAuthn credentials on revoke. |
+| S9 | Audit logs lack method/IP/userAgent detail | ✅ FIXED | `resolveFailureReason()`, `getClientIP()`, 5 new AuditLogPort methods with DB persistence. |
+| S10 | NFC cards list missing from UI | ✅ FIXED | Collapsible section on enrollment page showing all NFC cards with deactivate button. |
+| S11 | Marmara 2FA not choice-based | ✅ FIXED | "Marmara Adaptive Login" (PASSWORD + CHOICE of 9 methods) set as default; old flow deactivated. |
+| S12 | Email OTP not arriving | ⏳ BLOCKED | SMTP works, but fivucsas.com has no SPF/DKIM/DMARC DNS at TurkTicaret. Emails silently dropped. |
+| S13 | TurkTicaret DNS config for email | 📋 TODO | Add SPF, DKIM, DMARC records at TurkTicaret nameservers for fivucsas.com domain email. |
+| S14 | NFC re-enrollment 500 error | ✅ FIXED | Unique constraint on (card_serial, tenant_id). NfcController now reactivates existing inactive card instead of INSERT. |
+| S15 | NFC enrollment dialog hardcoded English | ✅ FIXED | 25+ strings replaced with t() i18n (EN+TR). |
+| S16 | Breadcrumb/title mismatch | ✅ FIXED | BREADCRUMB_I18N_MAP with t() calls. All nav keys in en.json + tr.json. |
+| S17 | Marmara 3-step 2FA | ✅ FIXED | PASSWORD → CHOICE (9 methods) → CHOICE (9 methods, different from step 2). |
+| S18 | Entity state unprofessional | ✅ FIXED | V32 migration: NfcCard + OAuth2Client + VerificationDocument get revokedAt/expiresAt/verifiedAt timestamps. User isActive synced from status enum. |
+| S19 | Raw error messages in UI (~30 files) | ✅ FIXED | Centralized `formatApiError()` utility maps HTTP status to i18n messages. ErrorBoundary no longer shows stack traces. |
 
 ### QR Code Issues (Needs Testing)
 
