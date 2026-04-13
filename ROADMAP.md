@@ -1,6 +1,6 @@
 # FIVUCSAS - Product Roadmap
 
-> Last updated: 2026-03-28
+> Last updated: 2026-04-13
 
 ## Project Status Summary
 
@@ -187,10 +187,10 @@
 
 ### 6.1 Code Quality
 - [ ] Remove fingerprint/voice stubs after WebAuthn decision
-- [ ] Fix UserController.getAllUsers() pagination (in-memory -> DB query)
+- [x] Fix UserController.getAllUsers() pagination (in-memory -> DB query) ✅ verified 2026-04-13
 - [x] Connect TotpController to frontend enrollment
 - [x] Connect QrCodeController to frontend
-- [ ] Connect EnrollmentManagementController to frontend
+- [x] Connect EnrollmentManagementController to frontend ✅ verified 2026-04-13 (EnrollmentRepository.ts)
 
 ### 6.2 Documentation
 - [ ] API documentation for auth endpoints
@@ -216,7 +216,7 @@ Architecture: "Stripe Elements for Biometrics" — iframe-isolated biometric cap
 - [x] Extract MultiStepAuthFlow + 10 steps + biometric engine into standalone verify-app
 - [x] WidgetDemoPage (/widget-demo) polished with live preview
 - [x] Deploy to verify.fivucsas.com ✅
-- [ ] Implement postMessage bridge in verify-app (emit ready, step-change, complete, error, resize events to parent SDK)
+- [x] Implement postMessage bridge in verify-app (emit ready, step-change, complete, error, resize events to parent SDK) ✅ 2026-04-13
 
 ### 7.2 Build @fivucsas/auth-js SDK ✅ DONE
 - [x] SDK module created (src/features/auth/components/sdk/)
@@ -290,5 +290,5 @@ Platform authenticators (Windows Hello, Touch ID, Android biometrics) cover fing
 | Phase 4: Deployment | March-April 2026 | In Progress |
 | Phase 5: Mobile | April 2026 | In Progress (75%) |
 | Phase 6: Polish | April 2026 | In Progress |
-| Phase 7: Embeddable Auth Widget | March 2026 | In Progress (~75%) |
+| Phase 7: Embeddable Auth Widget | March 2026 | In Progress (~90%) |
 | Final Presentation | Spring 2026 | Scheduled |
