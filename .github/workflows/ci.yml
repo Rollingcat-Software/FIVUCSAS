@@ -28,10 +28,12 @@ jobs:
 
       - name: Validate Docker Compose configs
         run: |
-          docker compose -f docker-compose.yml config --quiet 2>&1 || true
-          docker compose -f docker-compose.dev.yml config --quiet 2>&1 || true
-          # prod compose depends on submodule build contexts, validate syntax only
-          docker compose -f docker-compose.prod.yml config 2>&1 | grep -v "has neither an image nor a build context" || true
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.dev.yml config --quiet
+          # prod compose references submodule build contexts not present in CI; suppress only that known warning
+          docker compose -f docker-compose.prod.yml config 2>&1 \
+            | grep -v "has neither an image nor a build context" \
+            | (grep -E "^(Error|error)" && exit 1 || exit 0)
 
       - name: Validate NGINX config syntax
         run: |
