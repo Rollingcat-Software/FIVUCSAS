@@ -35,7 +35,7 @@
 |---|--------|---------|----------|---------|--------|
 | 1 | Password | OK | OK | N/A | PRODUCTION |
 | 2 | Email OTP | OK | OK | N/A | PRODUCTION |
-| 3 | SMS OTP | OK | OK | N/A | PRODUCTION (needs Twilio) |
+| 3 | SMS OTP | OK | OK | Twilio | PRODUCTION ✅ |
 | 4 | TOTP | OK | OK | N/A | PRODUCTION |
 | 5 | Face | OK | OK | DeepFace | PRODUCTION |
 | 6 | QR Code | OK | OK | N/A | PRODUCTION |
@@ -56,7 +56,7 @@
 - [x] Flow: register -> credentials.create() -> verify-registration
 - [x] Add enrollment in Settings page
 - [x] Server challenge flow added, frontend wired
-- [ ] Test with YubiKey, Windows Hello, Touch ID
+- [ ] Test with YubiKey — awaiting hardware purchase (see procurement section below)
 
 ### 2.3 Fingerprint Auth (Decision: Use WebAuthn) ✅ DONE
 - [x] Refactor FingerprintAuthHandler to use WebAuthn
@@ -153,10 +153,10 @@
 - [ ] Verify all services healthy
 
 ### 4.4 Real Email/SMS OTP Delivery
-- [ ] Configure SMTP credentials for email OTP (SendGrid / AWS SES / direct SMTP)
-- [ ] Configure SMS gateway credentials (Twilio — TwilioSmsService already implemented)
+- [ ] Configure SMTP credentials for email OTP (SendGrid / AWS SES / direct SMTP) — DNS pending
 - [ ] Test email OTP flow end-to-end
-- [ ] Test SMS OTP flow end-to-end
+- [x] SMS gateway: Twilio activated, TwilioSmsService live ✅ 2026-04-13
+- [x] Test SMS OTP flow end-to-end ✅ 2026-04-13
 
 ### 4.5 Web Frontend Sync
 - [ ] Rebuild and deploy web-app dashboard to Hostinger if auth flow UI changed
@@ -215,8 +215,8 @@ Architecture: "Stripe Elements for Biometrics" — iframe-isolated biometric cap
 ### 7.1 Extract verify-app ✅ DONE
 - [x] Extract MultiStepAuthFlow + 10 steps + biometric engine into standalone verify-app
 - [x] WidgetDemoPage (/widget-demo) polished with live preview
-- [ ] Deploy to verify.fivucsas.com
-- [ ] Implement postMessage bridge (ready, step-change, complete, error, resize events)
+- [x] Deploy to verify.fivucsas.com ✅
+- [ ] Implement postMessage bridge in verify-app (emit ready, step-change, complete, error, resize events to parent SDK)
 
 ### 7.2 Build @fivucsas/auth-js SDK ✅ DONE
 - [x] SDK module created (src/features/auth/components/sdk/)
@@ -247,6 +247,25 @@ Architecture: "Stripe Elements for Biometrics" — iframe-isolated biometric cap
 - [ ] web-app uses @fivucsas/auth-react for its own login
 - [ ] client-apps uses WebView + verify-app
 - [ ] Landing page demo with Web Component
+
+---
+
+## Hardware Procurement (Awaiting Purchase)
+
+> Code is production-ready. Physical devices needed only for testing.
+
+### Recommended Devices — Turkey (Best Price/Performance)
+
+| Device | Est. TRY Price | Where to Buy | Use Case |
+|--------|---------------|--------------|----------|
+| **YubiKey Security Key C NFC** | ~2,000–2,500 | Trendyol, Hepsiburada | Hardware Key auth (USB-C + NFC) — best p/p |
+| **YubiKey 5 NFC** | ~3,510 | Trendyol, Hepsiburada | Hardware Key (USB-A, wider compat) |
+| **Token2 T2F2-PIN** | ~2,500–3,100 | token2.com (ships to TR) | Cheapest FIDO2, no NFC |
+
+### Fingerprint
+Platform authenticators (Windows Hello, Touch ID, Android biometrics) cover fingerprint via WebAuthn — no external reader needed. Kensington VeriMark is the only confirmed WebAuthn-compatible USB reader but is scarce and expensive in Turkey (~4,000–6,000 TRY, limited availability).
+
+**Decision: Use built-in platform authenticators for fingerprint. Only buy a YubiKey for hardware key testing.**
 
 ---
 
