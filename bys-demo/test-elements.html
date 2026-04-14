@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIVUCSAS Elements Test</title>
+
+  <!--
+    Load the FIVUCSAS Web Components bundle.
+    For production: use the CDN URL below.
+    For local dev:  swap to the relative path comment.
+  -->
+  <script src="https://verify.fivucsas.com/elements/fivucsas-elements.js"></script>
+  <!-- <script src="../web-app/dist-elements/fivucsas-elements.js"></script> -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #1a1a1a;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 8px; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; color: #333; }
+    p  { margin: 0 0 16px; color: #555; font-size: 14px; }
+    section {
+      margin: 32px 0;
+      padding: 20px 24px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 12px 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin: 12px 0 0;
+      color: #333;
+    }
+    #event-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px 14px;
+      border-radius: 6px;
+      height: 160px;
+      overflow-y: auto;
+      font-size: 12px;
+      font-family: "Cascadia Code", "Fira Code", monospace;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e3f2fd;
+      color: #1565c0;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <h1>FIVUCSAS Web Components <span class="badge">Phase C</span></h1>
+  <p>
+    Vanilla test page for <code>&lt;fivucsas-verify&gt;</code> and
+    <code>&lt;fivucsas-button&gt;</code> custom elements.
+    No framework required — works with any HTML page.
+  </p>
+
+  <!-- ── 1. Sign-In Button ──────────────────────────────────────── -->
+  <section>
+    <h2>&lt;fivucsas-button&gt; — Modal sign-in button</h2>
+    <p>Opens a modal containing the verify widget. Closes automatically on success or cancel.</p>
+
+    <fivucsas-button
+      id="login-btn"
+      tenant-id="marmara"
+      client-id="test-client"
+      redirect-uri="https://demo.fivucsas.com/callback"
+      label="FIVUCSAS ile Giriş Yap"
+      theme="light"
+      lang="tr">
+    </fivucsas-button>
+
+    <pre>&lt;fivucsas-button
+  tenant-id="marmara"
+  client-id="test-client"
+  redirect-uri="https://demo.fivucsas.com/callback"
+  label="FIVUCSAS ile Giriş Yap"
+  theme="light"
+  lang="tr"&gt;
+&lt;/fivucsas-button&gt;</pre>
+  </section>
+
+  <!-- ── 2. Inline Verify Widget ───────────────────────────────── -->
+  <section>
+    <h2>&lt;fivucsas-verify&gt; — Inline embed</h2>
+    <p>Place the verify widget directly in your page without a button/modal.</p>
+
+    <fivucsas-verify
+      id="verify-widget"
+      tenant-id="marmara"
+      client-id="test-client"
+      redirect-uri="https://demo.fivucsas.com/callback"
+      theme="light"
+      lang="tr"
+      width="380px"
+      height="560px">
+    </fivucsas-verify>
+
+    <pre>&lt;fivucsas-verify
+  tenant-id="marmara"
+  client-id="test-client"
+  redirect-uri="https://demo.fivucsas.com/callback"
+  theme="light"
+  lang="tr"
+  width="380px"
+  height="560px"&gt;
+&lt;/fivucsas-verify&gt;</pre>
+  </section>
+
+  <!-- ── 3. Event Log ──────────────────────────────────────────── -->
+  <section>
+    <h2>Event Log</h2>
+    <p>All <code>fivucsas:*</code> events received from the elements above.</p>
+    <div id="event-log"></div>
+  </section>
+
+  <script>
+    const logEl = document.getElementById('event-log');
+    const widget = document.getElementById('verify-widget');
+    const loginBtn = document.getElementById('login-btn');
+
+    function addLog(source, eventName, detail) {
+      const line = document.createElement('div');
+      const time = new Date().toLocaleTimeString('tr-TR');
+      const detailStr = detail !== undefined ? ' → ' + JSON.stringify(detail) : '';
+      line.textContent = '[' + time + '] ' + source + ' ' + eventName + detailStr;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const EVENTS = [
+      'fivucsas:ready',
+      'fivucsas:complete',
+      'fivucsas:error',
+      'fivucsas:step-change',
+      'fivucsas:cancel',
+      'fivucsas:resize',
+    ];
+
+    // Listen on the inline widget
+    EVENTS.forEach(function(evt) {
+      widget.addEventListener(evt, function(e) {
+        addLog('[verify]', evt, e.detail);
+      });
+    });
+
+    // Listen on the button (events bubble up from inner verify)
+    EVENTS.forEach(function(evt) {
+      loginBtn.addEventListener(evt, function(e) {
+        addLog('[button]', evt, e.detail);
+      });
+    });
+
+    addLog('[page]', 'loaded — custom elements registered', null);
+  </script>
+</body>
+</html>
