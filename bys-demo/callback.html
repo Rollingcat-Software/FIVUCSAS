@@ -54,8 +54,9 @@
                 <dl class="token-info" id="token-info"></dl>
 
                 <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
-                    Redirecting to dashboard in <span id="countdown">10</span> seconds...
+                    Redirecting to dashboard in <span id="countdown">5</span> seconds...
                 </p>
+                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;">Continue Now</button>
             </div>
 
             <!-- Error State (hidden initially) -->
@@ -153,7 +154,7 @@
         });
 
         // Countdown redirect
-        var count = 10;
+        var count = 5;
         var countEl = document.getElementById('countdown');
         countEl.textContent = count;
         var timer = setInterval(function() {
@@ -164,6 +165,14 @@
                 window.location.href = 'dashboard.html';
             }
         }, 1000);
+
+        var continueBtn = document.getElementById('continue-now');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', function() {
+                clearInterval(timer);
+                window.location.href = 'dashboard.html';
+            });
+        }
     }
 
     function showError(msg) {
