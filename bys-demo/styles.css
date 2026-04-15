@@ -344,6 +344,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .captcha-image {
@@ -377,7 +378,9 @@ body {
 }
 
 .captcha-input {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 0.65rem 0.75rem;
     border: 1px solid var(--border);
     border-radius: 4px;

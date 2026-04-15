@@ -10,7 +10,7 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
-    Header set Permissions-Policy "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
+    Header set Permissions-Policy 'camera=(self "https://verify.fivucsas.com"), microphone=(self "https://verify.fivucsas.com"), publickey-credentials-get=(self "https://verify.fivucsas.com"), publickey-credentials-create=(self "https://verify.fivucsas.com")'
 </IfModule>
 
 # Cache static assets
