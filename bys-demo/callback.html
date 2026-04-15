@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Authentication | FIVUCSAS Demo</title>
-    <meta name="description" content="FIVUCSAS biyometrik kimlik dogrulama islemi sonucu. OAuth callback sayfasi.">
-    <meta property="og:title" content="Marmara BYS Authentication - FIVUCSAS Demo">
-    <meta property="og:description" content="FIVUCSAS biyometrik kimlik dogrulama islemi sonucu.">
+    <meta name="description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu. OAuth callback sayfası.">
+    <meta property="og:title" content="Marmara BYS Kimlik Doğrulama - FIVUCSAS Demo">
+    <meta property="og:description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://demo.fivucsas.com/callback.html">
     <meta property="og:site_name" content="FIVUCSAS">
     <meta property="og:image" content="https://fivucsas.com/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Marmara BYS Authentication - FIVUCSAS Demo">
-    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik dogrulama islemi sonucu.">
+    <meta name="twitter:title" content="Marmara BYS Kimlik Doğrulama - FIVUCSAS Demo">
+    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu.">
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="styles.css">
@@ -28,8 +28,8 @@
     <a href="index.html" class="navbar-brand">
         <div class="navbar-logo">M</div>
         <div>
-            <div class="navbar-title">Marmara Universitesi</div>
-            <div class="navbar-subtitle">Ogrenci Bilgi Sistemi (BYS)</div>
+            <div class="navbar-title">Marmara Üniversitesi</div>
+            <div class="navbar-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
         </div>
     </a>
 </nav>
@@ -41,30 +41,30 @@
             <!-- Loading State -->
             <div id="loading-state">
                 <div class="spinner"></div>
-                <h2 style="margin-bottom: 0.5rem;">Processing Authentication</h2>
-                <p style="color: var(--text-light);">Verifying your identity with FIVUCSAS...</p>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulanıyor</h2>
+                <p style="color: var(--text-light);">FIVUCSAS ile kimliğiniz doğrulanıyor...</p>
             </div>
 
             <!-- Success State (hidden initially) -->
             <div id="success-state" style="display: none;">
                 <div class="success-icon" style="color: var(--success);">&#x2705;</div>
-                <h2 style="margin-bottom: 0.5rem;">Authentication Successful</h2>
-                <p style="color: var(--text-light); margin-bottom: 1rem;">Identity verified via FIVUCSAS</p>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarılı</h2>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Kimliğiniz FIVUCSAS üzerinden doğrulandı</p>
 
                 <dl class="token-info" id="token-info"></dl>
 
                 <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
-                    Redirecting to dashboard in <span id="countdown">5</span> seconds...
+                    <span id="countdown">5</span> saniye içinde panele yönlendiriliyorsunuz...
                 </p>
-                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;">Continue Now</button>
+                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;">Hemen Devam Et</button>
             </div>
 
             <!-- Error State (hidden initially) -->
             <div id="error-state" style="display: none;">
                 <div class="success-icon" style="color: var(--danger);">&#x274C;</div>
-                <h2 style="margin-bottom: 0.5rem;">Authentication Failed</h2>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarısız</h2>
                 <p id="error-message" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
-                <a href="index.html" class="btn btn-primary">Try Again</a>
+                <a href="index.html" class="btn btn-primary">Tekrar Dene</a>
             </div>
         </div>
     </div>
@@ -92,7 +92,7 @@
     var error = params.get('error');
 
     if (error) {
-        showError('OAuth error: ' + (params.get('error_description') || error));
+        showError('OAuth hatası: ' + (params.get('error_description') || error));
         return;
     }
 
@@ -111,7 +111,7 @@
     }
 
     if (!authData || (!authData.success && !authData.accessToken)) {
-        showError('No authentication data received. Please try logging in again.');
+        showError('Kimlik doğrulama verisi alınamadı. Lütfen tekrar giriş yapın.');
         return;
     }
 
@@ -125,23 +125,23 @@
         // Display token info
         var info = document.getElementById('token-info');
         var fields = [
-            ['User ID', data.userId || data.displayName || 'N/A'],
-            ['Email', data.email || 'N/A'],
-            ['Methods', (data.completedMethods || []).join(', ') || 'N/A'],
-            ['Timestamp', data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A']
+            ['Kullanıcı ID', data.userId || data.displayName || '—'],
+            ['E-posta', data.email || '—'],
+            ['Doğrulama Yöntemleri', (data.completedMethods || []).join(', ') || '—'],
+            ['Zaman', data.timestamp ? new Date(data.timestamp).toLocaleString('tr-TR') : '—']
         ];
 
         if (data.accessToken) {
-            fields.push(['Access Token', data.accessToken.substring(0, 30) + '...']);
+            fields.push(['Erişim Belirteci', data.accessToken.substring(0, 30) + '...']);
         }
         if (data.refreshToken) {
-            fields.push(['Refresh Token', data.refreshToken.substring(0, 20) + '...']);
+            fields.push(['Yenileme Belirteci', data.refreshToken.substring(0, 20) + '...']);
         }
         if (data.sessionId) {
-            fields.push(['Session ID', data.sessionId]);
+            fields.push(['Oturum ID', data.sessionId]);
         }
         if (data.authCode) {
-            fields.push(['Auth Code', data.authCode.substring(0, 20) + '...']);
+            fields.push(['Yetki Kodu', data.authCode.substring(0, 20) + '...']);
         }
 
         fields.forEach(function(f) {

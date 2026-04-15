@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marmara BYS - Dashboard | FIVUCSAS Demo</title>
-    <meta name="description" content="FIVUCSAS ile dogrulanmis ogrenci paneli demosu. Biyometrik kimlik dogrulama sonrasi ogrenci bilgi sistemi gorunumu.">
-    <meta property="og:title" content="Marmara BYS Dashboard - FIVUCSAS Demo">
-    <meta property="og:description" content="FIVUCSAS ile dogrulanmis ogrenci paneli demosu.">
+    <title>Marmara BYS - Öğrenci Paneli | FIVUCSAS Demo</title>
+    <meta name="description" content="FIVUCSAS ile doğrulanmış öğrenci paneli demosu. Biyometrik kimlik doğrulama sonrası öğrenci bilgi sistemi görünümü.">
+    <meta property="og:title" content="Marmara BYS Panel - FIVUCSAS Demo">
+    <meta property="og:description" content="FIVUCSAS ile doğrulanmış öğrenci paneli demosu.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://demo.fivucsas.com/dashboard.html">
     <meta property="og:site_name" content="FIVUCSAS">
     <meta property="og:image" content="https://fivucsas.com/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Marmara BYS Dashboard - FIVUCSAS Demo">
-    <meta name="twitter:description" content="FIVUCSAS ile dogrulanmis ogrenci paneli demosu.">
+    <meta name="twitter:title" content="Marmara BYS Panel - FIVUCSAS Demo">
+    <meta name="twitter:description" content="FIVUCSAS ile doğrulanmış öğrenci paneli demosu.">
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="styles.css">
@@ -29,17 +29,17 @@
     <a href="dashboard.html" class="navbar-brand">
         <div class="navbar-logo">M</div>
         <div>
-            <div class="navbar-title">Marmara Universitesi</div>
-            <div class="navbar-subtitle">Ogrenci Bilgi Sistemi (BYS)</div>
+            <div class="navbar-title">Marmara Üniversitesi</div>
+            <div class="navbar-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
         </div>
     </a>
     <div class="navbar-actions">
         <span class="fivucsas-badge">
             <span class="badge-dot"></span>
-            FIVUCSAS Verified
+            FIVUCSAS Doğrulandı
         </span>
         <span class="navbar-user" id="navbar-user"></span>
-        <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
+        <button class="btn btn-sm btn-danger" onclick="logout()">Çıkış</button>
     </div>
 </nav>
 
@@ -48,12 +48,12 @@
     <!-- Welcome Banner -->
     <div class="dashboard-welcome">
         <div>
-            <h1 id="welcome-name">Welcome</h1>
-            <p>Spring 2026 Semester &mdash; Computer Engineering Department</p>
+            <h1 id="welcome-name">Hoş Geldiniz</h1>
+            <p>2025-2026 Bahar Dönemi &mdash; Bilgisayar Mühendisliği Bölümü</p>
         </div>
         <div class="fivucsas-badge" style="background: rgba(255,255,255,0.15); color: #fff;">
             <span class="badge-dot"></span>
-            Identity Verified
+            Kimlik Doğrulandı
         </div>
     </div>
 
@@ -61,19 +61,19 @@
     <div class="student-info-grid">
         <div class="card stat-card">
             <div class="stat-value" id="student-number">20200001234</div>
-            <div class="stat-label">Student Number</div>
+            <div class="stat-label">Öğrenci Numarası</div>
         </div>
         <div class="card stat-card">
             <div class="stat-value">3.42</div>
-            <div class="stat-label">GPA (Cumulative)</div>
+            <div class="stat-label">Genel Not Ortalaması</div>
         </div>
         <div class="card stat-card">
             <div class="stat-value">128 / 160</div>
-            <div class="stat-label">Credits Completed</div>
+            <div class="stat-label">Tamamlanan Kredi</div>
         </div>
         <div class="card stat-card">
-            <div class="stat-value">7th</div>
-            <div class="stat-label">Current Semester</div>
+            <div class="stat-value">7.</div>
+            <div class="stat-label">Güncel Yarıyıl</div>
         </div>
     </div>
 
@@ -82,53 +82,53 @@
         <!-- Course List -->
         <div class="card">
             <div class="card-header">
-                &#x1f4da; Current Courses (Spring 2026)
+                &#x1f4da; Güncel Dersler (2025-2026 Bahar)
             </div>
             <div class="card-body" style="padding: 0;">
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Course</th>
-                                <th>Credits</th>
-                                <th>Midterm</th>
+                                <th>Kod</th>
+                                <th>Ders</th>
+                                <th>Kredi</th>
+                                <th>Vize</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>CSE4297</td>
-                                <td>Engineering Project I</td>
+                                <td>Bitirme Projesi I</td>
                                 <td>4</td>
                                 <td><span class="grade-badge grade-aa">AA</span></td>
                             </tr>
                             <tr>
                                 <td>CSE4040</td>
-                                <td>Cloud Computing</td>
+                                <td>Bulut Bilişim</td>
                                 <td>3</td>
                                 <td><span class="grade-badge grade-ba">BA</span></td>
                             </tr>
                             <tr>
                                 <td>CSE4056</td>
-                                <td>Software Quality Assurance</td>
+                                <td>Yazılım Kalite Güvencesi</td>
                                 <td>3</td>
                                 <td><span class="grade-badge grade-bb">BB</span></td>
                             </tr>
                             <tr>
                                 <td>CSE4074</td>
-                                <td>Computer Networks</td>
+                                <td>Bilgisayar Ağları</td>
                                 <td>3</td>
                                 <td><span class="grade-badge grade-ba">BA</span></td>
                             </tr>
                             <tr>
                                 <td>CSE4070</td>
-                                <td>Distributed Systems</td>
+                                <td>Dağıtık Sistemler</td>
                                 <td>3</td>
                                 <td><span class="grade-badge grade-cb">CB</span></td>
                             </tr>
                             <tr>
                                 <td>ATA2026</td>
-                                <td>Ataturk's Principles</td>
+                                <td>Atatürk İlkeleri ve İnkılap Tarihi</td>
                                 <td>2</td>
                                 <td><span class="grade-badge grade-aa">AA</span></td>
                             </tr>
@@ -141,42 +141,42 @@
         <!-- Today's Schedule -->
         <div class="card">
             <div class="card-header">
-                &#x1f4c5; Today's Schedule (Monday)
+                &#x1f4c5; Bugünkü Program (Pazartesi)
             </div>
             <div class="card-body">
                 <div class="schedule-item">
                     <div class="schedule-time">09:00 - 10:50</div>
                     <div class="schedule-course">
-                        <div class="course-name">CSE4040 - Cloud Computing</div>
-                        <div class="course-room">Room: T5-205</div>
+                        <div class="course-name">CSE4040 - Bulut Bilişim</div>
+                        <div class="course-room">Derslik: T5-205</div>
                     </div>
                 </div>
                 <div class="schedule-item">
                     <div class="schedule-time">11:00 - 12:50</div>
                     <div class="schedule-course">
-                        <div class="course-name">CSE4297 - Engineering Project I</div>
-                        <div class="course-room">Room: Lab 3B</div>
+                        <div class="course-name">CSE4297 - Bitirme Projesi I</div>
+                        <div class="course-room">Derslik: Lab 3B</div>
                     </div>
                 </div>
                 <div class="schedule-item">
                     <div class="schedule-time">13:00 - 13:50</div>
                     <div class="schedule-course">
-                        <div class="course-name" style="color: var(--text-light); font-style: italic;">Lunch Break</div>
+                        <div class="course-name" style="color: var(--text-light); font-style: italic;">Öğle Arası</div>
                         <div class="course-room"></div>
                     </div>
                 </div>
                 <div class="schedule-item">
                     <div class="schedule-time">14:00 - 15:50</div>
                     <div class="schedule-course">
-                        <div class="course-name">CSE4074 - Computer Networks</div>
-                        <div class="course-room">Room: T5-301</div>
+                        <div class="course-name">CSE4074 - Bilgisayar Ağları</div>
+                        <div class="course-room">Derslik: T5-301</div>
                     </div>
                 </div>
                 <div class="schedule-item">
                     <div class="schedule-time">16:00 - 17:50</div>
                     <div class="schedule-course">
-                        <div class="course-name">CSE4070 - Distributed Systems</div>
-                        <div class="course-room">Room: T5-102</div>
+                        <div class="course-name">CSE4070 - Dağıtık Sistemler</div>
+                        <div class="course-room">Derslik: T5-102</div>
                     </div>
                 </div>
             </div>
@@ -187,69 +187,69 @@
     <!-- Semester GPA History -->
     <div class="card" style="margin-top: 1.5rem;">
         <div class="card-header">
-            &#x1f4c8; GPA History
+            &#x1f4c8; Not Ortalaması Geçmişi
         </div>
         <div class="card-body" style="padding: 0;">
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Semester</th>
-                            <th>Credits</th>
-                            <th>Semester GPA</th>
-                            <th>Cumulative GPA</th>
-                            <th>Standing</th>
+                            <th>Dönem</th>
+                            <th>Kredi</th>
+                            <th>Dönem Ortalaması</th>
+                            <th>Genel Ortalama</th>
+                            <th>Durum</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Fall 2020</td>
+                            <td>2020-2021 Güz</td>
                             <td>18</td>
                             <td>3.25</td>
                             <td>3.25</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr>
-                            <td>Spring 2021</td>
+                            <td>2020-2021 Bahar</td>
                             <td>18</td>
                             <td>3.10</td>
                             <td>3.18</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr>
-                            <td>Fall 2021</td>
+                            <td>2021-2022 Güz</td>
                             <td>21</td>
                             <td>3.45</td>
                             <td>3.28</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr>
-                            <td>Spring 2022</td>
+                            <td>2021-2022 Bahar</td>
                             <td>18</td>
                             <td>3.55</td>
                             <td>3.34</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr>
-                            <td>Fall 2022</td>
+                            <td>2022-2023 Güz</td>
                             <td>18</td>
                             <td>3.60</td>
                             <td>3.39</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr>
-                            <td>Spring 2023</td>
+                            <td>2022-2023 Bahar</td>
                             <td>17</td>
                             <td>3.50</td>
                             <td>3.40</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                         <tr style="font-weight: 600; background: #f8f9ff;">
-                            <td>Spring 2026 (Current)</td>
+                            <td>2025-2026 Bahar (Güncel)</td>
                             <td>18</td>
                             <td>-</td>
                             <td>3.42</td>
-                            <td><span class="grade-badge grade-ba">Good</span></td>
+                            <td><span class="grade-badge grade-ba">İyi</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -260,28 +260,28 @@
     <!-- Announcements -->
     <div class="card" style="margin-top: 1.5rem;">
         <div class="card-header">
-            &#x1f4e2; Announcements
+            &#x1f4e2; Duyurular
         </div>
         <div class="card-body">
             <div class="schedule-item">
-                <div class="schedule-time" style="color: var(--danger); min-width: 90px;">Apr 10</div>
+                <div class="schedule-time" style="color: var(--danger); min-width: 90px;">10 Nisan</div>
                 <div class="schedule-course">
-                    <div class="course-name">CSE4297 Final Presentation Deadline</div>
-                    <div class="course-room">Submit slides and demo video by 23:59</div>
+                    <div class="course-name">CSE4297 Bitirme Sunum Son Tarihi</div>
+                    <div class="course-room">Sunum slaytları ve demo videosunu 23:59'a kadar yükleyin</div>
                 </div>
             </div>
             <div class="schedule-item">
-                <div class="schedule-time" style="min-width: 90px;">Apr 15</div>
+                <div class="schedule-time" style="min-width: 90px;">15 Nisan</div>
                 <div class="schedule-course">
-                    <div class="course-name">Spring 2026 Final Exam Schedule Published</div>
-                    <div class="course-room">Check your exam dates and rooms</div>
+                    <div class="course-name">2025-2026 Bahar Final Sınav Programı Yayınlandı</div>
+                    <div class="course-room">Sınav tarihlerinizi ve dersliklerinizi kontrol edin</div>
                 </div>
             </div>
             <div class="schedule-item">
-                <div class="schedule-time" style="min-width: 90px;">Apr 3</div>
+                <div class="schedule-time" style="min-width: 90px;">3 Nisan</div>
                 <div class="schedule-course">
-                    <div class="course-name">Library Hours Extended for Finals</div>
-                    <div class="course-room">Open until 00:00 on weekdays starting April 20</div>
+                    <div class="course-name">Finallere Yönelik Kütüphane Saatleri Uzatıldı</div>
+                    <div class="course-room">20 Nisan'dan itibaren hafta içi 00:00'a kadar açık</div>
                 </div>
             </div>
         </div>
@@ -289,13 +289,14 @@
 
     <!-- Powered By -->
     <div class="powered-by">
-        Authentication powered by
+        Kimlik doğrulama
         <a href="https://fivucsas.com" target="_blank" rel="noopener">
             <span class="fivucsas-badge">
                 <span class="badge-dot"></span>
-                FIVUCSAS Identity Verification
+                FIVUCSAS Kimlik Doğrulama
             </span>
         </a>
+        tarafından sağlandı
     </div>
 
 </div>
@@ -317,8 +318,8 @@
     }
 
     // Populate user info
-    var displayName = authData.displayName || authData.email || 'Student';
-    document.getElementById('welcome-name').textContent = 'Welcome, ' + displayName;
+    var displayName = authData.displayName || authData.email || 'Öğrenci';
+    document.getElementById('welcome-name').textContent = 'Hoş geldiniz, ' + displayName;
     document.getElementById('navbar-user').textContent = displayName;
 
     // Generate a consistent student number from the user ID or email
