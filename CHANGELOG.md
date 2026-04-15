@@ -2,6 +2,25 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
+## [Unreleased] - 2026-04-15 — demo.fivucsas MFA hardening (evening continuation)
+
+### Fixed
+- **Apache `.htaccess` Permissions-Policy parse error on Hostinger**: double-quoted `Header set` values with `\"` escapes leaked literal backslashes into the emitted header, breaking structured-header parsing and killing camera/mic iframe delegation. Switched to single-quoted outer delimiter with bare inner quotes. Camera/mic now delegate to `https://verify.fivucsas.com` correctly.
+- **MFA method-reuse AMR collision**: `AuthController` was storing AMR values (RFC 8176) in `MfaSession.completedMethods`, so EMAIL_OTP after TOTP hit a false "METHOD_ALREADY_USED" (both map to `"otp"`). Now stores `AuthMethodType.name()` (unique per method); AMR mapping happens only at JWT issuance. Also fixed `stepsData` initial value (`["pwd"]` → `["PASSWORD"]`) in `AuthenticateUserService`.
+- **Widget bundle sync**: `web-app/dist-verify/` was never rsync'd into `verify-widget/html/` before Docker build, so fixes shipped but container image kept old bundle. Documented 3-step sync (build → rsync → docker build). `PerfContext` also changed to return NOOP when provider absent so Face step works inside widget iframe.
+- **BlazeFace `@tensorflow/tfjs-converter` "Failed to resolve module specifier"**: earlier quick-fix had externalized the package in `vite.verify.config.ts`. Real fix: installed the package (`--legacy-peer-deps`) and removed from externals. Also added `https://tfhub.dev https://www.kaggle.com` to widget CSP `connect-src` so the model can be fetched.
+- **Voice login had no phrase prompt**: enrollment shows a passphrase but login didn't. Added `mfa.voice.promptPhrase` + `samplePhrase` i18n keys (en/tr) and a boxed prompt above the mic in `VoiceStep.tsx`.
+- **Face step back button off-screen**: camera view pushed "backToMethodSelection" below the fold. Moved button ABOVE step content with `ArrowBack` icon.
+- **BYS demo Turkish strings**: `dashboard.html` + `callback.html` were entirely English despite `lang="tr"`; `index.html` missing diacritics (Universitesi → Üniversitesi, Ogrenci → Öğrenci, Sifre → Şifre, Giris → Giriş, Iletisim → İletişim, …). Fully localized all three pages. Also fixed captcha input overflow (`min-width: 0` + `flex-wrap: wrap`).
+- **Success redirect gate**: `index.html` sessionStorage payload now includes `success: true`, `email`, `displayName`, `sessionId`, `completedMethods`, `timestamp` — `dashboard.html` auth check no longer kicks user back to login.
+- **Twilio SMS body localization**: `TwilioVerifySmsService.sendOtp` now calls `.setLocale("tr")` so Turkish users receive the OTP template in Turkish.
+
+### Known (regulatory, not a code bug)
+- **Twilio SMS sender shows "TWVerify"** instead of "FIVUCSAS". This is Twilio's default shared alpha sender; it cannot be changed by any SDK/API call. Custom alpha IDs in Turkey require BTK/İYS pre-registration + Twilio Support ticket to register the alpha on the Verify Service, then adding it under *Channel Configuration → SMS → Alternate Senders*. 1–4 week approval. See `docs/plans/SMS_ACTIVATION_PLAN.md` Appendix.
+
+### Verified
+- End-to-end 3-method login (PASSWORD + TOTP + EMAIL_OTP) on Brave PC succeeded; dashboard redirect worked; no console errors; Turkish dashboard rendered clean.
+
 ## [Unreleased] - 2026-04-14/15 — Client-Side ML Split + V33 Deploy
 
 ### Added
