@@ -294,9 +294,13 @@ async function startFivucsasLogin() {
 
         if (result.success) {
             sessionStorage.setItem('fivucsas_auth', JSON.stringify({
+                success: true,
                 accessToken: result.accessToken,
                 refreshToken: result.refreshToken,
                 userId: result.userId,
+                email: result.email,
+                displayName: result.displayName,
+                sessionId: result.sessionId,
                 completedMethods: result.completedMethods,
                 timestamp: result.timestamp
             }));

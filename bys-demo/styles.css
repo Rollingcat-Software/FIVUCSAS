@@ -973,4 +973,8 @@ table tbody tr:hover { background: #fdf0f0; }
     .captcha-row { flex-wrap: wrap; }
     .captcha-input { width: 100%; min-width: 0; }
     .bys-nav-list { display: none; }
+    .login-card { padding: 1.25rem 1rem; }
+    .input-wrapper input { font-size: 1rem; padding: 0.85rem 0.75rem 0.85rem 2.5rem; }
+    .captcha-input { font-size: 1rem; padding: 0.85rem 0.75rem; }
+    .fivucsas-login-btn { padding: 0.85rem 1rem; font-size: 0.95rem; }
 }
