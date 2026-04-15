@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-11
+**Last verified**: 2026-04-15 (V33 voice_enrollments deployed; client-side ML split Phases 1-4 committed)
 
 ## Architecture
 
@@ -102,9 +102,9 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 ## Database
 
-- Flyway migrations V0-V30 (30 total)
-- Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions
-- pgvector HNSW indexes on face_embeddings + voice_enrollments
+- Flyway migrations V1-V33 (identity-core-api) + Alembic 0001-0004 (biometric-processor)
+- Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2)
+- pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 
 ## Testing
 
@@ -127,7 +127,7 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 | Document | Topic |
 |----------|-------|
 | SMS_ACTIVATION_PLAN.md | Twilio integration (hexagonal) |
-| CLIENT_SIDE_ML_PLAN.md | On-device ML migration (10 weeks) |
+| CLIENT_SIDE_ML_PLAN.md | Pre-filter-only strategy v2.0 (D1-D4 locked 2026-04-14) |
 | BYOD_ARCHITECTURE.md | Tenant own-DB (8 weeks) |
 | VOICE_STT_PLAN.md | Speech-to-text verification |
 | BAAS_RENTAL_MODEL.md | BaaS pricing model |

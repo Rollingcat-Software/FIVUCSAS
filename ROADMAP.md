@@ -1,6 +1,6 @@
 # FIVUCSAS - Product Roadmap
 
-> Last updated: 2026-04-13
+> Last updated: 2026-04-15 (V33 deployed; client-side ML Phases 1-4 committed)
 
 ## Project Status Summary
 

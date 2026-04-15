@@ -2,6 +2,21 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
+## [Unreleased] - 2026-04-14/15 — Client-Side ML Split + V33 Deploy
+
+### Added
+- **Alembic 0004** `client_embedding_observations` table (biometric-processor) — vector(128), log-only per D2; populated via FastAPI BackgroundTasks so telemetry failures never break primary enrollment/verification
+- **Phase 3 build-time model delivery**: `web-app/scripts/fetch-models.mjs` + `public/models/manifest.json` (SHA256-pinned). `npm prebuild` runs fetch-models. `.onnx` files git-ignored. silero-vad + yolo-card-nano live at https://app.fivucsas.com/models/
+- **Phase 4 Silero VAD V1**: `VoiceVAD.ts` wraps silero-vad.onnx (512-sample frames, persisted h/c state); `TwoFactorDispatcher` gates VOICE uploads with graceful fallback when model unavailable or payload non-WAV
+- **CLIENT_SIDE_ML_PLAN.md v2.0**: honest pre-filter-only rewrite; D1-D4 decisions locked (pre-filter client, log-only server, SHA256 delivery, Silero V1/ECAPA V2 deferred)
+
+### Fixed
+- **V33 voice_enrollments migration DEPLOYED** (2026-04-14): rebuilt identity-core-api image after unblocking pre-existing `NfcController` compile error (exposed `findByCardSerialAndTenantId` on hexagonal port + adapter). Flyway history now V33.
+
+### Known
+- mobilefacenet.onnx pending — all public mirrors return 401/404; needs authenticated InsightFace/HuggingFace download. Graceful fallback active (auth works without it per D2).
+- VoiceStep uses MediaRecorder → WebM directly (4 consumer sites). VoiceVAD currently bypasses until VoiceStep is rewired to emit wav16k via useVoiceRecorder.
+
 ## [Unreleased] - 2026-03-19
 
 ### Added - 2026-03-19 Auth-Test & Backend Refinements
