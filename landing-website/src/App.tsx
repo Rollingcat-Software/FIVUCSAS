@@ -439,39 +439,33 @@ function App() {
             </p>
           </motion.div>
 
-          {/* Project Lead */}
-          <motion.div
-            className="max-w-md mx-auto mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="p-8 rounded-2xl bg-slate-800/50 border border-primary-500/20 text-center">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 mx-auto mb-4 flex items-center justify-center">
-                <span className="text-3xl font-bold">AG</span>
-              </div>
-              <h3 className="text-xl font-semibold">Ahmet Abdullah Gultekin</h3>
-              <p className="text-primary-400 text-sm mt-1">Project Lead &amp; Full-Stack Developer</p>
-              <p className="text-slate-500 text-xs mt-3">Architecture, Backend, Frontend, DevOps, ML Integration</p>
-            </div>
-          </motion.div>
-
-          {/* Development Team Roles */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
-            {devRoles.map((role, index) => (
+          {/* Team Members */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+            {teamMembers.map((member, index) => (
               <motion.div
-                key={role.title}
-                className="p-6 rounded-2xl bg-slate-800/50 border border-slate-700/50 text-center"
+                key={member.name}
+                className={`p-8 rounded-2xl text-center ${
+                  member.lead
+                    ? 'bg-slate-800/50 border border-primary-500/20'
+                    : 'bg-slate-800/50 border border-slate-700/50'
+                }`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-600 mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-xl" role="img" aria-label={role.iconLabel}>{role.icon}</span>
+                <div
+                  className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                    member.lead
+                      ? 'bg-gradient-to-br from-primary-500 to-accent-500'
+                      : 'bg-gradient-to-br from-slate-700 to-slate-600'
+                  }`}
+                >
+                  <span className="text-3xl font-bold">{member.initials}</span>
                 </div>
-                <h3 className="font-semibold text-sm">{role.title}</h3>
-                <p className="text-xs text-slate-500 mt-1">{role.scope}</p>
+                <h3 className="text-xl font-semibold">{member.name}</h3>
+                <p className="text-primary-400 text-sm mt-1">{member.role}</p>
+                <p className="text-slate-500 text-xs mt-3">{member.scope}</p>
               </motion.div>
             ))}
           </div>
@@ -673,10 +667,28 @@ const services = [
   },
 ]
 
-const devRoles = [
-  { icon: '\u{2699}\uFE0F', iconLabel: 'Gear', title: 'Backend Engineering', scope: 'Java 21, Spring Boot, FastAPI' },
-  { icon: '\u{1F3A8}', iconLabel: 'Artist palette', title: 'Frontend Development', scope: 'React, TypeScript, KMP' },
-  { icon: '\u{1F680}', iconLabel: 'Rocket', title: 'DevOps & Infrastructure', scope: 'Docker, CI/CD, Hetzner' },
+const teamMembers = [
+  {
+    lead: true,
+    initials: 'AG',
+    name: 'Ahmet Abdullah Gültekin',
+    role: 'Project Lead & Full-Stack Engineer',
+    scope: 'Architecture · Backend · Frontend · DevOps · ML Integration',
+  },
+  {
+    lead: false,
+    initials: 'AE',
+    name: 'Ayşe Gülsüm Eren',
+    role: 'Mobile App Developer',
+    scope: 'Kotlin Multiplatform · Android · iOS · Desktop',
+  },
+  {
+    lead: false,
+    initials: 'AA',
+    name: 'Ayşenur Arıcı',
+    role: 'AI/ML & Biometric Systems',
+    scope: 'Face · Voice · Liveness · Anti-spoofing',
+  },
 ]
 
 export default App
