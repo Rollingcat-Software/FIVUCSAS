@@ -66,11 +66,11 @@
         </a>
         <div class="header-right">
             <div class="header-contact-line">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                <svg role="img" aria-label="Telefon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                 0216 777 00 00
             </div>
             <div class="header-contact-line">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <svg role="img" aria-label="E-posta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 bilgisistem@marmara.edu.tr
             </div>
         </div>
@@ -190,8 +190,8 @@
                                 <text x="145" y="30" fill="#534" font-size="17" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(5,145,30)">2</text>
                             </svg>
                         </div>
-                        <button type="button" class="captcha-refresh" title="Yenile" onclick="return false;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                        <button type="button" class="captcha-refresh" title="Yenile" aria-label="Güvenlik kodunu yenile" onclick="return false;">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
                         </button>
                         <input type="text" class="captcha-input" placeholder="Kodu giriniz" maxlength="6">
                     </div>
@@ -314,9 +314,9 @@ async function startFivucsasWidget() {
     try {
         const result = await auth.verify({
             flow: 'login',
-            onStepChange: (step) => console.log('Step:', step),
+            onStepChange: (step) => { if (location.hostname === 'localhost') console.log('Step:', step); },
             onError: (err) => console.error('Auth error:', err),
-            onCancel: () => console.log('Auth cancelled')
+            onCancel: () => { if (location.hostname === 'localhost') console.log('Auth cancelled'); }
         });
 
         if (result.success) {
