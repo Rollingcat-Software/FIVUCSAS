@@ -440,13 +440,13 @@ function App() {
           </motion.div>
 
           {/* Team Members */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 items-stretch">
             {teamMembers.map((member, index) => (
               <motion.div
                 key={member.name}
-                className={`p-8 rounded-2xl text-center ${
+                className={`relative p-8 rounded-2xl text-center flex flex-col ${
                   member.lead
-                    ? 'bg-slate-800/50 border border-primary-500/20'
+                    ? 'bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-2 border-primary-500/40 shadow-lg shadow-primary-500/10 md:-translate-y-2'
                     : 'bg-slate-800/50 border border-slate-700/50'
                 }`}
                 initial={{ opacity: 0, y: 20 }}
@@ -454,18 +454,23 @@ function App() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
+                {member.lead && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-md">
+                    Lead
+                  </span>
+                )}
                 <div
                   className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center ${
                     member.lead
-                      ? 'bg-gradient-to-br from-primary-500 to-accent-500'
+                      ? 'bg-gradient-to-br from-primary-500 to-accent-500 ring-4 ring-primary-500/20'
                       : 'bg-gradient-to-br from-slate-700 to-slate-600'
                   }`}
                 >
                   <span className="text-3xl font-bold">{member.initials}</span>
                 </div>
-                <h3 className="text-xl font-semibold">{member.name}</h3>
-                <p className="text-primary-400 text-sm mt-1">{member.role}</p>
-                <p className="text-slate-500 text-xs mt-3">{member.scope}</p>
+                <h3 className={`font-semibold ${member.lead ? 'text-xl' : 'text-lg'}`}>{member.name}</h3>
+                <p className={`text-sm mt-1 ${member.lead ? 'text-primary-300 font-medium' : 'text-primary-400'}`}>{member.role}</p>
+                <p className="text-slate-400 text-xs mt-3 leading-relaxed">{member.scope}</p>
               </motion.div>
             ))}
           </div>
@@ -672,22 +677,22 @@ const teamMembers = [
     lead: true,
     initials: 'AG',
     name: 'Ahmet Abdullah Gültekin',
-    role: 'Project Lead & Full-Stack Engineer',
-    scope: 'Architecture · Backend · Frontend · Face · Voice · MRZ · DevOps',
+    role: 'Project Lead · Principal Engineer',
+    scope: 'Architecture · Backend · Frontend · Mobile · Desktop · Biometrics · ML · DevOps',
   },
   {
     lead: false,
     initials: 'AE',
     name: 'Ayşe Gülsüm Eren',
-    role: 'Mobile & Biometric Puzzle Developer',
-    scope: 'Kotlin Multiplatform · Hand & Finger Tracking · Biometric Puzzles',
+    role: 'Mobile & Puzzle Developer',
+    scope: 'Kotlin Multiplatform · Biometric Puzzles · Hand Tracking',
   },
   {
     lead: false,
     initials: 'AA',
     name: 'Ayşenur Arıcı',
-    role: 'Computer Vision & ML Research',
-    scope: 'YOLO Card Detector · Liveness · Anti-Spoofing · Model Training',
+    role: 'ML & Vision Researcher',
+    scope: 'YOLO Training · Liveness · Anti-Spoofing',
   },
 ]
 
