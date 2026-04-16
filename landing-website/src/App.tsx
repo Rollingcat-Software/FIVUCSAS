@@ -444,24 +444,14 @@ function App() {
             {teamMembers.map((member, index) => (
               <motion.div
                 key={member.name}
-                className={`p-8 rounded-2xl text-center flex flex-col bg-slate-800/50 ${
-                  member.lead
-                    ? 'border border-primary-500/30'
-                    : 'border border-slate-700/50'
-                }`}
+                className="p-8 rounded-2xl text-center flex flex-col bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 transition-colors duration-300"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div
-                  className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center ${
-                    member.lead
-                      ? 'bg-gradient-to-br from-primary-500 to-accent-500'
-                      : 'bg-gradient-to-br from-slate-700 to-slate-600'
-                  }`}
-                >
-                  <span className="text-3xl font-bold">{member.initials}</span>
+                <div className={`w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-to-br ${member.gradient}`}>
+                  <span className="text-3xl font-bold text-white">{member.initials}</span>
                 </div>
                 <h3 className="text-xl font-semibold">{member.name}</h3>
                 <p className="text-primary-400 text-sm mt-1">{member.role}</p>
@@ -669,25 +659,25 @@ const services = [
 
 const teamMembers = [
   {
-    lead: true,
     initials: 'AG',
     name: 'Ahmet Abdullah Gültekin',
     role: 'Project Lead · Full-Stack Developer',
     scope: 'Architecture · Backend · Frontend · Mobile · Biometrics · ML · DevOps',
+    gradient: 'from-blue-500 to-violet-500',
   },
   {
-    lead: false,
     initials: 'AE',
     name: 'Ayşe Gülsüm Eren',
     role: 'Mobile & Puzzle Developer',
     scope: 'Kotlin Multiplatform · Biometric Puzzles · Hand Tracking',
+    gradient: 'from-fuchsia-500 to-pink-500',
   },
   {
-    lead: false,
     initials: 'AA',
     name: 'Ayşenur Arıcı',
     role: 'ML & Vision Researcher',
     scope: 'YOLO Training · Liveness · Anti-Spoofing',
+    gradient: 'from-emerald-500 to-teal-500',
   },
 ]
 
