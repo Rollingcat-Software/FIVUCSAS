@@ -89,12 +89,20 @@ FIVUCSAS/                    # Parent repo (submodules)
 
 PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KEY | QR_CODE | NFC_DOCUMENT
 
+## Architectural direction (2026-04-16)
+
+**Hosted-first auth.** Primary integration mode is redirective OIDC: tenants call `FivucsasAuth.loginRedirect({...})` → user redirected to `verify.fivucsas.com/login` → MFA → browser returns with `?code=…&state=…` → tenant exchanges at `/oauth2/token`. Widget iframe remains for **inline step-up MFA** only. See `web-app/docs/AUDIT_REPORT_2026-04-16.md` and `web-app/docs/plans/HOSTED_LOGIN_INTEGRATION.md` (PR-1).
+
+**Why:** Industry pattern (Auth0 Universal Login, Okta, Microsoft Entra, Google, Apple, Keycloak, AWS Cognito, Stripe, Turkish banks, e-Devlet all use hosted-first). Solves Web NFC iframe restriction, WebAuthn cross-origin edge cases, Safari ITP, 3P cookie death.
+
+**Platform coverage:** web, iOS (ASWebAuthenticationSession + AppAuth), Android (Custom Tabs + AppAuth), Electron/desktop (loopback per RFC 8252), CLI. Redirect-URI allowlist accepts HTTPS, custom schemes, and `http://127.0.0.1:*`.
+
 ## Key Features
 
 - Multi-tenant with tenant-controlled auth flows
 - 2FA (admin-configurable: PASSWORD + any second factor)
-- OAuth 2.0 / OIDC with PKCE support
-- Embeddable auth widget (iframe + postMessage)
+- OAuth 2.0 / OIDC with PKCE support (code + id_token, JWKS, discovery)
+- Hosted login page (primary) + embeddable widget (step-up MFA, secondary)
 - Identity verification pipeline (9 steps, 7 industry templates)
 - BlazeFace on-device face detection (client-side ML)
 - My Profile page (enrollments, activity, data export, KVKK/GDPR)

@@ -1,13 +1,58 @@
 # FIVUCSAS - Product Roadmap
 
-> Last updated: 2026-04-15 (V33 deployed; client-side ML Phases 1-4 committed)
+> Last updated: 2026-04-16 — Hosted-first auth pivot following Round-5 mobile testing + comprehensive 5-agent audit.
 
 ## Project Status Summary
 
-- **Overall Completion**: ~98%
-- **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger)
+- **Overall Completion**: ~99%
+- **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger), Verify Widget (Hetzner)
 - **Local Dev**: Docker Compose (5 services, all healthy)
-- **Tests**: 528+ backend, 304 unit (web-app), 276+ E2E, 20 step-up unit tests
+- **Tests**: 633 backend, 619 web-app (Vitest), 401 client-apps, 27 Playwright specs (~1,800+ total)
+
+---
+
+## Active initiative: Hosted-first auth + Round-5 hardening
+
+**Status:** In progress on branch `feat/hosted-first-auth-round5` (web-app).
+**Plan:** `web-app/docs/AUDIT_REPORT_2026-04-16.md` + `web-app/TODO.md`.
+**Motivation:** Round-5 testing on Chrome Android surfaced structural iframe limits. Industry pattern for serious IdPs is hosted-first redirective auth. Backend OAuth 2.0 + OIDC is already production-grade; pivot is mostly a frontend + deployment lift.
+
+### Wave 0 (ops, awaiting user go-ahead)
+- [ ] Rotate production secrets (DB, Redis, JWT, Twilio, biometric API key) — committed in `.env.prod` files, exposed in git history
+- [ ] Purge secrets from git history via `git filter-repo`
+- [ ] Move secrets to runtime injection (GitHub Actions + `--env-file`)
+- [ ] Tighten `bio.fivucsas.com` Traefik route — add `rate-limit` + `admin-whitelist` middlewares
+
+### Wave 1 (PR-1, in progress)
+- A1 method-reuse resilience (backend echo + frontend hydrate)
+- A2 mobile layout (viewport flow + method grid + iframe autosize + QR/Voice polish)
+- A4 dashboard typo + notification i18n
+- B.1–B.4 hosted login V1 (OAuth2 content negotiation, HostedLoginApp, SDK `loginRedirect`, BYS demo flip, tenant integration docs)
+- C widget repositioning (NFC framed fallback → hosted, architecture doc rewrite)
+- Dashboard admin-page i18n sweep (AuditLogs/Roles/Tenants)
+- Demo credentials removed from LoginPage UI
+
+### Wave 2 (PR-2)
+- Unify LoginMfaFlow + MultiStepAuthFlow
+- Backend DTO migration (135 `Map.of()` responses → typed DTOs)
+- Admin `@PreAuthorize` + unified `ErrorResponse`
+- PKCE failure audit logging + rate limit
+- Native-app SDK integration docs (iOS AppAuth, Android Custom Tabs, Electron)
+
+### Wave 3 (PR-3)
+- 17 backend controllers `@WebMvcTest` coverage
+- `@Version` optimistic locking on `User`/`AuthFlow`/`Tenant`
+- JPA cascade refactor (`CascadeType.ALL` → `PERSIST, MERGE`)
+- `@Transactional(readOnly=true)` sweep on 50+ services
+- CI i18n lint rule (reject untranslated English in `.tsx`)
+
+### Wave 4 (polish)
+- Terminology sweep (MFA canonical)
+- `docs/04-api/ERROR_CODES.md`, `docs/guides/tenant-integration/QUICKSTART.md`, `docs/06-deployment/FEATURE_FLAGS.md`
+- SDK `CHANGELOG.md` split
+- `console.log` purge in auth paths
+- `aria-describedby` sweep
+- Mobile table responsive breakpoints
 
 ---
 
