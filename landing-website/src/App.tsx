@@ -73,7 +73,7 @@ function App() {
             </div>
 
             {/* Desktop links */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden lg:flex items-center space-x-8">
               <a href="#features" className="text-slate-300 hover:text-white transition-colors">Features</a>
               <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors">How It Works</a>
               <a href="#architecture" className="text-slate-300 hover:text-white transition-colors">Architecture</a>
@@ -91,7 +91,7 @@ function App() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
               onClick={() => setMobileOpen(prev => !prev)}
               aria-label="Toggle menu"
             >
@@ -111,7 +111,7 @@ function App() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden pb-4 space-y-2"
+              className="lg:hidden pb-4 space-y-2"
             >
               {[
                 ['#features', 'Features'],
@@ -223,7 +223,7 @@ function App() {
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500/20 to-accent-500/20 group-hover:from-primary-500/30 group-hover:to-accent-500/30 flex items-center justify-center mb-4 transition-all duration-300">
-                  <span className="text-2xl">{feature.icon}</span>
+                  <span className="text-2xl" role="img" aria-label={feature.iconLabel}>{feature.icon}</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                 <p className="text-slate-400">{feature.description}</p>
@@ -268,7 +268,7 @@ function App() {
                 )}
                 <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
                 <p className="text-slate-400">{step.description}</p>
-                <div className="mt-4 text-3xl">{step.icon}</div>
+                <div className="mt-4 text-3xl" role="img" aria-label={step.iconLabel}>{step.icon}</div>
               </motion.div>
             ))}
           </div>
@@ -407,7 +407,7 @@ function App() {
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{service.icon}</span>
+                  <span className="text-3xl" role="img" aria-label={service.iconLabel}>{service.icon}</span>
                   <h3 className="text-xl font-semibold">{service.name}</h3>
                 </div>
                 <p className="text-slate-400 mb-4">{service.description}</p>
@@ -468,7 +468,7 @@ function App() {
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-600 mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-xl">{role.icon}</span>
+                  <span className="text-xl" role="img" aria-label={role.iconLabel}>{role.icon}</span>
                 </div>
                 <h3 className="font-semibold text-sm">{role.title}</h3>
                 <p className="text-xs text-slate-500 mt-1">{role.scope}</p>
@@ -581,31 +581,37 @@ function App() {
 const features = [
   {
     icon: '\u{1F510}',
+    iconLabel: 'Locked padlock',
     title: 'Biometric Authentication',
     description: 'Advanced face recognition with liveness detection and anti-spoofing measures.',
   },
   {
     icon: '\u{1F3E2}',
+    iconLabel: 'Office building',
     title: 'Multi-Tenant Architecture',
     description: 'Isolated data and configurations per tenant with row-level security.',
   },
   {
     icon: '\u{1F465}',
+    iconLabel: 'People',
     title: 'User Management',
     description: 'Comprehensive user lifecycle management with RBAC permissions.',
   },
   {
     icon: '\u{1F4CA}',
+    iconLabel: 'Bar chart',
     title: 'Audit Logging',
     description: 'Complete audit trail for compliance and security monitoring.',
   },
   {
     icon: '\u{1F511}',
+    iconLabel: 'Key',
     title: 'JWT Authentication',
     description: 'Secure token-based authentication with refresh token rotation.',
   },
   {
     icon: '\u{1F4F1}',
+    iconLabel: 'Mobile phone',
     title: 'Cross-Platform SDKs',
     description: 'Native support for Android, iOS, and Desktop applications.',
   },
@@ -616,16 +622,19 @@ const howItWorks = [
     title: 'Register',
     description: 'Create a tenant account and configure your authentication flow with the methods you need.',
     icon: '\u{1F4DD}',
+    iconLabel: 'Memo',
   },
   {
     title: 'Enroll Biometric',
     description: 'Users enroll their face, voice, or other biometric data through secure capture.',
     icon: '\u{1F9D1}',
+    iconLabel: 'Person',
   },
   {
     title: 'Authenticate',
     description: 'Verify identity in real-time using multi-step flows combining any of 10 auth methods.',
     icon: '\u{2705}',
+    iconLabel: 'Check mark',
   },
 ]
 
@@ -643,18 +652,21 @@ const techStack = [
 const services = [
   {
     icon: '\u{1F510}',
+    iconLabel: 'Locked padlock',
     name: 'Identity Core API',
     description: 'Central authentication and identity management service handling users, tenants, and permissions.',
     tech: ['Spring Boot 3.4.7', 'Java 21', 'PostgreSQL', 'Redis'],
   },
   {
     icon: '\u{1F441}\uFE0F',
+    iconLabel: 'Eye',
     name: 'Biometric Processor',
     description: 'ML-powered face recognition engine with 46+ endpoints for enrollment, verification, and analysis.',
     tech: ['FastAPI', 'Python 3.12', 'InsightFace', 'pgvector'],
   },
   {
     icon: '\u{1F5A5}\uFE0F',
+    iconLabel: 'Desktop computer',
     name: 'Admin Dashboard',
     description: 'Feature-rich web application for tenant administrators to manage users and monitor activity.',
     tech: ['React 18', 'TypeScript', 'MUI', 'Redux Toolkit'],
@@ -662,9 +674,9 @@ const services = [
 ]
 
 const devRoles = [
-  { icon: '\u{2699}\uFE0F', title: 'Backend Engineering', scope: 'Java 21, Spring Boot, FastAPI' },
-  { icon: '\u{1F3A8}', title: 'Frontend Development', scope: 'React, TypeScript, KMP' },
-  { icon: '\u{1F680}', title: 'DevOps & Infrastructure', scope: 'Docker, CI/CD, Hetzner' },
+  { icon: '\u{2699}\uFE0F', iconLabel: 'Gear', title: 'Backend Engineering', scope: 'Java 21, Spring Boot, FastAPI' },
+  { icon: '\u{1F3A8}', iconLabel: 'Artist palette', title: 'Frontend Development', scope: 'React, TypeScript, KMP' },
+  { icon: '\u{1F680}', iconLabel: 'Rocket', title: 'DevOps & Infrastructure', scope: 'Docker, CI/CD, Hetzner' },
 ]
 
 export default App
