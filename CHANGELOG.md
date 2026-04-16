@@ -1,8 +1,30 @@
 # Changelog
 
-All notable changes to the FIVUCSAS project will be documented in this file.
+All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
-## [Unreleased] - 2026-04-15 — demo.fivucsas MFA hardening (evening continuation)
+## [2026-04-16] — PR-1 hosted-first auth V1 + GDPR compliance
+
+### Added
+
+- **Hosted-first OAuth 2.0 authorization code flow** — `verify.fivucsas.com/login` serves a top-level browsing context login page; tenants call `FivucsasAuth.loginRedirect({...})` and receive `?code=…&state=…` on their callback. Iframe widget remains available for inline step-up MFA only. Platform coverage: web, iOS (ASWebAuthenticationSession), Android (Chrome Custom Tabs), Electron (loopback per RFC 8252), CLI.
+- **GDPR Art. 17 / Art. 20 compliance** — `GET /api/v1/users/{id}/export` (JSON data bundle, rate-limited 1/h/user, audit event `USER_DATA_EXPORTED`), daily `SoftDeletePurgeJob` with 30-day retention (flag-gated, default off), `DELETE /api/v1/admin/purge/dry-run` for super-admin preview.
+- **Identity-core-api Maven CI workflow** — `.github/workflows/ci.yml` runs `mvn test` on every PR against main (Testcontainers backed). Previously only `deploy-hetzner.yml` existed; PRs had no automated test gate.
+- **8 missing `notifications.actions.*` i18n keys** — password reset, session revoke, email verification audit codes were rendering raw to Turkish users.
+
+### Changed
+
+- **Flyway V34** — `oauth2_clients.confidential` column; public clients now require PKCE S256.
+- **Flyway V35** — `mfa_sessions.consumed_at TIMESTAMP` replaces boolean flag for atomic code-mint replay guard.
+- **Flyway V36** — `mfa_sessions.client_id UUID` cross-client replay guard.
+- **biometric-processor CI consolidation** — 4 overlapping workflows (`ci.yml`, `ci-cd.yml`, `cd.yml`, `pr-validation.yml`) reduced to 2 (`ci.yml` + `deploy-hetzner.yml`). Removed dead GCP Cloud Run and Railway deployment code.
+- **Documentation archive sweep** — ~85 stale/redundant docs moved into per-repo `docs/archive/2026-04-16/` via `git mv` (biometric-processor 44, docs 45, client-apps 13, practice-and-test 13). Public doc tree now leads with current reality only.
+
+### Fixed
+
+- **PR-1 review blockers B1-B9** — SecurityConfig anonymous endpoints, cross-client replay guard, PKCE S256 mandate, code-mint atomicity, loopback redirect validation (IPv4-only, query rejection), OIDC nonce validation, 429 Retry-After, completedMethods derivation from MfaSession, hosted-login SDK + BYS demo flip.
+- **Deployment state:** PR-1 merged but **Docker image not yet rebuilt** — Flyway V34/V35/V36 apply on next container rebuild. Web-app `dist/` not yet rsynced to Hostinger.
+
+## [2026-04-15] — demo.fivucsas MFA hardening
 
 ### Fixed
 - **Apache `.htaccess` Permissions-Policy parse error on Hostinger**: double-quoted `Header set` values with `\"` escapes leaked literal backslashes into the emitted header, breaking structured-header parsing and killing camera/mic iframe delegation. Switched to single-quoted outer delimiter with bare inner quotes. Camera/mic now delegate to `https://verify.fivucsas.com` correctly.
@@ -21,7 +43,7 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 ### Verified
 - End-to-end 3-method login (PASSWORD + TOTP + EMAIL_OTP) on Brave PC succeeded; dashboard redirect worked; no console errors; Turkish dashboard rendered clean.
 
-## [Unreleased] - 2026-04-14/15 — Client-Side ML Split + V33 Deploy
+## [2026-04-14/15] — Client-Side ML Split + V33 Deploy
 
 ### Added
 - **Alembic 0004** `client_embedding_observations` table (biometric-processor) — vector(128), log-only per D2; populated via FastAPI BackgroundTasks so telemetry failures never break primary enrollment/verification
@@ -36,7 +58,7 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 - mobilefacenet.onnx pending — all public mirrors return 401/404; needs authenticated InsightFace/HuggingFace download. Graceful fallback active (auth works without it per D2).
 - VoiceStep uses MediaRecorder → WebM directly (4 consumer sites). VoiceVAD currently bypasses until VoiceStep is rewired to emit wav16k via useVoiceRecorder.
 
-## [Unreleased] - 2026-03-19
+## [2026-03-19] — Auth-Test Refinements + Backend Tracking
 
 ### Added - 2026-03-19 Auth-Test & Backend Refinements
 - **Auth-test page refinements**: Fingerprint username field hidden (WebAuthn + hardware token), Voice re-record enforcement after enrollment + delete enrollment button, NFC 409 "already enrolled" message + delete card button + response parsing fix (`res.success` -> `res.ok`), Face removed client-side CLAHE (caused verify mismatch) + camera 640x480 for mobile, Bank enrollment uses face-cropped images instead of full frame, Liveness server-authoritative verdict (was requiring both client+server), consistent Enroll/Verify/Who Is This?/Delete button order across all sections
@@ -66,7 +88,7 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ---
 
-## [Unreleased] - 2026-02-21
+## [2026-02-21] — Integration Closure + Step-Up Backend
 
 ### Added - 2026-03-13 Integration Closure Batch
 - **web-app test baseline mocks** under `src/core/repositories/__mocks__/`:

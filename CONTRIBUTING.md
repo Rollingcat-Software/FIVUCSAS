@@ -17,9 +17,9 @@ Thank you for your interest in contributing to the FIVUCSAS Identity Verificatio
 ### Prerequisites
 
 - Docker and Docker Compose v2+
-- Node.js 20+ (for web-app and landing-website)
-- Java 21+ and Gradle (for identity-core-api)
-- Python 3.11+ (for biometric-processor)
+- Node.js 22+ (for web-app and landing-website)
+- Java 21+ and Maven 3.9+ (for identity-core-api)
+- Python 3.12+ (for biometric-processor)
 - Android Studio / Xcode (for client-apps, optional)
 
 ### Full Stack (Docker Compose)

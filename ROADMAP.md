@@ -1,37 +1,42 @@
-# FIVUCSAS - Product Roadmap
+# FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-16 — Hosted-first auth pivot following Round-5 mobile testing + comprehensive 5-agent audit.
+> Last updated: 2026-04-16 — PR-1 hosted-first V1 merged to main (identity-core-api#16, web-app#22). Flyway V34/V35/V36 merged; production rollout pending container rebuild.
 
 ## Project Status Summary
 
 - **Overall Completion**: ~99%
-- **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger), Verify Widget (Hetzner)
+- **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger), Verify Widget / Hosted Login (Hetzner)
 - **Local Dev**: Docker Compose (5 services, all healthy)
-- **Tests**: 633 backend, 619 web-app (Vitest), 401 client-apps, 27 Playwright specs (~1,800+ total)
+- **Tests**: 633 backend, 619 web-app (Vitest), 401 client-apps, 27 Playwright specs (~1,800 total)
 
 ---
 
-## Active initiative: Hosted-first auth + Round-5 hardening
+## Active initiative: Hosted-first auth post-merge rollout
 
-**Status:** PR-1 **In Review — Needs Revision**. PRs open: identity-core-api#16, web-app#22. Three independent review passes (Copilot, backend reviewer, web-app reviewer) converged on **9 blockers**; show-stopper is SecurityConfig.java:86-91 missing permitAll for the two new anonymous OAuth endpoints. Post-demo blocker-fix sprint: ~1 focused day.
-**Demo-day safety (2026-04-16):** verified `demo.fivucsas.com` still calls widget `auth.verify({flow:'login'})`, NOT `loginRedirect()` — prod is not exposed to the in-review code.
-**Plan:** `web-app/docs/AUDIT_REPORT_2026-04-16.md` + `web-app/TODO.md` (see "PR-1 Review Blockers" section for the 9-item punch list).
-**Motivation:** Round-5 testing on Chrome Android surfaced structural iframe limits. Industry pattern for serious IdPs is hosted-first redirective auth. Backend OAuth 2.0 + OIDC is already production-grade; pivot is mostly a frontend + deployment lift.
+**Status:** PR-1 Wave 1 **merged 2026-04-16** (identity-core-api#16 → `8059ca9`, web-app#22 → `048de42`, parent pointer → `09650cd`). All 9 review blockers (B1-B9) shipped as separate commits to preserve audit history. GDPR Art. 17 / Art. 20 (export endpoint + soft-delete purge job) added 2026-04-16 as a follow-up commit set.
+**Next:** production rollout — rebuild identity-core-api Docker image so Flyway applies V34/V35/V36, then rsync web-app `dist/` to Hostinger. DB backup first; smoke-test hosted-login flow after.
+**Motivation:** Round-5 mobile testing on Chrome Android surfaced structural iframe limits (WebAuthn cross-origin edge cases, Safari ITP, 3P cookie death). Industry pattern for serious IdPs is hosted-first redirective auth (Auth0, Okta, Entra, Google, Stripe, Keycloak). Backend OAuth 2.0 / OIDC was already production-grade; the pivot was largely a frontend + deployment lift.
 
-### Wave 0 (ops, awaiting user go-ahead)
+### Merged in PR-1 (2026-04-16)
+- B1 `SecurityConfig` permitAll for `/oauth2/authorize/complete` + `/oauth2/authorize/config` (+ Testcontainers integration test)
+- B2 `mfa_sessions.client_id` cross-client replay guard (Flyway V36)
+- B3 PKCE S256 mandatory for public clients — `oauth2_clients.confidential` column (Flyway V34)
+- B4 atomic code-mint replay guard via `consumed_at` TIMESTAMP (Flyway V35)
+- B5 IPv4-only loopback redirect URI validation (RFC 8252), reject any incoming query on callback
+- B6 OIDC nonce validation on hosted-login callback
+- B7 Retry-After header on 429 responses for authorize-complete + login
+- B8 derive `completedMethods` from `MfaSession` (no hardcoded AMR list)
+- B9 web-app `loginRedirect` SDK + `HostedLoginPage` + BYS demo flip to hosted mode
+- Part A i18n sweep (method-reuse resilience, mobile layout, notifications)
+- Part C widget repositioning (NFC framed-mode fallback card, architecture doc rewrite)
+- Part D full admin-page i18n sweep (+112 keys per locale across AuditLogs/Roles/Tenants/RoleForm/useLivenessPuzzle + date locales)
+
+### Wave 0 (ops, not yet done)
 - [ ] Rotate production secrets (DB, Redis, JWT, Twilio, biometric API key) — committed in `.env.prod` files, exposed in git history
 - [ ] Purge secrets from git history via `git filter-repo`
 - [ ] Move secrets to runtime injection (GitHub Actions + `--env-file`)
 - [ ] Tighten `bio.fivucsas.com` Traefik route — add `rate-limit` + `admin-whitelist` middlewares
-
-### Wave 1 (PR-1, in progress)
-- A1 method-reuse resilience (backend echo + frontend hydrate)
-- A2 mobile layout (viewport flow + method grid + iframe autosize + QR/Voice polish)
-- A4 dashboard typo + notification i18n
-- B.1–B.4 hosted login V1 (OAuth2 content negotiation, HostedLoginApp, SDK `loginRedirect`, BYS demo flip, tenant integration docs)
-- C widget repositioning (NFC framed fallback → hosted, architecture doc rewrite)
-- Dashboard admin-page i18n sweep (AuditLogs/Roles/Tenants)
-- Demo credentials removed from LoginPage UI
+- [ ] Deploy PR-1 to prod (rebuild backend Docker, Flyway applies V34/V35/V36; rsync web-app to Hostinger)
 
 ### Wave 2 (PR-2)
 - Unify LoginMfaFlow + MultiStepAuthFlow
