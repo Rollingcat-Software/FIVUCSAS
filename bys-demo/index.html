@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Öğrenci Bilgi Sistemi | FIVUCSAS Demo</title>
     <meta name="description" content="Marmara Üniversitesi BYS Demo — FIVUCSAS biyometrik kimlik doğrulama entegrasyonu örneği.">
@@ -35,8 +36,6 @@
             <a href="#" onclick="return false;">İletişim</a>
             <span class="util-sep">|</span>
             <a href="#" onclick="return false;">Site Haritası</a>
-            <span class="util-sep">|</span>
-            <a href="#" onclick="return false;" class="lang-link">EN</a>
         </div>
     </div>
 </div>
@@ -175,7 +174,7 @@
 
                 <!-- Fake CAPTCHA -->
                 <div class="captcha-area">
-                    <label>Guvenlik Kodu</label>
+                    <label>Güvenlik Kodu</label>
                     <div class="captcha-row">
                         <div class="captcha-image">
                             <svg viewBox="0 0 160 48" width="160" height="48">
@@ -210,7 +209,7 @@
                 <span class="link-dot">&middot;</span>
                 <a href="#" onclick="return false;">Kullanıcı adımı unuttum</a>
                 <span class="link-dot">&middot;</span>
-                <a href="#" onclick="return false;">Ilk sifremi olustur</a>
+                <a href="#" onclick="return false;">İlk şifremi oluştur</a>
             </div>
 
             <!-- Divider -->
@@ -270,9 +269,9 @@
         <div class="footer-links">
             <a href="#" onclick="return false;">Gizlilik Politikasi</a>
             <span>|</span>
-            <a href="#" onclick="return false;">Erisebilirlik</a>
+            <a href="#" onclick="return false;">Erişebilirlik</a>
             <span>|</span>
-            <a href="#" onclick="return false;">Yardim</a>
+            <a href="#" onclick="return false;">Yardım</a>
         </div>
         <p>&copy; 2026 T.C. Marmara Üniversitesi &mdash; Bilgi İşlem Daire Başkanlığı</p>
         <p class="footer-demo-note">Bu bir FIVUCSAS entegrasyon demosudur. <a href="https://fivucsas.com" target="_blank" rel="noopener">fivucsas.com</a></p>
@@ -280,7 +279,9 @@
 </footer>
 
 <!-- FIVUCSAS Official Auth SDK -->
-<script src="https://verify.fivucsas.com/fivucsas-auth.js"></script>
+<script src="https://verify.fivucsas.com/fivucsas-auth.js"
+        integrity="sha384-QglswaDd6O5ov9m0yDNk2c3ySJE8Xt2aH/C6o0rzzqq2N+x+z48gotA0omyRdZGO"
+        crossorigin="anonymous"></script>
 <script>
 const FIVUCSAS_CONFIG = {
     clientId: 'marmara-bys-demo',

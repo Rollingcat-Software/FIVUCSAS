@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FIVUCSAS Elements Test</title>
 
@@ -10,7 +11,7 @@
     For production: use the CDN URL below.
     For local dev:  swap to the relative path comment.
   -->
-  <script src="https://verify.fivucsas.com/elements/fivucsas-elements.js"></script>
+  <script src="https://verify.fivucsas.com/elements/fivucsas-elements.js" crossorigin="anonymous"></script>
   <!-- <script src="../web-app/dist-elements/fivucsas-elements.js"></script> -->
 
   <style>

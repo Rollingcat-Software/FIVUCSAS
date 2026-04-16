@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Authentication | FIVUCSAS Demo</title>
     <meta name="description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu. OAuth callback sayfası.">
@@ -71,7 +72,9 @@
 </div>
 
 <!-- FIVUCSAS SDK for handleRedirectCallback() -->
-<script src="https://verify.fivucsas.com/fivucsas-auth.js"></script>
+<script src="https://verify.fivucsas.com/fivucsas-auth.js"
+        integrity="sha384-QglswaDd6O5ov9m0yDNk2c3ySJE8Xt2aH/C6o0rzzqq2N+x+z48gotA0omyRdZGO"
+        crossorigin="anonymous"></script>
 <script>
 (function() {
     'use strict';
