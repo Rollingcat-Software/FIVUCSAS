@@ -673,21 +673,21 @@ const teamMembers = [
     initials: 'AG',
     name: 'Ahmet Abdullah Gültekin',
     role: 'Project Lead & Full-Stack Engineer',
-    scope: 'Architecture · Backend · Frontend · DevOps · ML Integration',
+    scope: 'Architecture · Backend · Frontend · Face · Voice · MRZ · DevOps',
   },
   {
     lead: false,
     initials: 'AE',
     name: 'Ayşe Gülsüm Eren',
-    role: 'Mobile App Developer',
-    scope: 'Kotlin Multiplatform · Android · iOS · Desktop',
+    role: 'Mobile & Biometric Puzzle Developer',
+    scope: 'Kotlin Multiplatform · Hand & Finger Tracking · Biometric Puzzles',
   },
   {
     lead: false,
     initials: 'AA',
     name: 'Ayşenur Arıcı',
-    role: 'AI/ML & Biometric Systems',
-    scope: 'Face · Voice · Liveness · Anti-spoofing',
+    role: 'Computer Vision & ML Research',
+    scope: 'YOLO Card Detector · Liveness · Anti-Spoofing · Model Training',
   },
 ]
 
