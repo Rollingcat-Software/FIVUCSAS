@@ -13,8 +13,9 @@
 
 ## Active initiative: Hosted-first auth + Round-5 hardening
 
-**Status:** In progress on branch `feat/hosted-first-auth-round5` (web-app).
-**Plan:** `web-app/docs/AUDIT_REPORT_2026-04-16.md` + `web-app/TODO.md`.
+**Status:** PR-1 **In Review — Needs Revision**. PRs open: identity-core-api#16, web-app#22. Three independent review passes (Copilot, backend reviewer, web-app reviewer) converged on **9 blockers**; show-stopper is SecurityConfig.java:86-91 missing permitAll for the two new anonymous OAuth endpoints. Post-demo blocker-fix sprint: ~1 focused day.
+**Demo-day safety (2026-04-16):** verified `demo.fivucsas.com` still calls widget `auth.verify({flow:'login'})`, NOT `loginRedirect()` — prod is not exposed to the in-review code.
+**Plan:** `web-app/docs/AUDIT_REPORT_2026-04-16.md` + `web-app/TODO.md` (see "PR-1 Review Blockers" section for the 9-item punch list).
 **Motivation:** Round-5 testing on Chrome Android surfaced structural iframe limits. Industry pattern for serious IdPs is hosted-first redirective auth. Backend OAuth 2.0 + OIDC is already production-grade; pivot is mostly a frontend + deployment lift.
 
 ### Wave 0 (ops, awaiting user go-ahead)
