@@ -58,6 +58,9 @@ function App() {
 
   return (
     <div className="min-h-screen gradient-bg text-white">
+      {/* ─── Skip to content (a11y) ─── */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded">Skip to content</a>
+
       {/* ─── Navigation ─── */}
       <nav className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -76,8 +79,8 @@ function App() {
               <a href="#architecture" className="text-slate-300 hover:text-white transition-colors">Architecture</a>
               <a href="#team" className="text-slate-300 hover:text-white transition-colors">Team</a>
               <a href="#contact" className="text-slate-300 hover:text-white transition-colors">Contact</a>
-              <a href="https://demo.fivucsas.com" target="_blank" rel="noopener" className="text-slate-300 hover:text-white transition-colors">Demo</a>
-              <a href="https://status.fivucsas.com" target="_blank" rel="noopener" className="text-slate-300 hover:text-white transition-colors">Status</a>
+              <a href="https://demo.fivucsas.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors">Demo</a>
+              <a href="https://status.fivucsas.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors">Status</a>
               <a
                 href="https://app.fivucsas.com"
                 className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 transition-colors"
@@ -133,7 +136,7 @@ function App() {
       </nav>
 
       {/* ─── Hero Section ─── */}
-      <section ref={heroRef} className="relative pt-32 pb-20 px-4 overflow-hidden">
+      <section id="main" ref={heroRef} className="relative pt-32 pb-20 px-4 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -166,7 +169,7 @@ function App() {
               <a
                 href="https://demo.fivucsas.com"
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="px-8 py-4 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 font-semibold transition-all"
               >
                 Live Demo
@@ -174,7 +177,7 @@ function App() {
               <a
                 href="https://github.com/Rollingcat-Software/FIVUCSAS"
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="px-8 py-4 rounded-xl bg-slate-700/20 hover:bg-slate-700/40 border border-slate-700 font-semibold transition-all text-slate-300"
               >
                 View on GitHub
@@ -189,7 +192,7 @@ function App() {
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           <StatCard value={10} suffix="" label="Auth Methods" />
           <StatCard value={180} suffix="+" label="API Endpoints" />
-          <StatCard value={900} suffix="+" label="Tests Passing" />
+          <StatCard value={1800} suffix="+" label="Tests Passing" />
           <StatCard value={6} suffix="" label="Services" />
         </div>
       </section>
@@ -634,7 +637,7 @@ const techStack = [
   { logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg', name: 'PostgreSQL', description: 'Primary Database' },
   { logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg', name: 'Redis', description: 'Cache & Queue' },
   { logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg', name: 'Docker', description: 'Containerization' },
-  { logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nginx/nginx-original.svg', name: 'NGINX', description: 'API Gateway' },
+  { logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/traefikproxy/traefikproxy-original.svg', name: 'Traefik', description: 'API Gateway + TLS' },
 ]
 
 const services = [
@@ -642,13 +645,13 @@ const services = [
     icon: '\u{1F510}',
     name: 'Identity Core API',
     description: 'Central authentication and identity management service handling users, tenants, and permissions.',
-    tech: ['Spring Boot 3.2', 'Java 21', 'PostgreSQL', 'Redis'],
+    tech: ['Spring Boot 3.4.7', 'Java 21', 'PostgreSQL', 'Redis'],
   },
   {
     icon: '\u{1F441}\uFE0F',
     name: 'Biometric Processor',
     description: 'ML-powered face recognition engine with 46+ endpoints for enrollment, verification, and analysis.',
-    tech: ['FastAPI', 'Python 3.11', 'InsightFace', 'pgvector'],
+    tech: ['FastAPI', 'Python 3.12', 'InsightFace', 'pgvector'],
   },
   {
     icon: '\u{1F5A5}\uFE0F',
