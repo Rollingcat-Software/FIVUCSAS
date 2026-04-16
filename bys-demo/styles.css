@@ -559,6 +559,22 @@ body {
 
 .fivucsas-login-btn:hover .fivucsas-arrow { transform: translateX(3px); opacity: 1; }
 
+/* Secondary: advanced/widget button */
+.fivucsas-advanced { margin-top: 0.75rem; text-align: center; }
+.fivucsas-advanced-btn {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+}
+.fivucsas-advanced-btn:hover { color: #374151; }
+
 /* ─── Demo Banner ─── */
 .demo-banner {
     max-width: 430px;

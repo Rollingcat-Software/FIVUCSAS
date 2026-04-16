@@ -70,44 +70,66 @@
     </div>
 </div>
 
+<!-- FIVUCSAS SDK for handleRedirectCallback() -->
+<script src="https://verify.fivucsas.com/fivucsas-auth.js"></script>
 <script>
 (function() {
     'use strict';
 
-    var authData = null;
-
-    // Check for auth data from the widget (stored in sessionStorage by index.html)
-    try {
-        var stored = sessionStorage.getItem('fivucsas_auth');
-        if (stored) {
-            authData = JSON.parse(stored);
-        }
-    } catch(e) {
-        // ignore
-    }
-
-    // Also check URL params (OAuth authorization code flow)
     var params = new URLSearchParams(window.location.search);
-    var authCode = params.get('code');
-    var error = params.get('error');
+    var oauthError = params.get('error');
+    var oauthCode = params.get('code');
 
-    if (error) {
-        showError('OAuth hatası: ' + (params.get('error_description') || error));
+    if (oauthError) {
+        showError('OAuth hatası: ' + (params.get('error_description') || oauthError));
         return;
     }
 
-    if (authCode && !authData) {
-        // Authorization code received from OAuth redirect
-        authData = {
-            success: true,
-            authCode: authCode,
-            displayName: 'OAuth User',
-            email: 'student@marmara.edu.tr',
-            sessionId: 'oauth-' + Date.now(),
-            completedMethods: ['password'],
-            timestamp: Date.now()
-        };
-        sessionStorage.setItem('fivucsas_auth', JSON.stringify(authData));
+    // Primary path: OAuth 2.0 authorization code from hosted login.
+    // SDK verifies state, exchanges code at /oauth2/token with PKCE verifier,
+    // and returns access/id/refresh tokens.
+    if (oauthCode) {
+        var auth = new FivucsasAuth({
+            clientId: 'marmara-bys-demo',
+            baseUrl: 'https://verify.fivucsas.com',
+            apiBaseUrl: 'https://api.fivucsas.com/api/v1',
+            locale: 'tr'
+        });
+
+        auth.handleRedirectCallback()
+            .then(function(tokens) {
+                var authData = {
+                    success: true,
+                    mode: 'hosted',
+                    accessToken: tokens.accessToken,
+                    refreshToken: tokens.refreshToken,
+                    idToken: tokens.idToken,
+                    tokenType: tokens.tokenType,
+                    expiresIn: tokens.expiresIn,
+                    userId: tokens.userId,
+                    email: tokens.email,
+                    displayName: tokens.displayName,
+                    sessionId: tokens.sessionId || ('oauth-' + Date.now()),
+                    completedMethods: tokens.completedMethods,
+                    timestamp: tokens.timestamp || Date.now()
+                };
+                sessionStorage.setItem('fivucsas_auth', JSON.stringify(authData));
+                showSuccess(authData);
+            })
+            .catch(function(err) {
+                console.error('Token exchange failed:', err);
+                showError('Kimlik doğrulama tamamlanamadı: ' + (err.message || 'Bilinmeyen hata'));
+            });
+        return;
+    }
+
+    // Fallback path: widget flow stashed tokens in sessionStorage
+    var authData = null;
+    try {
+        var stored = sessionStorage.getItem('fivucsas_auth');
+        if (stored) authData = JSON.parse(stored);
+    } catch(e) {
+        // ignore
     }
 
     if (!authData || (!authData.success && !authData.accessToken)) {
@@ -115,7 +137,6 @@
         return;
     }
 
-    // Show success
     showSuccess(authData);
 
     function showSuccess(data) {

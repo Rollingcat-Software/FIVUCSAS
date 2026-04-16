@@ -226,7 +226,7 @@
             <!-- Second Divider -->
             <div class="login-divider"><span>veya</span></div>
 
-            <!-- FIVUCSAS Login Button -->
+            <!-- FIVUCSAS Login Button — PRIMARY: hosted redirective OIDC flow -->
             <button class="fivucsas-login-btn" id="fivucsas-login-btn" onclick="startFivucsasLogin()">
                 <span class="fivucsas-icon">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -236,10 +236,17 @@
                 </span>
                 <div class="fivucsas-btn-text">
                     <div class="fivucsas-btn-label">FIVUCSAS ile Güvenli Giriş</div>
-                    <div class="fivucsas-btn-sub">Biyometrik Kimlik Dogrulama</div>
+                    <div class="fivucsas-btn-sub">Yönlendirmeli Giriş &mdash; Biyometrik Kimlik Doğrulama</div>
                 </div>
                 <svg class="fivucsas-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
             </button>
+
+            <!-- Secondary: inline widget (step-up MFA / advanced) -->
+            <div class="fivucsas-advanced">
+                <button type="button" class="fivucsas-advanced-btn" onclick="startFivucsasWidget()">
+                    İnline MFA (gelişmiş) &mdash; iframe widget örneği
+                </button>
+            </div>
 
         </div><!-- /.login-card -->
 
@@ -275,15 +282,34 @@
 <!-- FIVUCSAS Official Auth SDK -->
 <script src="https://verify.fivucsas.com/fivucsas-auth.js"></script>
 <script>
-async function startFivucsasLogin() {
-    const auth = new FivucsasAuth({
-        clientId: 'marmara-bys-demo',
-        baseUrl: 'https://verify.fivucsas.com',
-        apiBaseUrl: 'https://api.fivucsas.com/api/v1',
-        locale: 'tr',
-        theme: 'light'
-    });
+const FIVUCSAS_CONFIG = {
+    clientId: 'marmara-bys-demo',
+    baseUrl: 'https://verify.fivucsas.com',
+    apiBaseUrl: 'https://api.fivucsas.com/api/v1',
+    locale: 'tr',
+    theme: 'light'
+};
 
+// PRIMARY: hosted-first OIDC flow
+// Navigates the top-level browser to verify.fivucsas.com/login, which runs
+// MFA natively (Web NFC, passkeys, camera all work), then redirects back
+// to callback.html with ?code=...&state=... for code→token exchange.
+async function startFivucsasLogin() {
+    try {
+        const auth = new FivucsasAuth(FIVUCSAS_CONFIG);
+        await auth.loginRedirect({
+            redirectUri: window.location.origin + '/callback.html',
+            scope: 'openid profile email'
+        });
+    } catch (err) {
+        console.error('loginRedirect failed:', err);
+        alert('Giriş başlatılamadı. Lütfen tekrar deneyin.');
+    }
+}
+
+// SECONDARY: embedded iframe widget — kept for inline step-up MFA demos
+async function startFivucsasWidget() {
+    const auth = new FivucsasAuth(FIVUCSAS_CONFIG);
     try {
         const result = await auth.verify({
             flow: 'login',
@@ -295,6 +321,7 @@ async function startFivucsasLogin() {
         if (result.success) {
             sessionStorage.setItem('fivucsas_auth', JSON.stringify({
                 success: true,
+                mode: 'widget',
                 accessToken: result.accessToken,
                 refreshToken: result.refreshToken,
                 userId: result.userId,
@@ -307,7 +334,7 @@ async function startFivucsasLogin() {
             window.location.href = 'callback.html';
         }
     } catch (err) {
-        console.error('Authentication failed:', err);
+        console.error('Widget auth failed:', err);
         alert('Kimlik doğrulama başarısız oldu. Lütfen tekrar deneyin.');
     }
 }
