@@ -2,6 +2,38 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18d] — Security incident log + keystore rotation plan + parallel recovery round
+
+### Documented
+- **GitGuardian incident #29836028** — Android keystore password `fivucsas2026` leaked in public git history of `Rollingcat-Software/client-apps` (commit `db18fa7`, reachable via tag `v3.0.0`). Scaffolding to read from env vars / Gradle properties shipped `cb6eab9` same day. Rotation is still user-gated (keytool + GitHub secret paste). New `docs/SECURITY_INCIDENTS.md` logs the incident, blast-radius assessment, full remediation playbook, and the decision NOT to rewrite history (rotation makes the leaked password dead; history rewrite has higher blast radius than residual exposure). `ROADMAP.md` Phase C gets a new item **C6** covering this rotation.
+- **Plans shipped** to `docs/plans/`: `NFC_PUSH_APPROVAL_PROTOCOL.md` (cross-device NFC handoff mirroring e-Devlet — `fivucsas://nfc-session` deep link, Ed25519 device registration, FCM/APNS push, V39 migration sketch, 13-threat security review); `CLIENT_APPS_PARITY.md` (Android / iOS / Desktop parity — 22-row feature matrix, per-platform top-10 gaps, 4-phase rollout to 2026-08-01 GA).
+
+### Added
+- **Android keystore rotation scaffolding** (`client-apps` commit `cb6eab9`): `androidApp/build.gradle.kts` reads `ANDROID_KEYSTORE_PATH` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` from Gradle properties or env; release signing falls back to debug signing with a warning when creds absent (keeps PR / fork CI green). `.github/workflows/android-build.yml` gates the keystore decode step behind `workflow_dispatch` + `build_type=release`, materialises `ANDROID_KEYSTORE_BASE64` into `$RUNNER_TEMP`, wipes in `if: always()` post-step. New `client-apps/docs/RELEASE.md` documents 6-month rotation cadence and emergency revocation playbook. `README.md` adds a "Signed release builds" section.
+
+### In flight (background agents at commit time)
+- **Ship A** — critical prod fixes (CORS preflight on `/api/v1/auth/mfa/step`, `ort.min-*.js` 404 on verify.fivucsas.com, BlazeFace 4× re-init due to missing singleton, production console log noise, i18next Locize banner).
+- **Ship D** — RFC 6238 TOTP engine (Android-first, KMP commonMain): `TotpGenerator` + `OtpauthUri` parser + `TotpVault` (EncryptedSharedPreferences) + `AuthenticatorScreen` Compose UI. Manual entry only in v5.1.0; QR scan deferred to G2.
+
+### Fixed (Ship A landed)
+- **Verify-widget ORT 404** — root cause: `.gitignore` line 50 excludes
+  `verify-widget/html/assets/*.js` so the Dockerfile `COPY html/` step shipped
+  the image with an empty `assets/` directory. Added
+  `verify-widget/sync-assets.sh` to `rsync` `../web-app/dist-verify/assets/`
+  into `verify-widget/html/assets/` immediately before
+  `docker compose build`, matching `feedback_widget_deploy_sync` memory rule.
+  `curl -sI https://verify.fivucsas.com/assets/ort.min-CSPs-wzd.js` → 200.
+- **bys-demo SDK cache-bust** bumped to `?v=20260418d` on both
+  `index.html` and `callback.html`. SRI hash unchanged
+  (`sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6`)
+  because the SDK bundle was not rebuilt this round.
+- **CORS on `/api/v1/auth/mfa/step`** — preflight from
+  `https://verify.fivucsas.com` already returns 200 with correct
+  `Access-Control-Allow-*` headers in prod; no backend / filter-order change
+  needed. Runtime verified with `curl -X OPTIONS`.
+- See `web-app/CHANGELOG.md ## [2026-04-18d]` for BlazeFace singleton,
+  `dropConsole`, and i18n debug details.
+
 ## [2026-04-18c] — Hosted-login UX recovery: callback data, stepper, locale, face retry, copy audit
 
 ### Fixed
