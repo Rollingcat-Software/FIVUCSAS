@@ -109,13 +109,13 @@ This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 secti
 
 Android currently sits at ~15/20 feature parity with web. Cross-platform deep review (2026-04-18e) identified five gaps that, once closed, bring the mobile client to 20/20. Full sequencing, file-level plan, and verification steps live in `docs/plans/PATH_TO_20_20.md` (canonical).
 
-- [ ] **I1.** Passport BAC MFA integration — wire the already-ported NFC infrastructure (`androidApp/data/nfc/`, 5,447 LOC) into `MfaFlowScreen.kt:324`; port `MrzScannerScreen.kt` from `practice-and-test/UniversalNfcReader`; new `NfcStepScreen.kt`. (~2 days)
-- [ ] **I2.** GDPR/KVKK export mobile UI — repository + ViewModel + Profile row + `DownloadManager` + 8 i18n keys. Backend (`GET /users/{id}/export`) shipped 2026-04-16b; web-app wired 2026-04-18. (~2 days)
-- [ ] **I3.** FCM action buttons + `fivucsas://` deep-link — Allow/Deny actions on push notifications, new `ApprovalActionReceiver`, `fivucsas://nfc-session` scheme in AndroidManifest, `MainActivity.onNewIntent` handler per `docs/plans/NFC_PUSH_APPROVAL_PROTOCOL.md`. (~2 days)
-- [ ] **I4.** Dark mode toggle in Settings — `ThemeMode { SYSTEM, LIGHT, DARK }` enum + `ThemePreferences` + CompositionLocal + 3-radio row in `SettingsScreen`. `AppColors.kt` already carries both palettes. (~1 day)
-- [ ] **I5.** Authenticator QR scanner — new `OtpQrScannerScreen.kt` reusing existing `QrScannerScreen` CameraX + ML Kit + `OtpauthUri.parse()`; replaces the current Toast on the "Scan QR" bottom-sheet entry shipped in v5.1.0. (~1 day)
+- [x] **I1.** Passport BAC MFA integration — `NfcStepScreen` + ported `MrzScannerScreen` wired into `MfaFlowScreen.kt:324`. Shipped in client-apps `1b378e1` (v5.2.0-rc1).
+- [x] **I2.** GDPR/KVKK export mobile UI — `DataExportViewModel` + `ExportDataRow` + MediaStore Downloads + 8 i18n keys. Shipped in v5.2.0-rc1.
+- [x] **I3.** FCM action buttons + `fivucsas://` deep-link — `ApprovalActionReceiver` + `NfcApprovalViewModel` + `MainActivity.onNewIntent` handler. Shipped in v5.2.0-rc1.
+- [x] **I4.** Dark mode toggle in Settings — `ThemeMode { SYSTEM, LIGHT, DARK }` enum + `LocalThemeMode` CompositionLocal + Settings radio row. Shipped in v5.2.0-rc1.
+- [x] **I5.** Authenticator QR scanner — `OtpQrScannerScreen` reusing `QrScannerScreen` CameraX + `OtpauthUri.parse()`. Shipped in v5.2.0-rc1.
 
-Total ~8 engineer-days; fully parallelizable across 5 code agents. Wave plan + verification in `docs/plans/PATH_TO_20_20.md`.
+**Phase I COMPLETE** — Android feature parity at 20/20. Tag `v5.2.0-rc1` placed 2026-04-18e; full `v5.2.0` after Ship B (verify-app StepLayout) lands + any follow-ups.
 
 ---
 
@@ -123,7 +123,7 @@ Total ~8 engineer-days; fully parallelizable across 5 code agents. Wave plan + v
 
 | Month | Planned | Status |
 |-------|---------|--------|
-| April 2026 | Phase A (lint green) + Phase B (Dependabot merges) + Phase L (docs refresh) | **DONE** for L; A/B in flight |
+| April 2026 | Phase A (lint green) + Phase B (Dependabot merges) + Phase I (Android 20/20) + Phase L (docs refresh) | **DONE** (A/B/I/L shipped 2026-04-18) |
 | May 2026 | Phase C (Wave 0 ops — secrets rotation + history purge + Traefik tightening) + Phase E (bundle + CI speed) + Phase D start (D4 OIDC conformance + D5 PKCE audit) | Planned |
 | June 2026 | Phase G quick wins (G1 YubiKey testing, G4 native-app SDK docs, G7 Web Components) + Phase D continued (D1 DNN liveness + D2 voice replay) | Planned |
 | July 2026 | Phase F observability (Loki/Grafana, backup-restore cron, SLA + incident runbooks) | Planned |
