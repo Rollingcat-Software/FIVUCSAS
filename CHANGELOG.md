@@ -2,6 +2,31 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18b] — Demo login recovery, IC CI green, Vite dependabot closed
+
+### Fixed
+- **demo.fivucsas.com login** — button click was throwing `"Giriş başlatılamadı."` because `verify.fivucsas.com/fivucsas-auth.js` was the Apr-15 bundle (10,643 B) which predates the `loginRedirect` SDK method shipped in PR-1. Rebuilt `dist-sdk` (15,684 B), copied into `verify-widget/html/`, rebuilt container, updated SRI hashes in `bys-demo/{index,callback}.html`. rsync'd to Hostinger.
+- **Browser-cache trap** — after shipping the new bundle, users with a cached Apr-15 SDK still failed: their cached bytes didn't match the new SRI hash so the browser blocked the script. Fixed with two measures:
+  - `verify-widget/nginx.conf`: the specific `/fivucsas-auth.js` location block was being shadowed by the generic `\.js$` regex (nginx first-match semantics); moved it above the generic rule. `max-age=300, must-revalidate` on SDK files so future updates propagate in 5 minutes. Other static assets keep 1y immutable.
+  - `bys-demo/{index,callback}.html`: `?v=20260418` cache-bust on SDK URL.
+- **identity-core-api CI on `main` — 38 red tests → 0.** Root cause was systematic test-source drift from 25+ legitimate source changes while the broken self-hosted runner was silently skipping public PRs. 10 test files realigned to current source (no `@Disabled`, no weakened assertions):
+  - `AuthControllerTest`: corrected `UserRepository` JPA→domain-port import, added 13 `@MockBean`s for controller's grown 25-dep constructor.
+  - `EnrollmentControllerTest`, `TotpControllerTest`, `OtpControllerTest`, `UserEnrollmentFlowControllerTest`: added `EnrollmentHealthService` + related `@MockBean`s.
+  - `AuthenticateUserServiceTest`: 4 new mocks + migrated to 2-arg `generateAccessToken(email, amr)` form (RFC 8176).
+  - `GetCurrentUserServiceTest`: added `TenantRepository` mock.
+  - `ManageEnrollmentServiceTest`: `NfcCardRepositoryPort` + `WebAuthnCredentialRepositoryPort` mocks; re-enroll test switched to PASSWORD (TOTP not in `AUTO_COMPLETE_TYPES`).
+  - `NfcDocumentAuthHandlerTest`: `NfcCardRepositoryPort` mock + assertions aligned with current repository-lookup path.
+  - `TotpAuthHandlerTest`: `UserRepository` mock for Redis-miss→DB fallback in `resolveTotpSecret`.
+  - `mvn test`: 838 tests / 0 failures / 0 errors (27 skips are integration, gated on `RUN_INTEGRATION=true`).
+
+### Security
+- **Dependabot #28 merged** — Vite 6.4.1 → 6.4.2 in `landing-website/` (dev-dep only; path-traversal + `server.fs.deny` trim-slash fixes). Parent repo now at **0 open Dependabot PRs**.
+
+### Repo hygiene
+- **biometric-processor garbage purged** — `=0.10.0` (0-byte artefact of a shell-interpretation typo) and `2025-12-26-perfect-heres-the-exact-prompt-to-give-sonnet.txt` (25 KB personal prompt scratch) deleted from tracked files.
+- **Parent orphan cleanup** — `auth-test/` (empty dir with only a stray `.git/`) and `.github/ISSUE_TEMPLATE/` (empty) removed from working tree.
+- **`bys-demo/robots.txt`** — `Disallow: /test-elements.html` (dev Web Components demo kept in repo but not indexable).
+
 ## [2026-04-18] — Deploy round 2: V37/V38, CI unblock, Dependabot sweep, MobileFaceNet out
 
 ### Added
