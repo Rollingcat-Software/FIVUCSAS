@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-16 (PR-1 hosted-first V1 merged to main on both repos; Flyway V34/V35/V36 pending prod rollout)
+**Last verified**: 2026-04-18 (Phase A lint green on ubuntu-latest CI; Dependabot protobufjs CRITICAL + follow-redirects merged; MobileFaceNet stripped; Flyway V37/V38 applied to prod; roadmap refreshed to Phase A–L)
 
 ## Architecture
 
@@ -110,7 +110,7 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 ## Database
 
-- Flyway migrations V1-V36 (identity-core-api) + Alembic 0001-0004 (biometric-processor)
+- Flyway migrations V1-V38 (identity-core-api; V37 tenant_id index, V38 SPA public client flip) + Alembic 0001-0004 (biometric-processor)
 - Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
 - pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 
@@ -126,9 +126,14 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 ## CI/CD
 
-- Self-hosted runner `hetzner-cx43` on GitHub Actions
-- All pipelines GREEN (web-app, identity-core-api, client-apps, biometric-processor)
-- Dependabot configured (weekly, grouped, limit 5)
+- **web-app** CI runs on `ubuntu-latest` (both public-repo jobs). Self-hosted
+  `hetzner-cx43` runner reserved for the `Deploy to Hostinger` workflow only.
+- **identity-core-api** CI split: unit tests (`mvn -T 2C test`) on `ubuntu-latest`,
+  integration tests (Testcontainers, gated on `RUN_INTEGRATION=true`) on the
+  self-hosted runner.
+- All pipelines GREEN (web-app, identity-core-api, client-apps, biometric-processor).
+- Dependabot configured (weekly, grouped, limit 5). As of 2026-04-18: 0 open
+  vulnerabilities after protobufjs + follow-redirects merges.
 
 ## Design Documents (docs/plans/)
 

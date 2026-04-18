@@ -2,6 +2,37 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18] — Deploy round 2: V37/V38, CI unblock, Dependabot sweep, MobileFaceNet out
+
+### Added
+- **Flyway V37** — `oauth2_clients.tenant_id` index (audit safety-net; V24 already declared it). Applied to prod.
+- **Flyway V38** — `fivucsas-web-dashboard` flipped to `confidential = false` because the SPA cannot hold a client secret (RFC 6749 §2.1 / RFC 8252 §8.4). Applied to prod; PKCE S256 was already mandatory.
+- **`marmara-bys-demo` OAuth2 client** — registered in prod for the BYS demo integration (`demo.fivucsas.com`).
+- **Phase A–L roadmap** — `ROADMAP.md` refreshed for 2026-04-18 with the full plan (A lint → B dependabot → C ops hardening → D security depth → E perf → F observability → G features → H code-quality → L docs) and a Timeline table. Identity-core-api now has its own `TODO.md` seeded from Phase C/D/E/H backend items; `web-app/TODO.md` sections split into "Open 2026-04-18" / "Completed 2026-04-18".
+
+### Changed
+- **web-app CI** — both jobs moved from self-hosted `hetzner-cx43` to `ubuntu-latest` (the runner group had `allows_public_repositories: false`, silently skipping this public repo for ~5 days). `.npmrc` added with `legacy-peer-deps=true` so Vite 8 + vite-plugin-pwa peer mismatch doesn't break `npm ci`.
+- **identity-core-api CI** — split into `test` (unit, ubuntu-latest, now `mvn -T 2C`) + `integration-tests` (self-hosted, Docker-required Testcontainers via `RUN_INTEGRATION=true`). Integration test classes gated with `@EnabledIfEnvironmentVariable(named = "RUN_INTEGRATION", matches = "true")`.
+- **Face embedding pipeline (web-app)** — MobileFaceNet stripped entirely (was blocked on an authenticated download). Now landmark-geometry only (`geometry-512`, 512-D from MediaPipe FaceLandmarker). Server remains authoritative via Alembic 0004 log-only observations per D2.
+
+### Fixed
+- **web-app lint** — 23 errors / 63 warnings → 0 errors / 33 warnings. Cleared `react-hooks/rules-of-hooks` in `HostedLoginApp.tsx` and `TwoFactorDispatcher.tsx`, `no-useless-escape` in `FivucsasAuth.ts`, stale `eslint-disable` in `postMessageBridge.ts`, 30 `exhaustive-deps` across 20 files. Tests: 597/597 passing.
+
+### Security
+- **Dependabot sweep** — 0 remaining vulnerabilities after merging:
+  - `protobufjs` 7.5.4 → 7.5.5 (CRITICAL, web-app #23)
+  - `follow-redirects` 1.15.11 → 1.16.0 (MODERATE, web-app #21)
+- **Still open:** `vite` 6.4.1 → 6.4.2 patch in `landing-website/` (parent #28, MODERATE, dev-server only — awaiting user decision).
+
+### Deployed
+- Docker rebuild of identity-core-api — V37/V38 + marmara-bys-demo client applied.
+- web-app `dist/` rsync'd to Hostinger after Dependabot merges.
+
+### Still on the human plate
+- Phase C (Wave 0 ops) — secret rotation + `git filter-repo` on `.env.prod` history. Destructive; needs maintenance window.
+- Phase D — DNN liveness, voice replay detection, voice STT verification, OIDC conformance.
+- DKIM CNAMEs still NXDOMAIN on Hostinger.
+
 ## [2026-04-16] — PR-1 hosted-first auth V1 + GDPR compliance
 
 ### Added
