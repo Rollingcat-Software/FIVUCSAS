@@ -1,6 +1,6 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-16 — PR-1 hosted-first V1 merged to main (identity-core-api#16, web-app#22). Flyway V34/V35/V36 merged; production rollout pending container rebuild.
+> Last updated: 2026-04-18 — V38 OAuth2 public flip shipped, MobileFaceNet deprecated, `marmara-bys-demo` client registered, web-app PR CI migrated to `ubuntu-latest`. Pre-existing lint debt surfaced (23 errors / 63 warnings) is now blocking Dependabot security merges.
 
 ## Project Status Summary
 
@@ -11,54 +11,106 @@
 
 ---
 
-## Active initiative: Hosted-first auth post-merge rollout
+## Active initiative: Post-V38 stabilization + lint-debt burn-down
 
-**Status:** PR-1 Wave 1 **merged 2026-04-16** (identity-core-api#16 → `8059ca9`, web-app#22 → `048de42`, parent pointer → `09650cd`). All 9 review blockers (B1-B9) shipped as separate commits to preserve audit history. GDPR Art. 17 / Art. 20 (export endpoint + soft-delete purge job) added 2026-04-16 as a follow-up commit set.
-**Next:** production rollout — rebuild identity-core-api Docker image so Flyway applies V34/V35/V36, then rsync web-app `dist/` to Hostinger. DB backup first; smoke-test hosted-login flow after.
-**Motivation:** Round-5 mobile testing on Chrome Android surfaced structural iframe limits (WebAuthn cross-origin edge cases, Safari ITP, 3P cookie death). Industry pattern for serious IdPs is hosted-first redirective auth (Auth0, Okta, Entra, Google, Stripe, Keycloak). Backend OAuth 2.0 / OIDC was already production-grade; the pivot was largely a frontend + deployment lift.
+**Status (2026-04-18):**
+- Flyway **V38** flipped `fivucsas-web-dashboard` OAuth2 client to public + PKCE-only (SPA cannot hold a secret).
+- **MobileFaceNet deprecated** (commit `9e15cdd`) — landmark-geometry (512-dim MediaPipe) is now the sole client embedding. 4.9 MB download + ONNX startup overhead eliminated; server DeepFace Facenet512 remains authoritative per D2 log-only rule.
+- **`marmara-bys-demo`** OAuth2 client registered for `demo.fivucsas.com` hosted-login flow.
+- **Web-app PR CI migrated to `ubuntu-latest`** (commit `cd0c1ba`) — `.npmrc legacy-peer-deps=true` added to compensate (fd9092c). Move revealed pre-existing lint debt the self-hosted runner was silently skipping.
+- **GDPR front-end export wire-up** shipped (commit `52f2fe1`), completing the Art. 20 data-portability surface started 2026-04-16b.
+- **ORT + BlazeFace lazy-load** verified via bundle audit (commit `91064ed` — already dynamic imports; off the critical path).
 
-### Merged in PR-1 (2026-04-16)
-- B1 `SecurityConfig` permitAll for `/oauth2/authorize/complete` + `/oauth2/authorize/config` (+ Testcontainers integration test)
-- B2 `mfa_sessions.client_id` cross-client replay guard (Flyway V36)
-- B3 PKCE S256 mandatory for public clients — `oauth2_clients.confidential` column (Flyway V34)
-- B4 atomic code-mint replay guard via `consumed_at` TIMESTAMP (Flyway V35)
-- B5 IPv4-only loopback redirect URI validation (RFC 8252), reject any incoming query on callback
-- B6 OIDC nonce validation on hosted-login callback
-- B7 Retry-After header on 429 responses for authorize-complete + login
-- B8 derive `completedMethods` from `MfaSession` (no hardcoded AMR list)
-- B9 web-app `loginRedirect` SDK + `HostedLoginPage` + BYS demo flip to hosted mode
-- Part A i18n sweep (method-reuse resilience, mobile layout, notifications)
-- Part C widget repositioning (NFC framed-mode fallback card, architecture doc rewrite)
-- Part D full admin-page i18n sweep (+112 keys per locale across AuditLogs/Roles/Tenants/RoleForm/useLivenessPuzzle + date locales)
+**Blockers surfaced today:**
+- 23 lint errors + 63 warnings on web-app — worst offender `HostedLoginApp.tsx` (15 `react-hooks/rules-of-hooks` errors from an early-return placed before hook calls). 1 error in `FivucsasAuth.ts` (`no-useless-escape`), 1 in `postMessageBridge.ts` (stale eslint-disable), 6 `no-unused-vars` in tests.
+- **Dependabot gated on lint-green**: web-app #29 `protobufjs` **CRITICAL**, #28 `follow-redirects` MODERATE, FIVUCSAS parent #8 Vite MODERATE.
+- Actual critical-path bundle hotspots (post-ORT-lazy): `mui-vendor-*.js` 548 KB, Recharts `container-*.js` 398 KB + `PieChart-*.js` 397 KB.
 
-### Wave 0 (ops, not yet done)
-- [ ] Rotate production secrets (DB, Redis, JWT, Twilio, biometric API key) — committed in `.env.prod` files, exposed in git history
-- [ ] Purge secrets from git history via `git filter-repo`
-- [ ] Move secrets to runtime injection (GitHub Actions + `--env-file`)
-- [ ] Tighten `bio.fivucsas.com` Traefik route — add `rate-limit` + `admin-whitelist` middlewares
-- [ ] Deploy PR-1 to prod (rebuild backend Docker, Flyway applies V34/V35/V36; rsync web-app to Hostinger)
+**Next:** Phase A lint sweep → Phase B Dependabot merge → Phase C Wave 0 ops hardening (during a scheduled maintenance window — JWT rotation signs everyone out).
 
-### Wave 2 (PR-2)
-- Unify LoginMfaFlow + MultiStepAuthFlow
-- Backend DTO migration (135 `Map.of()` responses → typed DTOs)
-- Admin `@PreAuthorize` + unified `ErrorResponse`
-- PKCE failure audit logging + rate limit
-- Native-app SDK integration docs (iOS AppAuth, Android Custom Tabs, Electron)
+---
 
-### Wave 3 (PR-3)
-- 17 backend controllers `@WebMvcTest` coverage
-- `@Version` optimistic locking on `User`/`AuthFlow`/`Tenant`
-- JPA cascade refactor (`CascadeType.ALL` → `PERSIST, MERGE`)
-- `@Transactional(readOnly=true)` sweep on 50+ services
-- CI i18n lint rule (reject untranslated English in `.tsx`)
+## Phases A–H (2026-04-18 restructure)
 
-### Wave 4 (polish)
-- Terminology sweep (MFA canonical)
-- `docs/04-api/ERROR_CODES.md`, `docs/guides/tenant-integration/QUICKSTART.md`, `docs/06-deployment/FEATURE_FLAGS.md`
-- SDK `CHANGELOG.md` split
-- `console.log` purge in auth paths
-- `aria-describedby` sweep
-- Mobile table responsive breakpoints
+This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 sections (Auth Method Completion, Widget Architecture, etc.) are retained below unchanged.
+
+### Phase A — Green the PR CI (unblocks Dependabot)
+
+- [ ] **A1.** Refactor `src/verify-app/HostedLoginApp.tsx` so all hooks run above the early `return <ErrorCard/>`; gate internal effects on `authParams` truthiness (15 errors → 0).
+- [ ] **A2.** Misc errors: `FivucsasAuth.ts:105` useless regex escape; `postMessageBridge.ts:74` stale eslint-disable; test-file `no-unused-vars` (`act`, `afterEach`, `waitFor`, `userEvent`).
+- [ ] **A3.** Exhaustive-deps warnings (63) in `GuestsPage`, `NfcEnrollmentPage`, `SettingsPage`, `WidgetAuthPage`, `TenantFormPage`, `UserFormPage`, `useBlazeFace` — intentional stale closures get inline `// eslint-disable-next-line` + WHY comment.
+- [ ] **A4.** `npm test -- --run` — 597 passing; update `HostedLoginApp.test.tsx` if hook-order change breaks it.
+- [ ] Ship as one commit: `fix(lint): unblock ubuntu-latest CI — hooks rules-of-hooks + unused vars`.
+
+### Phase B — Merge Dependabot security patches
+
+- [ ] **B1.** `@dependabot rebase` web-app #23 protobufjs + #21 follow-redirects once A is green.
+- [ ] **B2.** `gh pr merge --squash --delete-branch` each.
+- [ ] **B3.** FIVUCSAS parent Dependabot #8 (Vite) — verify transitive vs direct; bump if direct.
+- [ ] **B4.** Rsync rebuilt web-app to Hostinger after protobufjs bump (TensorFlow.js runtime dep).
+
+### Phase C — Wave 0 ops hardening (CRITICAL — real secret exposure)
+
+`.env.prod` files are committed with live DB / Redis / JWT / Twilio / biometric creds. Rotate BEFORE history purge so the leaked values are already dead. Schedule a 2-hour maintenance window — JWT rotation signs everyone out.
+
+- [ ] **C1.** Rotate: PostgreSQL, Redis, JWT signing key, Twilio SID+token, biometric `X-API-Key`, Hostinger SMTP.
+- [ ] **C2.** Move secrets to runtime injection: GitHub Actions → workflow env → Docker `--env-file /etc/fivucsas/.env.prod` (root:root, 0600, never in git).
+- [ ] **C3.** `git filter-repo --path .env.prod --invert-paths` on identity-core-api, web-app, FIVUCSAS parent. Force-push. Update all clones.
+- [ ] **C4.** `bio.fivucsas.com` Traefik: add `rate-limit` (avg 30 r/s, burst 50) + `admin-whitelist` (VPS, laptop, on-call).
+- [ ] **C5.** Enable GitHub push-protection + add `gitleaks` to CI.
+
+### Phase D — Security depth
+
+- [ ] **D1.** DNN liveness detection — evaluate DeepPixBiS / MiniFASNet / Silent-Face-v2; target <8 MB ONNX, >15 FPS mid-phone; wire as 3rd pre-filter in `BiometricEngine.ts`, log-only first.
+- [ ] **D2.** Voice replay detection — spectral cosine > 0.95 reject.
+- [ ] **D3.** Voice STT verification per `docs/plans/VOICE_STT_PLAN.md` (Whisper.cpp tiny.en WASM + server confirm). 2 weeks.
+- [ ] **D4.** OIDC discovery conformance-suite run; fix deviations; target Basic certification profile.
+- [ ] **D5.** PKCE failure audit logging (`actorIp` + `clientId` + `failureReason`) + rate-limit by `clientId`.
+
+### Phase E — Performance (bundle + CI)
+
+- [ ] **E1.** Recharts lazy-load via `React.lazy()` on `AnalyticsPage` / `DashboardPage` (PieChart 397 KB + container 398 KB).
+- [ ] **E2.** MUI vendor split in `vite.config.ts` `manualChunks` — `mui-core` (Button/TextField/Box/Typography) vs `mui-data` (DataGrid/AutoComplete/DatePicker). 548 KB → ~300 KB + ~250 KB.
+- [ ] **E3.** CI speed: Maven `-T 2C` in IC ci.yml; Vitest `--pool=threads --poolOptions.threads.maxThreads=4`.
+- [x] **E4.** `oauth2_clients.tenant_id` index — present since V24, reaffirmed V37.
+- [ ] **E5.** `size-limit` CI gate — fail if any chunk grows >10 % from baseline.
+
+### Phase F — Compliance & observability
+
+- [ ] **F1.** DKIM CNAMEs on Hostinger hPanel (`hostingermail1/2/3._domainkey.fivucsas.com`).
+- [ ] **F2.** Weekly backup-restore cron — unzip latest dump, restore to throwaway DB, `SELECT COUNT(*) FROM users`, alert on mismatch.
+- [ ] **F3.** Loki + Grafana sidecar on Hetzner; ship Traefik + identity-core-api + biometric-processor logs; `grafana.fivucsas.com` behind admin-whitelist.
+- [ ] **F4.** Define 99.5 % monthly uptime SLA + error budget; wire `status.fivucsas.com` to Traefik health.
+- [ ] **F5.** `docs/runbooks/INCIDENTS.md` — one page per failure mode (DB, Redis, Traefik cert, SMTP rate-limit, biometric-processor OOM).
+
+### Phase G — Feature completions
+
+- [ ] **G1.** YubiKey hardware testing (purchase ~2,200 TRY; E2E on web-app + verify.fivucsas.com).
+- [ ] **G2.** Mobile QR scanner in `client-apps/` (mlkit-barcode-scanning, POST to QR session).
+- [ ] **G3.** NFC document (Android) — ICAO MRTD chip read (DG1 MRZ, DG2 face).
+- [ ] **G4.** Native-app SDK integration docs (`ios-appauth.md`, `android-customtabs.md`, `electron-loopback.md`, `cli-loopback.md`).
+- [ ] **G5.** Voice STT integration (ties to D3).
+- [ ] **G6.** BYOD architecture (`BYOD_ARCHITECTURE.md`) — 8-week lift; book after A–F green.
+- [ ] **G7.** `<fivucsas-verify>` + `<fivucsas-button>` Web Components + CSS Custom Properties theming.
+
+### Phase H — Code-quality waves 2/3/4
+
+- [ ] **H1 (Wave 2)** — unify `LoginMfaFlow` + `MultiStepAuthFlow`; 135 `Map.of()` → typed DTOs; admin `@PreAuthorize` sweep; unified `ErrorResponse`.
+- [ ] **H2 (Wave 3)** — `@WebMvcTest` for 17 controllers; `@Version` on `User` / `AuthFlow` / `Tenant`; JPA cascade `ALL` → `PERSIST, MERGE`; `@Transactional(readOnly=true)` sweep on 50+ services; CI i18n lint rule rejecting hardcoded English in `.tsx`.
+- [ ] **H3 (Wave 4 polish)** — MFA terminology canonicalization; `docs/04-api/ERROR_CODES.md`, `QUICKSTART.md`, `FEATURE_FLAGS.md`; `console.log` purge in auth paths; `aria-describedby` sweep; mobile table breakpoints.
+
+---
+
+## Timeline (2026-04-18 restructure)
+
+| Month | Planned | Status |
+|-------|---------|--------|
+| April 2026 | Phase A (lint green) + Phase B (Dependabot merges) + Phase L (docs refresh) | **DONE** for L; A/B in flight |
+| May 2026 | Phase C (Wave 0 ops — secrets rotation + history purge + Traefik tightening) + Phase E (bundle + CI speed) + Phase D start (D4 OIDC conformance + D5 PKCE audit) | Planned |
+| June 2026 | Phase G quick wins (G1 YubiKey testing, G4 native-app SDK docs, G7 Web Components) + Phase D continued (D1 DNN liveness + D2 voice replay) | Planned |
+| July 2026 | Phase F observability (Loki/Grafana, backup-restore cron, SLA + incident runbooks) | Planned |
+| August 2026 | Phase H waves 2 + 3 + 4 code-quality burn-down | Planned |
+| September 2026+ | Phase G6 BYOD architecture (8-week lift, book after A–F green) | Deferred |
 
 ---
 
@@ -328,10 +380,12 @@ Platform authenticators (Windows Hello, Touch ID, Android biometrics) cover fing
 | AD-002 | Voice: Resemblyzer 256-dim | Lightweight speaker verification, CPU-friendly | Implemented |
 | AD-003 | NFC: Deferred | Mobile-only, needs hardware | Deferred |
 | AD-004 | Health checks: curl | wget missing from Alpine, python fragile | Implemented |
+| AD-005 | Client embedding: landmark-geometry only (2026-04-18) | MobileFaceNet deprecated; MediaPipe 512-dim covers pre-filter, server DeepFace Facenet512 authoritative | Implemented |
+| AD-006 | SPA OAuth2 client: public + PKCE-only (2026-04-18) | `fivucsas-web-dashboard` flipped via Flyway V38 — SPA cannot hold secret | Implemented |
 
 ---
 
-## Timeline
+## Legacy timeline (pre-restructure reference)
 
 | Phase | Target | Status |
 |-------|--------|--------|
