@@ -45,3 +45,8 @@ nul
 
 # Claude metadata
 .claude/
+
+# Generated verify-widget bundle artifacts (built via npm run build:widget)
+verify-widget/html/assets/*.js
+verify-widget/html/assets/*.js.map
+verify-widget/html/assets/*.css
