@@ -37,13 +37,75 @@ function r(e, t, r) {
 }
 //#endregion
 //#region src/verify-app/sdk/FivucsasAuth.ts
-var i = "https://verify.fivucsas.com", a = "https://api.fivucsas.com/api/v1", o = "fivucsas-verify-iframe", s = "\n.fivucsas-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 2147483647;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    background: rgba(0, 0, 0, 0.55);\n    backdrop-filter: blur(4px);\n    -webkit-backdrop-filter: blur(4px);\n    animation: fivucsas-fade-in 0.2s ease-out;\n}\n.fivucsas-overlay-inner {\n    position: relative;\n    width: 100%;\n    max-width: 440px;\n    max-height: 90vh;\n    border-radius: 12px;\n    overflow: hidden;\n    background: #fff;\n    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);\n}\n.fivucsas-close-btn {\n    position: absolute;\n    top: 8px;\n    right: 8px;\n    z-index: 1;\n    width: 32px;\n    height: 32px;\n    border: none;\n    border-radius: 50%;\n    background: rgba(0, 0, 0, 0.06);\n    color: #333;\n    font-size: 18px;\n    line-height: 1;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background 0.15s;\n}\n.fivucsas-close-btn:hover {\n    background: rgba(0, 0, 0, 0.12);\n}\n.fivucsas-iframe {\n    display: block;\n    width: 100%;\n    height: 500px;\n    border: none;\n}\n@keyframes fivucsas-fade-in {\n    from { opacity: 0; }\n    to   { opacity: 1; }\n}\n@media (max-width: 480px) {\n    .fivucsas-overlay-inner {\n        max-width: 100%;\n        max-height: 100vh;\n        border-radius: 0;\n    }\n}\n", c = !1;
-function l() {
-	if (c) return;
-	let e = document.createElement("style");
-	e.textContent = s, document.head.appendChild(e), c = !0;
+var i = "https://verify.fivucsas.com", a = "https://api.fivucsas.com/api/v1", o = "fivucsas-verify-iframe", s = "fivucsas:pkce", c = "fivucsas:state", l = "fivucsas:nonce", u = "fivucsas:redirect_uri";
+function d(e) {
+	let t = "";
+	for (let n = 0; n < e.length; n++) t += String.fromCharCode(e[n]);
+	return btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-var u = class {
+function f(e = 32) {
+	let t = new Uint8Array(e);
+	return crypto.getRandomValues(t), d(t);
+}
+async function p() {
+	let e = f(32), t = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(e));
+	return {
+		verifier: e,
+		challenge: d(new Uint8Array(t))
+	};
+}
+var m = /^[a-z][a-z0-9+.-]*$/;
+function h(e) {
+	if (!e || typeof e != "string") throw Error("FivucsasAuth: redirect URI is empty or not a string");
+	let t;
+	try {
+		t = new URL(e);
+	} catch {
+		throw Error(`FivucsasAuth: redirect URI is not a valid URL: ${e}`);
+	}
+	let n = t.protocol.replace(/:$/, "").toLowerCase();
+	if (new Set([
+		"javascript",
+		"data",
+		"vbscript",
+		"file",
+		"blob"
+	]).has(n)) throw Error(`FivucsasAuth: redirect URI scheme not allowed: ${n}:`);
+	if (n !== "https") {
+		if (n === "http") {
+			let e = t.hostname;
+			if (e === "127.0.0.1" || e === "[::1]" || e === "::1" || e === "localhost") return;
+			throw Error(`FivucsasAuth: redirect URI scheme not allowed: http:// is only permitted for RFC 8252 loopback (127.0.0.1, [::1], localhost), got host "${e}"`);
+		}
+		if (!m.test(n)) throw Error(`FivucsasAuth: redirect URI scheme is not RFC 3986-compliant: ${n}:`);
+	}
+}
+function g(e) {
+	if (!e || typeof e != "string") throw Error("FivucsasAuth: id_token is not a string");
+	let t = e.split(".");
+	if (t.length !== 3) throw Error("FivucsasAuth: id_token is not a valid JWT (expected 3 segments)");
+	try {
+		let e = t[1].replace(/-/g, "+").replace(/_/g, "/"), n = e.length % 4;
+		n && (e += "=".repeat(4 - n));
+		let r = atob(e), i = JSON.parse(r);
+		if (!i || typeof i != "object") throw Error("FivucsasAuth: id_token payload is not an object");
+		return i;
+	} catch (e) {
+		throw e instanceof Error && e.message.startsWith("FivucsasAuth:") ? e : Error("FivucsasAuth: id_token payload could not be decoded");
+	}
+}
+function _(e, t) {
+	if (!t) throw Error("FivucsasAuth: missing stored nonce — cannot validate id_token (possible session loss or replay)");
+	let n = g(e).nonce;
+	if (typeof n != "string" || n !== t) throw Error("FivucsasAuth: id_token nonce mismatch — possible token replay or CSRF");
+}
+var v = "\n.fivucsas-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 2147483647;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    background: rgba(0, 0, 0, 0.55);\n    backdrop-filter: blur(4px);\n    -webkit-backdrop-filter: blur(4px);\n    animation: fivucsas-fade-in 0.2s ease-out;\n}\n.fivucsas-overlay-inner {\n    position: relative;\n    width: 100%;\n    max-width: 440px;\n    max-height: 90vh;\n    border-radius: 12px;\n    overflow: hidden;\n    background: #fff;\n    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);\n}\n.fivucsas-close-btn {\n    position: absolute;\n    top: 8px;\n    right: 8px;\n    z-index: 1;\n    width: 32px;\n    height: 32px;\n    border: none;\n    border-radius: 50%;\n    background: rgba(0, 0, 0, 0.06);\n    color: #333;\n    font-size: 18px;\n    line-height: 1;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background 0.15s;\n}\n.fivucsas-close-btn:hover {\n    background: rgba(0, 0, 0, 0.12);\n}\n.fivucsas-iframe {\n    display: block;\n    width: 100%;\n    min-height: 560px;\n    height: auto;\n    border: none;\n}\n@keyframes fivucsas-fade-in {\n    from { opacity: 0; }\n    to   { opacity: 1; }\n}\n@media (max-width: 480px) {\n    .fivucsas-overlay-inner {\n        max-width: 100%;\n        max-height: 100vh;\n        border-radius: 0;\n    }\n}\n", y = !1;
+function b() {
+	if (y) return;
+	let e = document.createElement("style");
+	e.textContent = v, document.head.appendChild(e), y = !0;
+}
+var x = class {
 	constructor(e) {
 		if (r(this, "config", void 0), r(this, "iframe", null), r(this, "overlay", null), r(this, "messageHandler", null), r(this, "activeReject", null), !e.clientId) throw Error("FivucsasAuth: clientId is required");
 		this.config = {
@@ -55,7 +117,7 @@ var u = class {
 		};
 	}
 	verify(e = {}) {
-		return this.iframe ? Promise.reject(/* @__PURE__ */ Error("FivucsasAuth: verification already in progress")) : (l(), new Promise((t, n) => {
+		return this.iframe ? Promise.reject(/* @__PURE__ */ Error("FivucsasAuth: verification already in progress")) : (b(), new Promise((t, n) => {
 			this.activeReject = n;
 			let r, i = !1;
 			if (e.container) {
@@ -74,9 +136,76 @@ var u = class {
 	destroy() {
 		this.activeReject && (this.activeReject(/* @__PURE__ */ Error("FivucsasAuth: destroyed")), this.activeReject = null), this.cleanup();
 	}
+	async loginRedirect(e) {
+		if (!e?.redirectUri) throw Error("FivucsasAuth: loginRedirect requires options.redirectUri");
+		if (typeof window > "u" || typeof crypto > "u" || !crypto.subtle) throw Error("FivucsasAuth: loginRedirect requires a browser with Web Crypto");
+		h(e.redirectUri);
+		let t = e.state ?? f(32), n = e.nonce ?? f(32), { verifier: r, challenge: i } = await p();
+		sessionStorage.setItem(s, r), sessionStorage.setItem(c, t), sessionStorage.setItem(l, n), sessionStorage.setItem(u, e.redirectUri);
+		let a = new URL(`${this.apiBase()}/oauth2/authorize`);
+		a.searchParams.set("client_id", this.config.clientId), a.searchParams.set("redirect_uri", e.redirectUri), a.searchParams.set("response_type", "code"), a.searchParams.set("scope", e.scope ?? "openid profile email"), a.searchParams.set("state", t), a.searchParams.set("nonce", n), a.searchParams.set("code_challenge", i), a.searchParams.set("code_challenge_method", "S256"), a.searchParams.set("display", e.display ?? "page"), window.location.assign(a.toString());
+	}
+	async handleRedirectCallback() {
+		if (typeof window > "u") throw Error("FivucsasAuth: handleRedirectCallback requires a browser");
+		let e = new URLSearchParams(window.location.search), t = e.get("error");
+		if (t) {
+			this.clearPkceStorage();
+			let n = e.get("error_description");
+			throw Error(`FivucsasAuth [${t}]: ${n ?? "OAuth error"}`);
+		}
+		let n = e.get("code"), r = e.get("state"), i = sessionStorage.getItem(c), a = sessionStorage.getItem(l), o = sessionStorage.getItem(s), d = sessionStorage.getItem(u);
+		if (!n) throw this.clearPkceStorage(), Error("FivucsasAuth: missing authorization code in callback URL");
+		if (!i || !r || r !== i) throw this.clearPkceStorage(), Error("FivucsasAuth: state mismatch — possible CSRF or expired session");
+		if (!o || !d) throw this.clearPkceStorage(), Error("FivucsasAuth: missing PKCE verifier or redirect URI — session lost");
+		try {
+			h(d);
+		} catch (e) {
+			throw this.clearPkceStorage(), e;
+		}
+		let f = new URLSearchParams();
+		f.set("grant_type", "authorization_code"), f.set("code", n), f.set("redirect_uri", d), f.set("client_id", this.config.clientId), f.set("code_verifier", o);
+		let p;
+		try {
+			p = await fetch(`${this.apiBase()}/oauth2/token`, {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: f.toString()
+			});
+		} finally {
+			this.clearPkceStorage();
+		}
+		if (!p.ok) {
+			let e = "";
+			try {
+				let t = await p.json();
+				e = t.error_description || t.error || "";
+			} catch {}
+			throw Error(`FivucsasAuth: token exchange failed (${p.status})${e ? ": " + e : ""}`);
+		}
+		let m = await p.json(), g = m.id_token ? String(m.id_token) : void 0;
+		return g && _(g, a), {
+			success: !0,
+			sessionId: "",
+			completedMethods: [],
+			accessToken: m.access_token ? String(m.access_token) : void 0,
+			refreshToken: m.refresh_token ? String(m.refresh_token) : void 0,
+			idToken: g,
+			tokenType: m.token_type ? String(m.token_type) : void 0,
+			expiresIn: typeof m.expires_in == "number" ? m.expires_in : void 0,
+			timestamp: Date.now()
+		};
+	}
+	apiBase() {
+		return this.config.apiBaseUrl.replace(/\/$/, "");
+	}
+	clearPkceStorage() {
+		try {
+			sessionStorage.removeItem(s), sessionStorage.removeItem(c), sessionStorage.removeItem(l), sessionStorage.removeItem(u);
+		} catch {}
+	}
 	createIframe(e, t) {
 		let n = document.createElement("iframe");
-		return n.id = o, n.className = "fivucsas-iframe", n.src = this.buildIframeUrl(t), n.setAttribute("allow", "camera; microphone; publickey-credentials-get; publickey-credentials-create"), n.setAttribute("sandbox", "allow-scripts allow-forms allow-same-origin allow-popups allow-modals"), n.setAttribute("title", "FIVUCSAS Identity Verification"), e.appendChild(n), n;
+		return n.id = o, n.className = "fivucsas-iframe", n.src = this.buildIframeUrl(t), n.setAttribute("allow", "camera; microphone; publickey-credentials-get; publickey-credentials-create"), n.setAttribute("sandbox", "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals"), n.setAttribute("title", "FIVUCSAS Identity Verification"), e.appendChild(n), n;
 	}
 	createOverlay(e) {
 		let t = document.createElement("div");
@@ -158,7 +287,7 @@ var u = class {
 	cleanup() {
 		this.messageHandler && (window.removeEventListener("message", this.messageHandler), this.messageHandler = null), this.iframe && (this.iframe.remove(), this.iframe = null), this.overlay && (this.overlay.remove(), this.overlay = null);
 	}
-}, d = "\n:host {\n    display: inline-block;\n}\n.fivucsas-trigger-btn {\n    display: inline-flex;\n    align-items: center;\n    gap: 8px;\n    padding: 10px 20px;\n    border: none;\n    border-radius: 8px;\n    background: #1a73e8;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    font-size: 14px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: background 0.15s, transform 0.1s;\n}\n.fivucsas-trigger-btn:hover {\n    background: #1557b0;\n}\n.fivucsas-trigger-btn:active {\n    transform: scale(0.98);\n}\n.fivucsas-trigger-btn .icon {\n    width: 18px;\n    height: 18px;\n}\n.fivucsas-inline-container {\n    width: 100%;\n    min-height: 200px;\n}\n", f = class extends HTMLElement {
+}, S = "\n:host {\n    display: inline-block;\n}\n.fivucsas-trigger-btn {\n    display: inline-flex;\n    align-items: center;\n    gap: 8px;\n    padding: 10px 20px;\n    border: none;\n    border-radius: 8px;\n    background: #1a73e8;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    font-size: 14px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: background 0.15s, transform 0.1s;\n}\n.fivucsas-trigger-btn:hover {\n    background: #1557b0;\n}\n.fivucsas-trigger-btn:active {\n    transform: scale(0.98);\n}\n.fivucsas-trigger-btn .icon {\n    width: 18px;\n    height: 18px;\n}\n.fivucsas-inline-container {\n    width: 100%;\n    min-height: 200px;\n}\n", C = class extends HTMLElement {
 	static get observedAttributes() {
 		return [
 			"client-id",
@@ -186,7 +315,7 @@ var u = class {
 		if (!this.verifying) {
 			this.verifying = !0;
 			try {
-				this.auth = new u(this.buildConfig());
+				this.auth = new x(this.buildConfig());
 				let e = this.buildOptions(), t = await this.auth.verify(e);
 				return this.dispatchEvent(new CustomEvent("fivucsas-complete", {
 					detail: t,
@@ -211,7 +340,7 @@ var u = class {
 	}
 	render() {
 		let e = document.createElement("style");
-		e.textContent = d;
+		e.textContent = S;
 		let t = document.createElement("button");
 		t.className = "fivucsas-trigger-btn";
 		let n = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -264,12 +393,12 @@ var u = class {
 		};
 	}
 };
-customElements.define("fivucsas-verify", f);
+customElements.define("fivucsas-verify", C);
 //#endregion
-export { u as FivucsasAuth, f as FivucsasVerifyElement };
-if (typeof u == "object" && u.FivucsasAuth) {
-	var p = u.FivucsasAuth;
-	Object.assign(p, u), u = p;
+export { x as FivucsasAuth, C as FivucsasVerifyElement };
+if (typeof x == "object" && x.FivucsasAuth) {
+	var w = x.FivucsasAuth;
+	Object.assign(w, x), x = w;
 }
 
 //# sourceMappingURL=fivucsas-auth.esm.js.map
