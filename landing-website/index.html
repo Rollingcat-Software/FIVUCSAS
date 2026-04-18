@@ -34,13 +34,68 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": "Organization",
       "name": "FIVUCSAS",
+      "url": "https://fivucsas.com",
+      "logo": "https://fivucsas.com/og-image.png",
+      "description": "Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform.",
+      "foundingDate": "2025",
+      "parentOrganization": {
+        "@type": "Organization",
+        "name": "RollingCat Software",
+        "url": "https://rollingcatsoftware.com"
+      },
+      "sameAs": [
+        "https://github.com/Rollingcat-Software/FIVUCSAS",
+        "https://github.com/Rollingcat-Software"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "rollingcat.help@gmail.com",
+        "availableLanguage": ["en", "tr"]
+      }
+    }
+    </script>
+
+    <!-- JSON-LD WebSite (with SearchAction) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FIVUCSAS",
+      "url": "https://fivucsas.com",
+      "description": "Biometric Identity Verification Platform",
+      "inLanguage": ["en", "tr"],
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://app.fivucsas.com/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD SoftwareApplication (Auth Widget / SDK) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FIVUCSAS Auth Widget",
+      "alternateName": "FIVUCSAS SDK",
       "applicationCategory": "SecurityApplication",
       "applicationSubCategory": "Biometric Authentication",
-      "operatingSystem": "Web, Android, iOS",
-      "url": "https://fivucsas.com",
-      "description": "Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform with 10 auth methods.",
+      "operatingSystem": "Web iOS Android",
+      "url": "https://verify.fivucsas.com",
+      "downloadUrl": "https://verify.fivucsas.com/sdk.js",
+      "description": "Embeddable biometric authentication widget and SDK. Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. Works like reCAPTCHA or e-Devlet for identity verification.",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -75,21 +130,11 @@
         "Multi-Tenant Architecture",
         "Identity Verification Pipeline"
       ],
-      "sameAs": [
-        "https://github.com/Rollingcat-Software"
-      ]
-    }
-    </script>
-
-    <!-- JSON-LD WebSite (for sitelinks search box) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "FIVUCSAS",
-      "url": "https://fivucsas.com",
-      "description": "Biometric Identity Verification Platform",
-      "inLanguage": ["en", "tr"]
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com"
+      }
     }
     </script>
 
