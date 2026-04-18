@@ -2,6 +2,25 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18c] — Hosted-login UX recovery: callback data, stepper, locale, face retry, copy audit
+
+### Fixed
+- **Fix 3 — callback.html shows blank user / email / methods.** `FivucsasAuth.handleRedirectCallback()` now decodes the id_token returned by `/oauth2/token` (`sub` → `userId`, `email`, `name` → `displayName`, `amr` → `completedMethods`) and falls back to `GET /oauth2/userinfo` with the bearer access_token when any field is missing. `sessionId` is synthesized from the code prefix instead of empty-string. The BYS demo callback card now renders the real identity values; two new SDK tests cover both id_token extraction and userinfo fallback.
+- **Fix 5 — `locale: 'tr'` not honoured on hosted login.** `FivucsasAuth.loginRedirect()` appends OIDC `ui_locales` to the authorize URL; `identity-core-api/OAuth2Controller.authorize` now parses `ui_locales` and forwards it on the 302 to `verify.fivucsas.com/login`; `HostedLoginApp.tsx` resolves locale via `ui_locales → legacy locale → navigator.language → 'en'`, sets `document.documentElement.lang`, and switches i18next before paint. Backend test `authorize_WhenDisplayPageWithUiLocales_ShouldForwardLocale` locks the pass-through.
+- **Fix 1 — conflicting face failure UI.** `FaceCaptureStep.tsx` swaps captured-image alt text to `mfa.face.lastAttemptAlt`, applies a subtle grayscale filter on error, and shows three retry tips (lighting, framing, glasses) under the error Alert instead of the bare "Verification failed. Please try again. Captured face" mash-up. **No biometric threshold or model change.**
+
+### Added
+- **Fix 4 — consistent step progress across every method.** New reusable `src/verify-app/StepProgress.tsx` (ARIA-labeled counter + determinate bar, hides when `total <= 1`) mounted at the top of `LoginMfaFlow.tsx`. The inline "Step N of M" caption that only rendered during NFC has been removed; Face, TOTP, Email OTP, NFC, and picker now share one indicator.
+- **Fix 6 — copy audit across all 10 auth methods.** `widget.*` and `mfa.face.*` keys in `en.json` + `tr.json` rewritten to the "what happened + what to do" pattern: `loginFailed`, `verificationFailed`, `unexpectedError`, `missingParams`, `skipFailed`, `mfaRequired`, `cameraError`, `authComplete`, `noStepsRemaining`, `unknownMethod`, plus `mfa.face.retryTip{Lighting,Framing,Glasses}`, `capturedAlt`, `lastAttemptAlt`. JSON key parity verified: 0 missing in either locale.
+
+### Tests
+- Vitest: **599 / 599** passing (was 597). +2 SDK tests.
+- Maven unit: **839 / 839** passing (was 838). +1 locale-forwarding assertion.
+
+### Deployed
+- SDK rebuilt (`dist-sdk/fivucsas-auth.js` — SRI `sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6`), synced to `verify-widget/html/` alongside new verify-app bundle; Docker widget container recreated; web-app `dist/` rsync'd to Hostinger; `bys-demo/` pushed to Hostinger with `?v=20260418c` cache-bust and new integrity hash on both `index.html` and `callback.html`.
+- Live smoke tests: `curl -sI https://verify.fivucsas.com/fivucsas-auth.js` returns 200 with `cache-control: max-age=300`; grep confirms `ui_locales`, `oauth-`, `oauth2/userinfo` strings present in the live bundle; `curl https://api.fivucsas.com/.well-known/openid-configuration` returns a valid discovery JSON.
+
 ## [2026-04-18b] — Demo login recovery, IC CI green, Vite dependabot closed
 
 ### Fixed

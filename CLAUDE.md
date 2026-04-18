@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-18 (Phase A lint green on ubuntu-latest CI; Dependabot protobufjs CRITICAL + follow-redirects merged; MobileFaceNet stripped; Flyway V37/V38 applied to prod; roadmap refreshed to Phase A–L)
+**Last verified**: 2026-04-18c (Hosted-login UX recovery round: SDK decodes id_token + userinfo fallback so callback cards stop rendering `—`; OIDC `ui_locales` threaded end-to-end from tenant → IC → hosted page; `<StepProgress>` unified across all 10 methods; face-retry tips + grayscale-on-error alt text; `widget.*` / `mfa.face.*` copy audit in en.json + tr.json. Vitest 599/599 · Maven 839/839. SDK + bys-demo cache-bust deployed.)
 
 ## Architecture
 

@@ -143,7 +143,7 @@ var x = class {
 		let t = e.state ?? f(32), n = e.nonce ?? f(32), { verifier: r, challenge: i } = await p();
 		sessionStorage.setItem(s, r), sessionStorage.setItem(c, t), sessionStorage.setItem(l, n), sessionStorage.setItem(u, e.redirectUri);
 		let a = new URL(`${this.apiBase()}/oauth2/authorize`);
-		a.searchParams.set("client_id", this.config.clientId), a.searchParams.set("redirect_uri", e.redirectUri), a.searchParams.set("response_type", "code"), a.searchParams.set("scope", e.scope ?? "openid profile email"), a.searchParams.set("state", t), a.searchParams.set("nonce", n), a.searchParams.set("code_challenge", i), a.searchParams.set("code_challenge_method", "S256"), a.searchParams.set("display", e.display ?? "page"), window.location.assign(a.toString());
+		a.searchParams.set("client_id", this.config.clientId), a.searchParams.set("redirect_uri", e.redirectUri), a.searchParams.set("response_type", "code"), a.searchParams.set("scope", e.scope ?? "openid profile email"), a.searchParams.set("state", t), a.searchParams.set("nonce", n), a.searchParams.set("code_challenge", i), a.searchParams.set("code_challenge_method", "S256"), a.searchParams.set("display", e.display ?? "page"), this.config.locale && a.searchParams.set("ui_locales", this.config.locale), window.location.assign(a.toString());
 	}
 	async handleRedirectCallback() {
 		if (typeof window > "u") throw Error("FivucsasAuth: handleRedirectCallback requires a browser");
@@ -182,14 +182,33 @@ var x = class {
 			} catch {}
 			throw Error(`FivucsasAuth: token exchange failed (${p.status})${e ? ": " + e : ""}`);
 		}
-		let m = await p.json(), g = m.id_token ? String(m.id_token) : void 0;
-		return g && _(g, a), {
+		let m = await p.json(), v = m.id_token ? String(m.id_token) : void 0, y = m.access_token ? String(m.access_token) : void 0;
+		v && _(v, a);
+		let b, x, S, C = [];
+		if (v) try {
+			let e = g(v);
+			typeof e.sub == "string" && (b = e.sub), typeof e.email == "string" && (x = e.email), typeof e.name == "string" && (S = e.name), Array.isArray(e.amr) && (C = e.amr.filter((e) => typeof e == "string"));
+		} catch {}
+		if (y && (!b || !x)) try {
+			let e = await fetch(`${this.apiBase()}/oauth2/userinfo`, {
+				method: "GET",
+				headers: { Authorization: `Bearer ${y}` }
+			});
+			if (e.ok) {
+				let t = await e.json();
+				!b && typeof t.sub == "string" && (b = t.sub), !x && typeof t.email == "string" && (x = t.email), !S && typeof t.name == "string" && (S = t.name), C.length === 0 && Array.isArray(t.amr) && (C = t.amr.filter((e) => typeof e == "string"));
+			}
+		} catch {}
+		return {
 			success: !0,
-			sessionId: "",
-			completedMethods: [],
-			accessToken: m.access_token ? String(m.access_token) : void 0,
+			sessionId: `oauth-${n.slice(0, 12)}-${Date.now()}`,
+			userId: b,
+			email: x,
+			displayName: S,
+			completedMethods: C,
+			accessToken: y,
 			refreshToken: m.refresh_token ? String(m.refresh_token) : void 0,
-			idToken: g,
+			idToken: v,
 			tokenType: m.token_type ? String(m.token_type) : void 0,
 			expiresIn: typeof m.expires_in == "number" ? m.expires_in : void 0,
 			timestamp: Date.now()
