@@ -16,7 +16,7 @@
 
 ---
 
-## Active initiative: Post-V38 stabilization + lint-debt burn-down
+## Active initiative: Post-V38 stabilization + lint-debt burn-down + Phase J Desktop hosted-first
 
 **Status (2026-04-18):**
 - Flyway **V38** flipped `fivucsas-web-dashboard` OAuth2 client to public + PKCE-only (SPA cannot hold a secret).
@@ -25,6 +25,7 @@
 - **Web-app PR CI migrated to `ubuntu-latest`** (commit `cd0c1ba`) — `.npmrc legacy-peer-deps=true` added to compensate (fd9092c). Move revealed pre-existing lint debt the self-hosted runner was silently skipping.
 - **GDPR front-end export wire-up** shipped (commit `52f2fe1`), completing the Art. 20 data-portability surface started 2026-04-16b.
 - **ORT + BlazeFace lazy-load** verified via bundle audit (commit `91064ed` — already dynamic imports; off the critical path).
+- **Phase J (Desktop hosted-first) now active** — `CLIENT_APPS_PARITY.md` rewritten 2026-04-18 post hosted-first pivot; matrix collapsed from 20 columns to 13 (OAuth client + dashboard + TOTP companion, no native biometrics). Android done; Desktop scaffolding in flight (Agents B/C/D on OAuth loopback + `SecureTokenStorage` + installers). See `docs/plans/CLIENT_APPS_PARITY.md`.
 
 **Blockers surfaced today:**
 - 23 lint errors + 63 warnings on web-app — worst offender `HostedLoginApp.tsx` (15 `react-hooks/rules-of-hooks` errors from an early-return placed before hook calls). 1 error in `FivucsasAuth.ts` (`no-useless-escape`), 1 in `postMessageBridge.ts` (stale eslint-disable), 6 `no-unused-vars` in tests.
@@ -105,17 +106,23 @@ This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 secti
 - [ ] **H2 (Wave 3)** — `@WebMvcTest` for 17 controllers; `@Version` on `User` / `AuthFlow` / `Tenant`; JPA cascade `ALL` → `PERSIST, MERGE`; `@Transactional(readOnly=true)` sweep on 50+ services; CI i18n lint rule rejecting hardcoded English in `.tsx`.
 - [ ] **H3 (Wave 4 polish)** — MFA terminology canonicalization; `docs/04-api/ERROR_CODES.md`, `QUICKSTART.md`, `FEATURE_FLAGS.md`; `console.log` purge in auth paths; `aria-describedby` sweep; mobile table breakpoints.
 
-### Phase I — Android 20/20 close-out (2026-04-18e)
+### Phase I — Android hosted-first 13/13 done (2026-04-18e)
 
-Android currently sits at ~15/20 feature parity with web. Cross-platform deep review (2026-04-18e) identified five gaps that, once closed, bring the mobile client to 20/20. Full sequencing, file-level plan, and verification steps live in `docs/plans/PATH_TO_20_20.md` (canonical).
+Android reached **13/13** on the post-pivot (2026-04-16) hosted-first parity matrix. The pre-pivot "20/20" framing is obsolete — the matrix collapsed to 13 thin-OAuth-client columns (see `docs/plans/CLIENT_APPS_PARITY.md` §2, rewritten 2026-04-18). Biometric auth surfaces live on the hosted login page (`verify.fivucsas.com/login`), not in the native app.
 
-- [x] **I1.** Passport BAC MFA integration — `NfcStepScreen` + ported `MrzScannerScreen` wired into `MfaFlowScreen.kt:324`. Shipped in client-apps `1b378e1` (v5.2.0-rc1).
+Closed during this phase (tagged `v5.2.0-rc1` 2026-04-18e):
+
+- [x] **I1.** Passport BAC MFA integration — `NfcStepScreen` + ported `MrzScannerScreen` wired into `MfaFlowScreen.kt:324`. Shipped in client-apps `1b378e1`. (Note: retained as a reference implementation; hosted-first means future tenants hit the web surface, but this path remains available for legacy mobile flows.)
 - [x] **I2.** GDPR/KVKK export mobile UI — `DataExportViewModel` + `ExportDataRow` + MediaStore Downloads + 8 i18n keys. Shipped in v5.2.0-rc1.
 - [x] **I3.** FCM action buttons + `fivucsas://` deep-link — `ApprovalActionReceiver` + `NfcApprovalViewModel` + `MainActivity.onNewIntent` handler. Shipped in v5.2.0-rc1.
 - [x] **I4.** Dark mode toggle in Settings — `ThemeMode { SYSTEM, LIGHT, DARK }` enum + `LocalThemeMode` CompositionLocal + Settings radio row. Shipped in v5.2.0-rc1.
 - [x] **I5.** Authenticator QR scanner — `OtpQrScannerScreen` reusing `QrScannerScreen` CameraX + `OtpauthUri.parse()`. Shipped in v5.2.0-rc1.
 
-**Phase I COMPLETE** — Android feature parity at 20/20. Tag `v5.2.0-rc1` placed 2026-04-18e; full `v5.2.0` after Ship B (verify-app StepLayout) lands + any follow-ups.
+**Phase I COMPLETE** — Android hosted-first 13/13. Tag `v5.2.0-rc1` placed 2026-04-18e; full `v5.2.0` after Ship B (verify-app StepLayout) lands + any follow-ups. Remaining Android work is release-level only (Play Store listing, AAB from CI, Baseline Profile, test-coverage bump) — tracked in `docs/plans/CLIENT_APPS_PARITY.md` §3.
+
+### Phase J — Desktop hosted-first 13/13 (ACTIVE 2026-04-18)
+
+Desktop (Windows + Linux; macOS out of scope for v6) is the current active client-apps workstream. Agents B/C/D are in flight on OAuth loopback, secure token storage (DPAPI on Windows, libsecret on Linux), and code-signed installers. Target Phase 2 exit 2026-06-27 (unsigned `.msi` + `.deb` on `fivucsas.com/download/beta`). See `docs/plans/CLIENT_APPS_PARITY.md` §3 "Desktop — gaps" for the 13-item priority-ordered breakdown.
 
 ---
 
