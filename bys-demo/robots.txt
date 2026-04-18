@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /callback.html
 Disallow: /dashboard.html
+Disallow: /test-elements.html
