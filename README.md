@@ -175,18 +175,22 @@ cd client-apps && ./gradlew :shared:test
 
 ## Project Status (April 2026)
 
-Production-deployed. 99% complete. ~1,800 tests across backend/web/mobile (633 backend + 619 web-app Vitest + 401 Kotlin + 27 Playwright specs).
+Production-deployed. 99% complete. ~1,820+ tests across backend/web/mobile (633 backend + 619 web-app Vitest + 424 Kotlin + 27 Playwright specs).
 
 ### What's shipped
 
-- **Identity Core API** — Spring Boot 3.4.7 on Java 21, JWT + RBAC + multi-tenancy, all 10 auth handlers, Flyway V1–V36 (V34–V36 ship hosted-login hardening: PKCE S256 mandate for public clients, atomic code-mint replay guard, cross-client replay guard), deployed on Hetzner VPS
+- **Identity Core API** — Spring Boot 3.4.7 on Java 21, JWT + RBAC + multi-tenancy, all 10 auth handlers, Flyway V1–V38 (V34–V36 ship hosted-login hardening: PKCE S256 mandate for public clients, atomic code-mint replay guard, cross-client replay guard; V37 tenant_id index; V38 SPA public client flip), deployed on Hetzner VPS
 - **Biometric Processor** — FastAPI on Python 3.12, DeepFace / MediaPipe / YOLO for face enroll + verify + liveness, Resemblyzer speaker embeddings for voice, document classifier + MRZ / TC OCR, deployed on Hetzner (internal Docker network, API-key gated, no public route)
 - **Web Dashboard** — React 18 + TypeScript 5 + Vite 8, Clean Architecture with InversifyJS DI, 17 admin pages, full i18n (en + tr), deployed to Hostinger
 - **Hosted Login + Widget** — `verify.fivucsas.com` serves a hosted-first redirective login (Auth0 / Okta pattern) at top-level browsing context; iframe widget remains available for inline step-up MFA
-- **Client Apps** — KMP for Android / iOS / Desktop, platform-native WebAuthn, Custom Tabs / ASWebAuthenticationSession for hosted-login handoff
+- **Client Apps** — KMP for Android / iOS / Desktop, platform-native WebAuthn, Custom Tabs / ASWebAuthenticationSession for hosted-login handoff. **Android v5.1.0 ships a standalone TOTP Authenticator** (RFC 6238, AES-GCM EncryptedSharedPreferences vault, Compose Material 3 UI) as a drop-in for Google/Microsoft Authenticator.
 - **Identity Verification Pipeline** — 9 step types, 7 industry templates, selfie-to-document matching
 - **CI/CD** — self-hosted GitHub runner on the VPS; each submodule has its own `ci.yml` + `deploy-*.yml` workflow; Dependabot configured
 - **Security** — PKCE S256 mandatory for public clients, OIDC nonce validation, CSP per-route with frame-ancestors allowlist, GDPR Art. 17 / Art. 20 endpoints (data export + soft-delete purge), rate-limited on authorize-complete + login + export
+
+### Mobile app
+
+See [`client-apps/README.md`](./client-apps/README.md) for the KMP mobile + desktop app, including the v5.1.0 standalone TOTP Authenticator, the current Android feature-parity matrix (targeting 20/20), and the Phase I gap close-out plan in [`docs/plans/PATH_TO_20_20.md`](./docs/plans/PATH_TO_20_20.md).
 
 ## Team
 

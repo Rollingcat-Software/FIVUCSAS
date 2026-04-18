@@ -2,6 +2,34 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18e] — Cross-platform deep review + Android 20/20 gap plan + doc sweep
+
+### Reviewed
+- **Cross-platform parity deep review.** Confirmed KMP genuineness (not a "shared scaffold with divergent platform folders"): `337` files under `shared/src/commonMain/` totalling ~`11,500` LOC of real shared domain / data / presentation code. The 22-row feature matrix in `docs/plans/CLIENT_APPS_PARITY.md` was re-baselined: **Android is at ~15/20**, not 13/20 as an earlier sketch implied. Web-app is the 20/20 reference.
+- **NFC port state (corrected).** Contrary to an earlier parity-matrix row that labelled NFC "scaffolded," the production NFC crypto stack is **already ported** into `client-apps/androidApp/src/main/kotlin/com/fivucsas/mobile/android/data/nfc/`: `PassportNfcReader` (873 LOC), `TurkishEidReader` (457), `BacAuthentication` (502), `SecureMessaging` (470), plus Dg1/Dg2/MRZ parsers and `CardReaderFactory` — **5,447 LOC total**. `NfcReadScreen.kt` (642 LOC, MRZ input UI + koinInject `INfcService`) also exists. The gap is integration only: `MfaFlowScreen.kt:324` still dispatches `NFC_DOCUMENT` to `GenericMethodStepInput`. Closing that dispatcher line + porting `MrzScannerScreen.kt` is Gap #1 of Phase I.
+- **Ship A + Ship D verification.** Ship A (CORS preflight on `/api/v1/auth/mfa/step`, verify-widget ORT 404, BlazeFace singleton, `dropConsole`, i18next banner) confirmed landed and green in prod. Ship D (Android TOTP authenticator v5.1.0 — RFC 6238 engine in commonMain, `EncryptedSharedPreferences` vault, Compose Material 3 UI, manual entry) tagged and shipped; QR-scan follow-up tracked under Phase I Gap #5.
+
+### Identified
+- **Five Android gaps to reach 20/20**, each one-liner here, full plan in `docs/plans/PATH_TO_20_20.md`:
+  1. Passport BAC MFA integration — wire existing NFC infra into multi-step dispatcher (~2 days).
+  2. GDPR/KVKK export mobile UI — repository + ViewModel + Profile row + `DownloadManager` + 8 i18n keys (~2 days).
+  3. FCM action buttons + `fivucsas://` deep-link per `NFC_PUSH_APPROVAL_PROTOCOL.md` (~2 days).
+  4. Dark mode toggle in Settings — palettes already in `AppColors.kt` (~1 day).
+  5. Authenticator QR scanner — reuse existing `QrScannerScreen` CameraX + ML Kit + `OtpauthUri.parse()` (~1 day).
+- Total: **~8 engineer-days, fully parallelizable** across 5 code agents (20A–20E).
+
+### Documented
+- **Canonical plan:** `docs/plans/PATH_TO_20_20.md` (new) — Wave 1/2/3/4 sequencing, per-gap table (# / Gap / Current state / Work / Files new / Files modified / Days), verification steps, out-of-scope list (iOS Phase 2, Desktop NFC/installer signing Phase 3, GitGuardian #29836028 rotation user-gated, Phase C Wave 0 2h maintenance window, biometric-processor 79-CVE triage, pre-existing `BiometricViewModelTest.enrollFace` failure).
+- **Doc sweep (8 files):** parent `ROADMAP.md` (new "Known open incidents" block + new Phase I section), parent `CHANGELOG.md` (this entry), parent `README.md` (client-apps 401 → 424, v5.1.0 Authenticator callout, mobile-app pointer), parent `CLAUDE.md` ("Last verified" + test count), `docs/plans/PATH_TO_20_20.md` (new), `client-apps/README.md` (feature coverage matrix + test count), `client-apps/CHANGELOG.md` ("[Unreleased] — v5.2.0 planning"), `client-apps/docs/TODO.md` (Phase A–E rewrite).
+
+### Deferred / out of scope
+- iOS parity (Phase 2 per `CLIENT_APPS_PARITY.md`).
+- Desktop NFC over PC/SC + Windows Authenticode / macOS notarization (Phase 3).
+- GitGuardian #29836028 keystore rotation — user-gated, `docs/SECURITY_INCIDENTS.md`.
+- Phase C Wave 0 secret rotation — requires scheduled 2-hour maintenance window.
+- Biometric-processor 79 CVE triage — separate workstream.
+- Pre-existing `BiometricViewModelTest.enrollFace` failure on `client-apps` — tracked under Phase D of `client-apps/docs/TODO.md`.
+
 ## [2026-04-18d] — Security incident log + keystore rotation plan + parallel recovery round
 
 ### Documented

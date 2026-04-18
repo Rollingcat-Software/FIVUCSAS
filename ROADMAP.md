@@ -1,6 +1,11 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-18d — Hosted-login UX recovery round complete (callback enrichment + unified stepper + OIDC ui_locales + face retry tips). Evening round adds 4 parallel planning specs (NFC push protocol, cross-platform parity, keystore rotation scaffolding, Android TOTP engine). **Open security incident**: GitGuardian #29836028 — Android keystore password `fivucsas2026` leaked in public history (commit `db18fa7`, tag `v3.0.0`); scaffolding in place (`cb6eab9`), rotation pending user action. See `docs/SECURITY_INCIDENTS.md` and Phase C6.
+> Last updated: 2026-04-18e — Cross-platform deep review confirmed KMP genuineness (337 commonMain files, ~11.5k LOC); Android v5.1.0 standalone TOTP authenticator shipped; NFC crypto (5,447 LOC) already ported into `androidApp/data/nfc/` but not yet wired into `MfaFlowScreen`; 5-gap close-out plan to reach 20/20 docketed as Phase I.
+
+## Known open incidents
+
+- **GitGuardian #29836028** — Android keystore password `fivucsas2026` leaked in public git history of `Rollingcat-Software/client-apps` (commit `db18fa7`, tag `v3.0.0`). Scaffolding that reads creds from env / Gradle properties shipped `cb6eab9` 2026-04-18. **Rotation is user-gated** (keytool + GitHub-secret paste). Full playbook: `docs/SECURITY_INCIDENTS.md`. Also tracked as Phase C6 below.
+- **Phase C Wave 0 secret rotation pending** — `.env.prod` values (PostgreSQL, Redis, JWT signing key, Twilio SID+token, biometric `X-API-Key`, Hostinger SMTP) are live in committed history. Rotation requires a scheduled 2-hour maintenance window (JWT rotation signs everyone out). Playbook: Phase C1–C5 below.
 
 ## Project Status Summary
 
@@ -99,6 +104,18 @@ This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 secti
 - [ ] **H1 (Wave 2)** — unify `LoginMfaFlow` + `MultiStepAuthFlow`; 135 `Map.of()` → typed DTOs; admin `@PreAuthorize` sweep; unified `ErrorResponse`.
 - [ ] **H2 (Wave 3)** — `@WebMvcTest` for 17 controllers; `@Version` on `User` / `AuthFlow` / `Tenant`; JPA cascade `ALL` → `PERSIST, MERGE`; `@Transactional(readOnly=true)` sweep on 50+ services; CI i18n lint rule rejecting hardcoded English in `.tsx`.
 - [ ] **H3 (Wave 4 polish)** — MFA terminology canonicalization; `docs/04-api/ERROR_CODES.md`, `QUICKSTART.md`, `FEATURE_FLAGS.md`; `console.log` purge in auth paths; `aria-describedby` sweep; mobile table breakpoints.
+
+### Phase I — Android 20/20 close-out (2026-04-18e)
+
+Android currently sits at ~15/20 feature parity with web. Cross-platform deep review (2026-04-18e) identified five gaps that, once closed, bring the mobile client to 20/20. Full sequencing, file-level plan, and verification steps live in `docs/plans/PATH_TO_20_20.md` (canonical).
+
+- [ ] **I1.** Passport BAC MFA integration — wire the already-ported NFC infrastructure (`androidApp/data/nfc/`, 5,447 LOC) into `MfaFlowScreen.kt:324`; port `MrzScannerScreen.kt` from `practice-and-test/UniversalNfcReader`; new `NfcStepScreen.kt`. (~2 days)
+- [ ] **I2.** GDPR/KVKK export mobile UI — repository + ViewModel + Profile row + `DownloadManager` + 8 i18n keys. Backend (`GET /users/{id}/export`) shipped 2026-04-16b; web-app wired 2026-04-18. (~2 days)
+- [ ] **I3.** FCM action buttons + `fivucsas://` deep-link — Allow/Deny actions on push notifications, new `ApprovalActionReceiver`, `fivucsas://nfc-session` scheme in AndroidManifest, `MainActivity.onNewIntent` handler per `docs/plans/NFC_PUSH_APPROVAL_PROTOCOL.md`. (~2 days)
+- [ ] **I4.** Dark mode toggle in Settings — `ThemeMode { SYSTEM, LIGHT, DARK }` enum + `ThemePreferences` + CompositionLocal + 3-radio row in `SettingsScreen`. `AppColors.kt` already carries both palettes. (~1 day)
+- [ ] **I5.** Authenticator QR scanner — new `OtpQrScannerScreen.kt` reusing existing `QrScannerScreen` CameraX + ML Kit + `OtpauthUri.parse()`; replaces the current Toast on the "Scan QR" bottom-sheet entry shipped in v5.1.0. (~1 day)
+
+Total ~8 engineer-days; fully parallelizable across 5 code agents. Wave plan + verification in `docs/plans/PATH_TO_20_20.md`.
 
 ---
 

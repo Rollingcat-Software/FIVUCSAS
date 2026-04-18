@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-18c (Hosted-login UX recovery round: SDK decodes id_token + userinfo fallback so callback cards stop rendering `—`; OIDC `ui_locales` threaded end-to-end from tenant → IC → hosted page; `<StepProgress>` unified across all 10 methods; face-retry tips + grayscale-on-error alt text; `widget.*` / `mfa.face.*` copy audit in en.json + tr.json. Vitest 599/599 · Maven 839/839. SDK + bys-demo cache-bust deployed.)
+**Last verified**: 2026-04-18e (Cross-platform review confirmed KMP genuineness (337 commonMain files, 11.5k LOC), Android v5.1.0 with TOTP authenticator, NFC code ported but pending MFA integration.)
 
 ## Architecture
 
@@ -120,7 +120,7 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 |--------|-------|
 | Identity Core API (Java) | 633 |
 | Web-app (Vitest) | 619 |
-| Client-apps (Kotlin) | 401 |
+| Client-apps (Kotlin) | 424 |
 | Playwright E2E | 27 specs |
 | **Total** | **~1,800+** |
 
