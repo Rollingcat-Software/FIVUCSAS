@@ -1,6 +1,6 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-18 — V38 OAuth2 public flip shipped, MobileFaceNet deprecated, `marmara-bys-demo` client registered, web-app PR CI migrated to `ubuntu-latest`. Pre-existing lint debt surfaced (23 errors / 63 warnings) is now blocking Dependabot security merges.
+> Last updated: 2026-04-18d — Hosted-login UX recovery round complete (callback enrichment + unified stepper + OIDC ui_locales + face retry tips). Evening round adds 4 parallel planning specs (NFC push protocol, cross-platform parity, keystore rotation scaffolding, Android TOTP engine). **Open security incident**: GitGuardian #29836028 — Android keystore password `fivucsas2026` leaked in public history (commit `db18fa7`, tag `v3.0.0`); scaffolding in place (`cb6eab9`), rotation pending user action. See `docs/SECURITY_INCIDENTS.md` and Phase C6.
 
 ## Project Status Summary
 
@@ -58,6 +58,7 @@ This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 secti
 - [ ] **C3.** `git filter-repo --path .env.prod --invert-paths` on identity-core-api, web-app, FIVUCSAS parent. Force-push. Update all clones.
 - [ ] **C4.** `bio.fivucsas.com` Traefik: add `rate-limit` (avg 30 r/s, burst 50) + `admin-whitelist` (VPS, laptop, on-call).
 - [ ] **C5.** Enable GitHub push-protection + add `gitleaks` to CI.
+- [ ] **C6.** Android keystore password rotation — GitGuardian incident **#29836028** (2026-04-08) flagged `fivucsas2026` hardcoded in `client-apps/androidApp/build.gradle.kts` (commit `db18fa7`, tag `v3.0.0`, still reachable on public repo history). Scaffolding to read from env vars shipped `cb6eab9` 2026-04-18. Rotation steps: (a) `keytool -storepasswd -keystore keystore/release.jks` → new store password; (b) `keytool -keypasswd -alias fivucsas -keystore keystore/release.jks` → new key password; (c) base64 the rotated JKS → GitHub secret `ANDROID_KEYSTORE_BASE64` on `Rollingcat-Software/client-apps`; (d) paste new passwords into `ANDROID_KEYSTORE_PASSWORD` + `ANDROID_KEY_PASSWORD` secrets; (e) `git filter-repo --path androidApp/build.gradle.kts --invert-paths` is NOT recommended (rewrites every commit). Instead, accept residual history exposure + rely on rotation making the old values dead. Mark GitGuardian incident resolved.
 
 ### Phase D — Security depth
 
