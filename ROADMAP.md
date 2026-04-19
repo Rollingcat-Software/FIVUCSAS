@@ -12,7 +12,7 @@
 - **Overall Completion**: ~99%
 - **Production Services**: Identity Core API (Hetzner VPS), Web Dashboard (Hostinger), Landing Website (Hostinger), Verify Widget / Hosted Login (Hetzner)
 - **Local Dev**: Docker Compose (5 services, all healthy)
-- **Tests**: 633 backend, 619 web-app (Vitest), 401 client-apps, 27 Playwright specs (~1,800 total)
+- **Tests**: 633 backend, 619 web-app (Vitest), 425 client-apps, 27 Playwright specs (~1,800 total)
 
 ---
 

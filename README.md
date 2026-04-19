@@ -175,7 +175,7 @@ cd client-apps && ./gradlew :shared:test
 
 ## Project Status (April 2026)
 
-Production-deployed. 99% complete. ~1,820+ tests across backend/web/mobile (633 backend + 619 web-app Vitest + 424 Kotlin + 27 Playwright specs).
+Production-deployed. 99% complete. ~1,820+ tests across backend/web/mobile (633 backend + 619 web-app Vitest + 425 Kotlin + 27 Playwright specs).
 
 ### What's shipped
 

@@ -1,6 +1,12 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # Static HTML routes — map extensionless URL → .html before the SPA fallback.
+  # Keeps the URL pretty (/download) without triggering the SPA catch-all below.
+  RewriteRule ^download/?$ /download.html [L]
+
+  # SPA fallback — every other missing path is handled by React Router.
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

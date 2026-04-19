@@ -2,6 +2,42 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-18f] — Hosted-first parity rewrite + APK MFA reload fix + TR i18n restore
+
+### Fixed
+- **Android APK — multi-factor auth page no longer hangs on reload.** On
+  process death / configuration change, `LoginViewModel` state reset,
+  `loginState.mfaSessionToken` came back `null`, and `MfaFlowScreen` sat on
+  `MfaFlowUiState.Idle` rendering a bare `CircularProgressIndicator()` with
+  no escape. `AppNavigation.kt` now re-keys the init `LaunchedEffect` on
+  the session token and pops back to Login if the token disappeared while
+  still `Idle`. `MfaFlowScreen.kt` Idle branch renders `MFA_PREPARING`
+  copy + a visible Cancel button (defense-in-depth).
+- **Turkish localisation — diacritics restored across
+  `client-apps/shared/.../StringResources.kt`.** ~600 `trStrings` entries
+  had been ASCII-flattened (`Giris` → `Giriş`, `Sifre` → `Şifre`,
+  `Dogrulama` → `Doğrulama`, `Kullanici` → `Kullanıcı`, etc.). Restored
+  by hand, verified `compileDebugKotlinAndroid` green. English map and
+  `StringKey` enum untouched.
+
+### Changed
+- **Client-apps parity matrix collapsed from 20 columns to 13** to match
+  the 2026-04-16 hosted-first pivot. Native clients are no longer
+  biometric reimplementers — they are thin OAuth 2.0 / OIDC clients that
+  redirect to `verify.fivucsas.com/login` (Chrome Custom Tabs on Android,
+  `ASWebAuthenticationSession` on iOS, RFC 8252 loopback on Desktop).
+  Platform status after rewrite: **Android 13/13** (v5.2.0-rc1), Desktop
+  (Win/Linux) 2/13 (scaffolding), iOS 0/13 (Phase 2). macOS explicitly
+  out of scope for v6 (no Mac hardware for `codesign`/`notarytool`).
+  Pre-pivot 20-row matrix preserved as Appendix A of
+  `docs/plans/CLIENT_APPS_PARITY.md`. New Phase J (Desktop hosted-first)
+  added to `ROADMAP.md`.
+
+### In flight (not landed this session)
+- Desktop OAuth 2.0 loopback client (RFC 8252), Windows DPAPI + Linux
+  libsecret token storage, `.deb` / `.msi` installer configs — four
+  background agents working in parallel, will land in separate commits.
+
 ## [2026-04-18e] — Cross-platform deep review + Android 20/20 gap plan + doc sweep
 
 ### Reviewed
