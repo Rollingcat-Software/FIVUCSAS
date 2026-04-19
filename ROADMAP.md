@@ -1,6 +1,8 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-18e — Cross-platform deep review confirmed KMP genuineness (337 commonMain files, ~11.5k LOC); Android v5.1.0 standalone TOTP authenticator shipped; NFC crypto (5,447 LOC) already ported into `androidApp/data/nfc/` but not yet wired into `MfaFlowScreen`; 5-gap close-out plan to reach 20/20 docketed as Phase I.
+> Last updated: 2026-04-19 — UX review round: web-app MFA selector chip overflow, face enrollment modal i18n, face login quality tags, step-counter jumping, copy sweep (kiracınızın → kuruluşunuzun; page rename; TDK grammar) all shipped (commits `e47089f`, `a572c9f`, `920f641`). Dependabot: 4 safe patches rebased (biometric-processor #39/#40/#43/#45); 3 major bumps (#41 pytest 7→9, #42 pillow 10→12, #44 keras 2→3) in validation. Phase A (lint) + Phase B (protobufjs/follow-redirects) already shipped earlier — roadmap updated to reflect real state. APK status: `v5.2.0-rc1` tagged as GitHub pre-release 2026-04-18 but **no APK/AAB artifact attached** — binary distribution still pending (blocked on keystore rotation per GitGuardian #29836028).
+
+> Prior update (2026-04-18e): Cross-platform deep review confirmed KMP genuineness (337 commonMain files, ~11.5k LOC); Android v5.1.0 standalone TOTP authenticator shipped; NFC crypto (5,447 LOC) already ported into `androidApp/data/nfc/` but not yet wired into `MfaFlowScreen`; 5-gap close-out plan to reach 20/20 docketed as Phase I.
 
 ## Known open incidents
 
