@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Helper: install pre-commit hooks in the parent repo and every submodule that
+# has a .pre-commit-config.yaml (IN-M1 — 2026-04-19).
+#
+# Usage:  ./.pre-commit-install
+# Requires:  pip install pre-commit  (or `pipx install pre-commit`).
+set -euo pipefail
+
+if ! command -v pre-commit >/dev/null 2>&1; then
+    echo "pre-commit not found. Install it with:"
+    echo "  pipx install pre-commit   # recommended"
+    echo "  pip install --user pre-commit"
+    exit 1
+fi
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+install_in() {
+    local dir="$1"
+    if [ -f "${dir}/.pre-commit-config.yaml" ]; then
+        echo "==> installing hooks in ${dir}"
+        (cd "${dir}" && pre-commit install)
+    fi
+}
+
+install_in "${ROOT}"
+for sub in identity-core-api biometric-processor web-app client-apps landing-website bys-demo verify-widget; do
+    install_in "${ROOT}/${sub}"
+done
+
+echo "Done. 'git commit' will now run gitleaks before accepting a commit."

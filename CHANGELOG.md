@@ -2,6 +2,77 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-19] Infra audit remediation (IN-C1/H4/M1/M6)
+
+Scope: `/opt/projects/fivucsas/docs/audits/AUDIT_2026-04-19.md` findings
+**IN-C1, IN-H4, IN-M1, IN-M6, IN-LOW**. Postgres password rotation (IN-C2)
+is **not** in this batch — held for explicit user sign-off.
+
+### Fixed
+- **IN-C1 — nightly backups had been failing 8+ days.** `backup.log` showed
+  `FAILED: encryption failed` on all 5 databases since 2026-04-09. Root cause:
+  backup.sh runs under root's cron (`sudo crontab -l`) but the
+  `backup@rollingcatsoftware.com` public key lives only in `/home/deploy/.gnupg`.
+  Root's keyring is empty, so every `gpg --encrypt` exited with
+  `"No data"`. Previously the script would keep the plaintext dump on failure,
+  so daily we were writing unencrypted SQL to disk. Changes:
+  - `backup.sh` now refuses to run if the recipient key is missing (exit 2,
+    explicit log line — no more silent fallback).
+  - Added `--pinentry-mode loopback` alongside `--batch --yes --trust-model always`.
+  - On encryption failure the plaintext dump is now **deleted**, not kept.
+  - Added optional `BACKUP_HEALTHCHECK_URL` ping on full success (no-op by
+    default — user sets it when they pick a Healthchecks.io / Uptime Kuma URL).
+  - Header comment documents how to import the key into root's keyring.
+- **IN-C1 (cont.) — `backup-offsite.sh`** no longer drops `.sql.gz.gpg` files
+  at the rsync boundary. Old filter `--exclude='*.sql.gz'` inadvertently kept
+  plaintext-only semantics; new filter explicitly includes `*.gpg` / `*.log`
+  and excludes both `*.sql` and `*.sql.gz` (defence-in-depth against any
+  future script that forgets to encrypt).
+
+### Added
+- **IN-M6 — backup restore verification** (`infra/backup-verify.sh` +
+  `infra/crontab.d/backup-verify.cron`). Weekly script decrypts the latest
+  `identity_core.sql.gz.gpg`, spins up a throwaway `postgres:17-alpine`
+  container on 127.0.0.1:55432, loads the dump, and reports row counts for
+  `users`, `tenants`, `audit_logs`. Container + tmpfiles torn down via EXIT
+  trap. Cron file **shipped but NOT installed** — user must copy it to
+  `/etc/cron.d/` when ready.
+- **IN-M1 — gitleaks pre-commit hooks.** Added `.pre-commit-config.yaml` to
+  parent repo + `identity-core-api`, `web-app`, `client-apps`; extended
+  `biometric-processor`'s existing config with a gitleaks stage. Helper
+  `.pre-commit-install` bulk-installs across the monorepo. Docs:
+  `docs/PRECOMMIT_HOOKS.md`. detect-secrets intentionally skipped to avoid
+  baseline maintenance overhead.
+
+### Changed
+- **IN-H4 — Compose hardening.**
+  - `identity-core-api/docker-compose.prod.yml`: `read_only: true` + tmpfs
+    `/tmp` + `/var/log`, `cap_drop: [ALL]`, CPU limit `2.0`, memory bumped
+    768 MB → 2 GB to give Spring Boot headroom.
+  - `biometric-processor/docker-compose.prod.yml`: same read_only / tmpfs /
+    cap_drop pattern, CPU limit `2.0` → `4.0` (ML workload). Memory already
+    4 GB.
+- **IN-LOW — compose hygiene.** Removed obsolete `version: '3.9'` key from
+  `biometric-processor/docker-compose.prod.yml` (Compose v5 warns on it).
+
+### Not done (tracked)
+- **IN-C2** — Postgres superuser password rotation. Held for user sign-off +
+  maintenance window.
+- **IN-H1/H2/H3** — Traefik rate-limit buckets, admin-whitelist attachment,
+  TLS minVersion pinning. Not in this batch.
+- Compose services were **not restarted** — edits are on disk only.
+
+### Deploy note
+To actually apply the compose hardening, during a maintenance window run:
+```
+cd /opt/projects/fivucsas/identity-core-api
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d identity-core-api
+cd /opt/projects/fivucsas/biometric-processor
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d biometric-api
+```
+
+---
+
 ## [2026-04-18f] — Hosted-first parity rewrite + APK MFA reload fix + TR i18n restore
 
 ### Fixed
