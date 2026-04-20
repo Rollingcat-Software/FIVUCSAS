@@ -1,6 +1,8 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-04-19 — UX review round: web-app MFA selector chip overflow, face enrollment modal i18n, face login quality tags, step-counter jumping, copy sweep (kiracınızın → kuruluşunuzun; page rename; TDK grammar) all shipped (commits `e47089f`, `a572c9f`, `920f641`). Dependabot: 4 safe patches rebased (biometric-processor #39/#40/#43/#45); 3 major bumps (#41 pytest 7→9, #42 pillow 10→12, #44 keras 2→3) in validation. Phase A (lint) + Phase B (protobufjs/follow-redirects) already shipped earlier — roadmap updated to reflect real state. APK status: `v5.2.0-rc1` tagged as GitHub pre-release 2026-04-18 but **no APK/AAB artifact attached** — binary distribution still pending (blocked on keystore rotation per GitGuardian #29836028).
+> Last updated: 2026-04-20 — Audit-2026-04-19 remediation round landed across all 4 submodules + infra. See "Done (2026-04-20)" block below for the cross-walk. Parity matrix re-verified: Android 10/13 (not 13/13), Desktop 2/13, iOS 0/13. Widget integration doc polished with step-up MFA + CSP / permissionsPolicy / postMessage troubleshooting.
+>
+> Prior update (2026-04-19) — UX review round: web-app MFA selector chip overflow, face enrollment modal i18n, face login quality tags, step-counter jumping, copy sweep (kiracınızın → kuruluşunuzun; page rename; TDK grammar) all shipped (commits `e47089f`, `a572c9f`, `920f641`). Dependabot: 4 safe patches rebased (biometric-processor #39/#40/#43/#45); 3 major bumps (#41 pytest 7→9, #42 pillow 10→12, #44 keras 2→3) in validation. Phase A (lint) + Phase B (protobufjs/follow-redirects) already shipped earlier. APK status: `v5.2.0-rc1` tagged as GitHub pre-release 2026-04-18 but **no APK/AAB artifact attached** — binary distribution still pending (blocked on keystore rotation per GitGuardian #29836028).
 
 > Prior update (2026-04-18e): Cross-platform deep review confirmed KMP genuineness (337 commonMain files, ~11.5k LOC); Android v5.1.0 standalone TOTP authenticator shipped; NFC crypto (5,447 LOC) already ported into `androidApp/data/nfc/` but not yet wired into `MfaFlowScreen`; 5-gap close-out plan to reach 20/20 docketed as Phase I.
 
@@ -35,6 +37,66 @@
 - Actual critical-path bundle hotspots (post-ORT-lazy): `mui-vendor-*.js` 548 KB, Recharts `container-*.js` 398 KB + `PieChart-*.js` 397 KB.
 
 **Next:** Phase A lint sweep → Phase B Dependabot merge → Phase C Wave 0 ops hardening (during a scheduled maintenance window — JWT rotation signs everyone out).
+
+---
+
+## Done (2026-04-20) — Audit 2026-04-19 remediation round
+
+Cross-walk to `docs/audits/AUDIT_2026-04-19.md`. Items closed via parallel
+specialist agents on 2026-04-20. Submodule pointer bumps deferred to a
+single parent-repo commit after all agents merge.
+
+### ML / biometric-processor
+- **ML-C1** — cross-tenant vector-search leak closed: `find_similar()` +
+  `delete()` on face + voice pgvector repos now enforce `tenant_id` in the
+  SQL `WHERE`, not just log it. Defense-in-depth for the identity-core-api
+  tenant filter.
+- **ML-H1 / H2 / H3 / H4** — ML hardening wave: input-size guards on
+  uploads, liveness-score logging path tightened, model-hash validation on
+  load, `X-API-Key` enforced on all pgvector-adjacent routes.
+- **ML-M1 / M3 / M5** — cleanup + log hygiene + Pydantic strictness.
+
+### Front-end / web-app
+- **FE-H2 / H3 / H4** — front-end audit items (bundle regression guard, CSP
+  alignment between `vite.config.ts` + `public/.htaccess`, i18n lint sweep
+  preventing hardcoded English).
+
+### Mobile / client-apps
+- **MO-H1 / H3 / H4 / H6** — hardening items on the legacy Android path
+  (EncryptedSharedPreferences key rotation support, FCM token refresh,
+  approval-action deep-link validation, NFC scope guard).
+- **MO-C3** — closed.
+- **MO-C1 (Android has no OAuth)** remains OPEN; tracked in
+  `docs/plans/CLIENT_APPS_PARITY.md` §0a. Hosted-first OAuth integration is
+  the three items listed there (AppAuth + Custom Tabs, callback App Link,
+  refresh scheduler).
+
+### Infra / backups / Traefik
+- **IN-C1** — nightly backups fixed 2026-04-19 (see 2026-04-19 CHANGELOG).
+- **IN-H2** — Traefik rate-limits + admin whitelist on `bio.fivucsas.com`.
+- **IN-M3** — compose hardening follow-ups (read_only, tmpfs, cap_drop,
+  CPU/mem limits) stack-authored by the infra agent alongside IN-H4.
+
+### Back-end / identity-core-api
+- **BE-H1** (in-flight via agent) — OAuth2 audit-log enrichment (`actorIp`
+  + `clientId` + `failureReason` on PKCE failures) + rate-limit by
+  `clientId`. Ties into Phase D5.
+- **BE-H3** (in-flight via agent) — OIDC discovery conformance cleanup
+  (Phase D4 sibling).
+
+### Docs
+- `web-app/docs/plans/HOSTED_LOGIN_INTEGRATION.md` polished (step-up MFA
+  section, CSP / camera-mic permissionsPolicy / postMessage-origin
+  troubleshooting).
+- `docs/plans/CLIENT_APPS_PARITY.md` §2 matrix re-counted honestly
+  (Android 10/13, Desktop 2/13, iOS 0/13).
+- `CHANGELOG.md` 2026-04-20 entry added with cross-walk.
+
+### Not in this round (explicit)
+- **IN-C2** Postgres superuser password rotation — held for explicit user
+  sign-off + maintenance window.
+- **Submodule pointer bumps** — parent repo will bump pointers in a single
+  commit after all feature agents merge their submodule work.
 
 ---
 
@@ -108,9 +170,11 @@ This replaces the former Wave 0 / 2 / 3 / 4 tables. Historical Phase 1–7 secti
 - [ ] **H2 (Wave 3)** — `@WebMvcTest` for 17 controllers; `@Version` on `User` / `AuthFlow` / `Tenant`; JPA cascade `ALL` → `PERSIST, MERGE`; `@Transactional(readOnly=true)` sweep on 50+ services; CI i18n lint rule rejecting hardcoded English in `.tsx`.
 - [ ] **H3 (Wave 4 polish)** — MFA terminology canonicalization; `docs/04-api/ERROR_CODES.md`, `QUICKSTART.md`, `FEATURE_FLAGS.md`; `console.log` purge in auth paths; `aria-describedby` sweep; mobile table breakpoints.
 
-### Phase I — Android hosted-first 13/13 done (2026-04-18e)
+### Phase I — Android hosted-first: **10/13 (partial)** as of 2026-04-20
 
-Android reached **13/13** on the post-pivot (2026-04-16) hosted-first parity matrix. The pre-pivot "20/20" framing is obsolete — the matrix collapsed to 13 thin-OAuth-client columns (see `docs/plans/CLIENT_APPS_PARITY.md` §2, rewritten 2026-04-18). Biometric auth surfaces live on the hosted login page (`verify.fivucsas.com/login`), not in the native app.
+> Correction 2026-04-20: audit 2026-04-19 (MO-C1) disproved the earlier "13/13" claim. `androidApp/` has **no OAuth code at all** — no `net.openid:appauth`, no Chrome Custom Tabs intent, no `verify.fivucsas.com/callback` App Link, no `authorize` / `code_challenge` hits. The three hosted-first items (OAuth redirect, callback deep-link, refresh scheduler) remain open. Everything else Android needed for thin-OAuth-client parity — secure token storage, dashboard, cross-device sessions, GDPR export, offline display, push approvals, TOTP companion, QR display/scan, signed-release artifact, store listing in planning — **is** in place. See `docs/plans/CLIENT_APPS_PARITY.md` §0a + §2 for the honest matrix.
+>
+> Biometric auth surfaces live on the hosted login page (`verify.fivucsas.com/login`), not in the native app.
 
 Closed during this phase (tagged `v5.2.0-rc1` 2026-04-18e):
 
@@ -120,7 +184,7 @@ Closed during this phase (tagged `v5.2.0-rc1` 2026-04-18e):
 - [x] **I4.** Dark mode toggle in Settings — `ThemeMode { SYSTEM, LIGHT, DARK }` enum + `LocalThemeMode` CompositionLocal + Settings radio row. Shipped in v5.2.0-rc1.
 - [x] **I5.** Authenticator QR scanner — `OtpQrScannerScreen` reusing `QrScannerScreen` CameraX + `OtpauthUri.parse()`. Shipped in v5.2.0-rc1.
 
-**Phase I COMPLETE** — Android hosted-first 13/13. Tag `v5.2.0-rc1` placed 2026-04-18e; full `v5.2.0` after Ship B (verify-app StepLayout) lands + any follow-ups. Remaining Android work is release-level only (Play Store listing, AAB from CI, Baseline Profile, test-coverage bump) — tracked in `docs/plans/CLIENT_APPS_PARITY.md` §3.
+**Phase I PARTIAL (10/13)** — Android thin-OAuth-client hosted-first is **not yet complete**. Tag `v5.2.0-rc1` placed 2026-04-18e ships as Android-only stable on the legacy password + native MFA path. To reach an honest Android 13/13 the three OAuth items in `docs/plans/CLIENT_APPS_PARITY.md` §0a + §3 must land. Release-level work (Play Store listing, AAB from CI, Baseline Profile, test-coverage bump) still tracked in §3.
 
 ### Phase J — Desktop hosted-first 13/13 (ACTIVE 2026-04-18)
 

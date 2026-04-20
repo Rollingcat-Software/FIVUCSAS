@@ -2,6 +2,68 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-20] Audit 2026-04-19 remediation round + docs polish
+
+Cross-walk to `docs/audits/AUDIT_2026-04-19.md`. Parallel specialist agents
+closed findings across all 4 submodules + infra on 2026-04-20. Submodule
+pointer bumps are **not** in this parent-repo commit — they will be bumped
+in a single follow-up after all feature agents merge their submodule work.
+
+### Fixed / Changed (cross-walk to AUDIT_2026-04-19)
+
+- **ML-C1** — cross-tenant vector-search leak closed on both face and voice
+  pgvector repositories: `find_similar()` + `delete()` now enforce
+  `tenant_id` in SQL `WHERE`, not just in logging.
+- **ML-H1 / H2 / H3 / H4** — ML hardening wave (upload size guards,
+  liveness-score logging tightened, model-hash validation, `X-API-Key`
+  enforcement on pgvector-adjacent routes).
+- **ML-M1 / M3 / M5** — cleanup + log hygiene + Pydantic strictness.
+- **FE-H2 / H3 / H4** — front-end audit: bundle regression guard, CSP
+  alignment between `vite.config.ts` + `public/.htaccess`, i18n lint sweep
+  rejecting hardcoded English.
+- **MO-H1 / H3 / H4 / H6 + MO-C3** — legacy Android path hardening
+  (EncryptedSharedPreferences key rotation, FCM token refresh, approval
+  deep-link validation, NFC scope guard).
+- **IN-H2** — Traefik rate-limits + admin IP whitelist on
+  `bio.fivucsas.com`.
+- **IN-M3** — compose hardening follow-ups stack-authored alongside
+  2026-04-19's IN-H4 (`read_only: true` + tmpfs + `cap_drop: [ALL]` +
+  CPU/mem limits on both `identity-core-api` and `biometric-processor`).
+- **BE-H1 / BE-H3 / IN-H5** — in flight via agents: OAuth2 PKCE-failure
+  audit-log enrichment (`actorIp` + `clientId` + `failureReason`) +
+  per-`clientId` rate-limit (Phase D5); OIDC discovery conformance cleanup
+  (Phase D4). Will fold into a later parent-repo submodule bump.
+
+### Added / Docs
+
+- **Widget integration guide polish** — `web-app/docs/plans/HOSTED_LOGIN_INTEGRATION.md`:
+  new "Step-up MFA (iframe widget mode)" section with widget-vs-redirect
+  decision table; troubleshooting expanded with CSP, camera/mic
+  `Permissions-Policy` (recent Traefik fix 2026-04-19), and
+  `postMessage`-origin-check rows; copy-paste CSP quickstart block. Total
+  file size 318 lines (under 400-line cap).
+- **Parity matrix honest re-count** — `docs/plans/CLIENT_APPS_PARITY.md`
+  §2 matrix fixed to match §0a audit correction: **Android 10/13**
+  (rows 1/3/4 `✗` — no OAuth redirect, no refresh scheduler, no OAuth
+  callback deep-link; legacy password + native MFA path still supported),
+  **Desktop 2/13** (`OAuthLoopbackClient` + `SecureTokenStorage`),
+  **iOS 0/13** (no `client-apps/iosApp/` directory).
+- **ROADMAP refresh** — `ROADMAP.md` gains a "Done (2026-04-20)" block
+  with the above cross-walk; Phase I downgraded from "COMPLETE 13/13" to
+  "PARTIAL 10/13" with the three OAuth items explicitly called out.
+
+### Not done (explicit, tracked)
+
+- **IN-C2** — Postgres superuser password rotation. Held for user
+  sign-off + scheduled maintenance window (carried over from 2026-04-19).
+- **MO-C1** — Android has no OAuth redirect / callback / refresh
+  scheduler. The three items needed to reach honest Android 13/13 are
+  listed in `docs/plans/CLIENT_APPS_PARITY.md` §0a + §3.
+- **Submodule pointer bumps** — deferred to a single parent-repo commit
+  after all feature agents merge.
+
+---
+
 ## [2026-04-19] Infra audit remediation (IN-C1/H4/M1/M6)
 
 Scope: `/opt/projects/fivucsas/docs/audits/AUDIT_2026-04-19.md` findings
