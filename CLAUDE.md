@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-19 (APK MFA reload freeze fixed on the Idle branch; 14 remaining ASCII Turkish strings restored in `StringResources.kt` (974 diacritics); docs/CI/Dependabot audit done. Desktop hosted-first scaffolding landed: OAuth loopback client + SecureTokenStorage (DPAPI/libsecret/fallback). Android v5.2.0-rc1 remains 13/13 hosted-first.)
+**Last verified**: 2026-04-20 (AUDIT_2026-04-20 Phase-1 remediation: JWT RS256 default, TOTP strict-mode + V42 CHECK constraint, MFA rate limits with Retry-After, dead-code cleanup of biometric_data table via V43. Phase 1.3b biometric embedding envelope encryption (AES-GCM-256, per-tenant DEK) staged in biometric-processor worktree, pending Alembic 0005/0006/0007 rollout. PR #17 on identity-core-api pending merge, +877 tests green.)
 
 ## Architecture
 
@@ -110,8 +110,8 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 
 ## Database
 
-- Flyway migrations V1-V38 (identity-core-api; V37 tenant_id index, V38 SPA public client flip) + Alembic 0001-0004 (biometric-processor)
-- Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
+- Flyway migrations V1-V43 (identity-core-api; V39 TOTP AES-GCM, V40/V41 audit partition, V42 TOTP strict CHECK, V43 drop dead biometric_data) + Alembic 0001-0004 (biometric-processor; 0005-0007 staged for embedding envelope encryption, not yet applied)
+- Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs (partitioned monthly per V40/V41), oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
 - pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 
 ## Testing
