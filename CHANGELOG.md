@@ -2,7 +2,7 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
-## [2026-04-22c] SEO upgrades — landing + bys-demo + app + verify-adjacent
+## [2026-04-22] SEO upgrades — landing + bys-demo + app + verify-adjacent (round 3)
 
 Per user feedback: comprehensive SEO hardening across the public surfaces.
 All additive; no behavioural / feature changes.
