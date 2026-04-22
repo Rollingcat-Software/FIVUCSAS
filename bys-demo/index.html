@@ -4,21 +4,61 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marmara BYS - Öğrenci Bilgi Sistemi | FIVUCSAS Demo</title>
-    <meta name="description" content="Marmara Üniversitesi BYS Demo — FIVUCSAS biyometrik kimlik doğrulama entegrasyonu örneği.">
-    <meta name="robots" content="noindex, nofollow">
-    <meta property="og:title" content="Marmara BYS - FIVUCSAS Entegrasyon Demosu">
-    <meta property="og:description" content="FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite BYS'ye nasıl entegre edildiğini gösteren canlı demo.">
+    <title>FIVUCSAS Biyometrik Kimlik Doğrulama — Üniversite BYS Entegrasyon Demosu</title>
+    <meta name="description" content="Canlı entegrasyon demosu: FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite öğrenci bilgi sistemine nasıl entegre edildiğini gösterir. Marmara BYS arayüzü, demo veridir.">
+    <meta name="keywords" content="FIVUCSAS, biyometrik kimlik doğrulama, OAuth 2.0, OIDC, entegrasyon demosu, BYS, öğrenci bilgi sistemi, demo, biometric authentication demo">
+    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gültekin">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <!-- googlebot-specific directive mirrors the robots directives so Google
+         doesn't narrow to just index,follow when both tags are present. -->
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta property="og:title" content="FIVUCSAS — Üniversite BYS Biyometrik Kimlik Doğrulama Entegrasyon Demosu">
+    <meta property="og:description" content="FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite BYS'ye nasıl entegre edildiğini gösteren canlı demo. Marmara BYS arayüzü, demo veridir.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://demo.fivucsas.com">
-    <meta property="og:site_name" content="FIVUCSAS">
+    <meta property="og:url" content="https://demo.fivucsas.com/">
+    <meta property="og:site_name" content="FIVUCSAS Demo">
     <meta property="og:image" content="https://fivucsas.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:locale" content="tr_TR">
+    <meta property="og:locale:alternate" content="en_US">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Marmara BYS - FIVUCSAS Entegrasyon Demosu">
-    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik doğrulama entegrasyonunu gösteren canlı BYS demosu.">
+    <meta name="twitter:title" content="FIVUCSAS — Üniversite BYS Entegrasyon Demosu">
+    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik doğrulamanın bir üniversite BYS'ye nasıl entegre edildiğini gösteren canlı demo.">
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png">
-    <link rel="canonical" href="https://demo.fivucsas.com">
+    <link rel="canonical" href="https://demo.fivucsas.com/">
+
+    <!-- JSON-LD WebPage schema: positions this page as a product demo, not a
+         real university portal. Reduces risk of Google mistaking it for
+         Marmara's official BYS. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "FIVUCSAS Biyometrik Kimlik Doğrulama — BYS Entegrasyon Demosu",
+      "description": "Canlı entegrasyon demosu: FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite öğrenci bilgi sistemine nasıl entegre edildiğini gösterir.",
+      "url": "https://demo.fivucsas.com/",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      },
+      "about": {
+        "@type": "SoftwareApplication",
+        "name": "FIVUCSAS Auth Widget",
+        "applicationCategory": "SecurityApplication",
+        "url": "https://fivucsas.com/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      },
+      "inLanguage": "tr"
+    }
+    </script>
+
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

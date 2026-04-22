@@ -8,14 +8,18 @@
     <meta name="color-scheme" content="dark" />
     <meta name="description" content="FIVUCSAS — Biometric identity verification platform. Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR, and more. OAuth 2.0 / OIDC compliant, multi-tenant, built for production." />
     <meta name="keywords" content="biometric authentication, face verification, MFA, multi-factor authentication, OIDC, OAuth 2.0, SaaS, enterprise security, biyometrik doğrulama, yüz tanıma, kimlik doğrulama, FIVUCSAS" />
-    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gultekin" />
-    <meta name="robots" content="index, follow" />
+    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gültekin" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <!-- googlebot-specific directive mirrors the full robots directives so Google
+         does not fall back to the narrower pair when both tags are present. -->
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FIVUCSAS — Biometric Identity Verification Platform" />
     <meta property="og:description" content="Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant. Built for production, multi-tenant ready." />
-    <meta property="og:url" content="https://fivucsas.com" />
+    <meta property="og:url" content="https://fivucsas.com/" />
     <meta property="og:site_name" content="FIVUCSAS" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="tr_TR" />
@@ -29,7 +33,11 @@
     <meta name="twitter:description" content="Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant." />
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png" />
 
-    <link rel="canonical" href="https://fivucsas.com" />
+    <link rel="canonical" href="https://fivucsas.com/" />
+    <!-- hreflang: same-URL bilingual SPA — EN + TR toggle via JS, not separate URLs. -->
+    <link rel="alternate" hreflang="x-default" href="https://fivucsas.com/" />
+    <link rel="alternate" hreflang="en" href="https://fivucsas.com/" />
+    <link rel="alternate" hreflang="tr" href="https://fivucsas.com/" />
     <link rel="apple-touch-icon" href="https://fivucsas.com/og-image.png" />
 
     <!-- JSON-LD Organization -->
@@ -38,7 +46,7 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "FIVUCSAS",
-      "url": "https://fivucsas.com",
+      "url": "https://fivucsas.com/",
       "logo": "https://fivucsas.com/og-image.png",
       "description": "Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform.",
       "foundingDate": "2025",
@@ -66,13 +74,13 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "FIVUCSAS",
-      "url": "https://fivucsas.com",
+      "url": "https://fivucsas.com/",
       "description": "Biometric Identity Verification Platform",
       "inLanguage": ["en", "tr"],
       "publisher": {
         "@type": "Organization",
         "name": "FIVUCSAS",
-        "url": "https://fivucsas.com"
+        "url": "https://fivucsas.com/"
       },
       "potentialAction": {
         "@type": "SearchAction",
@@ -135,7 +143,7 @@
       "publisher": {
         "@type": "Organization",
         "name": "FIVUCSAS",
-        "url": "https://fivucsas.com"
+        "url": "https://fivucsas.com/"
       }
     }
     </script>

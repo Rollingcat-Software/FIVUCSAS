@@ -3,3 +3,5 @@ Allow: /
 Disallow: /callback.html
 Disallow: /dashboard.html
 Disallow: /test-elements.html
+
+Sitemap: https://demo.fivucsas.com/sitemap.xml
