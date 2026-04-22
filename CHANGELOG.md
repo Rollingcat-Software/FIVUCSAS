@@ -2,7 +2,7 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
-## [2026-04-22b] UI refresh — verify.fivucsas.com (Scope B)
+## [2026-04-22] UI refresh — verify.fivucsas.com (Scope B)
 
 Follow-up to Scope A. Polishes the hosted login surface
 (`verify.fivucsas.com/login`) and the iframe widget
@@ -36,7 +36,7 @@ external integrator's `integrity="sha384-…"` attribute remain valid.
   - `src/verify-app/LoginMfaFlow.tsx` — Card chrome softened
     (mode-aware elevation, 20 px radius), header uses Poppins display
     font with tighter letter-spacing, cancel button with compact close
-    icon. Phase state machine + every one of the 10 step components
+    icon. Phase state machine + every one of the 11 step components
     (`PasswordStep`, `MethodPickerStep`, `TotpStep`, `SmsOtpStep`,
     `EmailOtpMfaStep`, `FaceCaptureStep`, `VoiceStep`,
     `FingerprintStep`, `QrCodeStep`, `HardwareKeyStep`, `NfcStep`)
