@@ -467,7 +467,7 @@ export default function App() {
         <section className="px-4 border-y border-white/5 bg-white/[0.015]">
           <div className="max-w-6xl mx-auto py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
             <Stat value={10}   suffix=""  label={text(t.stats.methods)} />
-            <Stat value={180}  suffix="+" label={text(t.stats.endpoints)} />
+            <Stat value={250}  suffix="+" label={text(t.stats.endpoints)} />
             <Stat value={1800} suffix="+" label={text(t.stats.tests)} />
             <Stat value={3}    suffix=""  label={text(t.stats.services)} />
           </div>
