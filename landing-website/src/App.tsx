@@ -429,7 +429,7 @@ export default function App() {
                   <Icon name="arrow" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </a>
                 <a
-                  href="https://api.fivucsas.com/swagger-ui.html"
+                  href="https://docs.fivucsas.com"
                   target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 font-semibold text-[0.95rem] backdrop-blur-xl transition-all hover:-translate-y-0.5"
                 >
