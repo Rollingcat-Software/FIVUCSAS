@@ -2,6 +2,54 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-22c] SEO upgrades — landing + bys-demo + app + verify-adjacent
+
+Per user feedback: comprehensive SEO hardening across the public surfaces.
+All additive; no behavioural / feature changes.
+
+### `landing-website/` (fivucsas.com)
+- `index.html` — upgraded `<meta name="robots">` to include
+  `max-image-preview:large, max-snippet:-1, max-video-preview:-1`;
+  added explicit `googlebot` + `referrer` directives.
+- Canonical URL normalised with trailing slash; added hreflang
+  alternates (`x-default` + `en` + `tr`).
+
+### `bys-demo/` (demo.fivucsas.com)
+- `index.html` — **flipped from `noindex, nofollow` → `index, follow`**.
+  Per user review, the BYS integration demo is a legitimate public
+  showcase of FIVUCSAS's OIDC flow and deserves SEO visibility.
+  - Title reframed to lead with FIVUCSAS (not Marmara) to avoid
+    confusing Google into thinking this is Marmara's real portal:
+    `FIVUCSAS Biyometrik Kimlik Doğrulama — Üniversite BYS Entegrasyon Demosu`.
+  - Added author + referrer + JSON-LD `WebPage` positioning this
+    explicitly as a demo page whose `about` is the FIVUCSAS
+    `SoftwareApplication`.
+  - OG / Twitter tags updated to English alternate locale + 1200×630
+    image dimensions + explicit "demo" framing.
+- `robots.txt` — sitemap pointer added.
+- `sitemap.xml` *(new)* — single URL for the demo home.
+
+### `web-app/` submodule bump: `70a4c06 → 12c5cbc`
+Pulls in PRs #26 (post-review nit fixes on verify-app)
+and #27 (make app.fivucsas.com indexable — platform-wide
+sign-in surface).
+- `index.html` rewritten in English primary with `robots: index, follow`,
+  JSON-LD Organization + WebPage, canonical.
+- `public/robots.txt` — `Disallow: /` → `Allow: /` with explicit
+  `Disallow` for every authenticated dashboard path.
+- `public/sitemap.xml` *(new)* — 9 public URLs (home, login, register,
+  forgot/reset password, terms, privacy, widget-demo, developer-portal).
+- `public/.htaccess` — per-route `X-Robots-Tag: noindex, nofollow`
+  added for authenticated SPA paths (defense-in-depth over robots.txt,
+  per Copilot #27 review).
+- LoginMfaFlow Card: DRY'd duplicated boxShadow (PR #25 Copilot nit).
+- CHANGELOG: step-component count 10→11 (PR #25/#31 Copilot nits).
+
+### Not in this round
+- `verify.fivucsas.com` SDK untouched — SRI hashes on `bys-demo` +
+  every external integrator stay valid.
+- No backend or identity-core-api / biometric-processor change.
+
 ## [2026-04-22] UI refresh — verify.fivucsas.com (Scope B)
 
 Follow-up to Scope A. Polishes the hosted login surface
