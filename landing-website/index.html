@@ -1,30 +1,32 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en" data-lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="FIVUCSAS — Bulut tabanlı biyometrik kimlik doğrulama ve yüz tanıma platformu. Kurumsal MFA çözümü." />
-    <meta name="keywords" content="biyometrik doğrulama, yüz tanıma, kimlik doğrulama, MFA, SaaS, kurumsal güvenlik, biometric authentication, face verification, FIVUCSAS" />
-    <meta name="author" content="Ahmet Abdullah Gultekin, Marmara Üniversitesi" />
+    <meta name="theme-color" content="#070713" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="FIVUCSAS — Biometric identity verification platform. Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR, and more. OAuth 2.0 / OIDC compliant, multi-tenant, built for production." />
+    <meta name="keywords" content="biometric authentication, face verification, MFA, multi-factor authentication, OIDC, OAuth 2.0, SaaS, enterprise security, biyometrik doğrulama, yüz tanıma, kimlik doğrulama, FIVUCSAS" />
+    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gultekin" />
     <meta name="robots" content="index, follow" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="FIVUCSAS — Biyometrik Kimlik Doğrulama" />
-    <meta property="og:description" content="Bulut tabanlı biyometrik kimlik doğrulama platformu. Yüz tanıma, parmak izi, ses ve daha fazlası." />
+    <meta property="og:title" content="FIVUCSAS — Biometric Identity Verification Platform" />
+    <meta property="og:description" content="Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant. Built for production, multi-tenant ready." />
     <meta property="og:url" content="https://fivucsas.com" />
     <meta property="og:site_name" content="FIVUCSAS" />
-    <meta property="og:locale" content="tr_TR" />
-    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="tr_TR" />
     <meta property="og:image" content="https://fivucsas.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
-    <!-- Twitter Card -->
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="FIVUCSAS — Biyometrik Kimlik Doğrulama" />
-    <meta name="twitter:description" content="Bulut tabanlı biyometrik kimlik doğrulama platformu. Yüz tanıma, parmak izi, ses ve daha fazlası." />
+    <meta name="twitter:title" content="FIVUCSAS — Biometric Identity Verification" />
+    <meta name="twitter:description" content="Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant." />
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png" />
 
     <link rel="canonical" href="https://fivucsas.com" />
@@ -58,7 +60,7 @@
     }
     </script>
 
-    <!-- JSON-LD WebSite (with SearchAction) -->
+    <!-- JSON-LD WebSite -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -83,7 +85,7 @@
     }
     </script>
 
-    <!-- JSON-LD SoftwareApplication (Auth Widget / SDK) -->
+    <!-- JSON-LD SoftwareApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -138,17 +140,13 @@
     }
     </script>
 
-    <title>FIVUCSAS — Biyometrik Kimlik Doğrulama Platformu</title>
+    <title>FIVUCSAS — Biometric Identity Verification Platform</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Google Search Console verification -->
-    <!-- DNS TXT record already exists: google-site-verification=RTnOyspxMve8PKsFb3cUAmPpEz-PMTUEwb8vKwh3L44 -->
-    <!-- Just add fivucsas.com at search.google.com/search-console — it will auto-verify via the TXT record -->
-    <!-- <meta name="google-site-verification" content="YOUR_CODE_IF_USING_META_VERIFICATION"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body class="noise">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

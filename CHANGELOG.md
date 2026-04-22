@@ -2,6 +2,58 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-22] UI refresh — landing, web-app shell, BYS demo (Scope A)
+
+Zero functional change across the whole refresh. Every route, handler,
+OAuth flow, postMessage event shape, widget integration call, `data-testid`,
+and i18n key preserved. All 608 Vitest tests green in `web-app`.
+
+### `landing-website/` (fivucsas.com)
+- Full rewrite of `src/App.tsx`, `src/index.css`, `tailwind.config.js`,
+  and `index.html`. New palette (violet primary, cyan secondary on dark
+  canvas), Space Grotesk display + Inter body + JetBrains Mono accents,
+  custom inline SVG icon system, working EN / TR toggle with localStorage
+  + `navigator.language` first-load detection.
+- New sections: 10 auth-methods grid with custom icon glyphs,
+  architecture stack visual (Clients → Traefik → Services → Storage),
+  trust-signals row (RS256 default, AES-GCM-256, KVKK / GDPR, partitioned
+  audit logs, Retry-After MFA rate-limits), hosted-first CLI mock, refined
+  team + microservices + tech-stack sections.
+- All JSON-LD Organization / WebSite / SoftwareApplication blocks,
+  robots.txt, sitemap.xml, og-image.png, pgp.asc, favicon.svg preserved.
+- `.htaccess` (SPA fallback + security headers + caching) unchanged.
+
+### `bys-demo/` (demo.fivucsas.com)
+- `styles.css` rewritten with refined tokens (Marmara crimson identity
+  retained, modern typography scale, red accent stripes on cards, premium
+  FIVUCSAS gradient CTA with shimmer sweep). Polished tables, schedule
+  items, GPA grid, callback loading + success + error states.
+- **Zero HTML or JS edits** on `index.html`, `dashboard.html`,
+  `callback.html`: every `<script>` tag, CSP meta, SRI integrity hash,
+  `FIVUCSAS_CONFIG` literal, `loginRedirect()`, `handleRedirectCallback()`,
+  `sessionStorage` read / write, and every DOM id preserved byte-for-byte.
+
+### `web-app/` (app.fivucsas.com) — submodule bump
+- Pulls in PR #24 (`feat(web-app): Scope A UI refresh — theme + shell`):
+  new `src/theme.ts` (calibrated palette, Poppins display hierarchy,
+  8-tier shadow ramp, focus-visible rings, refined overrides across
+  every MUI primitive), rebuilt Sidebar (grouped nav + gradient active
+  indicator + admin chips + status tile), TopBar (glass AppBar +
+  gradient avatar + polished user menu), DashboardLayout (ambient
+  canvas + refined breadcrumbs), PublicLayout (glass AppBar + gradient
+  logo + contained CTA).
+- i18n additive only: `nav.group.*`, `nav.badgeAdmin`, `nav.primary`,
+  `sidebar.systemStatus` added to both locales.
+- Scope A explicitly excludes feature pages, `verify-app/` (hosted
+  login + widget — planned separately), and SDK (SRI hashes on
+  integrators stay valid).
+
+### Not in this round
+- `verify-widget/` + `fivucsas-auth.js` SDK untouched (would break SRI
+  hash in `bys-demo` callback.html and every external integrator).
+- No backend or identity-core-api / biometric-processor change.
+- No feature-page redesigns in web-app.
+
 ## [2026-04-20] Audit 2026-04-19 remediation round + docs polish
 
 Cross-walk to `docs/audits/AUDIT_2026-04-19.md`. Parallel specialist agents
