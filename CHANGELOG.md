@@ -2,6 +2,43 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
+## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split
+
+Continuation of the 2026-04-24 audit work. This entry covers the evening pass. 6 api PRs + 6 web PRs merged + deployed. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.
+
+### Backend (identity-core-api, all MERGED + DEPLOYED)
+- **#19** hotfix — JWT RS256 env wiring + V40 idempotency (prod outage recovery from morning rebuild).
+- **#20** `fix/auth-retry-same-step` — METHOD_ALREADY_USED retry guard (login edge case #1).
+- **#21** users-list tenant-scope v1 (superseded by #23).
+- **#22** `fix/auth-method-video-interview-enum` — `/auth-methods` 500 (missing `VIDEO_INTERVIEW` enum).
+- **#23** `fix/users-list-tenant-scope-v2` — correct implementation via `RbacAuthorizationService.getCurrentUser()`; fail-closed zero-UUID sentinel.
+- **#24** `fix/backend-403s-tenant-scope` — 8 dashboard controllers refactored via new `TenantScopeResolver`; broken 3-arg `hasPermission(#id,'Type','action')` form replaced with `@rbac.hasPermission('perm:name')`; added GET `/verification/flows|stats|sessions` (frontend-API mismatch fix).
+
+### Frontend (web-app, all MERGED + DEPLOYED)
+- **#30** CSP: extract inline eruda loader + generate PWA icons (192/512/apple-touch) via `rsvg-convert`.
+- **#32** hosted-login single-factor flow (demo.fivucsas "session expired" on Marmara Simple Login fixed: mint code via `GET /oauth2/authorize` with Bearer token on the post-password path).
+- **#33** biometric-puzzles public access (drop `AdminRoute` + `adminOnly` on sidebar entry).
+- **#35** `decodeJwtPayload` UTF-8 fix — `atob()` + `TextDecoder` so Turkish `ü` no longer mojibakes to `Ã¼` on `demo.fivucsas.com`.
+- **#36** default-route CSP unified with biometric routes (`'unsafe-eval'` + `'wasm-unsafe-eval'` — SPA routes can't escape the initial-HTML CSP); ONNX `wasmPaths` → jsdelivr CDN (runtime WASM wasn't in `dist/`); **page split**: `/auth-methods-testing` (9 auth-method demos, renamed from the old "Biometric Puzzles") vs NEW `/biometric-puzzles` (23 real micro-challenges: 14 face + 9 hand). New `BiometricPuzzleId` enum + dedicated registry.
+- **#37** face-search 422 fix (pipe `useAuth().user.tenantId` into `BiometricService.searchFace` — backend `/api/v1/search` required `tenant_id` form field).
+
+### Concept clarification (user correction)
+**Biometric puzzle ≠ auth method.** A biometric puzzle is a small active-liveness micro-challenge: blink, smile, turn head left, wave, show N fingers, trace a shape. NOT email OTP / SMS / TOTP / QR / hardware key. The original registry conflated the two; #36 separates them into two routes.
+
+### Live-ops applied directly to prod DB (follow-up needed to capture in Flyway)
+- Granted Marmara TENANT_ADMIN ~30 tenant-scoped permissions (auth_flow:*, device:*, enrollment:*, guest.*, tenant.update/configure/members, verification:*, user_role.read/assign/revoke, permission.read, audit:read).
+- `users.user_type` for `ahmet.abdullah@marun.edu.tr` bumped `TENANT_MEMBER` → `TENANT_ADMIN` so `RbacAuthorizationService.isTenantAdmin()` returns true (AuditLogController gate).
+
+### Agents still running when session paused
+5 background agents: `rbac-frontend-gating` (web), `tenant-email-domains` (api — Marmara marmara.edu.tr + marun.edu.tr multi-domain), `login-edge-cases-3-5-6` (api), `professional-biometric-puzzles` (web — real per-challenge detection), `sarnic-pr22-copilot-nits` (Sarnic — 6 Copilot review nits).
+
+### Verification (deploy-verified as of 2026-04-24 T17:35 UTC)
+All 8 originally-leaking endpoints return 200 for `ahmet.abdullah@marun.edu.tr`:
+- `/audit-logs`, `/tenants/{marmara}/auth-flows`, `/devices`, `/enrollments`, `/verification/flows`, `/verification/stats`, `/verification/sessions`, `/auth-methods`.
+- `/users` scoped to Marmara (12 rows, not 23).
+
+---
+
 ## [Unreleased] - 2026-03-19
 
 ### Added - 2026-03-19 Auth-Test & Backend Refinements
