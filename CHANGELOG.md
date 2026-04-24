@@ -2,9 +2,16 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
-## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split
+## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split + RBAC frontend gating
 
-Continuation of the 2026-04-24 audit work. This entry covers the evening pass. 6 api PRs + 6 web PRs merged + deployed. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.
+Continuation of the 2026-04-24 audit work. This entry covers the evening pass. **6 api PRs + 7 web PRs merged + deployed** across the day. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.
+
+### Frontend RBAC gating shipped (PR web #38, last of the day)
+- **`src/config/sidebarPermissions.ts`** — single-source permission matrix per sidebar entry.
+- Sidebar filters per caller role: SUPER_ADMIN-only entries (all-tenants list, system permissions, platform audit) hidden for TENANT_ADMIN + below. Tenant-scoped entries (Users, Auth Flows, Devices, Enrollments, Audit Logs for own tenant, …) visible to TENANT_ADMIN + hidden for plain USER.
+- New `<RoleRoute roles={[...]}>` — non-admin users hitting `/tenants` redirect to dashboard instead of empty shell.
+- Dashboard counters scoped per Rule 3 — "Total Tenants" card hidden for non-SUPER_ADMIN; "Total Users" label adapts to "Users in your tenant".
+- Settings page trimmed (user audit) — removed unwired Compact View toggle + notification toggles; hidden 2FA section for users with no MFA enrolled; deduped active sessions (was showing 14+ duplicates).
 
 ### Backend (identity-core-api, all MERGED + DEPLOYED)
 - **#19** hotfix — JWT RS256 env wiring + V40 idempotency (prod outage recovery from morning rebuild).
