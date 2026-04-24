@@ -2,6 +2,39 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-04-24] User-reported prod issues — bulk triage + cleanup
+
+Follow-up pass on issues surfaced after the morning session landed:
+
+### Fixed in prod
+- **`/login` face MFA broken** — per-route CSP on `public/.htaccess` dropped `'unsafe-eval'` + `'wasm-unsafe-eval'` from `script-src`, so WebAssembly (BlazeFace/TFJS, MediaPipe fallback) couldn't initialize. CSP restored; clickjacking defense kept via `frame-ancestors 'none'`. — **web-app #28 (earlier), confirmed live**.
+- **Inline-script CSP blocks `/login` + `/biometric-puzzles`** — `index.html` line 107 had an inline `<script>` (eruda debug loader) that the strict `script-src` rejected. Moved to `/eruda-loader.js` (same-origin). — **web-app #30**.
+- **PWA icons 404** — `manifest.webmanifest` referenced `pwa-192x192.png`, `pwa-512x512.png`, `apple-touch-icon.png` that never existed in `public/`. Generated from `favicon.svg` with `rsvg-convert`. — **web-app #30**.
+- **demo.fivucsas.com "Giriş oturumunuz sona erdi"** — `HostedLoginApp.handleLoginComplete` refused any `onComplete` that lacked an `mfaSessionToken`. But 1-step flows (Marmara Simple Login) correctly return no MFA session. Added a branch that mints the OAuth code via `GET /oauth2/authorize` + Bearer token for the single-factor path. — **web-app #32**.
+- **verify-widget container rebuilt** with the above fixes.
+- **SMS OTP code input unreadable** (black-on-black in dark OS theme with `color-scheme: light dark`) — solid `background.paper` + explicit `text.primary`. — **web-app #28 (earlier)**.
+- **Identity-core-api prod outage recovery** — `docker compose build --no-cache` rebuilt from 5-day-old image; collided with (1) V40/V41 partition migrations, (2) new JWT RS256 default (missing RSA keypair + TOTP encryption key), (3) docker-compose env wiring never propagated for the new vars. Fixed env wiring, generated keys, baseline-skipped V40/V41 because prod had dead-row drift that broke idempotent reapply. — **api #19 hotfix**.
+- **`GET /api/v1/auth-methods` 500** — DB had `VIDEO_INTERVIEW` row used by Fintech-KYC / Healthcare-Basic flows, but the Java `AuthMethodType` enum didn't include it. Added. — **api #22**.
+- **TENANT_ADMIN sees all tenants' users on `/users`** — first fix (PR #21) routed through `AuthorizationService.getCurrentTenantId()` which reads tenantId from a `CustomUserDetails` principal, but the bean actually returns a plain Spring `UserDetails`. Corrected via `RbacAuthorizationService.getCurrentUser()` with fail-closed zero-UUID sentinel. — **api #23**.
+- **Biometric Puzzles inaccessible** — route was wrapped in `<AdminRoute>` + sidebar entry had `adminOnly: true`, so TENANT_ADMIN + regular users couldn't reach the page. Opened to all authenticated users. — **web-app #33**.
+- **Biometric Puzzles concept wrong** — registry mapped puzzles 1-to-1 onto auth methods (EMAIL_OTP, SMS, TOTP, QR, HARDWARE_KEY, FACE, VOICE, FINGERPRINT, NFC). User correction: *a biometric puzzle is a small active-liveness micro-challenge performed with face or hands — blink, smile, turn head, wave, show 3 fingers, trace a shape. NOT one-time-code factors.* Rewrote the registry around a new `BiometricPuzzleId` enum with **14 face + 9 hand = 23 real challenges**. Deleted 8 non-biometric puzzle files. Added 46 new i18n keys. `HandGesturePlaceholderPuzzle` renders the 9 hand challenges with a simulated-detection stub until the `@mediapipe/tasks-vision` detector from PR #31 lands. — **web-app #34**.
+- **UTF-8 mojibake on demo dashboard** — "Ahmet Abdullah GÃ¼ltekin" instead of "Gültekin" because `decodeJwtPayload` passed `atob()` output (binary string = one char per byte) straight to `JSON.parse`, which then treated the bytes as Latin-1. Switched to `TextDecoder` over `Uint8Array.from(atob(b64), c => c.charCodeAt(0))`. — **web-app #35**.
+
+### In flight (CI pending)
+- **`METHOD_ALREADY_USED` retry fix** — login edge case #1: retrying the current step (wrong OTP typo) was rejected as substitution. Now only rejects when the submitted method ≠ the current step's configured method. — **api #20**.
+- **Gesture Phase 2 web** — landmarks-only MediaPipe HandLandmarker detector + hook + step + TwoFactorDispatcher case. Draft; i18n keys + unit tests before ready-for-review. — **web-app #31**.
+- **client-apps iOS CoreFoundation restoration** — `cnames.structs.__CFError` attempt. — **client-apps #28**.
+- **APK QR login i18n** — 23 strings → `StringKey.QR_LOGIN_*`, submit spinner. Blocked on #28 (iOS baseline) before CI passes. — **client-apps #27**.
+
+### Known open user-reported issues (not yet fixed)
+- `/verification/flows`, `/verification/stats` return 500; `/verification/sessions` returns 405 — frontend calls endpoints that don't exist in `VerificationController` (only `/templates` + POST-only `/sessions` are mapped). Needs frontend-API alignment.
+- Settings page: active-sessions list bloated (14+ duplicate entries per user at same IP); notification toggles + compact-view toggle aren't persisted; 2FA section shows "not required" for users with no MFA — scope audit pending.
+- Email-domain → tenant auto-mapping (Marmara `marmara.edu.tr` + `marun.edu.tr`) — needs `tenant_email_domains` table; feature-track work.
+- Sarnic PR #22 (RBAC) still blocked on 1 approving review.
+- DMARC upgrade waits on `dmarc@fivucsas.com` mailbox provisioning.
+
+See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the triage + priority list.
+
 ## [2026-04-22] SEO upgrades — landing + bys-demo + app + verify-adjacent (round 3)
 
 Per user feedback: comprehensive SEO hardening across the public surfaces.
