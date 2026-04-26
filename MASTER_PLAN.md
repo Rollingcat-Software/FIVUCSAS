@@ -1,6 +1,8 @@
 # FIVUCSAS — Master Plan: Honest Assessment & Gate-Driven Roadmap
 > Created: 2026-03-15
 
+> **Scope note (2026-04-26):** iOS and macOS are permanently out of scope. The product owner has no Apple hardware for development/testing. Android APK + Windows + Linux desktop cover the demonstration target. KMP `iosMain` directories remain in the codebase for compile structure but receive no further engineering work.
+
 ---
 
 ## ANSWERS TO YOUR 9 QUESTIONS
@@ -251,9 +253,12 @@ INTEGRATION PATH 3: Direct REST API (exists today)
   → But requires implementing the multi-step UI themselves
 
 INTEGRATION PATH 4: Embedded UI Components (for mobile)
-  Android/iOS SDK (AAR / Swift Package) that companies add to their app
+  Android SDK (AAR) that companies add to their app
   Component shows our face capture / TOTP / password UI
   Returns JWT to the host app
+
+  iOS Swift Package: DROPPED 2026-04-26 (no Apple hardware available).
+  Apple-platform tenants integrate via REST API (Path 3) or hosted login.
 
   → Our client-apps code is a starting point but is not packaged as an SDK
 ```

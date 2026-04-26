@@ -2,6 +2,11 @@
 
 All notable changes to the FIVUCSAS project will be documented in this file.
 
+## [Unreleased]
+
+### Docs
+- **iOS / iPadOS / macOS scope dropped (2026-04-26).** Forward-looking iOS/macOS work removed from `ROADMAP.md`, `ROADMAP_V2.md`, `MASTER_PLAN.md`, `PLATFORM_STATUS.md`, `MOBILE_APP_COMPREHENSIVE_REDESIGN.md`, `FRONTEND_COMPARISON_REPORT.md`, `docs/plans/CLIENT_APPS_PARITY.md`, `docs/plans/PATH_TO_20_20.md`. Apple platforms are permanently out of scope — no Apple hardware available for development, signing, or testing. KMP `iosMain` directory remains in tree as part of compile structure but receives no engineering work. Historical CHANGELOG entries that reference past iOS work are preserved unchanged.
+
 ## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split + RBAC frontend gating
 
 Continuation of the 2026-04-24 audit work. This entry covers the evening pass. **6 api PRs + 7 web PRs merged + deployed** across the day. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.

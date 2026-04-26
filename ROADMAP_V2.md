@@ -1,6 +1,8 @@
 # FIVUCSAS — Comprehensive Production Roadmap V2
 
-> **Created**: 2026-03-17 | **Revised**: 2026-03-19
+> **Scope note (2026-04-26):** iOS and macOS are permanently out of scope. The product owner has no Apple hardware for development/testing. Android APK + Windows + Linux desktop cover the demonstration target. KMP `iosMain` directories remain in the codebase for compile structure but receive no further engineering work. Historical session notes below that mention iOS work are left as-is (history); forward-looking phases have been updated.
+
+> **Created**: 2026-03-17 | **Revised**: 2026-04-26 (iOS/macOS scope dropped)
 > **Goal**: All 10 auth methods production-ready, browser-first, client-app as fallback
 > **Philosophy**: Browser handles everything it can. What it can't → client-app acts as authenticator bridge.
 > **Server**: CPU-only (no GPU needed) — Hetzner VPS + Hostinger
@@ -125,7 +127,7 @@
 | 15 | **SMS OTP activation** — Twilio account needs activation. Setup script created: `./scripts/setup-twilio.sh` | Twilio dashboard + run setup script | Small |
 | 16 | **Hardware token E2E test** — Needs physical YubiKey to verify full flow | Manual testing only | Small |
 | 17 | **Client-apps: bank enrollment** — No 3-angle face capture (frontal + left + right) like auth-test has | `client-apps/androidApp/.../screen/BiometricEnrollScreen.kt` — add multi-angle capture | Medium |
-| 18 | **iOS target** — iosMain platform layer complete (IosSecureStorage/Keychain, IosCameraService/AVFoundation, IosLogger/NSLog, FingerprintPlatform/LocalAuthentication stub, NoOp NFC/Push, DefaultNetworkMonitor, Koin DI module). Needs Swift/SwiftUI wrappers for UI. | `client-apps/iosApp/` — SwiftUI wrappers, Core NFC activation, LocalAuthentication real impl | Medium |
+| 18 | ~~**iOS target**~~ — DROPPED 2026-04-26. iOS / iPadOS / macOS permanently out of scope (no Apple hardware). Existing `iosMain` platform layer stays in tree as part of KMP compile structure but receives no further work. | n/a — out of scope | n/a |
 
 #### P1.5 (Performance — discovered 2026-03-19)
 
@@ -166,8 +168,8 @@
 │                                                                  │
 │   NO ───────────────────────►  Client-App acts as bridge          │
 │   (FP-Embedded on desktop,     Like Google/Microsoft Authenticator│
-│    NFC on iOS/unsupported,     Push approval, scan & confirm,     │
-│    External FP scanner)        biometric verification via app     │
+│    NFC on unsupported           Push approval, scan & confirm,    │
+│    browsers, External FP)       biometric verification via app    │
 │                                                                  │
 │   * Voice: browser captures + extracts features                  │
 │   * FP-Embedded: WebAuthn if available, else client-app           │
@@ -285,8 +287,8 @@ navigator.credentials.create() with authenticatorAttachment: "platform"
 | Platform | Browser | WebAuthn Platform Auth |
 |----------|---------|----------------------|
 | Android | Chrome | ✅ Fingerprint / Face |
-| iOS | Safari | ✅ Face ID / Touch ID |
-| macOS | Safari/Chrome | ✅ Touch ID |
+| iOS | Safari | n/a — native iOS app out of scope (DROPPED 2026-04-26); browser support remains for hosted-login users on Apple devices |
+| macOS | Safari/Chrome | n/a — native macOS app out of scope (DROPPED 2026-04-26); browser support remains for hosted-login users on Apple devices |
 | Windows | Chrome/Edge | ✅ Windows Hello |
 | Linux | Chrome | ⚠️ Depends on PAM config |
 
@@ -499,15 +501,11 @@ CameraX → ML Kit barcode scanning → Decode QR
 - [ ] Rate limiting on auth endpoints
 - [ ] Production penetration test
 
-### Phase 7: iOS + Desktop (Week 7-9)
-- [x] iOS platform layer: IosSecureStorage (Keychain), IosCameraService (AVFoundation), IosLogger (NSLog)
-- [x] iOS Koin DI module: all bindings (camera, storage, logger, fingerprint, push, network, NFC)
-- [x] iOS FingerprintPlatform: stub (LocalAuthentication ready to wire)
-- [ ] iOS SwiftUI wrappers (iosApp target)
-- [ ] iOS NFC reader (Core NFC framework — NoOpNfcService in place)
-- [ ] iOS biometric (LocalAuthentication — real implementation)
+### Phase 7: Desktop (Week 7-9)
 - [ ] Desktop fingerprint (Windows Hello via JNA)
 - [ ] Desktop NFC (USB readers via javax.smartcardio)
+
+> **iOS / iPadOS / macOS DROPPED 2026-04-26.** Permanently out of scope — no Apple hardware available for development, signing, or testing. Pre-existing `iosMain` platform-layer scaffolding (Keychain, AVFoundation, NSLog wrappers, Koin DI bindings, LocalAuthentication stub) stays in the tree as part of the KMP compile structure but is not engineered against. Apple users authenticate via the hosted login page (`verify.fivucsas.com`) in their system browser.
 
 ---
 
@@ -640,7 +638,7 @@ CameraX → ML Kit barcode scanning → Decode QR
 | **4** | Fingerprint dual-mode | 1.5 weeks | WebAuthn + app bridge |
 | **5** | Client-app as authenticator | 1.5 weeks | Push approval, TOTP, NFC |
 | **6** | Security & polish | 1 week | Hardened, tested |
-| **7** | iOS + Desktop | 2 weeks | Cross-platform |
+| **7** | Desktop (Win + Linux) | 2 weeks | Cross-platform (iOS/macOS DROPPED 2026-04-26) |
 | **Total** | | **~11 weeks** | Full biometric platform |
 
 ---

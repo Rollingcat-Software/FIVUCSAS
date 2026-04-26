@@ -1,5 +1,7 @@
 # FIVUCSAS Mobile App - Comprehensive Redesign
 
+> **Scope note (2026-04-26):** iOS and macOS are permanently out of scope. The product owner has no Apple hardware for development/testing. Android APK + Windows + Linux desktop cover the demonstration target. The iOS-side material below (architectural diagrams referencing `iosMain`/`iosApp`, the `IosTokenStorage` Keychain example, etc.) is preserved for KMP architectural reference only — those modules are not engineered against. Forward-looking iOS work has been removed.
+
 ## Executive Summary
 
 This document provides a complete redesign specification for the FIVUCSAS mobile application ecosystem, based on extensive research of industry best practices from banking apps, government ID systems (e-Devlet), and leading identity verification platforms (Onfido, Jumio, Veriff).
