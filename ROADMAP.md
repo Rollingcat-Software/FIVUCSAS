@@ -1,6 +1,8 @@
 # FIVUCSAS - Product Roadmap
 
-> Last updated: 2026-03-28
+> **Scope note (2026-04-26):** iOS and macOS are permanently out of scope. The product owner has no Apple hardware for development/testing. Android APK + Windows + Linux desktop cover the demonstration target. KMP `iosMain` directories remain in the codebase for compile structure but receive no further engineering work.
+
+> Last updated: 2026-04-26 (scope note added)
 
 ## Project Status Summary
 

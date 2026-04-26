@@ -1,5 +1,7 @@
 # FIVUCSAS — Platform Status, Analysis & Roadmap
-> Last updated: 2026-03-19
+> **Scope note (2026-04-26):** iOS and macOS are permanently out of scope. The product owner has no Apple hardware for development/testing. Android APK + Windows + Linux desktop cover the demonstration target. KMP `iosMain` directories remain in the codebase for compile structure but receive no further engineering work.
+
+> Last updated: 2026-04-26 (scope note added; original analysis 2026-03-19)
 > Generated from deep codebase analysis across all submodules
 
 ---
@@ -455,7 +457,7 @@ The biometric-processor needs a GPU to run DeepFace at acceptable speed:
 - **7 test files** in client-apps
 - **Production API URLs** configured
 - **Step-up fingerprint integration** — backend V17 deployed, client side pending
-- Shared code structure: `shared/commonMain/`, `androidMain/`, `iosMain/`, `desktopMain/`
+- Shared code structure: `shared/commonMain/`, `androidMain/`, `desktopMain/`. (`iosMain/` exists in tree as part of KMP compile structure but is out of scope — DROPPED 2026-04-26; no Apple hardware available.)
 - Compose Multiplatform for UI
 
 ### What's missing
