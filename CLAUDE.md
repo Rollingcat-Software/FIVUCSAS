@@ -78,6 +78,16 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - `shared-redis` (port 6379, internal only)
 - `shared-postgres` with pgvector (port 5432, internal only) — biometric_db: face_embeddings, voice_enrollments
 
+**Biometric Processor — Prod Config (verified 2026-04-28):**
+- `FACE_DETECTION_BACKEND=opencv` — frontal-only Haar cascade; target: `centerface`
+- `FACE_RECOGNITION_MODEL=Facenet` — **128-dim**; target: `Facenet512` (512-dim, breaking migration)
+- `MODEL_DEVICE=cpu` — no GPU, CX43 CPU-only; this is correct and permanent
+- `ANTI_SPOOFING_ENABLED` — NOT set → disabled; must be enabled
+- Liveness (UniFace MiniFASNet, hybrid) — code exists, NOT wired into `/enroll` or `/verify`
+- pgvector `<=>` cosine search — production-grade, keep as-is
+- Full audit: `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`
+- Fix roadmap: `BIOMETRIC_ROADMAP_2026-04-28.md`
+
 **Rebuild & restart identity-core-api:**
 ```bash
 cd /opt/projects/fivucsas/identity-core-api
@@ -194,6 +204,39 @@ git submodule foreach git pull origin master
 - Shared code in `shared/commonMain/`
 - Platform-specific in `androidMain/`, `iosMain/`, `desktopMain/`
 - Compose Multiplatform for UI
+
+## Biometric Pipeline (CRITICAL — Read Before Touching biometric-processor or web-app auth)
+
+**Architecture decision:** Auth kararı sunucuda olmalı — tarayıcı güvenilmez. Client geometry embedding (512-dim landmark distance) LOG-ONLY'dir, auth için kullanılmaz (D2 kararı).
+
+### Gerçek Üretim Durumu (2026-04-28 audit)
+| Katman | Ne Çalışıyor | Ne Çalışmıyor |
+|---|---|---|
+| Client detection (auth) | BlazeFace 6pt | MediaPipe 478pt bağlı değil |
+| Server detection | OpenCV (frontal-only) | centerface (config değişikliği yeterli) |
+| Server embedding | **Facenet 128-D** | Facenet512 512-D (breaking migration) |
+| Server liveness | ❌ /enroll ve /verify'da YOK | UniFace/hybrid kodu var |
+| Server anti-spoofing | ❌ Kapalı | Config ile açılabilir |
+| Client passive liveness | ❌ Auth hook'una bağlı değil | PassiveLivenessDetector var |
+| pgvector search | ✅ Üretimde | — |
+
+### Kural: Embedding Dimension Tutarlılığı
+`FACE_RECOGNITION_MODEL` ile `EMBEDDING_DIMENSION` her zaman eşleşmeli:
+- `Facenet` → `EMBEDDING_DIMENSION=128`
+- `Facenet512` → `EMBEDDING_DIMENSION=512`
+- Model değiştirince **tüm embeddingler geçersiz** — yeniden enrollment zorunlu
+
+### Kural: GPU Gerektiren Modeller
+`ALLOW_HEAVY_ML=false` (default) iken bu modeller boot'u engeller:
+- `FACE_DETECTION_BACKEND`: `retinaface`, `yolov8`, `yolov11*`, `yolov12*`
+- `FACE_RECOGNITION_MODEL`: `ArcFace`, `VGG-Face`, `GhostFaceNet`
+
+CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
+
+### Kural: Liveness Entegrasyonu
+`/liveness` endpoint'i ayrı çalışıyor. `/enroll` ve `/verify` liveness çağırmıyor — bu kasıtlı değil, açık bir boşluk. Faz 2'de düzeltilecek.
+
+**Detay:** `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md` | **Roadmap:** `BIOMETRIC_ROADMAP_2026-04-28.md`
 
 ## Database
 
@@ -376,35 +419,29 @@ curl -X POST https://api.fivucsas.com/api/v1/auth/login \
 - Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
 - Mobile/Desktop Apps (75%) - Production URLs configured, Android APK GREEN, 3 new screens added (2026-03-19)
 - Card detection: server YOLO fails on CPU, migrating to client-side ONNX
-- **Performance optimization needed** (discovered 2026-03-19):
-  - biometric-api at 94% memory (2.825GB/3GB) — needs increase to 3.5GB
-  - Health check 678ms — needs lightweight endpoint
-  - Voice operations block event loop — need thread pool
-  - Missing pgvector HNSW indexes on embeddings
-- **Liveness threshold rewrite** — server-authoritative verdict working, thresholds being aligned with local demo
+- **Biometric pipeline overhaul** (2026-04-28 audit — see `BIOMETRIC_ROADMAP_2026-04-28.md`):
+  - Faz 1 (config): centerface detector, Facenet512 model, anti-spoofing enable, UniFace hybrid
+  - Faz 2 (integration): liveness → enroll/verify, passive liveness → client auth, MediaPipe FaceLandmarker → auth detection loop
+  - Faz 3 (adaptive threshold): enrollment-age-based threshold, embedding renewal UX
+  - ⚠️ Facenet512 geçişi mevcut tüm embeddingleri geçersiz kılar — migration planla
 
 ### Next Steps (Priority Order)
-1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done (Feb 19, all 10 auth handlers live)
-2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done (multi-step auth UI live)
-3. ~~Run Playwright E2E tests against production~~ ✅ Done (14/14 pass, Feb 20)
-4. ~~Fix production 500 errors (auth-flows, devices)~~ ✅ Done (Feb 20)
-5. ~~TestContainers integration tests~~ ✅ Done (24 tests pass)
-6. ~~i18n, analytics, TOTP enrollment, notification panel~~ ✅ Done
-7. ~~Twilio SMS gateway~~ ✅ Done (ready for activation)
-8. ~~Spring 2026 presentation slides~~ ✅ Done
-9. ~~Playwright E2E tests expanded to 224~~ ✅ Done (Feb 21, 42 failures → 0 failures)
-10. ~~Fingerprint step-up backend for mobile app~~ ✅ Done (Feb 21, V17 migration + 3 endpoints)
-11. ~~Deploy step-up backend to Hetzner VPS~~ ✅ Done (Feb 21, V17 applied, 3 endpoints live, smoke-tested)
-12. ~~Step-up unit tests~~ ✅ Done (Feb 21, 20 tests: StepUpChallengeServiceTest + StepUpAuthServiceTest)
-13. Setup Cloudflare Tunnel for biometric-processor on laptop GPU (scripts ready in deploy/)
-14. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
-15. Coordinate with Aysenur: share step-up endpoint docs, verify public key format compatibility
-16. Final presentation delivery (Spring 2026)
-17. ~~Fix Fingerprint/HardwareKey/Voice auth methods~~ ✅ Done (March 28, WebAuthn + Resemblyzer)
-18. ~~Fix AuthSessionRepository data wrapping bug~~ ✅ Done (March 28, fixes all secondary auth)
-19. Implement embeddable auth widget (Phase 7 — verify-app extraction + auth-js SDK)
-20. Fix DNS: delete AAAA record for bpa-fivucsas on Hostinger
-21. Add mizan, sarnic, minio, traefik A records on main domain DNS
+1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done
+2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done
+3. ~~All 10 auth methods working~~ ✅ Done
+4. ~~TestContainers integration tests~~ ✅ Done
+5. ~~Twilio SMS gateway~~ ✅ Done (ready for activation)
+6. ~~Spring 2026 presentation slides~~ ✅ Done
+7. ~~Fingerprint step-up backend~~ ✅ Done
+8. ~~OAuth 2.0 endpoints~~ ✅ Done
+9. **[BIOMETRIC F1] Config: centerface + anti-spoofing + UniFace hybrid** (no code, .env.prod only)
+10. **[BIOMETRIC F1] Config: Facenet512** (breaking migration — plan embedding re-enrollment)
+11. **[BIOMETRIC F2] Wire liveness into /enroll and /verify routes**
+12. **[BIOMETRIC F2] Wire MediaPipe FaceLandmarker into useFaceDetection hook**
+13. **[BIOMETRIC F2] Add passive liveness to useFaceChallenge**
+14. **[BIOMETRIC F3] Adaptive threshold based on enrollment.created_at**
+15. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
+16. Implement embeddable auth widget (Phase 7 — Web Components remaining)
 
 ## Deployment Scripts (REMEMBER!)
 
