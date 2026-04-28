@@ -38,7 +38,6 @@ nul
 *.zip
 
 # Archive and backup folders
-/archive/
 /_backup_before_submodules/
 
 # Claude Code

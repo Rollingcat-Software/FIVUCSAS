@@ -1,8 +1,13 @@
 # FIVUCSAS - Face and Identity Verification Using Cloud-based SaaS
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-Near%20Production-orange.svg)
+![Status](https://img.shields.io/badge/status-Production-brightgreen.svg)
+![Last verified](https://img.shields.io/badge/last%20verified-2026--04--28-informational.svg)
+
+> **Current state:** see [ROADMAP_2026-04-28.md](ROADMAP_2026-04-28.md)
+> for the canonical record. Older audits / roadmaps are in
+> [archive/2026-04-pre-roadmap-2028/](archive/2026-04-pre-roadmap-2028/).
 
 ## Overview
 
