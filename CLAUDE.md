@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running
-- **Last verified**: 2026-04-26 — All services UP. ~98% complete. Today's wave: 8 PRs (client-apps i18n+UX polish, web-app lint sweep 17→0 + i18n, api admin @PreAuthorize sweep, iOS/macOS scope DROPPED across 5 repos). Audit DRAFTs (api #32, web #45) flagged V42/V43 missing migrations. Login surfaces compared (`docs/LOGIN_SURFACES_COMPARISON_2026-04-26.md`).
+- **Last verified**: 2026-04-28 — Production hardening day. Session log: `project_session_20260428.md` (memory). 6 morning fixes verified live (LoginPage 401 i18n, UserRepo soft-delete filter, optional MFA step skip, Fivucsas tenant contact_email, UniFace passive liveness, useQualityAssessment bbox fallback). 7 afternoon fixes (3 shipped + 3 in-flight + 1 plan-only): sidebar dual-highlight, 4-method enrollment correctness sweep, MFA fingerprint-twice, biometric tools network error, puzzles polish, face demo page, client-apps parity plan. **FK-cascade incident**: hard-delete on duplicate user row wiped TOTP/WebAuthn/NFC; lesson saved as `feedback_no_hard_delete_users.md`. Audit DRAFTs (api #32, web #45) still flag V42/V43 missing migrations + test compile error.
 - **iOS/macOS scope**: PERMANENTLY OUT — no Apple hardware available. KMP `iosMain` retained for compile structure only. Forward roadmap is Android APK + Windows/Linux desktop.
 
 ## Architecture
@@ -78,15 +78,16 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - `shared-redis` (port 6379, internal only)
 - `shared-postgres` with pgvector (port 5432, internal only) — biometric_db: face_embeddings, voice_enrollments
 
-**Biometric Processor — Prod Config (verified 2026-04-28):**
-- `FACE_DETECTION_BACKEND=opencv` — frontal-only Haar cascade; target: `centerface`
-- `FACE_RECOGNITION_MODEL=Facenet` — **128-dim**; target: `Facenet512` (512-dim, breaking migration)
-- `MODEL_DEVICE=cpu` — no GPU, CX43 CPU-only; this is correct and permanent
-- `ANTI_SPOOFING_ENABLED` — NOT set → disabled; must be enabled
-- Liveness (UniFace MiniFASNet, hybrid) — code exists, NOT wired into `/enroll` or `/verify`
-- pgvector `<=>` cosine search — production-grade, keep as-is
-- Full audit: `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`
-- Fix roadmap: `BIOMETRIC_ROADMAP_2026-04-28.md`
+**Biometric Processor — Prod Config (verified 2026-04-28 afternoon, post-fix):**
+- `FACE_DETECTION_BACKEND=mtcnn` — bundled weights, no DeepFace UnboundLocalError. centerface attempted first, reverted because of upstream bug.
+- `FACE_RECOGNITION_MODEL=Facenet512` + `EMBEDDING_DIMENSION=512` — 512-dim. All current `face_embeddings` rows are 512-dim.
+- `MODEL_DEVICE=cpu` — CX43 CPU-only, permanent.
+- `ANTI_SPOOFING_ENABLED=true` — DeepFace anti-spoof on.
+- Liveness wired into `/verify` and `/enroll`. `LIVENESS_BACKEND=uniface` + `LIVENESS_MODE=passive` (hybrid demanded blink+smile that /verify never asks for; UniFace MiniFASNet 98%+ on real users is sufficient).
+- UniFace cache: `UNIFACE_CACHE_DIR=/app/uniface-cache` + `HOME=/tmp` + named volume `biometric_uniface` (chown'd uid 100). MiniFASNetV2.onnx persists across restarts.
+- pgvector `<=>` cosine search — production-grade.
+- Full audit (now stale, see Session 2026-04-28 memory): `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`
+- Roadmap (now stale — many F1/F2/F3 items shipped): `BIOMETRIC_ROADMAP_2026-04-28.md`. Current state: `ROADMAP_2026-04-28.md`.
 
 **Rebuild & restart identity-core-api:**
 ```bash
@@ -209,16 +210,19 @@ git submodule foreach git pull origin master
 
 **Architecture decision:** Auth kararı sunucuda olmalı — tarayıcı güvenilmez. Client geometry embedding (512-dim landmark distance) LOG-ONLY'dir, auth için kullanılmaz (D2 kararı).
 
-### Gerçek Üretim Durumu (2026-04-28 audit)
-| Katman | Ne Çalışıyor | Ne Çalışmıyor |
-|---|---|---|
-| Client detection (auth) | BlazeFace 6pt | MediaPipe 478pt bağlı değil |
-| Server detection | OpenCV (frontal-only) | centerface (config değişikliği yeterli) |
-| Server embedding | **Facenet 128-D** | Facenet512 512-D (breaking migration) |
-| Server liveness | ❌ /enroll ve /verify'da YOK | UniFace/hybrid kodu var |
-| Server anti-spoofing | ❌ Kapalı | Config ile açılabilir |
-| Client passive liveness | ❌ Auth hook'una bağlı değil | PassiveLivenessDetector var |
-| pgvector search | ✅ Üretimde | — |
+### Gerçek Üretim Durumu (2026-04-28 afternoon, post-fix)
+| Katman | Durum |
+|---|---|
+| Client detection (auth) | ✅ MediaPipe FaceLandmarker 478pt primary, BlazeFace fallback |
+| Server detection | ✅ MTCNN (bundled weights, deviation from centerface roadmap due to DeepFace bug) |
+| Server embedding | ✅ Facenet512 (512-dim) |
+| Server liveness (/verify) | ✅ UniFace MiniFASNet passive — `LIVENESS_BACKEND=uniface`, `LIVENESS_MODE=passive` |
+| Server liveness (/enroll) | ✅ Wired |
+| Server anti-spoofing | ✅ `ANTI_SPOOFING_ENABLED=true` |
+| Client passive liveness | ✅ `PASSIVE_LIVENESS_THRESHOLD=0.45` gate in useFaceChallenge |
+| Client quality scoring | ✅ Bbox fallback when no landmarks; weights redistribute to blur*0.55+lighting*0.45 |
+| pgvector search | ✅ Üretimde |
+| Adaptive threshold | ✅ `VERIFICATION_THRESHOLD_AGED_*` for >2yr-old embeddings |
 
 ### Kural: Embedding Dimension Tutarlılığı
 `FACE_RECOGNITION_MODEL` ile `EMBEDDING_DIMENSION` her zaman eşleşmeli:
@@ -414,34 +418,35 @@ curl -X POST https://api.fivucsas.com/api/v1/auth/login \
 - ✅ **URL double-prefix fix** in VoiceEnrollmentFlow, useBankEnrollment, useLivenessPuzzle
 - ✅ **All CI repos green**: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android
 
-### In Progress
-- Embeddable auth widget — Phase 7 ~75% complete (verify-app, auth-js, auth-react, OAuth 2.0 done; Web Components + dogfooding remaining)
-- Client-side ML migration (feature branch `feature/client-side-ml`) — see `CLIENT_SIDE_ML_REPORT.md`
-- Mobile/Desktop Apps (75%) - Production URLs configured, Android APK GREEN, 3 new screens added (2026-03-19)
-- Card detection: server YOLO fails on CPU, migrating to client-side ONNX
-- **Biometric pipeline overhaul** (2026-04-28 audit — see `BIOMETRIC_ROADMAP_2026-04-28.md`):
-  - Faz 1 (config): centerface detector, Facenet512 model, anti-spoofing enable, UniFace hybrid
-  - Faz 2 (integration): liveness → enroll/verify, passive liveness → client auth, MediaPipe FaceLandmarker → auth detection loop
-  - Faz 3 (adaptive threshold): enrollment-age-based threshold, embedding renewal UX
-  - ⚠️ Facenet512 geçişi mevcut tüm embeddingleri geçersiz kılar — migration planla
+### In Progress (2026-04-28 afternoon)
+- **Branches awaiting merge** (web-app):
+  - `fix/sidebar-dual-highlight` (1 commit, Team A)
+  - `fix/enrollment-correctness` (4 commits — TOTP, EMAIL_OTP, SMS_OTP, QR_CODE)
+  - `fix/biometric-tools-network` (Team E3 in flight)
+  - `polish/biometric-puzzles` (Team F3 in flight)
+  - `feat/face-demo-page` (Team G3 in flight)
+- **Branches awaiting merge** (identity-core-api):
+  - `fix/enrollment-correctness` (3 commits — auto-bind EMAIL_OTP+QR_CODE, drop from AUTO_COMPLETE_TYPES)
+  - `fix/mfa-step-no-double` (1 commit — exclude completed methods from next step)
+- **Plan-only, awaiting user approval**: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md` — Compose UI parity (≈5.5h) + APK release workflow (needs keystore + 4 GitHub secrets from user).
+- Biometric pipeline overhaul: Faz 1-3 mostly DONE (centerface→mtcnn deviation, Facenet512, anti-spoof on, liveness wired, MediaPipe FaceLandmarker, passive liveness, adaptive threshold). The `BIOMETRIC_ROADMAP_2026-04-28.md` doc is now mostly stale.
+- Embeddable auth widget — Phase 7 ~75% complete (verify-app, auth-js, auth-react, OAuth 2.0 done; Web Components + dogfooding remaining).
 
-### Next Steps (Priority Order)
-1. ~~Deploy updated backend JAR to Hetzner VPS~~ ✅ Done
-2. ~~Build and deploy updated web-app to Hostinger~~ ✅ Done
-3. ~~All 10 auth methods working~~ ✅ Done
-4. ~~TestContainers integration tests~~ ✅ Done
-5. ~~Twilio SMS gateway~~ ✅ Done (ready for activation)
-6. ~~Spring 2026 presentation slides~~ ✅ Done
-7. ~~Fingerprint step-up backend~~ ✅ Done
-8. ~~OAuth 2.0 endpoints~~ ✅ Done
-9. **[BIOMETRIC F1] Config: centerface + anti-spoofing + UniFace hybrid** (no code, .env.prod only)
-10. **[BIOMETRIC F1] Config: Facenet512** (breaking migration — plan embedding re-enrollment)
-11. **[BIOMETRIC F2] Wire liveness into /enroll and /verify routes**
-12. **[BIOMETRIC F2] Wire MediaPipe FaceLandmarker into useFaceDetection hook**
-13. **[BIOMETRIC F2] Add passive liveness to useFaceChallenge**
-14. **[BIOMETRIC F3] Adaptive threshold based on enrollment.created_at**
-15. Mobile app unit tests (need Android SDK: `cd client-apps && ./gradlew :shared:test`)
-16. Implement embeddable auth widget (Phase 7 — Web Components remaining)
+### Next Steps (Priority Order, as of 2026-04-28 afternoon)
+1. ~~Biometric pipeline F1/F2/F3~~ ✅ Done (today)
+2. ~~Login UX, FK-cascade dup-row 500, Fivucsas tenant NPE~~ ✅ Done (today)
+3. **Merge today's 7 branches → main** on web-app + identity-core-api
+4. **Deploy**: rebuild identity-core-api Docker, build web-app dist, rsync to Hostinger
+5. **V42 (TOTP strict) + V43 (drop biometric_data)** — P0 missing migrations per audit DRAFT PR #32
+6. **Fix identity-core-api test compile error** (`OperationType.LOGIN` → `OperationType.APP_LOGIN`) so CI can run
+7. **Rotate secrets** (TODO Phase C1a-f) — JWT_SECRET, postgres, Redis, Twilio, biometric API key, SMTP — never rotated since deploy
+8. `git filter-repo .env.prod` from history + push-protection + gitleaks
+9. Client-apps UI parity + APK release (plan: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md`) — needs user-side keystore generation
+10. Land or close audit DRAFT PRs #32 (api) and #45 (web-app)
+11. OIDC conformance suite run (TODO D4)
+12. Backup-restore verification cron (TODO F2)
+13. TOTP `@Convert` annotation (defense-in-depth follow-up to f1ea4b0 partial)
+14. Mobile app unit tests + Web Components (Phase 7 remainder)
 
 ## Deployment Scripts (REMEMBER!)
 
