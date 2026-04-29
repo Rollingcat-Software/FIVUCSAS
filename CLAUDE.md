@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running
-- **Last verified**: 2026-04-28 — Production hardening day. Session log: `project_session_20260428.md` (memory). 6 morning fixes verified live (LoginPage 401 i18n, UserRepo soft-delete filter, optional MFA step skip, Fivucsas tenant contact_email, UniFace passive liveness, useQualityAssessment bbox fallback). 7 afternoon fixes (3 shipped + 3 in-flight + 1 plan-only): sidebar dual-highlight, 4-method enrollment correctness sweep, MFA fingerprint-twice, biometric tools network error, puzzles polish, face demo page, client-apps parity plan. **FK-cascade incident**: hard-delete on duplicate user row wiped TOTP/WebAuthn/NFC; lesson saved as `feedback_no_hard_delete_users.md`. Audit DRAFTs (api #32, web #45) still flag V42/V43 missing migrations + test compile error.
+- **Last verified**: 2026-04-29 — Z-wave (post-AUDIT_2026-04-28 follow-up) all shipped. Z1: refresh-token rotation family revocation (V50 + RFC 6749 §10.4 reuse-detection, Sec-P2 #6) + OAuth2 `HostedAuthorizeCompleteRequest` Bean Validation with RFC 6749 §5.2 error-shape adapter (Sec-P2 #7) + MFA `expiresAt` boundary alignment (Edge-P2 #6). Z2: VitePWA `navigateFallback` + `cleanupOutdatedCaches` (Edge-P2 #9) — kills stale-shell 404s after Hostinger deploys. Z3: biometric-processor `MAX_FILE_SIZE` guard wired before API-key auth. Z4: deploy-SHA image tagging (Ops-P2 #7), audit DRAFT PRs #32/#45 closed as superseded, CHANGELOG updated. Z5: public `/face-demo` page (7 face capabilities — detection, landmarks, head pose, client passive liveness, server anti-spoof, quality, embedding visualization). Sec-P2 #8 (audit-log HTML escape) deferred — log-file-only today. Yesterday: 6 morning + 7 afternoon fixes; FK-cascade incident lesson saved. Audit DRAFTs (api #32, web #45) closed in Z4.
 - **iOS/macOS scope**: PERMANENTLY OUT — no Apple hardware available. KMP `iosMain` retained for compile structure only. Forward roadmap is Android APK + Windows/Linux desktop.
 
 ## Architecture
@@ -418,35 +418,27 @@ curl -X POST https://api.fivucsas.com/api/v1/auth/login \
 - ✅ **URL double-prefix fix** in VoiceEnrollmentFlow, useBankEnrollment, useLivenessPuzzle
 - ✅ **All CI repos green**: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android
 
-### In Progress (2026-04-28 afternoon)
-- **Branches awaiting merge** (web-app):
-  - `fix/sidebar-dual-highlight` (1 commit, Team A)
-  - `fix/enrollment-correctness` (4 commits — TOTP, EMAIL_OTP, SMS_OTP, QR_CODE)
-  - `fix/biometric-tools-network` (Team E3 in flight)
-  - `polish/biometric-puzzles` (Team F3 in flight)
-  - `feat/face-demo-page` (Team G3 in flight)
-- **Branches awaiting merge** (identity-core-api):
-  - `fix/enrollment-correctness` (3 commits — auto-bind EMAIL_OTP+QR_CODE, drop from AUTO_COMPLETE_TYPES)
-  - `fix/mfa-step-no-double` (1 commit — exclude completed methods from next step)
+### In Progress (2026-04-29)
+- **Operator-only Sec-P0a secret rotation**: see `/opt/projects/infra/RUNBOOK_SECRET_ROTATION.md`. Cannot be agent-driven (rotated values must originate on user's machine; history rewrite + force-push must be coordinated with collaborators).
+- **DR drill**: first restore drill into `identity_core_restore_drill` not yet executed. See `/opt/projects/infra/RUNBOOK_DR.md`.
+- **Observability stack**: GO after operator chooses Grafana password + runs `docker builder prune -af`. See `/opt/projects/infra/observability/RUNBOOK_OBSERVABILITY.md`.
+- **V50 (refresh_tokens.family_id)**: shipped to repo today, NOT yet applied to prod DB (out-of-order=false → manual `psql ALTER TABLE … ADD COLUMN family_id UUID; UPDATE … SET family_id=id; ALTER … SET NOT NULL;` then container rebuild). Same pattern as V42 manual application yesterday.
 - **Plan-only, awaiting user approval**: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md` — Compose UI parity (≈5.5h) + APK release workflow (needs keystore + 4 GitHub secrets from user).
 - Biometric pipeline overhaul: Faz 1-3 mostly DONE (centerface→mtcnn deviation, Facenet512, anti-spoof on, liveness wired, MediaPipe FaceLandmarker, passive liveness, adaptive threshold). The `BIOMETRIC_ROADMAP_2026-04-28.md` doc is now mostly stale.
 - Embeddable auth widget — Phase 7 ~75% complete (verify-app, auth-js, auth-react, OAuth 2.0 done; Web Components + dogfooding remaining).
 
-### Next Steps (Priority Order, as of 2026-04-28 afternoon)
-1. ~~Biometric pipeline F1/F2/F3~~ ✅ Done (today)
-2. ~~Login UX, FK-cascade dup-row 500, Fivucsas tenant NPE~~ ✅ Done (today)
-3. **Merge today's 7 branches → main** on web-app + identity-core-api
-4. **Deploy**: rebuild identity-core-api Docker, build web-app dist, rsync to Hostinger
-5. **V42 (TOTP strict) + V43 (drop biometric_data)** — P0 missing migrations per audit DRAFT PR #32
-6. **Fix identity-core-api test compile error** (`OperationType.LOGIN` → `OperationType.APP_LOGIN`) so CI can run
-7. **Rotate secrets** (TODO Phase C1a-f) — JWT_SECRET, postgres, Redis, Twilio, biometric API key, SMTP — never rotated since deploy
-8. `git filter-repo .env.prod` from history + push-protection + gitleaks
-9. Client-apps UI parity + APK release (plan: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md`) — needs user-side keystore generation
-10. Land or close audit DRAFT PRs #32 (api) and #45 (web-app)
-11. OIDC conformance suite run (TODO D4)
-12. Backup-restore verification cron (TODO F2)
-13. TOTP `@Convert` annotation (defense-in-depth follow-up to f1ea4b0 partial)
-14. Mobile app unit tests + Web Components (Phase 7 remainder)
+### Next Steps (Priority Order, as of 2026-04-29)
+1. ~~Z-wave: Z1 (api-security-tail) + Z2 (PWA) + Z3 (bio MAX_FILE_SIZE) + Z4 (ops housekeeping) + Z5 (face-demo)~~ ✅ Done (today)
+2. **Apply V50 to prod DB** (manual, then container rebuild) — `out-of-order=false` blocks Flyway from picking it up after V48/V49 already in history.
+3. **Deploy**: rebuild identity-core-api Docker (V50 + Sec-P2 #6/#7 + Edge-P2 #6), build web-app dist (face-demo + PWA fix), rsync to Hostinger.
+4. **Operator-only**: Sec-P0a secret rotation (`/opt/projects/infra/RUNBOOK_SECRET_ROTATION.md`) — JWT_SECRET, postgres, Redis, biometric API key, Twilio, SMTP.
+5. **Operator-only**: first DR drill — 30 min, validates GPG key + backup integrity + RTO. See `RUNBOOK_DR.md`.
+6. **Operator-only**: bring up observability stack (2 min after Grafana password + disk prune). See `RUNBOOK_OBSERVABILITY.md`.
+7. Client-apps UI parity + APK release (plan: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md`) — needs user-side keystore generation.
+8. Sec-P2 #8 audit-log HTML escape — only relevant once a UI renders details unescaped.
+9. OIDC conformance suite run (TODO D4).
+10. Backup-restore verification cron (TODO F2).
+11. Mobile app unit tests + Web Components (Phase 7 remainder).
 
 ## Deployment Scripts (REMEMBER!)
 
