@@ -7,6 +7,96 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 ### Docs
 - **iOS / iPadOS / macOS scope dropped (2026-04-26).** Forward-looking iOS/macOS work removed from `ROADMAP.md`, `ROADMAP_V2.md`, `MASTER_PLAN.md`, `PLATFORM_STATUS.md`, `MOBILE_APP_COMPREHENSIVE_REDESIGN.md`, `FRONTEND_COMPARISON_REPORT.md`, `docs/plans/CLIENT_APPS_PARITY.md`, `docs/plans/PATH_TO_20_20.md`. Apple platforms are permanently out of scope — no Apple hardware available for development, signing, or testing. KMP `iosMain` directory remains in tree as part of compile structure but receives no engineering work. Historical CHANGELOG entries that reference past iOS work are preserved unchanged.
 
+## [2026-04-29] — Ops-P2 sweep + Sec-P0b biometric API key elimination + audit PR cleanup
+
+Second day of the production-hardening wave. 2026-04-28 closed user-reported correctness bugs; 2026-04-29 closes the security and ops backlog from the AUDIT_2026-04-26 reports.
+
+### Security (web-app)
+- **Sec-P0b — biometric API key elimination from SPA bundle.** Previously the React build embedded `VITE_BIOMETRIC_API_KEY` + `VITE_BIOMETRIC_API_URL` so the browser called `bio.fivucsas.com` directly. Anyone with DevTools could harvest the key. Fixed via three commits:
+  - `fc79de6 fix(security): route BiometricService through identity-core-api proxy` — all bio calls now flow through authenticated identity-core-api endpoints (`/api/v1/biometric/*`).
+  - `5ac4a97 chore(security): drop VITE_BIOMETRIC_API_KEY/URL from build env` — keys removed from `.env.example` + CI workflow.
+  - `2a3820b chore(csp): drop bio.fivucsas.com from connect-src allow-list` — defense in depth: even if a key leaked, CSP blocks the call.
+- **Sec-P0a runbook** added so the same drift can be caught in PR review going forward.
+- **CI bundle hygiene**: `15aab67 fix(ci): write .env.production before build to prevent localhost:8080 in bundle` — the deploy workflow now writes `.env.production` from secrets pre-build so no developer-local URL ever ships.
+
+### Security (identity-core-api)
+- **Biometric adapter telemetry forwarding restored.** `6ad1d91 fix(biometric-proxy): forward tenant_id + client_embedding(s) to bio` — the proxy was dropping `tenant_id` and the optional `client_embedding(s)` fields, which broke per-tenant pgvector search and quality telemetry.
+- **JWT RS256 hard-locked on prod profile.** `65415f3 fix(security): lock JWT signing to RS256 on prod profile (SEC-P1 #3)` — even if HS256 secret leaks back into config, the prod profile rejects it at boot.
+- **MFA step rate-limit.** `3670932 fix(security): rate-limit POST /auth/mfa/step (SEC-P1 #4)` — previously uncovered attack surface; now emits `Retry-After` on 429.
+- **Audit-log size cap.** `8075c11 fix(audit-logs): cap size at 100 with @Min(1)/@Max(100) (EDGE-P1 #4)` — prevents large-page DoS via the audit-log query API.
+- **Tenant @SQLDelete + TOTP @Convert defense-in-depth.** `2e05457 fix(security): tenant soft-delete + TOTP @Convert defense-in-depth (EDGE-P1 #5, #7)` — Tenant entity now soft-deletes; TOTP secret column has `@Convert` so plaintext can never leak even if a developer bypasses the service layer.
+- **MFA race + cross-tenant by-id (2 P0s).** `24d3784 fix(security): close 2 audit-edge P0s (MFA race + cross-tenant by-id)`.
+- **OAuth tenant lock.** `5446d57 fix(auth): tenant-lock OAuth-initiated logins to the client's tenant`.
+- **startEnrollment race.** `5e7cc51 fix(enrollment): swallow startEnrollment race as idempotent re-fetch (EDGE-P1 #3)`.
+
+### Migrations (identity-core-api)
+- **V42 restored.** `bad7262 chore(flyway): restore V42 TOTP encrypted-at-rest CHECK constraint` — closes the gap flagged in audit PR #32.
+- **V43 reserved.** `29aa007 chore(flyway): reserve V43 slot as no-op (EDGE-P1 #8)` — original drop-`biometric_data` was redundant; slot pinned to prevent collisions.
+- **V49 follow-on** — additional schema housekeeping captured in the V47/V48 sequence.
+
+### Test mocks
+- `dcf50d6 test(mocks): align mocks with prod changes from 24d3784` — fixes the test-compile error called out in audit PR #32 (`OperationType.LOGIN` → `OperationType.APP_LOGIN`).
+- `be30dc7 test(auth): stub allowMfaStepAttempt in AuthControllerTest setup`.
+
+### Ops (parent)
+- **Image-SHA tagging** added to `scripts/deploy/deploy-identity-core-hetzner.{sh,ps1}` (Ops-P2 #7), mirroring `infra/deploy.sh` `e3e9056`. Allows rollback without rebuild.
+- **5 runbooks** added to capture incident response, rollback, secret rotation, FK-cascade recovery, and Sec-P0a CSP review.
+- **Audit DRAFT PRs closed.** `Rollingcat-Software/identity-core-api#32` and `Rollingcat-Software/web-app#45` (both authored 2026-04-26, single .md report file, no code to merge) closed with detailed summaries listing closed-vs-deferred findings against today's SHAs.
+
+### Polish (web-app)
+- `c641d4e Merge polish/web-app-i18n-error-sweep — close 9 P1 + 2 P2 audit-basic items` — bundle of:
+  - `a5df016 polish(i18n): localize raw err.message + 4 hardcoded TOTP strings`
+  - `62509e0 polish(services): re-throw raw ZodError instead of leaking err.message`
+  - `dc08ddb polish(i18n): localize document.title via pageTitles namespace`
+  - `fe935c9 polish(i18n): translate 23 biometricPuzzle hints to Turkish`
+- `c580822 fix(LoginPage): remove broken face-tile login` — the face-tile was a leftover from the pre-passive-liveness flow and 401'd unconditionally.
+
+---
+
+## [2026-04-28] — Production hardening day (6 morning fixes + enrollment correctness sweep + 4 audit reports)
+
+User-driven bug-bash. 6 user-reported issues fixed in the morning, followed by a correctness sweep across all 4 OTP-style auth methods, an MFA double-step fix, and 4 audit reports. FK-cascade incident discovered mid-day (hard-delete on duplicate user wiped TOTP/WebAuthn/NFC) — recovery procedure now memorialized as `feedback_no_hard_delete_users.md`.
+
+### Morning fixes (web-app, all SHIPPED + DEPLOYED)
+- **LoginPage 401 i18n.** `0a0684f fix(login): show invalidCredentials key for 401, not generic unauthorized` and `abc242f fix(login): surface 500/network errors to user via formatApiError`.
+- **`useQualityAssessment` bbox fallback.** `88cee54 fix(face): pass detector bbox so quality score isn't capped at 70`, `d1d396d fix(face): coerce null boundingBox to undefined for updateQuality`, `ed8021d fix(face): calibrate quality scoring for mobile front cameras`. Quality scoring un-pinned from 70%; bbox-only path now redistributes weights to blur*0.55 + lighting*0.45 when no landmarks are available.
+- **Sidebar dual-highlight.** `d217c64 fix(sidebar): highlight only exact route, not prefix collisions`.
+
+### Morning fixes (identity-core-api, all SHIPPED + DEPLOYED)
+- **UserRepo soft-delete filter.** `d1a3f73 fix(auth): filter soft-deleted users in findByEmail and related lookups` — `findByEmail` now adds `deletedAt IS NULL`. Closes the FK-cascade duplicate-row 500 that was blocking re-registration after admin soft-deletes.
+- **Optional MFA-step skip.** `80c4819 fix(auth): skip optional flow steps with no biometric enrollment` — fixes the morning "MFA stuck on face when user has no face enrolled" report.
+- **Tenant `contact_email` NPE.** Patched in same wave; `Fivucsas` system tenant row backfilled.
+- **UniFace passive liveness.** Wired into `/verify` and `/enroll`; `LIVENESS_BACKEND=uniface` + `LIVENESS_MODE=passive`. Hybrid mode demanded blink+smile that `/verify` never asks for.
+
+### Enrollment correctness sweep (identity-core-api)
+- `04db085 fix(enrollment): auto-create ENROLLED EMAIL_OTP row on first list`
+- `b91beae fix(enrollment): drop SMS_OTP, QR_CODE, EMAIL_OTP from AUTO_COMPLETE_TYPES`
+- `381aebd fix(enrollment): auto-bind QR_CODE alongside EMAIL_OTP`
+- `8d36c7d fix(mfa): exclude completed methods from next step's available list` — fixes "fingerprint required twice" report.
+- `c25b731 fix(users-list): use correct audit action + fall back to entity lastLoginAt`.
+
+### Enrollment correctness sweep (web-app)
+- `b87593c fix(enrollment): mark TOTP enrollment ENROLLED after verify-setup`
+- `7049eb2 fix(enrollment): treat EMAIL_OTP as auto-bound, drop fake enroll path`
+- `e44211b fix(enrollment): require real OTP code before flipping SMS_OTP enrolled`
+- `13c3762 fix(enrollment): treat QR_CODE as auto-bound, drop fake enroll path`
+- `275d1a9 Merge branch 'fix/enrollment-correctness'` aggregates the four.
+
+### Rescued agent work (web-app)
+- `47f7077 Merge branch 'fix/biometric-tools-network'` — biometric tools network error fix.
+- `fc16cdd fix(web): rescue stashed agent work — biometric tools, puzzles polish, MFA dedup` — diff-reviewed and shipped per the 2026-04-25 lesson "check working tree before re-dispatching dead agents".
+
+### Audit reports (parent)
+- `AUDIT_2026-04-26_SECURITY.md` (api), `AUDIT_2026-04-26_VERIFICATION.md` (web), `AUDIT_2026-04-24.md` (cross-cutting), and a multi-email design note. All four either closed by 2026-04-29 work or deferred to TODO Phase C/D/F backlog.
+
+### Archive sweep
+- Stale roadmap docs (`BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`, `BIOMETRIC_ROADMAP_2026-04-28.md`) flagged as superseded; current state captured in `ROADMAP_2026-04-28.md`.
+
+### FK-cascade incident
+Hard-delete on a duplicate user row cascaded through ~13 FK-linked tables (`webauthn_credentials`, `nfc_cards`, `user_devices`, `totp_secrets`, …). Recovery: re-enroll affected user. Lesson saved as `feedback_no_hard_delete_users.md` — never `DELETE FROM users`; always patch `findByEmail` with `deletedAt IS NULL`.
+
+---
+
 ## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split + RBAC frontend gating
 
 Continuation of the 2026-04-24 audit work. This entry covers the evening pass. **6 api PRs + 7 web PRs merged + deployed** across the day. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.
