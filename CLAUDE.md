@@ -7,7 +7,7 @@
 - **Organization**: Marmara University - Computer Engineering Department
 - **Course**: CSE4297/CSE4197 Engineering Project
 - **Status**: Production deployed and running
-- **Last verified**: 2026-04-29 — Z-wave (post-AUDIT_2026-04-28 follow-up) all shipped. Z1: refresh-token rotation family revocation (V50 + RFC 6749 §10.4 reuse-detection, Sec-P2 #6) + OAuth2 `HostedAuthorizeCompleteRequest` Bean Validation with RFC 6749 §5.2 error-shape adapter (Sec-P2 #7) + MFA `expiresAt` boundary alignment (Edge-P2 #6). Z2: VitePWA `navigateFallback` + `cleanupOutdatedCaches` (Edge-P2 #9) — kills stale-shell 404s after Hostinger deploys. Z3: biometric-processor `MAX_FILE_SIZE` guard wired before API-key auth. Z4: deploy-SHA image tagging (Ops-P2 #7), audit DRAFT PRs #32/#45 closed as superseded, CHANGELOG updated. Z5: public `/face-demo` page (7 face capabilities — detection, landmarks, head pose, client passive liveness, server anti-spoof, quality, embedding visualization). Sec-P2 #8 (audit-log HTML escape) deferred — log-file-only today. Yesterday: 6 morning + 7 afternoon fixes; FK-cascade incident lesson saved. Audit DRAFTs (api #32, web #45) closed in Z4.
+- **Last verified**: 2026-04-30 — Z-wave deployed: V50 applied, identity-core-api recreated healthy, web-app Z2+Z5 live on Hostinger, biometric-api running Z3, observability stack live, first DR drill OK, gitleaks CI green on both repos, secret-scanning + push-protection enabled. 2026-04-29 — Z-wave (post-AUDIT_2026-04-28 follow-up) all shipped. Z1: refresh-token rotation family revocation (V50 + RFC 6749 §10.4 reuse-detection, Sec-P2 #6) + OAuth2 `HostedAuthorizeCompleteRequest` Bean Validation with RFC 6749 §5.2 error-shape adapter (Sec-P2 #7) + MFA `expiresAt` boundary alignment (Edge-P2 #6). Z2: VitePWA `navigateFallback` + `cleanupOutdatedCaches` (Edge-P2 #9) — kills stale-shell 404s after Hostinger deploys. Z3: biometric-processor `MAX_FILE_SIZE` guard wired before API-key auth. Z4: deploy-SHA image tagging (Ops-P2 #7), audit DRAFT PRs #32/#45 closed as superseded, CHANGELOG updated. Z5: public `/face-demo` page (7 face capabilities — detection, landmarks, head pose, client passive liveness, server anti-spoof, quality, embedding visualization). Sec-P2 #8 (audit-log HTML escape) deferred — log-file-only today. Yesterday: 6 morning + 7 afternoon fixes; FK-cascade incident lesson saved. Audit DRAFTs (api #32, web #45) closed in Z4.
 - **iOS/macOS scope**: PERMANENTLY OUT — no Apple hardware available. KMP `iosMain` retained for compile structure only. Forward roadmap is Android APK + Windows/Linux desktop.
 
 ## Architecture
@@ -418,11 +418,17 @@ curl -X POST https://api.fivucsas.com/api/v1/auth/login \
 - ✅ **URL double-prefix fix** in VoiceEnrollmentFlow, useBankEnrollment, useLivenessPuzzle
 - ✅ **All CI repos green**: Sarnic 456 tests, web-app 171 tests, client-apps iOS+Android
 
-### In Progress (2026-04-29)
-- **Operator-only Sec-P0a secret rotation**: see `/opt/projects/infra/RUNBOOK_SECRET_ROTATION.md`. Cannot be agent-driven (rotated values must originate on user's machine; history rewrite + force-push must be coordinated with collaborators).
-- **DR drill**: first restore drill into `identity_core_restore_drill` not yet executed. See `/opt/projects/infra/RUNBOOK_DR.md`.
-- **Observability stack**: GO after operator chooses Grafana password + runs `docker builder prune -af`. See `/opt/projects/infra/observability/RUNBOOK_OBSERVABILITY.md`.
-- **V50 (refresh_tokens.family_id)**: shipped to repo today, NOT yet applied to prod DB (out-of-order=false → manual `psql ALTER TABLE … ADD COLUMN family_id UUID; UPDATE … SET family_id=id; ALTER … SET NOT NULL;` then container rebuild). Same pattern as V42 manual application yesterday.
+### In Progress (2026-04-30 — most items resolved)
+- ~~V50 prod apply~~ ✅ Applied 2026-04-30 04:49 UTC (279 rows backfilled, idx + Flyway history row).
+- ~~identity-core-api rebuild~~ ✅ Image `7f4409dc4aac` recreated 04:51, healthy.
+- ~~web-app Hostinger deploy~~ ✅ CI run #25128446192 success.
+- ~~First DR drill~~ ✅ Executed 2026-04-30 04:54 UTC — identity_core OK (25 users / 19 tenants / 279 refresh_tokens). Logged in `/opt/projects/backups/drill_log.txt`.
+- ~~Observability bring-up~~ ✅ Loki + Promtail + Grafana up 04:55 UTC. Loki `/ready` ok, Grafana `/api/health` database ok, Promtail tailing all docker logs. Traefik routing verified (admin-whitelist@file middleware enforcing). Grafana password in `/opt/projects/infra/observability/CREDENTIALS_2026-04-30.txt` (chmod 600, gitignored).
+- ~~Sec-P0a defensive measures~~ ✅ Gitleaks CI added to identity-core-api + web-app (CLI invocation, both green). Secret-scanning + push-protection enabled on both repos via API. Pre-generated rotation values in `/opt/projects/infra/PENDING_SECRETS_2026-04-30.txt` (chmod 600).
+- **Operator-only residual** (cannot be agent-driven):
+  - **Sec-P0a actual rotation** — runbook explicit "Operator-only — DO NOT delegate to an agent." Rotation invalidates all sessions; postgres rotation requires updating 5 dependent .env files in lockstep (incl. /opt/projects/infra/.env.backup); Twilio + SMTP rotations are upstream-console operations; history rewrite + force-push is irreversible if any local clone exists elsewhere.
+  - **Add DNS A record** `grafana.fivucsas.com → 116.203.222.213` to access Grafana via browser (currently reachable only from whitelisted IPs).
+  - **Configure Grafana contact point** (Slack webhook or SMTP) so the 2 provisioned alerts (`backup-failure`, `oauth-5xx-spike`) actually notify.
 - **Plan-only, awaiting user approval**: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md` — Compose UI parity (≈5.5h) + APK release workflow (needs keystore + 4 GitHub secrets from user).
 - Biometric pipeline overhaul: Faz 1-3 mostly DONE (centerface→mtcnn deviation, Facenet512, anti-spoof on, liveness wired, MediaPipe FaceLandmarker, passive liveness, adaptive threshold). The `BIOMETRIC_ROADMAP_2026-04-28.md` doc is now mostly stale.
 - Embeddable auth widget — Phase 7 ~75% complete (verify-app, auth-js, auth-react, OAuth 2.0 done; Web Components + dogfooding remaining).
