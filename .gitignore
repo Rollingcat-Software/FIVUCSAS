@@ -43,3 +43,6 @@ nul
 # Claude Code
 .claude/settings.local.json
 .claude/worktrees/
+
+# Widget deploy staging (built artifacts, not source)
+verify-widget/html/
