@@ -140,7 +140,7 @@ function App() {
         <motion.div style={{ opacity: heroOpacity, y: heroY }} className="max-w-7xl mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-block px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-300 text-sm mb-6">
-              Marmara University - Engineering Project
+              Multi-Tenant Biometric Identity Platform
             </span>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
@@ -556,7 +556,7 @@ function App() {
             </div>
 
             <p className="text-sm text-slate-500">
-              2026 FIVUCSAS. Marmara University.
+              2026 FIVUCSAS. All rights reserved.
             </p>
           </div>
         </div>
