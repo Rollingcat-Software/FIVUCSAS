@@ -1,14 +1,30 @@
 # FIVUCSAS Session Status — 2026-05-02
 
-**Snapshot:** 2026-05-02, mid-session. Supersedes `SESSION_STATUS_2026-05-01.md`.
+**Snapshot:** 2026-05-02, late-session update. Supersedes `SESSION_STATUS_2026-05-01.md`.
 
 This is the canonical session-state doc for 2026-05-02 work. The 2026-05-01 doc is preserved as historical record.
 
 ---
 
-## Today's headline
+## ⚠️ Headline change — operator rebuild upgraded to **P0 URGENT**
 
-Eight P0/P1 security findings from the four 2026-05-01 senior reviews are closed end-to-end. **Five PRs merged across two repos**:
+The mid-session test backfill (PR #59 F4) and a follow-on critical-fix agent (PR #60) discovered that a **principal-type mismatch** in `CustomUserDetailsService` had been silently nullifying multiple security primitives in production for at least 8 days (since 2026-04-24's PR #21 + #23 workaround):
+
+| Primitive | Live state before PR #60 |
+|---|---|
+| PR #54 cross-tenant `TenantBindFromAuthFilter` | `instanceof CustomUserDetails` always false → filter no-op'd → X-Tenant-ID header trusted across tenants |
+| `AuthorizationService.isOwner` | always false |
+| `AuthorizationService.isSameTenant` | always false |
+| `AuthorizationService.canManageUser` | always false |
+| `AuthorizationService.getCurrentUserId` | always null |
+| `AuthorizationService.getCurrentTenantId` | always null |
+| `AuditLoggingAspect` user/tenant attribution | always missing — audit-log rows had no who/which-tenant |
+
+`@PreAuthorize("@authz.isOwner(...)")` checks across the codebase have been silently false → reachable. Audit-log forensics from the past ≥8 days lack user/tenant attribution.
+
+**Container rebuild is therefore urgent**, not just "needed" — until PR #60 deploys, the cross-tenant defense and ownership checks remain dead in prod.
+
+## Today's headline (12 PRs merged)
 
 | PR | Repo | Closes |
 |---|---|---|
@@ -16,11 +32,16 @@ Eight P0/P1 security findings from the four 2026-05-01 senior reviews are closed
 | #55 | identity-core-api | P0-SEC-2 OAuth2 confidential client_secret + P0-SEC-4 RoleController/DeviceController tenantId ownership |
 | #56 | identity-core-api | P1-1 — refresh-token sha256(secret), dual-read legacy plaintext (V55 migration) |
 | #57 | identity-core-api | P1-2/3/4 — WebAuthn origin allowlist (registration + assertion), clientDataJSON required, sign-counter validated |
+| #58 | identity-core-api | Backend security batch — JJWT alg/kid bind, iss/aud actually wired (memory's "completed 2026-04-20" was wrong), HS512 gated, public-client PKCE hard-reject, MfaSession Jackson, audit-log escape gaps |
+| #59 | identity-core-api | Test coverage backfill — F4 RLS regression, F5 refresh-token family revoke, F9 ShedLock concurrency |
+| **#60** | **identity-core-api** | **P0-CRITICAL — wire `CustomUserDetails` as authenticated principal. Closes the silent bypass of #54 + 5 AuthorizationService methods + audit-log attribution.** |
 | #65 | biometric-processor | P1.3 — Fernet embedding encryption + Alembic 0005 + backfill script |
+| #66 | biometric-processor | Round-8 Copilot — UniFace warm-up via cached singleton (was previously dead code) |
 | #62 | web-app | P0-Q1 — VITE_API_BASE_URL centralized, ESLint guard rule |
 | #63 | web-app | P0-FE-1/2/3 — ErrorHandler i18n, useVerification i18n, dead Redux runtime deleted (-6.3 KB gzipped) |
+| #64 | web-app | Round-8 Copilot — MediaPipe CDN version centralized, BiometricEngine dispose race |
 
-Senior-Test review's F1 (real personal-face photos in git history at `biometric-processor/tests/fixtures/images/`) and Senior-Security's P0-3 (JWT_SECRET rotation + history scrub) remain operator-only — see §5 below.
+Three more agents in flight at writing (CI hygiene, backend quality, frontend error-surfacing). Senior-Test F1 (real personal-face photos in git history) and Senior-Security P0-3 JWT_SECRET rotation remain operator-only — see §5.
 
 ## Reviewer roster — closure status
 
@@ -55,6 +76,8 @@ Biometric-processor `main` HEAD: `611a3cc` "Fernet embedding encryption (#65)". 
 Web-app `main` HEAD: `88ae52c` "ErrorHandler + Redux removal (#63)". `VITE_API_BASE_URL` is now mandatory at build time.
 
 ## Operator-only residuals — strict ordering
+
+⚠️ **Container rebuild is now P0 URGENT**, not just P0. Without rebuild, PR #60's CustomUserDetails wiring stays out of prod, which means the cross-tenant defense (PR #54) and 5 AuthorizationService methods + audit-log user/tenant attribution remain dead live. This is a security-correctness regression with at-least-8-day duration.
 
 These cannot land without operator intervention. Order matters:
 
