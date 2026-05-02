@@ -7,11 +7,15 @@ This document is the **single source of truth for what's open**. Everything not 
 
 ---
 
-## Status as of 2026-05-02 (mid-session)
+## Status as of 2026-05-02 (late session)
 
-12 PRs merged today across api/bio/web. Eight P0/P1 from the senior reviews shipped. One critical post-merge bug (CustomUserDetails principal-type) found and closed in PR #60 — that bug had been silently nullifying the cross-tenant defense AND five `AuthorizationService` checks AND audit-log user/tenant attribution since at least 2026-04-24.
+13 PRs merged today across api/bio/web (PR #65 web added late). Eight P0/P1 from the senior reviews shipped. One critical post-merge bug (CustomUserDetails principal-type) found and closed in PR #60 — that bug had been silently nullifying the cross-tenant defense AND five `AuthorizationService` checks AND audit-log user/tenant attribution since at least 2026-04-24.
 
-3 more agents in flight at writing (CI hygiene + backend quality + frontend error-surfacing). Open backlog below assumes those will land green.
+**Late-session adds (post-summary):**
+- PR #65 (web, MERGED): F3 Playwright `@destructive` tags + `smoke` project + nightly cron — default test run no longer mutates PROD.
+- PR #67 (bio, OPEN): F2/F10 CI hygiene — Lint & Type Check still queued (Task #55 runner stall).
+- Backend quality + frontend error-surfacing agents re-dispatched after rate-limit; worktree salvage confirmed neither had draft work, so fresh dispatches are running.
+- Parent submodule pointers bumped to 2026-05-02 main heads (commits d6811bf + 54bb412).
 
 ---
 

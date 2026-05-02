@@ -6,7 +6,47 @@ This is the canonical session-state doc for 2026-05-02 work. The 2026-05-01 doc 
 
 ---
 
-## ⚠️ Headline change — operator rebuild upgraded to **P0 URGENT**
+## ✅ Late-session: rebuild **EXECUTED 2026-05-02 17:50–17:58 UTC**
+
+| Step | Status | Notes |
+|---|---|---|
+| bio rebuild + Fernet key | ✅ | `FIVUCSAS_EMBEDDING_KEY` plumbed via compose `${...}`. Container healthy. |
+| bio Alembic 0005 | ✅ (manual) | alembic CLI not installed in bio container; applied via raw SQL `ALTER TABLE … ADD COLUMN embedding_ciphertext bytea` + recorded `alembic_version` row. Follow-up Task #81. |
+| bio embedding backfill | ✅ | One-shot Python script: 19/19 face + 35/35 voice rows encrypted. Shipped backfill script has async-iter bug (Task #81). |
+| api rebuild | ✅ (after 2 retries) | First boot failed: `DuplicateKeyException: duplicate key app` in `application-prod.yml`. Hotfix PR #62 merged. Second boot failed Flyway `validate-on-migrate=true` on V24/V40/V41 drift; set `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=false` for emergency boot. Follow-up Task #80. |
+| api smoke | ✅ | `/actuator/health` UP, `POST /auth/login` returns proper JSON 401, `POST /webauthn/registration/start` returns 401 (auth required). |
+| Soak window | ⏳ T+30d | `APP_SECURITY_JWT_ALLOW_HS512=true`, `APP_SECURITY_JWT_ISSUER=`, `APP_SECURITY_JWT_AUDIENCE=` until ~2026-06-01 to preserve in-flight HS512/no-iss tokens. Follow-up Task #82. |
+
+### What changed in prod live state
+
+- Cross-tenant defence (PR #54) now actually runs — CustomUserDetails wiring (PR #60) baked in.
+- All 5 `AuthorizationService` methods + audit-log user/tenant attribution now resolve.
+- WebAuthn origin allowlist enforced (PR #57) with explicit `WEBAUTHN_ALLOWED_ORIGINS` env.
+- Refresh-token secret hashed at rest (PR #56).
+- OAuth2 confidential client_secret enforced (PR #55), RoleController/DeviceController ownership gated.
+- Embedding ciphertext column populated for all face+voice rows.
+- Tx/Async/equals/escape PR #38 baked in. Backend quality refactor PR #61 baked in.
+
+### Operator-only residuals (T1)
+
+| Item | State |
+|---|---|
+| T1.1 rebuild | ✅ DONE |
+| T1.2 env vars | ✅ DONE (added to .env.prod for both api and bio) |
+| T1.3 Alembic + backfill | ✅ DONE (manual SQL + one-shot Python) |
+| T1.4 JWT_SECRET rotation | ⏳ Defence-in-depth only — leaked GCP value was never live on Hetzner. Do via kid-based rotation post-soak. See `ANALYSIS_2026-05-02_USER_DOMAIN_AND_JWT_ROTATION.md`. |
+| T1.5 GDPR fixture force-push | ⏳ User-only |
+| T1.6 Smoke tests | ✅ Health + login + WebAuthn endpoint checks pass. |
+
+### New follow-up tasks created
+
+- Task #80 — `flyway:repair` to align prod schema_history with current migration files (V24/V40/V41 drift).
+- Task #81 — bio: add alembic to requirements.txt; fix `backfill_embedding_ciphertext.py` async-iter bug.
+- Task #82 — JWT soak countdown: at T+30d (~2026-06-01) flip `ALLOW_HS512=false`, set issuer/audience env, restart api.
+
+---
+
+## (historic) ⚠️ Headline change — operator rebuild upgraded to **P0 URGENT**
 
 The mid-session test backfill (PR #59 F4) and a follow-on critical-fix agent (PR #60) discovered that a **principal-type mismatch** in `CustomUserDetailsService` had been silently nullifying multiple security primitives in production for at least 8 days (since 2026-04-24's PR #21 + #23 workaround):
 
@@ -67,13 +107,22 @@ Substantive finding worth flagging before merge:
 
 ## Master roadmap — current state of `main`
 
-Identity-core-api `main` HEAD: `cf398b9` "WebAuthn origin allowlist + clientDataJSON + counter (#57)".
+Identity-core-api `main` HEAD: `9cf4367` "wire CustomUserDetails as authenticated principal (P0-critical) (#60)".
 
 Schema state: V1 → V55. V55 is the new refresh-token hash column. V53 (BEFORE-DELETE trigger) and V51 (ShedLock) are ahead of prod (Task #25 rebuild gate).
 
-Biometric-processor `main` HEAD: `611a3cc` "Fernet embedding encryption (#65)". Alembic head: `0005_embedding_ciphertext`. Operator MUST set `FIVUCSAS_EMBEDDING_KEY` in `.env.prod` AND run backfill before users hit the verify path post-rebuild — without the env, the container fails fast on boot (intentional).
+Biometric-processor `main` HEAD: `9f0999f` "UniFace warm-up correctness + caching + tests (#66)". Alembic head: `0005_embedding_ciphertext`. Operator MUST set `FIVUCSAS_EMBEDDING_KEY` in `.env.prod` AND run backfill before users hit the verify path post-rebuild — without the env, the container fails fast on boot (intentional).
 
-Web-app `main` HEAD: `88ae52c` "ErrorHandler + Redux removal (#63)". `VITE_API_BASE_URL` is now mandatory at build time.
+Web-app `main` HEAD: `e02c32f` "centralize MediaPipe CDN version + BiometricEngine dispose race (#64)". `VITE_API_BASE_URL` is now mandatory at build time.
+
+Parent FIVUCSAS `main` HEAD: `d6811bf` (submodule pointers bumped 2026-05-02 PM).
+
+## Late-session adds (post-PR #60)
+
+- **Web PR #65** (open): F3 — `@destructive` tags on CRUD specs, new `smoke` Playwright project, nightly 02:00 UTC cron. Default Playwright run no longer mutates PROD. Awaiting CI.
+- **Bio PR #67** (open): F2 + F10 — drop pytest-failure swallow in CI + remove stale top-level test files. Lint & Type Check still pending in queue (Task #55 runner stall).
+- **Backend quality batch** (in flight, fresh dispatch after rate-limit): P1-Q5/Q6/Q9 from `QUALITY_REVIEW_2026-05-01.md`. Verify-first.
+- **Frontend error-surfacing batch** (in flight, fresh dispatch after rate-limit): P1-FE-1..6 from `FRONTEND_REVIEW_2026-05-01.md`. Verify-first.
 
 ## Operator-only residuals — strict ordering
 
