@@ -144,6 +144,22 @@ Application DB role + `FORCE ROW LEVEL SECURITY` + per-table policies. Currently
 ### T4.9 webauthn_credentials VACUUM (NEW from Appendix C)
 27 dead / 3 live, never autovacuumed. ✅ **`VACUUM ANALYZE` run 2026-05-04 12:27 UTC — ratio 9.00 → 0.00, 14 dead tuples reclaimed.** Follow-up: tune `autovacuum_vacuum_scale_factor` for low-row-count tables so this doesn't recur.
 
+### T4.12 Documentation gaps (NEW from `DOC_AUDIT_2026-05-04.md` commit `f2efeac`)
+
+**P0 — quick wins, ≤2 hours each:**
+- **T4.12.a** — Add `SECURITY.md` to all 6 repos (parent + 5 submodules). Vulnerability-disclosure policy is the single highest-priority gap on an auth/biometric platform with JWT + OAuth2 + WebAuthn + RFC 6749 §10.4 family-revoke. Use the GitHub-recommended template; route to `info@app.fivucsas.com`.
+- **T4.12.b** — Add `LICENSE` file to every repo. All READMEs display MIT badges but no `LICENSE` file exists anywhere. Legally weak. XS effort.
+- **T4.12.c** — Add `landing-website/README.md`. The repo is currently completely undocumented.
+
+**P1 — multi-day initiatives:**
+- **T4.12.d** — Tenant onboarding playbook in `docs/01-getting-started/tenant-onboarding.md`. Covers OIDC client provisioning, redirect-URI allowlist, SDK install, first-signup → first-MFA flow.
+- **T4.12.e** — ADR (Architecture Decision Records) directory `docs/adr/`. Backfill the major decisions that currently live only in CHANGELOG narrative + session memos: hosted-first OIDC, pgvector, MobileFaceNet removal, Facenet512, log-only client embeddings, RFC 6749 §10.4 family-revoke, V53 BEFORE-DELETE trigger pattern, Persistable<UUID> wire-format trade-off.
+
+**P2 — cleanup:**
+- **T4.12.f** — `docs/` submodule has duplicate hierarchies (`02-architecture/` vs `architecture/`, `05-testing/` vs `testing/`, `01-getting-started/` vs `guides/`). Broken links to `docs/4-testing/`, `docs/5-security/`, `07-status/IMPLEMENTATION_STATUS_REPORT.md`. Consolidate into the numbered tree.
+- **T4.12.g** — `/opt/projects/infra/` has 8 strong runbooks but no public docs-index entry points to them. Cross-link from `docs/06-operations/` (or wherever the right index lives).
+- **T4.12.h** — Dated-doc reorganization: move 25+ `AUDIT_*` / `*REVIEW_*` / `SESSION_STATUS_*` / `ROADMAP_*` / `ANALYSIS_*` / `RESEARCH_*` files out of parent root into `docs/reviews/YYYY-MM-DD/<slug>.md`. **Hold for explicit user OK** — moves git history for many files.
+
 ### T4.11 User-reported bugs 2026-05-04 afternoon (NEW)
 
 User testing surfaced 6 issues. Each entry below shows status as of 12:45 UTC.
