@@ -4,6 +4,20 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-04 — P0 refresh-token fix + doc sweep
+
+- **api PR #71 (P0-PROD)** `fix/refresh-token-persistable-isnew` (squash
+  `a77c844`) — `RefreshToken implements Persistable<UUID>` with explicit
+  `isNew()` flag. Closes the 6 audit-log `MFA_STEP_FAILED` rows for
+  `ahabgu@gmail.com` between 06:34–06:38 UTC on 2026-05-04 (Hibernate was
+  treating manually-assigned UUIDs as merge candidates → silent NOOP on
+  insert). **Operator rebuild PENDING** to take effect in prod.
+- Doc sweep: api PR #72, web PR #71, bio PR #69 — bring CLAUDE.md /
+  CHANGELOG.md / TODO.md in line with what shipped today.
+- New `ROADMAP_OPTIMIZED_2026-05-04.md` supersedes the 05-02 file (kept
+  for history). Open-items count: ~24 across Tier 1–5; full P0/P1 closure
+  log in this CHANGELOG entry + the per-submodule CHANGELOGs.
+
 ### 2026-05-04 — Two-wave quality + hygiene sweep + senior reviews
 
 Multi-team parallel sweep of the open Tier-3 / Tier-4 backlog from `ROADMAP_OPTIMIZED_2026-05-02.md`, plus two new senior reviews (DB engineer, UI/UX designer). Total: 11 PRs landed across 3 repos, 2 review docs, 3 agents quota-truncated and salvaged into hand-shipped PRs.
@@ -51,7 +65,9 @@ T-LOGIN-EDGE, T-TEST-INFRA, T-DB-P0 hit limit mid-run. Salvage pattern: T-LOGIN-
 - `e0e87b5` — docs(roadmap refresh + CHANGELOG Wave 1)
 - `b5291f2` — docs(SENIOR_DB_REVIEW)
 - `044d537` — docs(SENIOR_UIUX_REVIEW)
-- final bump pending — api(#65 #69 #70) + web(#68 #69 #70)
+- `0be0bca` — final bumps for Wave 1 + Wave 2 (api #65/#69/#70, web #68/#69/#70).
+- doc-sweep bumps below — api `eaf8111` (PR #72 docs), web `120c35b` (PR #71 docs),
+  bio `d91760a` (PR #69 docs), plus api `a77c844` (P0 refresh-token PR #71).
 
 #### Backend (identity-core-api)
 - **PR #63** `arch/user-domain-boundary-archunit` (squash `432b4d3`) — ArchUnit guard freezing direct `entity.User` imports outside `infrastructure/`/`repository/`/`entity/` (T2.2 implementation, prevents drift back into the dual-User-model anti-pattern).
