@@ -4,19 +4,96 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
-### 2026-05-04 — P0 refresh-token fix + doc sweep
+### 2026-05-04 — Late-day: P0 prod fix DEPLOYED + senior reviewers + Copilot follow-ups
 
-- **api PR #71 (P0-PROD)** `fix/refresh-token-persistable-isnew` (squash
-  `a77c844`) — `RefreshToken implements Persistable<UUID>` with explicit
-  `isNew()` flag. Closes the 6 audit-log `MFA_STEP_FAILED` rows for
-  `ahabgu@gmail.com` between 06:34–06:38 UTC on 2026-05-04 (Hibernate was
-  treating manually-assigned UUIDs as merge candidates → silent NOOP on
-  insert). **Operator rebuild PENDING** to take effect in prod.
-- Doc sweep: api PR #72, web PR #71, bio PR #69 — bring CLAUDE.md /
-  CHANGELOG.md / TODO.md in line with what shipped today.
-- New `ROADMAP_OPTIMIZED_2026-05-04.md` supersedes the 05-02 file (kept
-  for history). Open-items count: ~24 across Tier 1–5; full P0/P1 closure
-  log in this CHANGELOG entry + the per-submodule CHANGELOGs.
+#### P0-PROD refresh-token fix (DEPLOYED 12:01 UTC)
+
+User reported failing MFA logins. Audit-log forensics on `identity_core.audit_logs`
+for `ahabgu@gmail.com` 2026-05-04 06:34–06:38 UTC: 6 consecutive `MFA_STEP_FAILED`
+rows, every method (FINGERPRINT/FACE/SMS_OTP/EMAIL_OTP) hitting
+`orchestration-error: ObjectOptimisticLockingFailureException` from
+`RefreshTokenService.createRefreshTokenInFamily:91`. Root cause: PR #56 (2026-05-02)
+introduced wire format `<id>.<secret>` and pre-assigned `RefreshToken.id` via
+`builder().id(UUID.randomUUID())`. With `@GeneratedValue(strategy = GenerationType.UUID)`
+plus a pre-set id, Spring Data's default `isNew()` (id-is-null heuristic) returned
+`false` → `SimpleJpaRepository.save()` routed to `merge()` → Hibernate detached-merge
+path → `StaleObjectStateException`. Every refresh-token mint after MFA completion
+silently failed. Bug active in prod since the 2026-05-02 17:50 UTC rebuild.
+
+- **api PR #71 (P0-PROD)** `fix/refresh-token-persistable-isnew` (squash `a77c844`) —
+  `RefreshToken implements Persistable<UUID>` with explicit transient `newEntity`
+  flag (defaults true; `@PostLoad`/`@PostPersist` flips to false). `@GeneratedValue`
+  removed (manual id assignment). New `RefreshTokenPersistableTest` (3 cases) +
+  full 13/13 `RefreshToken*Test` pass.
+- **api container REBUILT + RECREATED 12:01 UTC** with image `e9a33cef`. Boot
+  clean (V57 fail-soft warned and continued — pg_partman extension absent), 23.5s
+  start time, healthy. Smoke test: `/actuator/health` UP, login endpoint returns
+  structured 401 on bad credentials (pre-bug shape). No new orchestration errors
+  in audit_logs since rebuild.
+
+#### Senior-reviewer Copilot follow-ups (T-COPILOT-DEEP)
+
+- **api PR #73** `chore/copilot-deep-followups-2026-05-04` (squash `1c9e9be`) —
+  Copilot post-merge findings on PRs #65/#66/#67/#70:
+  - `OAuth2Service.getUserInfo` `OAuth2Exception` now passes explicit `invalid_token`
+    errorCode (RFC 6750 §3.1; was getting default `invalid_client`).
+  - `SoftDeletePurgeJob` now calls `userRepository.hardDeleteById(...)` (new native
+    query escape hatch) — the V53 trigger + PR #70 `@SQLDelete` on User would
+    otherwise loop forever rediscovering already-soft-deleted rows.
+  - `WebAuthnCredentialService.deleteByCredentialId` now revokes the matching
+    enrollment when last credential of a transport class disappears (mirrors
+    `deleteById` semantics).
+  - `Locale.ROOT` added to `.toLowerCase()` enrollment-URL builders (Turkish
+    dotted-i defensive — the user's tenant is Turkish-locale).
+  - + archunit baseline updated.
+- **web PR #73** `chore/copilot-deep-followups-2026-05-04` (squash `e47d464`) —
+  web-side Copilot post-merge findings on PRs #67/#69/#70.
+
+#### Senior UI/UX P1 batch (T-UIUX-P1)
+
+- **web PR #72** `feat/uiux-p1-batch-2026-05-04` (squash `bfb31c7`) — 3 P1 items
+  from `SENIOR_UIUX_REVIEW_2026-05-04.md`:
+  - **P1-1** `verify.fivucsas.com` cold-load now renders `IntegratorLandingCard`
+    with `loginRedirect({...})` snippet + link to `/developer-portal`. No more red
+    "Missing parameters" error on the most-typed integrator URL.
+  - **P1-2** 11 hardcoded English `aria-label` strings localized via `t()` (TopBar,
+    AppShell, App.tsx, EnrollmentsListPage, RegisterPage, UserDetailsPage,
+    UsersListPage). 23 EN + 23 TR keys added.
+  - **P1-4** Sidebar "My Profile" → "My Identity & Biometrics" / "Kimliğim ve
+    Biyometriklerim" — clearer mental model.
+  - **P0-1** developer-portal/widget-demo public access — verified already shipped
+    at HEAD (`App.tsx:223-226` inside `<PublicLayout>`).
+  - **P1-3** sidebar dev-tools collapse — deferred (M-effort, queued).
+- Hostinger auto-deploy SUCCESS — live at app.fivucsas.com + verify.fivucsas.com.
+
+#### CI/CD audit (T-CICD-AUDIT)
+
+- **`CICD_AUDIT_2026-05-04.md`** (commit `ac0b78d`, 521 lines) — first principled
+  audit of every workflow across all 5 repos. Top P0 findings:
+  - bio CI hasn't passed since 2026-04-07 (27 days). 82/100 cancelled, 2/100
+    success. All 5 jobs pinned to self-hosted runner that doesn't pull them.
+  - api Testcontainers integration job never executes on `main` (cancellation
+    after 5h38m queue, 0 successes in last 30 runs).
+  - Branch protection OFF on all 5 repos including api/bio/web shipping to prod.
+  - Recommendation: move api integration-tests + all 5 bio CI jobs to
+    `ubuntu-latest`. Keep deploy jobs on self-hosted (need Docker socket).
+- Plus the `deploy-landing.yml` 5-week stale-deploy theatre — same self-hosted
+  runner cause, trivially fixable by switching to ubuntu-latest + rsync.
+
+#### Doc sweep (T-DOC-SWEEP)
+
+- api PR #72 (squash `eaf8111`) — CLAUDE.md V57 + 2026-05-04 highlights, CHANGELOG.
+- web PR #71 (squash `120c35b`) — CLAUDE.md decomposition pattern, CHANGELOG, TODO.
+- bio PR #69 (squash `d91760a`) — CLAUDE.md alembic-in-runtime note.
+- Parent commit `28f2b33` — `ROADMAP_OPTIMIZED_2026-05-04.md` supersedes 05-02
+  (kept for history). Open-items count: ~24 across Tier 1–5.
+
+#### Final parent submodule pointer state (HEAD = this commit)
+- identity-core-api → `1c9e9be` (PR #73 Copilot follow-ups, deployed image is
+  `a77c844` PR #71; rebuild for #73 deferred — purge-job + WebAuthn polish are
+  not user-visible blockers).
+- web-app → `e47d464` (PR #73 Copilot follow-ups, auto-deployed to Hostinger).
+- biometric-processor → `d91760a` (PR #69 docs).
 
 ### 2026-05-04 — Two-wave quality + hygiene sweep + senior reviews
 
