@@ -4,9 +4,54 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
-### 2026-05-04 — Post-deploy quality + hygiene wave (Wave 1 of 2)
+### 2026-05-04 — Two-wave quality + hygiene sweep + senior reviews
 
-Multi-team parallel sweep of the open Tier-3 / Tier-4 backlog from `ROADMAP_OPTIMIZED_2026-05-02.md`. Wave 1 dispatched 4 agents; T-MERGE and T-FRONTEND-HYGIENE complete; T-LOGIN-EDGE and T-SEC-TAIL still running at this writing.
+Multi-team parallel sweep of the open Tier-3 / Tier-4 backlog from `ROADMAP_OPTIMIZED_2026-05-02.md`, plus two new senior reviews (DB engineer, UI/UX designer). Total: 11 PRs landed across 3 repos, 2 review docs, 3 agents quota-truncated and salvaged into hand-shipped PRs.
+
+#### Wave 2 (api)
+- **PR #66** `fix/devicecontroller-webauthn-service-boundary` (squash `e986609`) — `DeviceController` + 5 other call-sites (`HardwareKeyAuthHandler`, `FingerprintAuthHandler`, `WebAuthnVerifySupport`) now route credential writes through `WebAuthnCredentialService.{saveCredential,updateSignCount}`. New ArchUnit `WebAuthnRepoWriteBoundaryTest` blocks future regressions. (T-SEC-TAIL §T4.4)
+- **PR #67** `chore/security-userinfo-typecheck` (squash `2b49bd5`) — `/oauth2/userinfo` now requires `type=oauth2` claim, rejects ID-token replay. (SECURITY_REVIEW_2026-05-01 deferred)
+- **PR #68** `feat/audit-log-pg-partman-migration` (squash `d95425c`) — V57 `pg_partman` migration with monthly partitions, premake=12, retention 24 months, fail-soft when extension missing. New `V56__noop_reserved_for_refresh_token_plaintext_drop.sql` placeholder for chain contiguity (caught by `MigrationChainContiguityTest`). Testcontainers IT against postgres:16-alpine. Operator runbook at `/opt/projects/infra/RUNBOOK_AUDIT_LOG_PARTMAN.md`. (T-ARCH §T4.6)
+- **PR #65** `fix/login-edge-cases-2026-05-04` (T-LOGIN-EDGE; rebase-merged after 3-way collision with #66/#67/#68 — archunit baseline union resolved manually) — login edge-case items #1, #3, #4, #5, #6, #9 from 2026-04-24 audit:
+  - #1/#6 `ExecuteAuthSessionService.startSession` runs the same pre-flight enrollment check `AuthenticateUserService` already had.
+  - #3/#9 new `DELETE /api/v1/auth/sessions/{sessionId}` (idempotent 204/404, authn required).
+  - #4 `METHOD_ALREADY_USED` → 409 (was 400).
+  - #5 error responses now carry `currentStep`, `totalSteps`, `expectedMethod(s)`, `completedMethods`, `nextAction`.
+  - 1130 tests / 0 failures.
+- **PR #69** `chore/test-f15-deterministic-clock` (T-TEST-INFRA salvage) — F15 only: `JwtServiceTest` `Thread.sleep(10)` and `Thread.sleep(1100)` replaced with negative-expiration mint + `jti` uniqueness assert. ~1.1s reclaimed. F6 / F8 / YAML smoke deferred to next quota window.
+- **PR #70** `fix/user-soft-delete-jpa-restriction` (T-DB-P0 hand-shipped) — `User` entity now has `@SQLDelete` (mirrors `softDelete()` domain method) + `@SQLRestriction("deleted_at IS NULL")`. V53 BEFORE-DELETE trigger no longer surfaces as 5xx on `userRepository.delete()`. All 9 `findBy*` methods auto-filter the GDPR retention window. `findPurgeCandidates` switched to `nativeQuery=true` so `SoftDeletePurgeJob` can still see deleted rows. New `UserSoftDeleteAnnotationsTest` mirrors the existing `TenantSoftDeleteAnnotationsTest` guard. (Closes SENIOR_DB_REVIEW §P0-2 + §P0-3.)
+
+#### Wave 2 (web)
+- **PR #68** `chore/lint-ratchet` (squash `386b904`) — `--max-warnings` ratchet from 90 → 2. (T-QUALITY P1-Q10)
+- **PR #69** `refactor/enrollment-page-decomposition` (squash `35c116c`) — `EnrollmentPage.tsx` decomposed by biometric method. (T-QUALITY P1-Q7)
+- **PR #70** `chore/nfc-step-clear-timeout-copilot` — `NfcStep.tsx:96` 30s scan timeout now cleared in both `reading` and `readingerror` handlers (Copilot post-merge nit on PR #67).
+
+#### Senior reviews (read-only deliverables)
+- **`SENIOR_UIUX_REVIEW_2026-05-04.md`** (commit `044d537`, 463 lines) — verify.fivucsas + app.fivucsas review. Findings: 1 P0 (developer-portal + widget-demo gated behind admin auth — self-serve gap), 4 P1 (cold-load error on verify.fivucsas without OAuth params, 11 hardcoded English aria-labels, ...), 20 P2, 11 P3. All agent-actionable.
+- **`SENIOR_DB_REVIEW_2026-05-04.md`** (commit `b5291f2`) — schema + indexes + relations + views + migration history. 3 P0s found:
+  - V57 chain contiguity (closed pre-emptively by T-ARCH's V56 placeholder)
+  - User entity @SQLDelete missing (closed by PR #70)
+  - 9 UserRepository findBy* missing deletedAt filter (closed by PR #70)
+  - Plus Appendix C: 7 prod queries the operator must run from Hetzner SSH.
+
+#### Agent quota truncation (10am UTC reset)
+T-LOGIN-EDGE, T-TEST-INFRA, T-DB-P0 hit limit mid-run. Salvage pattern: T-LOGIN-EDGE's PR #65 was already drafted on GitHub (just needed a rebase + manual archunit union resolution); T-TEST-INFRA had a clean F15 diff in the working tree that was committed and shipped as #69 (renamed branch); T-DB-P0 left an empty worktree, so the P0-2 + P0-3 fix was hand-written and shipped as #70.
+
+#### CI/CD posture
+- web-app: 4-of-4 GREEN on every PR; auto-deployed to Hostinger.
+- identity-core-api: Maven test (unit) + scan + GitGuardian GREEN on every PR. Testcontainers QUEUED/CANCELLED per Task #55 self-hosted runner stall (acceptable, branch-protection OFF).
+- biometric-processor: untouched today (last 2026-05-02 PRs #67 #68 still on `main`).
+- **api + bio operator container rebuild required** to pick up V57 pg_partman + #66 + #67 + #70 + V56 placeholder. See `SESSION_STATUS_2026-05-02.md` §5 for the rebuild sequence; pg_partman additionally requires a custom postgres image with `postgresql-16-partman` + `postgresql-16-cron` (per `RUNBOOK_AUDIT_LOG_PARTMAN.md` Option A) OR `ALTER DATABASE identity_core SET app.skip_partman_v57='on'` (Option B fail-soft).
+
+#### Parent submodule pointer bumps (chronological)
+- `5e7ace5` — api(#63 #64) + bio(#67 #68)
+- `adfa6f8` — web(#67 P3 hygiene)
+- `725ea44` — api(#66 + #67 SECURITY P2)
+- `4eeae57` — api(#68 V57 pg_partman)
+- `e0e87b5` — docs(roadmap refresh + CHANGELOG Wave 1)
+- `b5291f2` — docs(SENIOR_DB_REVIEW)
+- `044d537` — docs(SENIOR_UIUX_REVIEW)
+- final bump pending — api(#65 #69 #70) + web(#68 #69 #70)
 
 #### Backend (identity-core-api)
 - **PR #63** `arch/user-domain-boundary-archunit` (squash `432b4d3`) — ArchUnit guard freezing direct `entity.User` imports outside `infrastructure/`/`repository/`/`entity/` (T2.2 implementation, prevents drift back into the dual-User-model anti-pattern).
