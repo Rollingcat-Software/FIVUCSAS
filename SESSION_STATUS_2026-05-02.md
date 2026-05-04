@@ -169,6 +169,15 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod \
 ### 5. JWT_SECRET rotation decision (P0-SEC-3)
 Operator must decide: was the leaked `f8ee668:.env.gcp` JWT_SECRET ever live on Hetzner? If yes: rotate, revoke all sessions, scrub history (`git filter-repo --path .env.gcp --invert-paths`). If no: rotate anyway (defence in depth) but no session revoke needed. Not a code task — operator-only.
 
+**T3.C — kid registry shipped, awaiting operator to set new key env.** PR `feat/jwt-kid-registry` (identity-core-api) refactors HS512 key resolution from a single secret into `HsKeyRegistry`, a Spring component that holds a `Map<String, SecretKey>` keyed by `kid`. `JwtService.buildToken` now stamps `hsKeyRegistry.getActiveKid()` on every new HS-signed token; `keyLocator()` routes verification through `hsKeyRegistry.keyFor(kid)` so multiple kids verify in parallel. Backward compat preserved: when only the legacy `JWT_SECRET` env is set the registry transparently maps it to the historical kid `hs-2026-04`, so no env-var changes are required to deploy this PR. Test count 1115 → 1116 (+9 in `JwtServiceKeyRegistryTest`, baseline retained).
+
+Operator rollout (post-merge, no user logout, no incident):
+1. Mint a new HS512 secret offline (`openssl rand -base64 64`).
+2. On Hetzner, add `JWT_HS_KEY_HS_2026_05=<new-secret>` plus `APP_SECURITY_JWT_RETIRED_HS_KIDS=hs-2026-04` to `.env.prod`. Restart api. Tokens minted with either secret keep verifying.
+3. Soak ≥ 30 days (longer than max refresh-token lifetime).
+4. Flip `APP_SECURITY_JWT_ACTIVE_HS_KID=hs-2026-05` and restart. Newly-minted tokens carry the new kid; legacy kid stays in retired list.
+5. After full token expiry, drop the old kid env + retired-list entry in a follow-up release.
+
 ### 6. GDPR fixture force-push (P0-T1, Test review F1)
 `biometric-processor/tests/fixtures/images/{ahab,afuat,aga}/*.jpg` are real personal photos in git history. `git filter-repo --path tests/fixtures/images --invert-paths` then force-push. Coordinate with the team — this rewrites history. Once done: regenerate fixture set with synthetic faces (StyleGAN, ThisPersonDoesNotExist, or licensed dataset).
 

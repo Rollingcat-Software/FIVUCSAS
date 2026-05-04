@@ -4,6 +4,37 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-04 — Post-deploy quality + hygiene wave (Wave 1 of 2)
+
+Multi-team parallel sweep of the open Tier-3 / Tier-4 backlog from `ROADMAP_OPTIMIZED_2026-05-02.md`. Wave 1 dispatched 4 agents; T-MERGE and T-FRONTEND-HYGIENE complete; T-LOGIN-EDGE and T-SEC-TAIL still running at this writing.
+
+#### Backend (identity-core-api)
+- **PR #63** `arch/user-domain-boundary-archunit` (squash `432b4d3`) — ArchUnit guard freezing direct `entity.User` imports outside `infrastructure/`/`repository/`/`entity/` (T2.2 implementation, prevents drift back into the dual-User-model anti-pattern).
+- **PR #64** `feat/jwt-kid-registry` (squash `2d958c5`) — JWT kid-based key registry. `HsKeyRegistry` Spring component holds `Map<String, SecretKey>` keyed by `kid`. `JwtService.buildToken` stamps `hsKeyRegistry.getActiveKid()`; `keyLocator()` routes verification through `hsKeyRegistry.keyFor(kid)`. Backward-compat: legacy `JWT_SECRET` maps to historical kid `hs-2026-04` automatically. Sets up no-logout HS-secret rotation. Test count 1115 → 1116. Operator rollout in `SESSION_STATUS_2026-05-02.md` §5 (T3.C).
+- **PR #b27dfdb** `fix/login-edge-cases-2026-05-04` (T-LOGIN-EDGE, in flight) — login edge-case follow-through items #1, #3, #4, #5, #6, #9 from 2026-04-24 audit.
+
+#### Biometric (biometric-processor)
+- **PR #67** `chore/ci-hygiene-2026-05-02` (squash `9f54388`) — F2 drop pytest-failure swallow in CI + F10 remove stale top-level test files (Test review 2026-05-01).
+- **PR #68** `fix/alembic-runtime-and-backfill-script` (squash `22bd33c`) — Adds `alembic` to runtime image (was missing — Task #81 manual SQL workaround now obsolete) + repairs `backfill_embedding_ciphertext.py` async-iter bug.
+
+#### Web (web-app)
+- **PR #67** `chore/frontend-p3-hygiene-batch` (squash `319b457`) — P3 hygiene batch:
+  - `index.html` `<title>` → brand-neutral "FIVUCSAS — Biometric Identity Verification Platform" (PageTitle still re-localizes per route after mount).
+  - `setTimeout` cleanups across 9 components (WidgetDemoPage CodeBlock, GuestsPage, TotpEnrollment, WebAuthnEnrollment, NfcEnrollment, StepUpDeviceRegistration, FaceVerificationFlow, TwoFactorVerification, NfcStep) using the existing `successTimerRef` pattern.
+  - `NotificationPanel` polling pauses on `document.visibilityState === 'hidden'` and resumes (with immediate fetch) on return — eliminates background-tab toast spam if API is down.
+  - CSP cleanup: `tfhub.dev` removed from `connect-src` (vite.config.ts + 3 .htaccess variants + verify-app/index.html); dead `kaggle.com` entry also stripped.
+- 746/747 Vitest pass (1 pre-existing `PeekABooDetector` failure unrelated to this batch). Hostinger auto-deploy SUCCESS (run #25302577416).
+- **Copilot post-merge nit** (substantive): `NfcStep.tsx:96` 30s scan timeout still pending after success/error — should also clear in `reading`/`readingerror` handlers. Queued as a follow-up.
+
+#### CI/CD
+- All 4 backend PRs landed on Hetzner self-hosted runner with `Maven test (unit)` + `gitleaks scan` + `GitGuardian Security Checks` GREEN. `Integration tests (Testcontainers)` and `Lint & Type Check` cancelled by Task #55 runner stall (acceptable per branch-protection-OFF + non-required-jobs policy).
+- web-app CI 4-of-4 GREEN (build-and-test, code-quality, gitleaks, GitGuardian) — auto-deployed to Hostinger.
+- **Copilot reviewer** errored on all 4 backend PRs with "Copilot encountered an error" — no review available; web review came through with 6 comments (5 low-confidence suppressed, 1 substantive — see above).
+
+#### Parent submodule pointer bumps
+- `5e7ace5` — bumps api (#63 + #64 squashes) + bio (#67 + #68 squashes).
+- `adfa6f8` — bumps web (#67 squash).
+
 ### Docs
 - **iOS / iPadOS / macOS scope dropped (2026-04-26).** Forward-looking iOS/macOS work removed from `ROADMAP.md`, `ROADMAP_V2.md`, `MASTER_PLAN.md`, `PLATFORM_STATUS.md`, `MOBILE_APP_COMPREHENSIVE_REDESIGN.md`, `FRONTEND_COMPARISON_REPORT.md`, `docs/plans/CLIENT_APPS_PARITY.md`, `docs/plans/PATH_TO_20_20.md`. Apple platforms are permanently out of scope — no Apple hardware available for development, signing, or testing. KMP `iosMain` directory remains in tree as part of compile structure but receives no engineering work. Historical CHANGELOG entries that reference past iOS work are preserved unchanged.
 
