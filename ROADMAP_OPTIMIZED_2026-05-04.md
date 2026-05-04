@@ -144,6 +144,17 @@ Application DB role + `FORCE ROW LEVEL SECURITY` + per-table policies. Currently
 ### T4.9 webauthn_credentials VACUUM (NEW from Appendix C)
 27 dead / 3 live, never autovacuumed. ✅ **`VACUUM ANALYZE` run 2026-05-04 12:27 UTC — ratio 9.00 → 0.00, 14 dead tuples reclaimed.** Follow-up: tune `autovacuum_vacuum_scale_factor` for low-row-count tables so this doesn't recur.
 
+### T4.11 User-reported bugs 2026-05-04 afternoon (NEW)
+
+User testing surfaced 6 issues. Each entry below shows status as of 12:45 UTC.
+
+- **USER-BUG-1 — Documentation gap audit (META).** Research what a professional production-grade SaaS platform should document, audit current state, recommend reorganization. ⏳ T-DOC-AUDIT in flight.
+- **USER-BUG-2 — Guest invitation creation crashed with `column "metadata" is of type jsonb but expression is of type character varying`.** Root cause: `GuestInvitation.metadata` had `@Column(columnDefinition = "jsonb")` but no `@JdbcTypeCode(SqlTypes.JSON)`, so Hibernate bound the String as varchar at runtime. ✅ Closed by api PR #74 (squash `5096e8d`); api container rebuilt + recreated 2026-05-04 12:39 UTC with image `0fd02c48`. Operator-side: try `POST /api/v1/guests/invite` again — should now return 201.
+- **USER-BUG-3 — SMS step has black/wrong colors for code label and resend button in dark mode.** `SmsOtpStep.tsx` lines 102-131 (TextField label) + 167-199 (resend Button). Likely missing theme-aware overrides on `MuiInputLabel-root` color and on the outlined Button text color. ⏳ T-WEB-USERBUGS in flight.
+- **USER-BUG-4 — Biometric Tools → Face Search returns "Eşleşme Bulunamadı" for a face that successfully logs in via face-verify.** Same face, different result. Likely tenant-scope mismatch in the search endpoint, OR a stricter threshold than verify, OR an image-encoding mismatch. ⏳ T-FACE-SEARCH in flight.
+- **USER-BUG-5 — Auth Methods Testing page mostly broken.** Most stubbed cards don't let the user click through. Possibly stale imports after PR web#69 EnrollmentPage decomposition relocated method-flows. ⏳ T-WEB-USERBUGS in flight.
+- **USER-BUG-6 — Settings page "Two-Factor Authentication" section is misleading.** Header says "Required by your organization / Managed by your organization's admin via Auth Flows" but then shows 3 buttons (Setup TOTP, Register Passkey, Register Hardware Key) which are actually for *device registration*, not method enablement. Rename + reword + i18n. ⏳ T-WEB-USERBUGS in flight.
+
 ### T4.10 Copilot-deferred items from today's review (NEW from T-COPILOT-DEEP report)
 Issues raised by Copilot that the post-merge follow-up agent deliberately deferred — each has a real fix but is out of scope for a single PR.
 
@@ -292,4 +303,4 @@ Pick a vendor (Statuspage, BetterUptime, Instatus) and stand up a basic page sho
 
 ---
 
-*Last updated: 2026-05-04 12:45 UTC — added Tier 4.10 (T-COPILOT-DEEP late-arriving deferred items) + closed T4.9 (`VACUUM ANALYZE webauthn_credentials` run on host).*
+*Last updated: 2026-05-04 12:50 UTC — added §T4.11 (6 user-reported bugs from afternoon testing). USER-BUG-2 (guest invitation jsonb) closed in-session: api PR #74 merged + rebuilt. T-DOC-AUDIT, T-WEB-USERBUGS, T-FACE-SEARCH dispatched in parallel for the remaining 5.*

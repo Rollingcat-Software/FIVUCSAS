@@ -4,6 +4,17 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-04 — Afternoon user-test bug round (USER-BUG-1..6)
+
+User testing surfaced 6 issues. **USER-BUG-2 (guest invitation jsonb) closed and DEPLOYED in-session.** Other 5 in flight via parallel agents.
+
+- **USER-BUG-2 — `POST /api/v1/guests/invite` returned 500.** Prod api logs at 2026-05-04 12:29:50 UTC: `ERROR: column "metadata" is of type jsonb but expression is of type character varying`. Root cause: `GuestInvitation.metadata` had `@Column(columnDefinition="jsonb")` but no `@JdbcTypeCode(SqlTypes.JSON)` — Hibernate bound the String as `varchar` at runtime; PostgreSQL rejected the implicit varchar→jsonb cast. **Closed by api PR #74 (squash `5096e8d`)**; api container rebuilt + recreated 2026-05-04 12:39 UTC with image `0fd02c48`. New regression test `GuestInvitationJsonbBindingTest` (2 cases) guards the contract.
+- **USER-BUG-1 (META — documentation audit)** — research what a professional SaaS platform should document, audit current state, recommend reorganization. T-DOC-AUDIT in flight.
+- **USER-BUG-3 — SMS step has black/wrong colors for code label and resend button in dark mode.** `SmsOtpStep.tsx` lines 102-131 + 167-199 missing theme-aware overrides. T-WEB-USERBUGS in flight.
+- **USER-BUG-4 — Biometric Tools → Face Search returns "Eşleşme Bulunamadı" for a face that successfully logs in via face-verify.** Likely tenant-scope mismatch in the search endpoint, OR a stricter threshold than verify, OR an image-encoding mismatch. T-FACE-SEARCH in flight.
+- **USER-BUG-5 — Auth Methods Testing page mostly broken.** Most stubbed cards fail. T-WEB-USERBUGS in flight.
+- **USER-BUG-6 — Settings page "Two-Factor Authentication" section is misleading** — header says "Required by your organization" but shows device-registration buttons. T-WEB-USERBUGS in flight (rename + reword + i18n).
+
 ### 2026-05-04 — Late-day: P0 prod fix DEPLOYED + senior reviewers + Copilot follow-ups
 
 #### P0-PROD refresh-token fix (DEPLOYED 12:01 UTC)
