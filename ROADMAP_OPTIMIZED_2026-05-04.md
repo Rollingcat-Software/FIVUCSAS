@@ -142,7 +142,17 @@ Application DB role + `FORCE ROW LEVEL SECURITY` + per-table policies. Currently
 25+ indexes with `idx_scan = 0`. Need a 7-day post-stats-reset re-audit before any `DROP INDEX`. Some are likely fine to keep (FK-covering indexes that just haven't seen traffic yet); some are likely droppable (e.g. duplicate composite indexes).
 
 ### T4.9 webauthn_credentials VACUUM (NEW from Appendix C)
-27 dead / 3 live, never autovacuumed. Either run `VACUUM (FULL, ANALYZE)` manually, or tune autovacuum thresholds for low-row-count tables.
+27 dead / 3 live, never autovacuumed. ✅ **`VACUUM ANALYZE` run 2026-05-04 12:27 UTC — ratio 9.00 → 0.00, 14 dead tuples reclaimed.** Follow-up: tune `autovacuum_vacuum_scale_factor` for low-row-count tables so this doesn't recur.
+
+### T4.10 Copilot-deferred items from today's review (NEW from T-COPILOT-DEEP report)
+Issues raised by Copilot that the post-merge follow-up agent deliberately deferred — each has a real fix but is out of scope for a single PR.
+
+- **T4.10.a (api PR #66 follow-up)** — `WebAuthnCredentialService.saveCredential` lacks `completeEnrollment` rollback on partial failure. Needs proxy-level integration test + transaction redesign. **P2 — security-positive but not user-blocking.**
+- **T4.10.b (api PR #68 follow-up)** — V57 pg_partman migration has 3 secondary issues: RLS predicate not yet plumbed into the partitioned hierarchy, missing FK on partition key, oversized legacy 2026-01..2026-06 static partition. V57 is fail-soft and not yet deployed via Option A; redesign needs prod-data testing in a dedicated PR. **P1 — must-fix before T1.G Option A (custom postgres image with pg_partman + pg_cron).**
+- **T4.10.c (api PR #67 follow-up)** — `/oauth2/userinfo` parses the JWT twice (once for type-claim extract, once for email). Minor perf. Would require widening `JwtService.extractAllClaims` visibility from package-private to public, OR extracting both claims in a single parse via `extractClaim`-with-tuple. **P3.**
+- **T4.10.d (api PR #65 follow-up)** — `verifyUserCanCompleteFlow` duplicated across `AuthenticateUserService` and `ExecuteAuthSessionService`. Pure refactor; pull into a shared service. **P2 — Quality-cleanup tier.**
+- **T4.10.e (api PR #69 follow-up)** — `isTokenValid` is not exercised in the expired-token test path. Minor coverage gap; ship a single test case calling `jwtService.isTokenValid(alreadyExpired)` and asserting false. **P3 — Test-infra tier.**
+- **T4.10.f (web PR #67 + PR #68 follow-ups)** — Cosmetic: `vite.config.ts` has a duplicate CSP block (one in JS, one in injected meta — only one path is hot); PR #68 ratchet's doc-name nit. **P3 — single-PR cleanup.**
 
 ---
 
@@ -282,4 +292,4 @@ Pick a vendor (Statuspage, BetterUptime, Instatus) and stand up a basic page sho
 
 ---
 
-*Last updated: 2026-05-04 12:30 UTC after SENIOR_DB Appendix C resolution and CHANGELOG late-day sync.*
+*Last updated: 2026-05-04 12:45 UTC — added Tier 4.10 (T-COPILOT-DEEP late-arriving deferred items) + closed T4.9 (`VACUUM ANALYZE webauthn_credentials` run on host).*
