@@ -1,8 +1,9 @@
 name: Deploy Landing to Hostinger
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master]
+    branches: [main, master]
     paths:
       - 'landing-website/**'
       - '.github/workflows/deploy-landing.yml'
@@ -13,7 +14,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: landing-website
