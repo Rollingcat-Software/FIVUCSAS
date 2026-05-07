@@ -4,6 +4,45 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-07 — Late: tenant pre-flight gate + verify.fivucsas Round 2 + step components theme audit
+
+After the morning P0 batch merged, user smoke-tested verify.fivucsas (= demo.fivucsas with `client_id=marmara-bys-demo`) and surfaced 4 more bugs. All shipped same session.
+
+**User-reported bugs**:
+- Password STEP PASSED for ahabgu@gmail.com (gmail) on Marmara hosted-login. Should reject with "not a Marmara member."
+- NFC step shows BOTH success ("NFC belge başarıyla okundu!") AND failure ("Doğrulama yapılamadı") simultaneously.
+- SMS OTP input + resend button render dark-on-light (theme drift between Card paper surface and `background.default`).
+- "Adım N/3" step counter only renders on step 3 of 3.
+- "Login could not be completed" generic error reappears for non-tenant-mismatch paths.
+
+**Tenant pre-flight gate (api #86 + web #81)** — Option C from `INVESTIGATION_VERIFY_FLOW_2026-05-07.md`:
+- New `TenantMismatchException` (api), `GlobalExceptionHandler` maps to 403 with `{ errorCode, requiredTenant, ... }`
+- `LoginMfaFlow.tsx` now passes `clientId` to `authRepository.login()`; `AuthRepository.ts` forwards in POST body; `AuthController` already had wiring (line 145)
+- `AuthenticateUserService` tenant-lock fires BEFORE `passwordEncoder.matches` — no MFA reached for wrong-tenant users
+- New i18n keys `errors.TENANT_MISMATCH_INLINE` (en + tr) interpolating `requiredTenant`
+- 9 new tests across both repos
+
+**Verify-app round 2 (web #82)** — bundles 4 fixes:
+- NFC contradictory state: `useEffect` clears `scanResult` when `error` truthy + `!error` guard on success Alert
+- 7 OAuth2 backend errors mapped to specific friendly messages (was: all collapsed to `hosted.exchangeFailed`):
+  `unknown_mfa_session`, `mfa_session_expired`, `mfa_not_completed`, `mfa_already_consumed`, `client_id_mismatch`, `pkce_missing`, `redirect_uri_mismatch`
+- RFC 6749 §4.1.2.1 state echo on error paths: redirects back to `redirect_uri?error=...&state=...` after 4s display delay (instead of stranding on verify.fivucsas)
+- LoginMfaFlow step counter now renders from step 1 onward (was: only step 3)
+
+**Step components theme audit (web #80)** — 8 step components touched:
+- 3 `background.default` → `background.paper` swaps (SmsOtpStep)
+- 6 hardcoded grayscale literals replaced with theme tokens (PasswordStep, EmailOtpStep, EmailOtpMfaStep, TotpStep, QrCodeStep, FaceCaptureStep)
+- Disabled-Button bg fix (resend button transparent)
+- MultiStepAuthFlow step counter relocated to top (in-app re-auth surface, separate from verify-app)
+
+**Investigation docs added**:
+- `INVESTIGATION_VERIFY_FLOW_2026-05-07.md` — E2E walkthrough, 22 findings (5 NEW + 17 P1/P2/P3) cross-referenced against MASTER
+
+**Operator follow-up**:
+- api container rebuild — must include #82, #84, #85, #86 (tenant gate critical)
+- bio rebuild — already flagged, includes #73, #74
+- Hostinger auto-deploy of web (#80, #81, #82) within minutes
+
 ### 2026-05-07 — User bug-fix round + 6-lens investigation + 10 P0 fixes (this session)
 
 User reported 2 verify.fivucsas.com bugs (tenant-mismatch error UX + face-model loading UX) and asked for an architectural look at face login. Then asked for a comprehensive investigation into mocks/fakes/incomplete pipelines/wire contracts/constraints/fail-open patterns.
