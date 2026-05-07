@@ -86,8 +86,8 @@ scp -i ~/.ssh/hetzner_ed25519 LOCAL_FILE root@116.203.222.213:/opt/identity-core
 - Liveness wired into `/verify` and `/enroll`. `LIVENESS_BACKEND=uniface` + `LIVENESS_MODE=passive` (hybrid demanded blink+smile that /verify never asks for; UniFace MiniFASNet 98%+ on real users is sufficient).
 - UniFace cache: `UNIFACE_CACHE_DIR=/app/uniface-cache` + `HOME=/tmp` + named volume `biometric_uniface` (chown'd uid 100). MiniFASNetV2.onnx persists across restarts.
 - pgvector `<=>` cosine search — production-grade.
-- Full audit (now stale, see Session 2026-04-28 memory): `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`
-- Roadmap (now stale — many F1/F2/F3 items shipped): `BIOMETRIC_ROADMAP_2026-04-28.md`. Current state: `ROADMAP_2026-04-28.md`.
+- Full audit (now stale, see Session 2026-04-28 memory): `archive/2026-04-pre-roadmap-2028/BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`
+- Roadmap (now stale — many F1/F2/F3 items shipped): `archive/2026-04-pre-roadmap-2028/BIOMETRIC_ROADMAP_2026-04-28.md`. Current state: `ROADMAP_2026-04-28.md`.
 
 **Rebuild & restart identity-core-api:**
 ```bash
@@ -240,7 +240,7 @@ CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 ### Kural: Liveness Entegrasyonu
 `/liveness` endpoint'i ayrı çalışıyor. `/enroll` ve `/verify` liveness çağırmıyor — bu kasıtlı değil, açık bir boşluk. Faz 2'de düzeltilecek.
 
-**Detay:** `BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md` | **Roadmap:** `BIOMETRIC_ROADMAP_2026-04-28.md`
+**Detay:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md` | **Roadmap:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_ROADMAP_2026-04-28.md`
 
 ## Database
 
@@ -432,7 +432,7 @@ curl -X POST https://api.fivucsas.com/api/v1/auth/login \
   - **Sec-P0a history rewrite** (`git filter-repo` + force-push): not strictly required since the actually-leaked secret is now rotated, but if you want to scrub the leaked value from public git history for cosmetic reasons, this is the only step left. Be aware: any local clone you have on another machine (laptop/WSL) will diverge irreversibly.
   - **Twilio + SMTP rotation**: upstream consoles only. Not part of this leak (those creds were never in `.env.gcp` or `.env.production`); listed in the runbook as generic hygiene only.
 - **Plan-only, awaiting user approval**: `CLIENT_APPS_PARITY_PLAN_2026-04-28.md` — Compose UI parity (≈5.5h) + APK release workflow (needs keystore + 4 GitHub secrets from user).
-- Biometric pipeline overhaul: Faz 1-3 mostly DONE (centerface→mtcnn deviation, Facenet512, anti-spoof on, liveness wired, MediaPipe FaceLandmarker, passive liveness, adaptive threshold). The `BIOMETRIC_ROADMAP_2026-04-28.md` doc is now mostly stale.
+- Biometric pipeline overhaul: Faz 1-3 mostly DONE (centerface→mtcnn deviation, Facenet512, anti-spoof on, liveness wired, MediaPipe FaceLandmarker, passive liveness, adaptive threshold). The `archive/2026-04-pre-roadmap-2028/BIOMETRIC_ROADMAP_2026-04-28.md` doc is now mostly stale.
 - Embeddable auth widget — Phase 7 ~75% complete (verify-app, auth-js, auth-react, OAuth 2.0 done; Web Components + dogfooding remaining).
 
 ### Next Steps (Priority Order, as of 2026-04-29)
