@@ -1,6 +1,6 @@
 # FIVUCSAS Optimized Roadmap — 2026-05-04 (post-Wave-2 + late-day P0 deploy)
 
-**Supersedes:** `ROADMAP_OPTIMIZED_2026-05-02.md` (kept for history).
+**Supersedes:** `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-02.md` (kept for history).
 
 **Authoritative source-of-truth review docs (all under `/opt/projects/fivucsas/` unless noted):**
 - 2026-05-04 — `SENIOR_DB_REVIEW_2026-05-04.md`, `SENIOR_UIUX_REVIEW_2026-05-04.md`, `CICD_AUDIT_2026-05-04.md`
