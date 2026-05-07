@@ -68,6 +68,45 @@ These require an external system the host cannot reach (registrar console, upstr
 
 ---
 
+## Tier 0 — INVESTIGATION 2026-05-07 P0 batch (highest priority, dispatched 2026-05-07 06:00 UTC)
+
+Six-lens audit on 2026-05-07 surfaced 10 P0 items. Source: `INVESTIGATION_MASTER_2026-05-07.md` (synthesis) + 6 sibling docs. Plain-language description for each.
+
+### T0.1 — Legacy `/2fa/verify-method` 2FA bypass [P0, agent-actionable]
+`AuthController.java:526-532` accepts ANY non-empty `assertion` string for FINGERPRINT/HARDWARE_KEY without signature/public-key/sign-counter checks; audit log records "success." N-step `WebAuthnVerifySupport` does this correctly — legacy route was missed. **Fix**: delegate to `WebAuthnVerifySupport.verifyAssertion(...)` or remove the legacy route if no client uses it.
+
+### T0.2 — Embedding encryption never invoked [P0, agent-actionable]
+`pgvector_embedding_repository.py` and `pgvector_voice_repository.py` write `embedding_ciphertext` on save but `find_similar` / `find_by_user_id` read the plaintext `embedding` column. `decrypt_vector` defined at `embedding_cipher.py:75` and **called nowhere**. **Fix**: replace plaintext column reads with decryption from ciphertext, then drop plaintext column once verified. Embedding-at-rest "encryption" is theater until this lands.
+
+### T0.3 — `WatchlistCheckHandler` is a hardcoded mock in production [P0, decision-then-agent]
+Live `@Component` returning `cleared=true, match_count=0` for every input (`WatchlistCheckHandler.java:14-50`). KYC/AML claim broken on any flow including `WATCHLIST_CHECK`. **Decision needed**: profile-gate to `@Profile("dev")` for now (default-safe — flow misses are explicit) OR commit to a real provider (Refinitiv/Dow Jones/etc.). **Default**: profile-gate this round, treat real-provider as a separate Tier-1 backlog.
+
+### T0.4 — `live_camera_analysis.py` boot fail-open [P0, agent-actionable]
+Returns `is_live=True` when `self._liveness_detector` is None (`live_camera_analysis.py:184-193`). DI failure at boot = silent fail-open. **Fix**: fail-closed (`is_live=False, reason="liveness_detector_unavailable"`) and add a startup health-check that aborts boot if detector is None.
+
+### T0.5 — Account-lockout error never surfaces to user [P0, agent-actionable]
+`AuthenticateUserService.java:79,127` throws `InvalidCredentialsException` for locked accounts. The dedicated `AccountLockedException` exists at `AccountLockedException.java:7` with `remainingLockTimeSeconds` but is never thrown. Frontend has full i18n keys for `ACCOUNT_LOCKED` (`web-app/.../tr.json:1576`) — dead code. Server lockout works (5 attempts → 15 min); only the surfacing is broken. **Fix**: throw `AccountLockedException` with remaining seconds when lockout fires; map in `GlobalExceptionHandler` to a structured 423 LOCKED response carrying the seconds.
+
+### T0.6 — OTP no per-code attempt counter [P0, agent-actionable]
+`OtpService.java:29-43` keeps the OTP on mismatch (no counter, no delete). Only defense is 30/min/IP `mfa-step` rate-limit. ~150 guesses/code against 10⁶ space; rotating IPs improves attacker odds. NIST 800-63B requires 3-5 failures then invalidate. **Fix**: add `attempts INTEGER NOT NULL DEFAULT 0` to OTP entity (or Redis key), increment on mismatch, invalidate at 5, surface remaining attempts in error response.
+
+### T0.7 — `tenants.max_users` never enforced [P0, agent-actionable]
+Field exists at `Tenant.java:86-88` (default 100), surfaced in admin UI; zero insert-path readers. **Fix**: in `RegisterUserService` (and `ManageUserService.create`) check `userRepository.countByTenantId(tenantId) < tenant.getMaxUsers()` before insert; new error code `TENANT_USER_QUOTA_EXCEEDED`. Decision needed on default cap policy for unmigrated tenants — sensible default is 1000 with admin-overridable.
+
+### T0.8 — Suspended tenants keep minting JWTs [P0, agent-actionable]
+`Tenant.canAcceptUsers()` exists (`Tenant.java:249-251`) with zero non-DTO callers. `AuthenticateUserService` has no `tenant.isActive()` gate. **Fix**: gate auth path with `if (tenant.getStatus() != ACTIVE) throw TenantSuspendedException` mapping to 423; same gate in token-refresh path.
+
+### T0.9 — Anti-replay spot-check defeated by corrupt frames [P0, agent-actionable]
+`verify_puzzle.py:171-196` only counts `is_live=False` outcomes as failures; any `continue` (decode error, detector exception) skips silently. 3 corrupt JPEGs → `failed_count=0` → spot-check pass. **Fix**: count exceptions/decode-errors as failures, raise `failed_count` and abort spot-check on threshold.
+
+### T0.10 — Face confidence fallback override [P0, agent-actionable]
+`FaceAuthHandler.java:65-75` and `AuthController.java:509-518` fall back to hardcoded 0.7 cosine threshold when processor's `verified` field is missing/false, ignoring the adaptive aging threshold. Override never logs. **Fix**: trust the processor `verified` field; on missing field log + reject; remove the duplicated fallback in both call sites.
+
+### T0.11 — INVESTIGATION P1 hardening backlog [staged after P0 batch]
+Round 2-6 in `INVESTIGATION_MASTER_2026-05-07.md`: AddressProofHandler real impl or profile-gate, LoggerService prod wiring, occlusion implementation, NFC MRZ wiring, access-token TTL = 15 min, voice/device caps, OAuth2 client RBAC, `/userinfo` scope filter, client_secret rotation, per-tenant rate limit, BiometricService underscore-prefix surfacing, error-shape unification, face-verify response shape, RFC 8252 redirect_uri schemes, AuthSessionRepository contract, AuditEventPublisher exception counter, 3 audit-log blind spots, `/2fa/verify*` HTTP status corrections, anti-spoof contradiction policy, SoftDeletePurgeJob default-on confirmation.
+
+---
+
 ## Tier 3 — Next active wave (agent-actionable, dispatch when quota window opens)
 
 These are the highest-leverage open items, ranked. Each is scoped tight enough for a single sub-agent to ship in one PR.

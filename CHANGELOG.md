@@ -4,6 +4,48 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-07 — User bug-fix round + 6-lens investigation + 10 P0 fixes (this session)
+
+User reported 2 verify.fivucsas.com bugs (tenant-mismatch error UX + face-model loading UX) and asked for an architectural look at face login. Then asked for a comprehensive investigation into mocks/fakes/incomplete pipelines/wire contracts/constraints/fail-open patterns.
+
+**Morning user-bug fixes (4 PRs)**:
+- web #75 — SMS OTP dark-mode contrast (USER-BUG-3)
+- web #76 — Settings device-registration wording (USER-BUG-6)
+- web #77 — F8 vitest e2e test relocation
+- web #78 — Hosted-login tenant-mismatch error UX (NEW: `hosted.tenantMismatch` i18n key, frontend now maps backend's `invalid_request` + tenant detail to specific message instead of generic retry)
+- web #79 — Face-model loading UX (`mfa.face.modelLoading` + `modelLoadFailed` i18n keys, gates quality chips on `initialized`, disables Capture during model load)
+- api #75 — Face-search tenant scope derived from authenticated principal (closes cross-tenant gap; backfilled 7 NULL-tenant face_embeddings rows)
+- api #79 — YAML duplicate-key smoke test (would have prevented PR #62 emergency hotfix)
+- api #80 — F6 `SecurityConfigPermitAllPinTest` + `AnonymousEndpointsSecurityIntegrationTest` (catches permitAll regressions in CI without bulk `addFilters=false` removals)
+- bio #70 — All bio CI jobs to ubuntu-latest (closes 27-day-dead bio CI)
+- bio #72 — Face-search detect-then-crop preprocessing fix
+- parent #38 — `deploy-landing.yml` rewritten on ubuntu-latest
+
+**6-lens investigation (2026-05-07 06:00 UTC)**:
+- `INVESTIGATION_MASTER_2026-05-07.md` (synthesis) + 6 sibling docs:
+  - `INVESTIGATION_MOCKS_2026-05-07.md` — 30 findings (2 P0 + 1 latent P0, 6 P1)
+  - `INVESTIGATION_USER_CONSTRAINTS_2026-05-07.md` — user-facing limit gaps
+  - `INVESTIGATION_DEV_CONSTRAINTS_2026-05-07.md` — tenant/integrator-facing limit gaps
+  - `INVESTIGATION_PIPELINES_2026-05-07.md` — production-claimed feature E2E verification
+  - `INVESTIGATION_WIRES_2026-05-07.md` — frontend↔backend payload diff
+  - `INVESTIGATION_FAILOPEN_2026-05-07.md` — silent-success / fail-open hunter
+
+**10 P0 fixes shipped (Round 1)**:
+- api #81 — `WatchlistCheckHandler` profile-gated to `dev` (was hardcoding `cleared=true` in prod, breaking KYC/AML claim) — P0-#3
+- api #82 — `AccountLockedException` now thrown with `remainingLockTimeSeconds`; new 423 contract; activates dead frontend i18n keys — P0-#5
+- api #83 — Face confidence 0.7 hardcoded fallback removed from both `FaceAuthHandler` + `AuthController`; trust bio processor's `verified` field — P0-#10
+- api #84 — Legacy `/2fa/verify-method` now validates WebAuthn assertion (was accepting any non-empty string for FINGERPRINT/HARDWARE_KEY — full 2FA bypass with audit log recording "success") — P0-#1
+- api #85 — OTP per-code attempt counter (5 strikes then invalidate) + Flyway V58 — P0-#6 (NIST 800-63B)
+- bio #73 — Embedding repositories now read encrypted ciphertext column with Fernet decrypt (was theater — ciphertext written, plaintext column read, `decrypt_vector` never called) — P0-#2
+- bio #74 — `live_camera_analysis.py` fail-closed when liveness detector unavailable + boot health-check (was returning `is_live=True` on missing detector) — P0-#4
+
+**Investigation-flagged P0s deferred** (need explicit approval or product decision):
+- P0-#7 — `tenants.max_users` field exists default 100, never enforced — needs default cap policy
+- P0-#8 — `TenantStatus.SUSPENDED` not gated in auth path — implementation queued
+- P0-#9 — Anti-replay spot-check defeated by corrupt frames (`continue` doesn't count as failure)
+
+**Deploy state**: All web fixes auto-deploy to Hostinger within minutes (PR #75-#79). **api + bio container rebuilds PENDING** on Hetzner (`feedback_audit_delta_before_rebuild.md` rule — operator must diff `<deployed-sha>..HEAD` before `docker compose build --no-cache`). The `/2fa` bypass fix (api #84) and the embedding decrypt fix (bio #73) are critical and should be the next rebuild.
+
 ### 2026-05-04 — Afternoon user-test bug round (USER-BUG-1..6)
 
 User testing surfaced 6 issues. **USER-BUG-2 (guest invitation jsonb) closed and DEPLOYED in-session.** Other 5 in flight via parallel agents.
