@@ -4,6 +4,37 @@ All notable changes to the FIVUCSAS project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-05-07 — Round 3 P0+P1 batch + prod rebuild + doc cleanup
+
+User said "fix all issues, complete all tasks, commit push merge and redeploy rebuild all changes." 6 parallel agents ran (5 fixes + 1 doc cleanup); all merged; **api + bio prod containers rebuilt and verified healthy**.
+
+**Round 3 fixes shipped**:
+- **api #87** (P1) — JWT access TTL 15min in prod (was 1h), OAuth2ClientController admin-only (was role-blind), `/userinfo` scope filter per OIDC §5.4
+- **api #88** (P1) — AddressProofHandler `@Profile("dev")` (mirrors WatchlistCheck pattern), AuditEventPublisher Micrometer counter `audit.publish.failure`, `/2fa/verify*` HTTP 200/false-success → proper 401/400/409
+- **api #89** (P0-#7+#8) — `tenants.max_users` enforced in RegisterUserService + ManageUserService.create (new `TenantUserQuotaExceededException` → 409 with `maxUsers`); `TenantStatus.SUSPENDED` gate in AuthenticateUserService + RefreshAccessTokenService (new `TenantSuspendedException` → 423 with `tenantStatus`)
+- **bio #76** (P0-#9) — anti-replay spot-check counts decode-errors and detector-exceptions as failures (`MAX_FAILED_SPOT_CHECK_FRAMES=2`); 3 corrupt JPEGs no longer yield `failed_count=0`
+- **web #83** (P1) — `BiometricService` underscore-prefix params surfaced (`tenantId`, `maxResults`, `clientEmbeddings` now actually sent in FormData); `formatApiError` unified across 3 backend envelopes (Spring `errorCode`, OAuth2 RFC-6749, MFA-step `status:FAILED`); 22 new tests
+- **parent #41** — 15 stale 2026-04 docs archived to `archive/2026-05/`; 4 cross-refs fixed (CLAUDE.md + ROADMAP)
+
+**Prod rebuild verified**:
+- api image `b670f218` recreated 2026-05-07 07:20 UTC, healthy in 25s. Audit-delta diff `5096e8d..af301f7` showed 15 commits, no new migrations, only `application-prod.yml` JWT TTL change.
+- bio image `a0a763b5` recreated 2026-05-07 07:28 UTC, healthy. Boot-time liveness detector health-check confirmed in startup logs (P0-#4 fix in action). Audit-delta diff `9f0999f..b2e5617` showed 9 commits.
+- All env vars present in `.env.prod` (FIVUCSAS_EMBEDDING_KEY for bio decrypt; WEBAUTHN_ALLOWED_ORIGINS for api). JWT_EXPIRATION not set in env → falls through to new yml default (15min) intentionally.
+- Smoke: `curl https://api.fivucsas.com/actuator/health` → 200 UP.
+
+**This session totals (2026-05-07)**:
+- 26 PRs merged across api/bio/web/parent
+- 8 INVESTIGATION docs at fivucsas root (master + 7 lenses + verify-flow E2E)
+- All 10 P0s shipped (morning 7 + late 3); ~7 P1s shipped; remainder in Tier 0 backlog
+- 15 stale docs archived
+- Prod containers rebuilt and verified
+
+**Remaining backlog** (`INVESTIGATION_MASTER_2026-05-07.md`, ~17 items):
+- Web: AuthSessionRepository contract, RFC 8252 redirect_uri schemes
+- Bio: NFC MRZ wiring (large), occlusion implementation, AddressProof real impl, LoggerService prod wiring
+- API: client_secret rotation endpoint, per-tenant rate-limit, anti-spoof contradiction policy, SoftDeletePurgeJob default-on confirmation
+- All P2/P3 cosmetic + cross-cutting cleanup items
+
 ### 2026-05-07 — Late: tenant pre-flight gate + verify.fivucsas Round 2 + step components theme audit
 
 After the morning P0 batch merged, user smoke-tested verify.fivucsas (= demo.fivucsas with `client_id=marmara-bys-demo`) and surfaced 4 more bugs. All shipped same session.
