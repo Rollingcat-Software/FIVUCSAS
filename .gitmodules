@@ -16,3 +16,6 @@
 [submodule "web-app"]
 	path = web-app
 	url = https://github.com/Rollingcat-Software/web-app.git
+[submodule "spoof-detector"]
+	path = spoof-detector
+	url = https://github.com/Rollingcat-Software/spoof-detector.git
