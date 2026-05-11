@@ -22,6 +22,11 @@ const t = {
     badge:      { en: 'v1 shipped · 1,800+ tests · production-ready', tr: 'v1 yayında · 1.800+ test · üretime hazır' },
     titleA:     { en: 'Identity verification',                      tr: 'Kimlik doğrulama' },
     titleB:     { en: 'for the modern internet.',                   tr: 'modern internet için.' },
+    subtitle:   { en: 'Face & Identity Verification Platform',      tr: 'Yüz & Kimlik Doğrulama Platformu' },
+    acronym:    {
+      en: 'FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS.',
+      tr: 'FIVUCSAS — Bulut Tabanlı SaaS ile Yüz ve Kimlik Doğrulama (Face and Identity Verification Using Cloud-based SaaS).',
+    },
     lede:       {
       en: 'FIVUCSAS is an end-to-end biometric authentication platform. Ten auth methods, an N-step MFA dispatcher, OAuth 2.0 / OIDC hosted login, and a drop-in verification widget — for any web, mobile, or desktop app.',
       tr: 'FIVUCSAS, uçtan uca biyometrik kimlik doğrulama platformudur. On doğrulama yöntemi, N-adımlı MFA akışı, OAuth 2.0 / OIDC barındırılan giriş ve her web, mobil veya masaüstü uygulamaya eklenebilen doğrulama widget’ı.',
@@ -411,12 +416,18 @@ export default function App() {
               </span>
 
               <h1 className="mt-8 font-display font-bold leading-[1.02] tracking-[-0.04em] text-5xl md:text-7xl lg:text-[5.25rem]">
-                <span className="gradient-text">{text(t.hero.titleA)}</span><br />
-                <span className="text-slate-100/80 font-medium">{text(t.hero.titleB)}</span>
+                <span className="gradient-text">FIVUCSAS</span><br />
+                <span className="block text-3xl md:text-5xl lg:text-6xl text-slate-100/80 font-medium mt-3">
+                  {text(t.hero.subtitle)}
+                </span>
               </h1>
 
               <p className="mt-8 text-lg md:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
                 {text(t.hero.lede)}
+              </p>
+
+              <p className="mt-4 text-sm text-slate-500 max-w-3xl mx-auto">
+                <strong className="text-slate-300">FIVUCSAS</strong> — <strong className="text-slate-300">F</strong>ace and <strong className="text-slate-300">I</strong>dentity <strong className="text-slate-300">V</strong>erification <strong className="text-slate-300">U</strong>sing <strong className="text-slate-300">C</strong>loud-based <strong className="text-slate-300">S</strong>a<strong className="text-slate-300">a</strong>S.
               </p>
 
               <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center">
