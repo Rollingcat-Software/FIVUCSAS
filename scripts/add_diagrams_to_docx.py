@@ -47,7 +47,7 @@ def generate_mermaid_image(mermaid_code, output_path, diagram_name):
             capture_output=True,
             text=True,
             timeout=60,
-            shell=True
+            shell=False
         )
 
         if result.returncode != 0:

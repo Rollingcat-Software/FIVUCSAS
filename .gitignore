@@ -6,6 +6,8 @@
 .env
 .env.local
 .env.*.local
+.env.prod
+.env.gcp
 
 # IDE
 .idea/
@@ -40,9 +42,10 @@ nul
 # Archive and backup folders
 /_backup_before_submodules/
 
-# Claude Code
-.claude/settings.local.json
-.claude/worktrees/
+# Claude metadata
+.claude/
 
-# Widget deploy staging (built artifacts, not source)
-verify-widget/html/
+# Generated verify-widget bundle artifacts (built via npm run build:widget)
+verify-widget/html/assets/*.js
+verify-widget/html/assets/*.js.map
+verify-widget/html/assets/*.css

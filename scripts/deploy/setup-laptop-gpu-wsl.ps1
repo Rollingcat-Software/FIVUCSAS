@@ -189,7 +189,7 @@ Write-Host ""
 Write-Host "3. Configure Cloudflare Tunnel:" -ForegroundColor White
 Write-Host "   cloudflared tunnel login" -ForegroundColor Gray
 Write-Host "   cloudflared tunnel create biometric-api" -ForegroundColor Gray
-Write-Host "   cloudflared tunnel route dns biometric-api bpa-fivucsas.rollingcatsoftware.com" -ForegroundColor Gray
+Write-Host "   cloudflared tunnel route dns biometric-api bio.fivucsas.com" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Start the service:" -ForegroundColor White
 Write-Host "   cd /opt/biometric-processor" -ForegroundColor Gray
@@ -205,5 +205,5 @@ Write-Host "   # Copy the random trycloudflare.com URL and test" -ForegroundColo
 Write-Host ""
 Write-Host "6. Test:" -ForegroundColor White
 Write-Host "   curl http://localhost:8001/api/v1/health" -ForegroundColor Gray
-Write-Host "   curl https://bpa-fivucsas.rollingcatsoftware.com/api/v1/health" -ForegroundColor Gray
+Write-Host "   curl https://bio.fivucsas.com/api/v1/health" -ForegroundColor Gray
 Write-Host ""

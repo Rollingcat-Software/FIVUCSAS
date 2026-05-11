@@ -1,439 +1,630 @@
 # Changelog
 
-All notable changes to the FIVUCSAS project will be documented in this file.
+All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
-## [Unreleased]
+## [2026-05-11] Session — INVESTIGATION P1 residue + ops hygiene + docs DX + paper P0
 
-### 2026-05-07 — Round 3 P0+P1 batch + prod rebuild + doc cleanup
+User asked for a comprehensive professional session roadmap, then approved all 5 actionable tracks ("all of them"). 4 decisions confirmed at recommended defaults (AddressProof/Watchlist stay dev-gated; branch protection with admin bypass; drop `refresh_tokens.token` plaintext now). 7 parallel agents dispatched in isolated `/tmp/T*/` worktrees; main thread shipped runbook + ROADMAP refresh in parallel.
 
-User said "fix all issues, complete all tasks, commit push merge and redeploy rebuild all changes." 6 parallel agents ran (5 fixes + 1 doc cleanup); all merged; **api + bio prod containers rebuilt and verified healthy**.
+**9 PRs merged** across api / bio / docs / spoof-detector / parent:
 
-**Round 3 fixes shipped**:
-- **api #87** (P1) — JWT access TTL 15min in prod (was 1h), OAuth2ClientController admin-only (was role-blind), `/userinfo` scope filter per OIDC §5.4
-- **api #88** (P1) — AddressProofHandler `@Profile("dev")` (mirrors WatchlistCheck pattern), AuditEventPublisher Micrometer counter `audit.publish.failure`, `/2fa/verify*` HTTP 200/false-success → proper 401/400/409
-- **api #89** (P0-#7+#8) — `tenants.max_users` enforced in RegisterUserService + ManageUserService.create (new `TenantUserQuotaExceededException` → 409 with `maxUsers`); `TenantStatus.SUSPENDED` gate in AuthenticateUserService + RefreshAccessTokenService (new `TenantSuspendedException` → 423 with `tenantStatus`)
-- **bio #76** (P0-#9) — anti-replay spot-check counts decode-errors and detector-exceptions as failures (`MAX_FAILED_SPOT_CHECK_FRAMES=2`); 3 corrupt JPEGs no longer yield `failed_count=0`
-- **web #83** (P1) — `BiometricService` underscore-prefix params surfaced (`tenantId`, `maxResults`, `clientEmbeddings` now actually sent in FormData); `formatApiError` unified across 3 backend envelopes (Spring `errorCode`, OAuth2 RFC-6749, MFA-step `status:FAILED`); 22 new tests
-- **parent #41** — 15 stale 2026-04 docs archived to `archive/2026-05/`; 4 cross-refs fixed (CLAUDE.md + ROADMAP)
+- **api #96** `chore(handlers+purge)` — confirmed `@Profile("dev")` on `AddressProofHandler` + `WatchlistCheckHandler` (already in tree from PR #88 / #81 on 2026-05-07); javadoc documenting dev-only contract; **flipped `APP_PURGE_SOFT_DELETE_ENABLED` default-on in `application-prod.yml`** (GDPR Art. 17). +5 tests (`SoftDeletePurgeJobSchedulingTest` + `ProdProfilePurgeDefaultTest`). 1249/1249 pass.
+- **api #97** `feat(nfc): wire bio mrz_parser into NfcController` — new `POST /api/v1/nfc/verify-mrz` endpoint; calls bio's new `/api/v1/nfc/mrz`; document number masked to last-4 chars in audit log + response payload (PII); new `AuditLogPort#logNfcDocumentVerified` method; existing serial-only `/verify` preserved for backward compat. +7 controller tests.
+- **api #98** `feat(db): V59 + V60` — V59 backfills `audit_logs.tenant_id` from `users.tenant_id` JOIN + sentinel `00000000-0000-0000-0000-000000000000` for remaining NULLs (12.6% baseline from SENIOR_DB Appendix C Q3). `AuditLogAdapter.SYSTEM_TENANT_ID` constant; `resolveTenantIdByEmail` so failed auth attempts surface in target tenant's view. V60 `ALTER TABLE refresh_tokens DROP COLUMN IF EXISTS token` (T+7d soak elapsed since PR #71 Persistable<UUID> fix); `RefreshToken.token` demoted to `@Transient` preserving 5 wire-token call sites; 4 derived queries removed. Plus `scripts/db/reset-pg-stat-user-indexes.sh` + `docs/RUNBOOK_UNUSED_INDEX_AUDIT.md` for the 7-day audit window (kick 2026-05-11 → re-check 2026-05-18). +7 tests. 1250/1250 pass.
 
-**Prod rebuild verified**:
-- api image `b670f218` recreated 2026-05-07 07:20 UTC, healthy in 25s. Audit-delta diff `5096e8d..af301f7` showed 15 commits, no new migrations, only `application-prod.yml` JWT TTL change.
-- bio image `a0a763b5` recreated 2026-05-07 07:28 UTC, healthy. Boot-time liveness detector health-check confirmed in startup logs (P0-#4 fix in action). Audit-delta diff `9f0999f..b2e5617` showed 9 commits.
-- All env vars present in `.env.prod` (FIVUCSAS_EMBEDDING_KEY for bio decrypt; WEBAUTHN_ALLOWED_ORIGINS for api). JWT_EXPIRATION not set in env → falls through to new yml default (15min) intentionally.
-- Smoke: `curl https://api.fivucsas.com/actuator/health` → 200 UP.
+- **bio #94** `feat(quality+liveness)` — real occlusion detector (`app/application/services/occlusion_detector.py`, 270 LOC). Eye-region variance ≤120 → sunglasses; mouth-region variance ≤130 → mask/hand; CIE-Lab ΔE ≤18 to distinguish fabric from skin-tone. Score weighting eyes=0.6 / mouth=0.4; critical regions list. Anti-spoof contradiction policy spot-check **confirmed already correct** since 2026-05-08 — `LIVENESS_VERDICT_POLICY=conservative` (default in `core/config.py:146`) unconditionally vetoes on `deepface_spoof_detected`; added 4 regression tests pinning behavior. +15 passing tests (616 → 631).
+- **bio #95** `feat(nfc): expose mrz_parser via /api/v1/nfc/mrz` — FastAPI route wraps existing `mrz_parser.py`; accepts `mrz_text` OR base64-encoded DG1 bytes (forward-compatible for ICAO chip-read); returns structured fields (document_number, issuing_country, dates, checksum_valid + per-field failure list). +10 unit tests covering TD1/TD3, checksum corruption (doc# + DOB), missing/ambiguous inputs, DG1 envelope round-trip, bad-base64.
 
-**This session totals (2026-05-07)**:
-- 26 PRs merged across api/bio/web/parent
-- 8 INVESTIGATION docs at fivucsas root (master + 7 lenses + verify-flow E2E)
-- All 10 P0s shipped (morning 7 + late 3); ~7 P1s shipped; remainder in Tier 0 backlog
-- 15 stale docs archived
-- Prod containers rebuilt and verified
+- **docs #13** `docs: tenant onboarding playbook + 8 ADRs + hierarchy consolidation (T4.12.d/e/f)`:
+  - `01-getting-started/tenant-onboarding.md` (215 lines, DX-first per `feedback_dx_first_planning.md`): leads with `npm install @fivucsas/auth-js` + `loginRedirect` snippet, then OIDC client provisioning, MFA flow customization, RFC 8252 redirect URIs, gotchas (CORS, PKCE, refresh-token family-revoke concurrent-tab trap), prod env vars, monitoring.
+  - `adr/` directory + 8 ADRs (572 lines, MADR shape): hosted-first OIDC / pgvector / MobileFaceNet removal / Facenet512 server-authoritative / RFC 6749 §10.4 family-revoke / V53 BEFORE-DELETE / Persistable<UUID> refresh tokens / spoof-detector standalone.
+  - Hierarchy consolidation: 14 `git mv`s preserving history (`guides/` → `01-getting-started/` + `06-deployment/`; `architecture/` → `02-architecture/`; `testing/` → `05-testing/`); 4 empty dirs removed; 4 broken `IMPLEMENTATION_STATUS_REPORT.md` links fixed; new Runbooks table in `06-deployment/README.md` cross-linking all 9 `/opt/projects/infra/RUNBOOK_*.md` files.
 
-**Remaining backlog** (`INVESTIGATION_MASTER_2026-05-07.md`, ~17 items):
-- Web: AuthSessionRepository contract, RFC 8252 redirect_uri schemes
-- Bio: NFC MRZ wiring (large), occlusion implementation, AddressProof real impl, LoggerService prod wiring
-- API: client_secret rotation endpoint, per-tenant rate-limit, anti-spoof contradiction policy, SoftDeletePurgeJob default-on confirmation
-- All P2/P3 cosmetic + cross-cutting cleanup items
+- **spoof-detector #10** `perf(blink)` — per-frame `FaceLandmarker` cache (3.0× speedup at 3 faces, 4.9× at 5; blink-stage FPS 9.8 → 28.9). EAR threshold recalibration: `0.20 → 0.18`, `REOPEN_THRESHOLD 0.22 → 0.23`, `MIN_OPEN_BETWEEN 6 → 12`. Clean 60s live fixture: 17 bpm (in 15–20 target band, down from previous 38 bpm false rate). +13 tests (126 → 139 green). `ROADMAP.md` P0 items ticked.
 
-### 2026-05-07 — Late: tenant pre-flight gate + verify.fivucsas Round 2 + step components theme audit
+- **parent #48** `chore(branch-protection)` — enabled 1-review + admin-bypass on `main` across FIVUCSAS (+master), identity-core-api, biometric-processor, web-app, client-apps. `enforce_admins=false` (emergency hotfix path), `required_status_checks=null`, conversation-resolution required, force-push + deletion blocked, linear-history not required (master integration pattern preserved). `CICD_AUDIT_2026-05-04.md` extended with new "2026-05-11 — Branch protection enabled" section.
+- **parent #49** `docs(roadmap)` — ROADMAP refresh (3 weeks stale; Phase A/B/C/I closed; active waves reframed to INVESTIGATION 2026-05-07 residue + DOC_AUDIT_2026-05-04 T4.12 + paper push); `b8bc76a` submodule-pointer sync from PR #47 followup; `9214e3c` 2026-05-11 session pointer bumps (api 6b17e0e → 606f1f4, bio 6f69a7d → 750492c, docs ed4dd25 → 78a9b4a, spoof-detector abc7f05 → cc73cf0). Adds spoof-detector to `.gitmodules` on the SEO branch (was extracted on `main` via `a6ac35a`).
 
-After the morning P0 batch merged, user smoke-tested verify.fivucsas (= demo.fivucsas with `client_id=marmara-bys-demo`) and surfaced 4 more bugs. All shipped same session.
+**Operator deliverables (no code, runbook-only)**:
+- `/opt/projects/infra/RUNBOOK_FLYWAY_REPAIR.md` — full procedure for repairing V40/V41/V42/V43/V49/V50 NULL-checksum rows (SENIOR_DB Appendix C Q1) + flipping `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true`. Includes Testcontainers dry-run + rollback. Operator runs when ready.
+- `identity-core-api/scripts/db/reset-pg-stat-user-indexes.sh` + `docs/RUNBOOK_UNUSED_INDEX_AUDIT.md` — kicks off the 7-day unused-index audit window 2026-05-11 → re-check 2026-05-18.
 
-**User-reported bugs**:
-- Password STEP PASSED for ahabgu@gmail.com (gmail) on Marmara hosted-login. Should reject with "not a Marmara member."
-- NFC step shows BOTH success ("NFC belge başarıyla okundu!") AND failure ("Doğrulama yapılamadı") simultaneously.
-- SMS OTP input + resend button render dark-on-light (theme drift between Card paper surface and `background.default`).
-- "Adım N/3" step counter only renders on step 3 of 3.
-- "Login could not be completed" generic error reappears for non-tenant-mismatch paths.
+**Audit-delta before rebuild** per `feedback_audit_delta_before_rebuild.md`:
+- api: deployed image `386fe01e` built 2026-05-08 20:03 UTC (last image-included commit `5add915` per `7ee52de` parent bump). HEAD now `606f1f4`. **15+ commits**: today's 3 PRs + #91 APP_PURGE_SOFT_DELETE_ENABLED wiring + #92 V29 Testcontainers FK fix + #93/#94 README placeholders + #95 traefik noindex labels. **Migrations V59 + V60 will apply on next boot.** application-prod.yml: APP_PURGE_SOFT_DELETE_ENABLED default flipped to true. Safe to rebuild.
+- bio: deployed image `75604e33` built 2026-05-09 11:15 UTC (last image-included commit around `31a2667`). HEAD now `750492c`. **3+ commits**: today's 2 PRs + #79 fast-uri / #75 python-multipart deps + #92 requirements-lock clarification. **No env-var changes.** Safe to rebuild.
 
-**Tenant pre-flight gate (api #86 + web #81)** — Option C from `INVESTIGATION_VERIFY_FLOW_2026-05-07.md`:
-- New `TenantMismatchException` (api), `GlobalExceptionHandler` maps to 403 with `{ errorCode, requiredTenant, ... }`
-- `LoginMfaFlow.tsx` now passes `clientId` to `authRepository.login()`; `AuthRepository.ts` forwards in POST body; `AuthController` already had wiring (line 145)
-- `AuthenticateUserService` tenant-lock fires BEFORE `passwordEncoder.matches` — no MFA reached for wrong-tenant users
-- New i18n keys `errors.TENANT_MISMATCH_INLINE` (en + tr) interpolating `requiredTenant`
-- 9 new tests across both repos
+**Rebuild pending** — operator action. T-FINAL of this session will trigger `docker compose build --no-cache` on both containers; flyway V59/V60 will apply at api boot; bio's new `/api/v1/nfc/mrz` route will register at startup.
 
-**Verify-app round 2 (web #82)** — bundles 4 fixes:
-- NFC contradictory state: `useEffect` clears `scanResult` when `error` truthy + `!error` guard on success Alert
-- 7 OAuth2 backend errors mapped to specific friendly messages (was: all collapsed to `hosted.exchangeFailed`):
-  `unknown_mfa_session`, `mfa_session_expired`, `mfa_not_completed`, `mfa_already_consumed`, `client_id_mismatch`, `pkce_missing`, `redirect_uri_mismatch`
-- RFC 6749 §4.1.2.1 state echo on error paths: redirects back to `redirect_uri?error=...&state=...` after 4s display delay (instead of stranding on verify.fivucsas)
-- LoginMfaFlow step counter now renders from step 1 onward (was: only step 3)
+**Followup queue** (not in this session):
+- bio main has **79 pre-existing failing unit tests + 3 errors** at baseline (separate from today's PRs — agent ab901dec confirmed). Causes flagged: missing `memory_embedding_repository`, missing `NoFaceDetectedError`, `Landmark.name` attr drift. Dedicated investigation needed.
+- `biometric-processor/README.md` still has broken `docs/4-testing/` + `docs/5-performance/` links into its OWN docs tree (different convention from the docs-submodule). Out of scope for PR #13.
+- master/main reconciliation — both branches diverged this session (master gained PR #49's commits; main has spoof-detector restructure). Reconciliation merge deferred to next round.
 
-**Step components theme audit (web #80)** — 8 step components touched:
-- 3 `background.default` → `background.paper` swaps (SmsOtpStep)
-- 6 hardcoded grayscale literals replaced with theme tokens (PasswordStep, EmailOtpStep, EmailOtpMfaStep, TotpStep, QrCodeStep, FaceCaptureStep)
-- Disabled-Button bg fix (resend button transparent)
-- MultiStepAuthFlow step counter relocated to top (in-app re-auth surface, separate from verify-app)
+## [2026-05-11] SEO round 4 — brand disambiguation (FIVUCSAS vs "fivics" autocorrect)
 
-**Investigation docs added**:
-- `INVESTIGATION_VERIFY_FLOW_2026-05-07.md` — E2E walkthrough, 22 findings (5 NEW + 17 P1/P2/P3) cross-referenced against MASTER
+Single-session sweep across landing, app, api, docs, status, and developer-facing surfaces to push Google + Bing past the "Did you mean fivics?" autocorrect. The brand token "fivucsas" had been silently rewritten to the archery brand "fivics" in SERPs; the fix is layered on-page + off-page brand signals.
 
-**Operator follow-up**:
-- api container rebuild — must include #82, #84, #85, #86 (tenant gate critical)
-- bio rebuild — already flagged, includes #73, #74
-- Hostinger auto-deploy of web (#80, #81, #82) within minutes
+### `landing-website/` (fivucsas.com)
+- `index.html` — meta description trimmed from 184 → 155 chars (Bing/Google sweet spot 150-160) with the full acronym expansion at the front. Same trim applied to `og:description` and `twitter:description` for consistency.
+- `index.html` — **static `<h1>` added in `<body>` (outside `#root`)** with the acronym expansion. Visually-hidden via the `sr-only` inline-style pattern so sighted users still see the animated React hero, but JS-less crawlers (Bingbot, social-card scrapers) see the H1 in the initial HTML response. Resolves Bing Webmaster Tools "H1 tag missing" finding.
+- `public/sitemap.xml` — added `https://docs.fivucsas.com/` entry; 8 URLs total.
 
-### 2026-05-07 — User bug-fix round + 6-lens investigation + 10 P0 fixes (this session)
+### `infra/traefik/config/dynamic.yml`
+- **Dedicated `noindex@file` middleware** split out of `secure-headers`. Before today, the `X-Robots-Tag: noindex, nofollow, noarchive` header lived inside `secure-headers.customResponseHeaders`, which is attached to most routers — so `docs.fivucsas.com` (brand-positive API docs) and `status.fivucsas.com` (Uptime Kuma transparency page) were getting noindex'd as collateral. `secure-headers` is now neutral on indexing; `noindex@file` is attached only to `fivucsas-api-admin` (swagger/actuator admin path router) and the docker-label `identity-api` router (public OAuth/auth/API).
+- **Empty-string `customResponseHeaders` are silently dropped by Traefik** — the stub `X-Robots-Tag: ""` that had been sitting in `secure-headers` since IN-H2 (2026-04-19) never actually shipped a noindex signal to Googlebot until now.
+- **Bonus: 24-day-old router-precedence bug fixed.** A Traefik restart (required because Edit-tool atomic-rename changes the bind-mount inode) corrected which router wins for `Host(api.fivucsas.com) && PathPrefix(/swagger-ui|/v3/api-docs|/actuator)`. The file-provider admin-whitelist router (defined in IN-H2 2026-04-19) had been silently losing to the docker-label `identity-api` router — so `/swagger-ui` and `/actuator/**` had been publicly reachable in violation of the IN-H2 design intent for almost a month. Post-restart they are correctly IP-gated.
 
-User reported 2 verify.fivucsas.com bugs (tenant-mismatch error UX + face-model loading UX) and asked for an architectural look at face login. Then asked for a comprehensive investigation into mocks/fakes/incomplete pipelines/wire contracts/constraints/fail-open patterns.
+### `identity-core-api/`
+- `docker-compose.prod.yml` — `identity-api` Traefik router middlewares chain updated: `secure-headers@file,rate-limit@file` → `secure-headers@file,noindex@file,rate-limit@file`. Picks up the new dedicated noindex middleware. Required container `--force-recreate` to load the new label.
+- `README.md` H1 — brand anchor refreshed: leads with `FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS`.
+- `README.md` lines 513/514/530 — example JWT-shaped strings (`"accessToken": "eyJ..."`, `"refreshToken": "eyJ..."`, `Authorization: Bearer eyJ...`) replaced with explicit `<JWT_ACCESS_TOKEN>` / `<JWT_REFRESH_TOKEN>` placeholders. Three pre-existing gitleaks `generic-api-key` + `curl-auth-header` findings cleared.
 
-**Morning user-bug fixes (4 PRs)**:
-- web #75 — SMS OTP dark-mode contrast (USER-BUG-3)
-- web #76 — Settings device-registration wording (USER-BUG-6)
-- web #77 — F8 vitest e2e test relocation
-- web #78 — Hosted-login tenant-mismatch error UX (NEW: `hosted.tenantMismatch` i18n key, frontend now maps backend's `invalid_request` + tenant detail to specific message instead of generic retry)
-- web #79 — Face-model loading UX (`mfa.face.modelLoading` + `modelLoadFailed` i18n keys, gates quality chips on `initialized`, disables Capture during model load)
-- api #75 — Face-search tenant scope derived from authenticated principal (closes cross-tenant gap; backfilled 7 NULL-tenant face_embeddings rows)
-- api #79 — YAML duplicate-key smoke test (would have prevented PR #62 emergency hotfix)
-- api #80 — F6 `SecurityConfigPermitAllPinTest` + `AnonymousEndpointsSecurityIntegrationTest` (catches permitAll regressions in CI without bulk `addFilters=false` removals)
-- bio #70 — All bio CI jobs to ubuntu-latest (closes 27-day-dead bio CI)
-- bio #72 — Face-search detect-then-crop preprocessing fix
-- parent #38 — `deploy-landing.yml` rewritten on ubuntu-latest
+### Submodule README brand-anchor refreshes
+Each submodule's top-level README H1 now leads with the full acronym expansion so it surfaces in GitHub's repo card and is indexed by GitHub-code search:
+- `biometric-processor/` — README.md H1 + repo description + topic `fivucsas`
+- `web-app/` — README.md H1 + repo description + topic `fivucsas`
+- `client-apps/` — README.md H1 + repo description + topic `fivucsas`
+- `identity-core-api/` — repo description + topic
+- `docs/` — repo description + topic
+- `practice-and-test/` — repo description + topic
+- `spoof-detector/` — repo description + topic
 
-**6-lens investigation (2026-05-07 06:00 UTC)**:
-- `INVESTIGATION_MASTER_2026-05-07.md` (synthesis) + 6 sibling docs:
-  - `INVESTIGATION_MOCKS_2026-05-07.md` — 30 findings (2 P0 + 1 latent P0, 6 P1)
-  - `INVESTIGATION_USER_CONSTRAINTS_2026-05-07.md` — user-facing limit gaps
-  - `INVESTIGATION_DEV_CONSTRAINTS_2026-05-07.md` — tenant/integrator-facing limit gaps
-  - `INVESTIGATION_PIPELINES_2026-05-07.md` — production-claimed feature E2E verification
-  - `INVESTIGATION_WIRES_2026-05-07.md` — frontend↔backend payload diff
-  - `INVESTIGATION_FAILOPEN_2026-05-07.md` — silent-success / fail-open hunter
+### `web-app/` (app.fivucsas.com)
+- `public/sitemap.xml` — was missing `/widget-auth` (9 routes → 10) and had no `<lastmod>` entries. Rewritten with all 10 public routes from the robots.txt Allow set plus `<lastmod>2026-05-11</lastmod>` and per-route priorities. Deployed direct via SCP to Hostinger.
 
-**10 P0 fixes shipped (Round 1)**:
-- api #81 — `WatchlistCheckHandler` profile-gated to `dev` (was hardcoding `cleared=true` in prod, breaking KYC/AML claim) — P0-#3
-- api #82 — `AccountLockedException` now thrown with `remainingLockTimeSeconds`; new 423 contract; activates dead frontend i18n keys — P0-#5
-- api #83 — Face confidence 0.7 hardcoded fallback removed from both `FaceAuthHandler` + `AuthController`; trust bio processor's `verified` field — P0-#10
-- api #84 — Legacy `/2fa/verify-method` now validates WebAuthn assertion (was accepting any non-empty string for FINGERPRINT/HARDWARE_KEY — full 2FA bypass with audit log recording "success") — P0-#1
-- api #85 — OTP per-code attempt counter (5 strikes then invalidate) + Flyway V58 — P0-#6 (NIST 800-63B)
-- bio #73 — Embedding repositories now read encrypted ciphertext column with Fernet decrypt (was theater — ciphertext written, plaintext column read, `decrypt_vector` never called) — P0-#2
-- bio #74 — `live_camera_analysis.py` fail-closed when liveness detector unavailable + boot health-check (was returning `is_live=True` on missing detector) — P0-#4
+### Uptime Kuma (`status.fivucsas.com`)
+- Monitor #3 ("Identity API") was hitting `https://api.fivucsas.com/actuator/health` externally; the IN-H2 router-precedence fix (above) means that endpoint now returns 403 to non-admin IPs. Monitor URL repointed to the docker-internal route `http://identity-core-api:8080/actuator/health` (uptime-kuma is on the `proxy` network with identity-core-api). Container restart loaded the new URL from the DB. Heartbeat went 0 (DOWN) → 1 (UP, 249 ms) at 05:02 UTC.
 
-**Investigation-flagged P0s deferred** (need explicit approval or product decision):
-- P0-#7 — `tenants.max_users` field exists default 100, never enforced — needs default cap policy
-- P0-#8 — `TenantStatus.SUSPENDED` not gated in auth path — implementation queued
-- P0-#9 — Anti-replay spot-check defeated by corrupt frames (`continue` doesn't count as failure)
+### Off-page brand signals
+- 8 GitHub repo descriptions (FIVUCSAS + all submodules) refreshed with the full acronym expansion + `homepage=https://fivucsas.com` + `fivucsas` topic.
+- Portfolio site (`ahmetabdullah.gultek.in`) FIVUCSAS project card strengthened: tagline + summary (EN + TR) now lead with the full acronym expansion; `stack` chips include `Biometric Authentication`, `OAuth 2.0`, `OIDC`, `Multi-tenant SaaS`; meta keywords updated. Card link points at `https://fivucsas.com` (not GitHub) so link juice goes to the brand domain.
+- GitHub profile README (`github.com/ahmetabdullahgultekin/ahmetabdullahgultekin`) FIVUCSAS entry now `### [FIVUCSAS](https://fivucsas.com)` with the full acronym expansion as the tagline (previously: text-only heading + shortened "Face & Identity Verification Platform" tagline).
 
-**Deploy state**: All web fixes auto-deploy to Hostinger within minutes (PR #75-#79). **api + bio container rebuilds PENDING** on Hetzner (`feedback_audit_delta_before_rebuild.md` rule — operator must diff `<deployed-sha>..HEAD` before `docker compose build --no-cache`). The `/2fa` bypass fix (api #84) and the embedding decrypt fix (bio #73) are critical and should be the next rebuild.
+### CI / deploy infra
+- `.github/workflows/deploy-landing.yml` — switched from `runs-on: [self-hosted, linux, x64]` to `runs-on: ubuntu-latest`. The Hetzner self-hosted runner had a stuck broker WebSocket session that wouldn't dispatch new jobs (returned `TaskAgentSessionConflictException` on re-register). The ubuntu-latest runner uses the same `HOSTINGER_SSH_KEY` repo secret and finishes deploy in ~30 s vs 8+ minute queue waits. Permanent improvement — landing-site deploys are now decoupled from Hetzner runner health.
+- `workflow_dispatch` trigger added to deploy-landing.yml so manual re-deploys can be fired from the GitHub Actions UI without a code change.
 
-### 2026-05-04 — Afternoon user-test bug round (USER-BUG-1..6)
+### Operator actions completed (out-of-band)
+- DNS A record `bio.fivucsas.com` deleted (was returning 404 — dangling brand surface).
+- Google Search Console: domain property added, sitemap `https://fivucsas.com/sitemap.xml` submitted, "Request indexing" fired on root. 7 pages discovered; the +1 for `docs.fivucsas.com` will be picked up on next crawl.
+- Bing Webmaster Tools: site added, URL Inspection → Request indexing fired. Two flagged issues — "Meta Description too long or too short" + "H1 tag missing" — both addressed in this release.
 
-User testing surfaced 6 issues. **USER-BUG-2 (guest invitation jsonb) closed and DEPLOYED in-session.** Other 5 in flight via parallel agents.
+### PRs merged this round (16)
+- Parent FIVUCSAS: #42, #43, #44, #45, #46
+- `web-app`: #88, #89
+- `identity-core-api`: #93, #94, #95
+- `biometric-processor`: #93
+- `client-apps`: #37
+- `ahmetabdullah.gultek.in` (portfolio): #2, #3, #4
+- Direct push: `ahmetabdullahgultekin/ahmetabdullahgultekin` profile README
 
-- **USER-BUG-2 — `POST /api/v1/guests/invite` returned 500.** Prod api logs at 2026-05-04 12:29:50 UTC: `ERROR: column "metadata" is of type jsonb but expression is of type character varying`. Root cause: `GuestInvitation.metadata` had `@Column(columnDefinition="jsonb")` but no `@JdbcTypeCode(SqlTypes.JSON)` — Hibernate bound the String as `varchar` at runtime; PostgreSQL rejected the implicit varchar→jsonb cast. **Closed by api PR #74 (squash `5096e8d`)**; api container rebuilt + recreated 2026-05-04 12:39 UTC with image `0fd02c48`. New regression test `GuestInvitationJsonbBindingTest` (2 cases) guards the contract.
-- **USER-BUG-1 (META — documentation audit)** — research what a professional SaaS platform should document, audit current state, recommend reorganization. T-DOC-AUDIT in flight.
-- **USER-BUG-3 — SMS step has black/wrong colors for code label and resend button in dark mode.** `SmsOtpStep.tsx` lines 102-131 + 167-199 missing theme-aware overrides. T-WEB-USERBUGS in flight.
-- **USER-BUG-4 — Biometric Tools → Face Search returns "Eşleşme Bulunamadı" for a face that successfully logs in via face-verify.** Likely tenant-scope mismatch in the search endpoint, OR a stricter threshold than verify, OR an image-encoding mismatch. T-FACE-SEARCH in flight.
-- **USER-BUG-5 — Auth Methods Testing page mostly broken.** Most stubbed cards fail. T-WEB-USERBUGS in flight.
-- **USER-BUG-6 — Settings page "Two-Factor Authentication" section is misleading** — header says "Required by your organization" but shows device-registration buttons. T-WEB-USERBUGS in flight (rename + reword + i18n).
+### Not in this round
+- iOS/macOS scope (permanent — no Apple hardware).
+- `verify.fivucsas.com` HTML metadata — already `<meta robots="noindex, nofollow">` (deliberate; auth surface, never a SERP destination).
+- LinkedIn brand-anchor post (user does not post on social media).
 
-### 2026-05-04 — Late-day: P0 prod fix DEPLOYED + senior reviewers + Copilot follow-ups
+## [2026-04-22] SEO upgrades — landing + bys-demo + app + verify-adjacent (round 3)
 
-#### P0-PROD refresh-token fix (DEPLOYED 12:01 UTC)
+Per user feedback: comprehensive SEO hardening across the public surfaces.
+All additive; no behavioural / feature changes.
 
-User reported failing MFA logins. Audit-log forensics on `identity_core.audit_logs`
-for `ahabgu@gmail.com` 2026-05-04 06:34–06:38 UTC: 6 consecutive `MFA_STEP_FAILED`
-rows, every method (FINGERPRINT/FACE/SMS_OTP/EMAIL_OTP) hitting
-`orchestration-error: ObjectOptimisticLockingFailureException` from
-`RefreshTokenService.createRefreshTokenInFamily:91`. Root cause: PR #56 (2026-05-02)
-introduced wire format `<id>.<secret>` and pre-assigned `RefreshToken.id` via
-`builder().id(UUID.randomUUID())`. With `@GeneratedValue(strategy = GenerationType.UUID)`
-plus a pre-set id, Spring Data's default `isNew()` (id-is-null heuristic) returned
-`false` → `SimpleJpaRepository.save()` routed to `merge()` → Hibernate detached-merge
-path → `StaleObjectStateException`. Every refresh-token mint after MFA completion
-silently failed. Bug active in prod since the 2026-05-02 17:50 UTC rebuild.
+### `landing-website/` (fivucsas.com)
+- `index.html` — upgraded `<meta name="robots">` to include
+  `max-image-preview:large, max-snippet:-1, max-video-preview:-1`;
+  added explicit `googlebot` + `referrer` directives.
+- Canonical URL normalised with trailing slash; added hreflang
+  alternates (`x-default` + `en` + `tr`).
 
-- **api PR #71 (P0-PROD)** `fix/refresh-token-persistable-isnew` (squash `a77c844`) —
-  `RefreshToken implements Persistable<UUID>` with explicit transient `newEntity`
-  flag (defaults true; `@PostLoad`/`@PostPersist` flips to false). `@GeneratedValue`
-  removed (manual id assignment). New `RefreshTokenPersistableTest` (3 cases) +
-  full 13/13 `RefreshToken*Test` pass.
-- **api container REBUILT + RECREATED 12:01 UTC** with image `e9a33cef`. Boot
-  clean (V57 fail-soft warned and continued — pg_partman extension absent), 23.5s
-  start time, healthy. Smoke test: `/actuator/health` UP, login endpoint returns
-  structured 401 on bad credentials (pre-bug shape). No new orchestration errors
-  in audit_logs since rebuild.
+### `bys-demo/` (demo.fivucsas.com)
+- `index.html` — **flipped from `noindex, nofollow` → `index, follow`**.
+  Per user review, the BYS integration demo is a legitimate public
+  showcase of FIVUCSAS's OIDC flow and deserves SEO visibility.
+  - Title reframed to lead with FIVUCSAS (not Marmara) to avoid
+    confusing Google into thinking this is Marmara's real portal:
+    `FIVUCSAS Biyometrik Kimlik Doğrulama — Üniversite BYS Entegrasyon Demosu`.
+  - Added author + referrer + JSON-LD `WebPage` positioning this
+    explicitly as a demo page whose `about` is the FIVUCSAS
+    `SoftwareApplication`.
+  - OG / Twitter tags updated to English alternate locale + 1200×630
+    image dimensions + explicit "demo" framing.
+- `robots.txt` — sitemap pointer added.
+- `sitemap.xml` *(new)* — single URL for the demo home.
 
-#### Senior-reviewer Copilot follow-ups (T-COPILOT-DEEP)
+### `web-app/` submodule bump: `70a4c06 → 12c5cbc`
+Pulls in PRs #26 (post-review nit fixes on verify-app)
+and #27 (make app.fivucsas.com indexable — platform-wide
+sign-in surface).
+- `index.html` rewritten in English primary with `robots: index, follow`,
+  JSON-LD Organization + WebPage, canonical.
+- `public/robots.txt` — `Disallow: /` → `Allow: /` with explicit
+  `Disallow` for every authenticated dashboard path.
+- `public/sitemap.xml` *(new)* — 9 public URLs (home, login, register,
+  forgot/reset password, terms, privacy, widget-demo, developer-portal).
+- `public/.htaccess` — per-route `X-Robots-Tag: noindex, nofollow`
+  added for authenticated SPA paths (defense-in-depth over robots.txt,
+  per Copilot #27 review).
+- LoginMfaFlow Card: DRY'd duplicated boxShadow (PR #25 Copilot nit).
+- CHANGELOG: step-component count 10→11 (PR #25/#31 Copilot nits).
 
-- **api PR #73** `chore/copilot-deep-followups-2026-05-04` (squash `1c9e9be`) —
-  Copilot post-merge findings on PRs #65/#66/#67/#70:
-  - `OAuth2Service.getUserInfo` `OAuth2Exception` now passes explicit `invalid_token`
-    errorCode (RFC 6750 §3.1; was getting default `invalid_client`).
-  - `SoftDeletePurgeJob` now calls `userRepository.hardDeleteById(...)` (new native
-    query escape hatch) — the V53 trigger + PR #70 `@SQLDelete` on User would
-    otherwise loop forever rediscovering already-soft-deleted rows.
-  - `WebAuthnCredentialService.deleteByCredentialId` now revokes the matching
-    enrollment when last credential of a transport class disappears (mirrors
-    `deleteById` semantics).
-  - `Locale.ROOT` added to `.toLowerCase()` enrollment-URL builders (Turkish
-    dotted-i defensive — the user's tenant is Turkish-locale).
-  - + archunit baseline updated.
-- **web PR #73** `chore/copilot-deep-followups-2026-05-04` (squash `e47d464`) —
-  web-side Copilot post-merge findings on PRs #67/#69/#70.
+### Not in this round
+- `verify.fivucsas.com` SDK untouched — SRI hashes on `bys-demo` +
+  every external integrator stay valid.
+- No backend or identity-core-api / biometric-processor change.
 
-#### Senior UI/UX P1 batch (T-UIUX-P1)
+## [2026-04-22] UI refresh — verify.fivucsas.com (Scope B)
 
-- **web PR #72** `feat/uiux-p1-batch-2026-05-04` (squash `bfb31c7`) — 3 P1 items
-  from `SENIOR_UIUX_REVIEW_2026-05-04.md`:
-  - **P1-1** `verify.fivucsas.com` cold-load now renders `IntegratorLandingCard`
-    with `loginRedirect({...})` snippet + link to `/developer-portal`. No more red
-    "Missing parameters" error on the most-typed integrator URL.
-  - **P1-2** 11 hardcoded English `aria-label` strings localized via `t()` (TopBar,
-    AppShell, App.tsx, EnrollmentsListPage, RegisterPage, UserDetailsPage,
-    UsersListPage). 23 EN + 23 TR keys added.
-  - **P1-4** Sidebar "My Profile" → "My Identity & Biometrics" / "Kimliğim ve
-    Biyometriklerim" — clearer mental model.
-  - **P0-1** developer-portal/widget-demo public access — verified already shipped
-    at HEAD (`App.tsx:223-226` inside `<PublicLayout>`).
-  - **P1-3** sidebar dev-tools collapse — deferred (M-effort, queued).
-- Hostinger auto-deploy SUCCESS — live at app.fivucsas.com + verify.fivucsas.com.
+Follow-up to Scope A. Polishes the hosted login surface
+(`verify.fivucsas.com/login`) and the iframe widget
+(`verify.fivucsas.com/?session_id=…`).
 
-#### CI/CD audit (T-CICD-AUDIT)
+**Zero functional change.** Preserves every OAuth handler,
+postMessage event shape, frame-bust effect, `assertSafeRedirectScheme`
+guard, step component, SDK byte, CSP header, and Permissions-Policy
+delegation. The `fivucsas-auth.js` SDK is **not rebuilt** — SHA-384 on
+live matches the staged copy, so `bys-demo`'s SRI hash and every
+external integrator's `integrity="sha384-…"` attribute remain valid.
 
-- **`CICD_AUDIT_2026-05-04.md`** (commit `ac0b78d`, 521 lines) — first principled
-  audit of every workflow across all 5 repos. Top P0 findings:
-  - bio CI hasn't passed since 2026-04-07 (27 days). 82/100 cancelled, 2/100
-    success. All 5 jobs pinned to self-hosted runner that doesn't pull them.
-  - api Testcontainers integration job never executes on `main` (cancellation
-    after 5h38m queue, 0 successes in last 30 runs).
-  - Branch protection OFF on all 5 repos including api/bio/web shipping to prod.
-  - Recommendation: move api integration-tests + all 5 bio CI jobs to
-    `ubuntu-latest`. Keep deploy jobs on self-hosted (need Docker socket).
-- Plus the `deploy-landing.yml` 5-week stale-deploy theatre — same self-hosted
-  runner cause, trivially fixable by switching to ubuntu-latest + rsync.
+### Changed
 
-#### Doc sweep (T-DOC-SWEEP)
+- `web-app/` submodule bump: `a4c0053 → 70a4c06`. Pulls in
+  [Rollingcat-Software/web-app#25](https://github.com/Rollingcat-Software/web-app/pull/25):
+  - `src/verify-app/HostedLoginApp.tsx` — `HostedFrame` rebuilt:
+    ambient radial gradient canvas (light + dark aware), gradient
+    brand-mark above the card, "Secured by FIVUCSAS" pill with
+    `VerifiedUserOutlined` icon, Poppins display title,
+    `verify.fivucsas.com` microcopy footer. All `parseHostedParams`,
+    `resolveLocale`, frame-bust effect, tenant meta fetch with
+    AbortController + 10s timeout, `handleLoginComplete`
+    (`/oauth2/authorize/complete` call), and `handleCancel` preserved.
+  - `src/verify-app/VerifyApp.tsx` — iframe body wrapper tokens tuned;
+    transparent background preserved so parent page styling still
+    bleeds through the widget. Every postMessage emission
+    (`sendReady`, `sendStepChange`, `sendComplete`, `sendCancel`,
+    `sendError`, `onParentMessage`, `setParentOrigin`) and every
+    handler preserved.
+  - `src/verify-app/LoginMfaFlow.tsx` — Card chrome softened
+    (mode-aware elevation, 20 px radius), header uses Poppins display
+    font with tighter letter-spacing, cancel button with compact close
+    icon. Phase state machine + every one of the 11 step components
+    (`PasswordStep`, `MethodPickerStep`, `TotpStep`, `SmsOtpStep`,
+    `EmailOtpMfaStep`, `FaceCaptureStep`, `VoiceStep`,
+    `FingerprintStep`, `QrCodeStep`, `HardwareKeyStep`, `NfcStep`)
+    untouched.
 
-- api PR #72 (squash `eaf8111`) — CLAUDE.md V57 + 2026-05-04 highlights, CHANGELOG.
-- web PR #71 (squash `120c35b`) — CLAUDE.md decomposition pattern, CHANGELOG, TODO.
-- bio PR #69 (squash `d91760a`) — CLAUDE.md alembic-in-runtime note.
-- Parent commit `28f2b33` — `ROADMAP_OPTIMIZED_2026-05-04.md` supersedes 05-02
-  (kept for history). Open-items count: ~24 across Tier 1–5.
+- `verify-widget/html/index.html` — regenerated by `sync-assets.sh`
+  to point at the new verify-app bundle
+  (`/assets/index-DGYB7Ly1.js`, `mui-vendor-DkSS5YNQ.js`,
+  `react-vendor-BkVLglrX.js`). This is the tracked entry for the
+  Docker image; asset chunks themselves remain gitignored.
 
-#### Final parent submodule pointer state (HEAD = this commit)
-- identity-core-api → `1c9e9be` (PR #73 Copilot follow-ups, deployed image is
-  `a77c844` PR #71; rebuild for #73 deferred — purge-job + WebAuthn polish are
-  not user-visible blockers).
-- web-app → `e47d464` (PR #73 Copilot follow-ups, auto-deployed to Hostinger).
-- biometric-processor → `d91760a` (PR #69 docs).
+### Deploy (followed the required 3-step sync)
 
-### 2026-05-04 — Two-wave quality + hygiene sweep + senior reviews
+1. `cd web-app && npm run build:verify` — clean, produced `dist-verify/`
+2. `cd ../verify-widget && ./sync-assets.sh` — staged 43 files into
+   `verify-widget/html/`. SDK files (`fivucsas-auth.js`, `.esm.js`,
+   `.map`) kept their 2026-04-18 mtimes (untouched).
+3. `docker compose -f docker-compose.prod.yml up -d --build verify-widget`
+   — nginx image rebuilt, container is healthy.
 
-Multi-team parallel sweep of the open Tier-3 / Tier-4 backlog from `ROADMAP_OPTIMIZED_2026-05-02.md`, plus two new senior reviews (DB engineer, UI/UX designer). Total: 11 PRs landed across 3 repos, 2 review docs, 3 agents quota-truncated and salvaged into hand-shipped PRs.
+**Live verification:**
+- `https://verify.fivucsas.com/` + `/login` → 200
+- `sha384sum` on live `/fivucsas-auth.js` matches local staged copy —
+  SRI hashes in `bys-demo/index.html` + `callback.html` still valid
+- 56 / 56 verify-app Vitest tests green, 608 / 608 full suite green
 
-#### Wave 2 (api)
-- **PR #66** `fix/devicecontroller-webauthn-service-boundary` (squash `e986609`) — `DeviceController` + 5 other call-sites (`HardwareKeyAuthHandler`, `FingerprintAuthHandler`, `WebAuthnVerifySupport`) now route credential writes through `WebAuthnCredentialService.{saveCredential,updateSignCount}`. New ArchUnit `WebAuthnRepoWriteBoundaryTest` blocks future regressions. (T-SEC-TAIL §T4.4)
-- **PR #67** `chore/security-userinfo-typecheck` (squash `2b49bd5`) — `/oauth2/userinfo` now requires `type=oauth2` claim, rejects ID-token replay. (SECURITY_REVIEW_2026-05-01 deferred)
-- **PR #68** `feat/audit-log-pg-partman-migration` (squash `d95425c`) — V57 `pg_partman` migration with monthly partitions, premake=12, retention 24 months, fail-soft when extension missing. New `V56__noop_reserved_for_refresh_token_plaintext_drop.sql` placeholder for chain contiguity (caught by `MigrationChainContiguityTest`). Testcontainers IT against postgres:16-alpine. Operator runbook at `/opt/projects/infra/RUNBOOK_AUDIT_LOG_PARTMAN.md`. (T-ARCH §T4.6)
-- **PR #65** `fix/login-edge-cases-2026-05-04` (T-LOGIN-EDGE; rebase-merged after 3-way collision with #66/#67/#68 — archunit baseline union resolved manually) — login edge-case items #1, #3, #4, #5, #6, #9 from 2026-04-24 audit:
-  - #1/#6 `ExecuteAuthSessionService.startSession` runs the same pre-flight enrollment check `AuthenticateUserService` already had.
-  - #3/#9 new `DELETE /api/v1/auth/sessions/{sessionId}` (idempotent 204/404, authn required).
-  - #4 `METHOD_ALREADY_USED` → 409 (was 400).
-  - #5 error responses now carry `currentStep`, `totalSteps`, `expectedMethod(s)`, `completedMethods`, `nextAction`.
-  - 1130 tests / 0 failures.
-- **PR #69** `chore/test-f15-deterministic-clock` (T-TEST-INFRA salvage) — F15 only: `JwtServiceTest` `Thread.sleep(10)` and `Thread.sleep(1100)` replaced with negative-expiration mint + `jti` uniqueness assert. ~1.1s reclaimed. F6 / F8 / YAML smoke deferred to next quota window.
-- **PR #70** `fix/user-soft-delete-jpa-restriction` (T-DB-P0 hand-shipped) — `User` entity now has `@SQLDelete` (mirrors `softDelete()` domain method) + `@SQLRestriction("deleted_at IS NULL")`. V53 BEFORE-DELETE trigger no longer surfaces as 5xx on `userRepository.delete()`. All 9 `findBy*` methods auto-filter the GDPR retention window. `findPurgeCandidates` switched to `nativeQuery=true` so `SoftDeletePurgeJob` can still see deleted rows. New `UserSoftDeleteAnnotationsTest` mirrors the existing `TenantSoftDeleteAnnotationsTest` guard. (Closes SENIOR_DB_REVIEW §P0-2 + §P0-3.)
+## [2026-04-22] UI refresh — landing, web-app shell, BYS demo (Scope A)
 
-#### Wave 2 (web)
-- **PR #68** `chore/lint-ratchet` (squash `386b904`) — `--max-warnings` ratchet from 90 → 2. (T-QUALITY P1-Q10)
-- **PR #69** `refactor/enrollment-page-decomposition` (squash `35c116c`) — `EnrollmentPage.tsx` decomposed by biometric method. (T-QUALITY P1-Q7)
-- **PR #70** `chore/nfc-step-clear-timeout-copilot` — `NfcStep.tsx:96` 30s scan timeout now cleared in both `reading` and `readingerror` handlers (Copilot post-merge nit on PR #67).
+Zero functional change across the whole refresh. Every route, handler,
+OAuth flow, postMessage event shape, widget integration call, `data-testid`,
+and i18n key preserved. All 608 Vitest tests green in `web-app`.
 
-#### Senior reviews (read-only deliverables)
-- **`SENIOR_UIUX_REVIEW_2026-05-04.md`** (commit `044d537`, 463 lines) — verify.fivucsas + app.fivucsas review. Findings: 1 P0 (developer-portal + widget-demo gated behind admin auth — self-serve gap), 4 P1 (cold-load error on verify.fivucsas without OAuth params, 11 hardcoded English aria-labels, ...), 20 P2, 11 P3. All agent-actionable.
-- **`SENIOR_DB_REVIEW_2026-05-04.md`** (commit `b5291f2`) — schema + indexes + relations + views + migration history. 3 P0s found:
-  - V57 chain contiguity (closed pre-emptively by T-ARCH's V56 placeholder)
-  - User entity @SQLDelete missing (closed by PR #70)
-  - 9 UserRepository findBy* missing deletedAt filter (closed by PR #70)
-  - Plus Appendix C: 7 prod queries the operator must run from Hetzner SSH.
+### `landing-website/` (fivucsas.com)
+- Full rewrite of `src/App.tsx`, `src/index.css`, `tailwind.config.js`,
+  and `index.html`. New palette (violet primary, cyan secondary on dark
+  canvas), Space Grotesk display + Inter body + JetBrains Mono accents,
+  custom inline SVG icon system, working EN / TR toggle with localStorage
+  + `navigator.language` first-load detection.
+- New sections: 10 auth-methods grid with custom icon glyphs,
+  architecture stack visual (Clients → Traefik → Services → Storage),
+  trust-signals row (RS256 default, AES-GCM-256, KVKK / GDPR, partitioned
+  audit logs, Retry-After MFA rate-limits), hosted-first CLI mock, refined
+  team + microservices + tech-stack sections.
+- All JSON-LD Organization / WebSite / SoftwareApplication blocks,
+  robots.txt, sitemap.xml, og-image.png, pgp.asc, favicon.svg preserved.
+- `.htaccess` (SPA fallback + security headers + caching) unchanged.
 
-#### Agent quota truncation (10am UTC reset)
-T-LOGIN-EDGE, T-TEST-INFRA, T-DB-P0 hit limit mid-run. Salvage pattern: T-LOGIN-EDGE's PR #65 was already drafted on GitHub (just needed a rebase + manual archunit union resolution); T-TEST-INFRA had a clean F15 diff in the working tree that was committed and shipped as #69 (renamed branch); T-DB-P0 left an empty worktree, so the P0-2 + P0-3 fix was hand-written and shipped as #70.
+### `bys-demo/` (demo.fivucsas.com)
+- `styles.css` rewritten with refined tokens (Marmara crimson identity
+  retained, modern typography scale, red accent stripes on cards, premium
+  FIVUCSAS gradient CTA with shimmer sweep). Polished tables, schedule
+  items, GPA grid, callback loading + success + error states.
+- **Zero HTML or JS edits** on `index.html`, `dashboard.html`,
+  `callback.html`: every `<script>` tag, CSP meta, SRI integrity hash,
+  `FIVUCSAS_CONFIG` literal, `loginRedirect()`, `handleRedirectCallback()`,
+  `sessionStorage` read / write, and every DOM id preserved byte-for-byte.
 
-#### CI/CD posture
-- web-app: 4-of-4 GREEN on every PR; auto-deployed to Hostinger.
-- identity-core-api: Maven test (unit) + scan + GitGuardian GREEN on every PR. Testcontainers QUEUED/CANCELLED per Task #55 self-hosted runner stall (acceptable, branch-protection OFF).
-- biometric-processor: untouched today (last 2026-05-02 PRs #67 #68 still on `main`).
-- **api + bio operator container rebuild required** to pick up V57 pg_partman + #66 + #67 + #70 + V56 placeholder. See `SESSION_STATUS_2026-05-02.md` §5 for the rebuild sequence; pg_partman additionally requires a custom postgres image with `postgresql-16-partman` + `postgresql-16-cron` (per `RUNBOOK_AUDIT_LOG_PARTMAN.md` Option A) OR `ALTER DATABASE identity_core SET app.skip_partman_v57='on'` (Option B fail-soft).
+### `web-app/` (app.fivucsas.com) — submodule bump
+- Pulls in PR #24 (`feat(web-app): Scope A UI refresh — theme + shell`):
+  new `src/theme.ts` (calibrated palette, Poppins display hierarchy,
+  8-tier shadow ramp, focus-visible rings, refined overrides across
+  every MUI primitive), rebuilt Sidebar (grouped nav + gradient active
+  indicator + admin chips + status tile), TopBar (glass AppBar +
+  gradient avatar + polished user menu), DashboardLayout (ambient
+  canvas + refined breadcrumbs), PublicLayout (glass AppBar + gradient
+  logo + contained CTA).
+- i18n additive only: `nav.group.*`, `nav.badgeAdmin`, `nav.primary`,
+  `sidebar.systemStatus` added to both locales.
+- Scope A explicitly excludes feature pages, `verify-app/` (hosted
+  login + widget — planned separately), and SDK (SRI hashes on
+  integrators stay valid).
 
-#### Parent submodule pointer bumps (chronological)
-- `5e7ace5` — api(#63 #64) + bio(#67 #68)
-- `adfa6f8` — web(#67 P3 hygiene)
-- `725ea44` — api(#66 + #67 SECURITY P2)
-- `4eeae57` — api(#68 V57 pg_partman)
-- `e0e87b5` — docs(roadmap refresh + CHANGELOG Wave 1)
-- `b5291f2` — docs(SENIOR_DB_REVIEW)
-- `044d537` — docs(SENIOR_UIUX_REVIEW)
-- `0be0bca` — final bumps for Wave 1 + Wave 2 (api #65/#69/#70, web #68/#69/#70).
-- doc-sweep bumps below — api `eaf8111` (PR #72 docs), web `120c35b` (PR #71 docs),
-  bio `d91760a` (PR #69 docs), plus api `a77c844` (P0 refresh-token PR #71).
+### Not in this round
+- `verify-widget/` + `fivucsas-auth.js` SDK untouched (would break SRI
+  hash in `bys-demo` callback.html and every external integrator).
+- No backend or identity-core-api / biometric-processor change.
+- No feature-page redesigns in web-app.
 
-#### Backend (identity-core-api)
-- **PR #63** `arch/user-domain-boundary-archunit` (squash `432b4d3`) — ArchUnit guard freezing direct `entity.User` imports outside `infrastructure/`/`repository/`/`entity/` (T2.2 implementation, prevents drift back into the dual-User-model anti-pattern).
-- **PR #64** `feat/jwt-kid-registry` (squash `2d958c5`) — JWT kid-based key registry. `HsKeyRegistry` Spring component holds `Map<String, SecretKey>` keyed by `kid`. `JwtService.buildToken` stamps `hsKeyRegistry.getActiveKid()`; `keyLocator()` routes verification through `hsKeyRegistry.keyFor(kid)`. Backward-compat: legacy `JWT_SECRET` maps to historical kid `hs-2026-04` automatically. Sets up no-logout HS-secret rotation. Test count 1115 → 1116. Operator rollout in `SESSION_STATUS_2026-05-02.md` §5 (T3.C).
-- **PR #b27dfdb** `fix/login-edge-cases-2026-05-04` (T-LOGIN-EDGE, in flight) — login edge-case follow-through items #1, #3, #4, #5, #6, #9 from 2026-04-24 audit.
+## [2026-04-20] Audit 2026-04-19 remediation round + docs polish
 
-#### Biometric (biometric-processor)
-- **PR #67** `chore/ci-hygiene-2026-05-02` (squash `9f54388`) — F2 drop pytest-failure swallow in CI + F10 remove stale top-level test files (Test review 2026-05-01).
-- **PR #68** `fix/alembic-runtime-and-backfill-script` (squash `22bd33c`) — Adds `alembic` to runtime image (was missing — Task #81 manual SQL workaround now obsolete) + repairs `backfill_embedding_ciphertext.py` async-iter bug.
+Cross-walk to `docs/audits/AUDIT_2026-04-19.md`. Parallel specialist agents
+closed findings across all 4 submodules + infra on 2026-04-20. Submodule
+pointer bumps are **not** in this parent-repo commit — they will be bumped
+in a single follow-up after all feature agents merge their submodule work.
 
-#### Web (web-app)
-- **PR #67** `chore/frontend-p3-hygiene-batch` (squash `319b457`) — P3 hygiene batch:
-  - `index.html` `<title>` → brand-neutral "FIVUCSAS — Biometric Identity Verification Platform" (PageTitle still re-localizes per route after mount).
-  - `setTimeout` cleanups across 9 components (WidgetDemoPage CodeBlock, GuestsPage, TotpEnrollment, WebAuthnEnrollment, NfcEnrollment, StepUpDeviceRegistration, FaceVerificationFlow, TwoFactorVerification, NfcStep) using the existing `successTimerRef` pattern.
-  - `NotificationPanel` polling pauses on `document.visibilityState === 'hidden'` and resumes (with immediate fetch) on return — eliminates background-tab toast spam if API is down.
-  - CSP cleanup: `tfhub.dev` removed from `connect-src` (vite.config.ts + 3 .htaccess variants + verify-app/index.html); dead `kaggle.com` entry also stripped.
-- 746/747 Vitest pass (1 pre-existing `PeekABooDetector` failure unrelated to this batch). Hostinger auto-deploy SUCCESS (run #25302577416).
-- **Copilot post-merge nit** (substantive): `NfcStep.tsx:96` 30s scan timeout still pending after success/error — should also clear in `reading`/`readingerror` handlers. Queued as a follow-up.
+### Fixed / Changed (cross-walk to AUDIT_2026-04-19)
 
-#### CI/CD
-- All 4 backend PRs landed on Hetzner self-hosted runner with `Maven test (unit)` + `gitleaks scan` + `GitGuardian Security Checks` GREEN. `Integration tests (Testcontainers)` and `Lint & Type Check` cancelled by Task #55 runner stall (acceptable per branch-protection-OFF + non-required-jobs policy).
-- web-app CI 4-of-4 GREEN (build-and-test, code-quality, gitleaks, GitGuardian) — auto-deployed to Hostinger.
-- **Copilot reviewer** errored on all 4 backend PRs with "Copilot encountered an error" — no review available; web review came through with 6 comments (5 low-confidence suppressed, 1 substantive — see above).
+- **ML-C1** — cross-tenant vector-search leak closed on both face and voice
+  pgvector repositories: `find_similar()` + `delete()` now enforce
+  `tenant_id` in SQL `WHERE`, not just in logging.
+- **ML-H1 / H2 / H3 / H4** — ML hardening wave (upload size guards,
+  liveness-score logging tightened, model-hash validation, `X-API-Key`
+  enforcement on pgvector-adjacent routes).
+- **ML-M1 / M3 / M5** — cleanup + log hygiene + Pydantic strictness.
+- **FE-H2 / H3 / H4** — front-end audit: bundle regression guard, CSP
+  alignment between `vite.config.ts` + `public/.htaccess`, i18n lint sweep
+  rejecting hardcoded English.
+- **MO-H1 / H3 / H4 / H6 + MO-C3** — legacy Android path hardening
+  (EncryptedSharedPreferences key rotation, FCM token refresh, approval
+  deep-link validation, NFC scope guard).
+- **IN-H2** — Traefik rate-limits + admin IP whitelist on
+  `bio.fivucsas.com`.
+- **IN-M3** — compose hardening follow-ups stack-authored alongside
+  2026-04-19's IN-H4 (`read_only: true` + tmpfs + `cap_drop: [ALL]` +
+  CPU/mem limits on both `identity-core-api` and `biometric-processor`).
+- **BE-H1 / BE-H3 / IN-H5** — in flight via agents: OAuth2 PKCE-failure
+  audit-log enrichment (`actorIp` + `clientId` + `failureReason`) +
+  per-`clientId` rate-limit (Phase D5); OIDC discovery conformance cleanup
+  (Phase D4). Will fold into a later parent-repo submodule bump.
 
-#### Parent submodule pointer bumps
-- `5e7ace5` — bumps api (#63 + #64 squashes) + bio (#67 + #68 squashes).
-- `adfa6f8` — bumps web (#67 squash).
+### Added / Docs
 
-### Docs
-- **iOS / iPadOS / macOS scope dropped (2026-04-26).** Forward-looking iOS/macOS work removed from `ROADMAP.md`, `ROADMAP_V2.md`, `MASTER_PLAN.md`, `PLATFORM_STATUS.md`, `MOBILE_APP_COMPREHENSIVE_REDESIGN.md`, `FRONTEND_COMPARISON_REPORT.md`, `docs/plans/CLIENT_APPS_PARITY.md`, `docs/plans/PATH_TO_20_20.md`. Apple platforms are permanently out of scope — no Apple hardware available for development, signing, or testing. KMP `iosMain` directory remains in tree as part of compile structure but receives no engineering work. Historical CHANGELOG entries that reference past iOS work are preserved unchanged.
+- **Widget integration guide polish** — `web-app/docs/plans/HOSTED_LOGIN_INTEGRATION.md`:
+  new "Step-up MFA (iframe widget mode)" section with widget-vs-redirect
+  decision table; troubleshooting expanded with CSP, camera/mic
+  `Permissions-Policy` (recent Traefik fix 2026-04-19), and
+  `postMessage`-origin-check rows; copy-paste CSP quickstart block. Total
+  file size 318 lines (under 400-line cap).
+- **Parity matrix honest re-count** — `docs/plans/CLIENT_APPS_PARITY.md`
+  §2 matrix fixed to match §0a audit correction: **Android 10/13**
+  (rows 1/3/4 `✗` — no OAuth redirect, no refresh scheduler, no OAuth
+  callback deep-link; legacy password + native MFA path still supported),
+  **Desktop 2/13** (`OAuthLoopbackClient` + `SecureTokenStorage`),
+  **iOS 0/13** (no `client-apps/iosApp/` directory).
+- **ROADMAP refresh** — `ROADMAP.md` gains a "Done (2026-04-20)" block
+  with the above cross-walk; Phase I downgraded from "COMPLETE 13/13" to
+  "PARTIAL 10/13" with the three OAuth items explicitly called out.
 
-## [2026-04-29] — Ops-P2 sweep + Sec-P0b biometric API key elimination + audit PR cleanup
+### Not done (explicit, tracked)
 
-Second day of the production-hardening wave. 2026-04-28 closed user-reported correctness bugs; 2026-04-29 closes the security and ops backlog from the AUDIT_2026-04-26 reports.
-
-### Security (web-app)
-- **Sec-P0b — biometric API key elimination from SPA bundle.** Previously the React build embedded `VITE_BIOMETRIC_API_KEY` + `VITE_BIOMETRIC_API_URL` so the browser called `bio.fivucsas.com` directly. Anyone with DevTools could harvest the key. Fixed via three commits:
-  - `fc79de6 fix(security): route BiometricService through identity-core-api proxy` — all bio calls now flow through authenticated identity-core-api endpoints (`/api/v1/biometric/*`).
-  - `5ac4a97 chore(security): drop VITE_BIOMETRIC_API_KEY/URL from build env` — keys removed from `.env.example` + CI workflow.
-  - `2a3820b chore(csp): drop bio.fivucsas.com from connect-src allow-list` — defense in depth: even if a key leaked, CSP blocks the call.
-- **Sec-P0a runbook** added so the same drift can be caught in PR review going forward.
-- **CI bundle hygiene**: `15aab67 fix(ci): write .env.production before build to prevent localhost:8080 in bundle` — the deploy workflow now writes `.env.production` from secrets pre-build so no developer-local URL ever ships.
-
-### Security (identity-core-api)
-- **Biometric adapter telemetry forwarding restored.** `6ad1d91 fix(biometric-proxy): forward tenant_id + client_embedding(s) to bio` — the proxy was dropping `tenant_id` and the optional `client_embedding(s)` fields, which broke per-tenant pgvector search and quality telemetry.
-- **JWT RS256 hard-locked on prod profile.** `65415f3 fix(security): lock JWT signing to RS256 on prod profile (SEC-P1 #3)` — even if HS256 secret leaks back into config, the prod profile rejects it at boot.
-- **MFA step rate-limit.** `3670932 fix(security): rate-limit POST /auth/mfa/step (SEC-P1 #4)` — previously uncovered attack surface; now emits `Retry-After` on 429.
-- **Audit-log size cap.** `8075c11 fix(audit-logs): cap size at 100 with @Min(1)/@Max(100) (EDGE-P1 #4)` — prevents large-page DoS via the audit-log query API.
-- **Tenant @SQLDelete + TOTP @Convert defense-in-depth.** `2e05457 fix(security): tenant soft-delete + TOTP @Convert defense-in-depth (EDGE-P1 #5, #7)` — Tenant entity now soft-deletes; TOTP secret column has `@Convert` so plaintext can never leak even if a developer bypasses the service layer.
-- **MFA race + cross-tenant by-id (2 P0s).** `24d3784 fix(security): close 2 audit-edge P0s (MFA race + cross-tenant by-id)`.
-- **OAuth tenant lock.** `5446d57 fix(auth): tenant-lock OAuth-initiated logins to the client's tenant`.
-- **startEnrollment race.** `5e7cc51 fix(enrollment): swallow startEnrollment race as idempotent re-fetch (EDGE-P1 #3)`.
-
-### Migrations (identity-core-api)
-- **V42 restored.** `bad7262 chore(flyway): restore V42 TOTP encrypted-at-rest CHECK constraint` — closes the gap flagged in audit PR #32.
-- **V43 reserved.** `29aa007 chore(flyway): reserve V43 slot as no-op (EDGE-P1 #8)` — original drop-`biometric_data` was redundant; slot pinned to prevent collisions.
-- **V49 follow-on** — additional schema housekeeping captured in the V47/V48 sequence.
-
-### Test mocks
-- `dcf50d6 test(mocks): align mocks with prod changes from 24d3784` — fixes the test-compile error called out in audit PR #32 (`OperationType.LOGIN` → `OperationType.APP_LOGIN`).
-- `be30dc7 test(auth): stub allowMfaStepAttempt in AuthControllerTest setup`.
-
-### Ops (parent)
-- **Image-SHA tagging** added to `scripts/deploy/deploy-identity-core-hetzner.{sh,ps1}` (Ops-P2 #7), mirroring `infra/deploy.sh` `e3e9056`. Allows rollback without rebuild.
-- **5 runbooks** added to capture incident response, rollback, secret rotation, FK-cascade recovery, and Sec-P0a CSP review.
-- **Audit DRAFT PRs closed.** `Rollingcat-Software/identity-core-api#32` and `Rollingcat-Software/web-app#45` (both authored 2026-04-26, single .md report file, no code to merge) closed with detailed summaries listing closed-vs-deferred findings against today's SHAs.
-
-### Polish (web-app)
-- `c641d4e Merge polish/web-app-i18n-error-sweep — close 9 P1 + 2 P2 audit-basic items` — bundle of:
-  - `a5df016 polish(i18n): localize raw err.message + 4 hardcoded TOTP strings`
-  - `62509e0 polish(services): re-throw raw ZodError instead of leaking err.message`
-  - `dc08ddb polish(i18n): localize document.title via pageTitles namespace`
-  - `fe935c9 polish(i18n): translate 23 biometricPuzzle hints to Turkish`
-- `c580822 fix(LoginPage): remove broken face-tile login` — the face-tile was a leftover from the pre-passive-liveness flow and 401'd unconditionally.
+- **IN-C2** — Postgres superuser password rotation. Held for user
+  sign-off + scheduled maintenance window (carried over from 2026-04-19).
+- **MO-C1** — Android has no OAuth redirect / callback / refresh
+  scheduler. The three items needed to reach honest Android 13/13 are
+  listed in `docs/plans/CLIENT_APPS_PARITY.md` §0a + §3.
+- **Submodule pointer bumps** — deferred to a single parent-repo commit
+  after all feature agents merge.
 
 ---
 
-## [2026-04-28] — Production hardening day (6 morning fixes + enrollment correctness sweep + 4 audit reports)
+## [2026-04-19] Infra audit remediation (IN-C1/H4/M1/M6)
 
-User-driven bug-bash. 6 user-reported issues fixed in the morning, followed by a correctness sweep across all 4 OTP-style auth methods, an MFA double-step fix, and 4 audit reports. FK-cascade incident discovered mid-day (hard-delete on duplicate user wiped TOTP/WebAuthn/NFC) — recovery procedure now memorialized as `feedback_no_hard_delete_users.md`.
+Scope: `/opt/projects/fivucsas/docs/audits/AUDIT_2026-04-19.md` findings
+**IN-C1, IN-H4, IN-M1, IN-M6, IN-LOW**. Postgres password rotation (IN-C2)
+is **not** in this batch — held for explicit user sign-off.
 
-### Morning fixes (web-app, all SHIPPED + DEPLOYED)
-- **LoginPage 401 i18n.** `0a0684f fix(login): show invalidCredentials key for 401, not generic unauthorized` and `abc242f fix(login): surface 500/network errors to user via formatApiError`.
-- **`useQualityAssessment` bbox fallback.** `88cee54 fix(face): pass detector bbox so quality score isn't capped at 70`, `d1d396d fix(face): coerce null boundingBox to undefined for updateQuality`, `ed8021d fix(face): calibrate quality scoring for mobile front cameras`. Quality scoring un-pinned from 70%; bbox-only path now redistributes weights to blur*0.55 + lighting*0.45 when no landmarks are available.
-- **Sidebar dual-highlight.** `d217c64 fix(sidebar): highlight only exact route, not prefix collisions`.
+### Fixed
+- **IN-C1 — nightly backups had been failing 8+ days.** `backup.log` showed
+  `FAILED: encryption failed` on all 5 databases since 2026-04-09. Root cause:
+  backup.sh runs under root's cron (`sudo crontab -l`) but the
+  `backup@rollingcatsoftware.com` public key lives only in `/home/deploy/.gnupg`.
+  Root's keyring is empty, so every `gpg --encrypt` exited with
+  `"No data"`. Previously the script would keep the plaintext dump on failure,
+  so daily we were writing unencrypted SQL to disk. Changes:
+  - `backup.sh` now refuses to run if the recipient key is missing (exit 2,
+    explicit log line — no more silent fallback).
+  - Added `--pinentry-mode loopback` alongside `--batch --yes --trust-model always`.
+  - On encryption failure the plaintext dump is now **deleted**, not kept.
+  - Added optional `BACKUP_HEALTHCHECK_URL` ping on full success (no-op by
+    default — user sets it when they pick a Healthchecks.io / Uptime Kuma URL).
+  - Header comment documents how to import the key into root's keyring.
+- **IN-C1 (cont.) — `backup-offsite.sh`** no longer drops `.sql.gz.gpg` files
+  at the rsync boundary. Old filter `--exclude='*.sql.gz'` inadvertently kept
+  plaintext-only semantics; new filter explicitly includes `*.gpg` / `*.log`
+  and excludes both `*.sql` and `*.sql.gz` (defence-in-depth against any
+  future script that forgets to encrypt).
 
-### Morning fixes (identity-core-api, all SHIPPED + DEPLOYED)
-- **UserRepo soft-delete filter.** `d1a3f73 fix(auth): filter soft-deleted users in findByEmail and related lookups` — `findByEmail` now adds `deletedAt IS NULL`. Closes the FK-cascade duplicate-row 500 that was blocking re-registration after admin soft-deletes.
-- **Optional MFA-step skip.** `80c4819 fix(auth): skip optional flow steps with no biometric enrollment` — fixes the morning "MFA stuck on face when user has no face enrolled" report.
-- **Tenant `contact_email` NPE.** Patched in same wave; `Fivucsas` system tenant row backfilled.
-- **UniFace passive liveness.** Wired into `/verify` and `/enroll`; `LIVENESS_BACKEND=uniface` + `LIVENESS_MODE=passive`. Hybrid mode demanded blink+smile that `/verify` never asks for.
+### Added
+- **IN-M6 — backup restore verification** (`infra/backup-verify.sh` +
+  `infra/crontab.d/backup-verify.cron`). Weekly script decrypts the latest
+  `identity_core.sql.gz.gpg`, spins up a throwaway `postgres:17-alpine`
+  container on 127.0.0.1:55432, loads the dump, and reports row counts for
+  `users`, `tenants`, `audit_logs`. Container + tmpfiles torn down via EXIT
+  trap. Cron file **shipped but NOT installed** — user must copy it to
+  `/etc/cron.d/` when ready.
+- **IN-M1 — gitleaks pre-commit hooks.** Added `.pre-commit-config.yaml` to
+  parent repo + `identity-core-api`, `web-app`, `client-apps`; extended
+  `biometric-processor`'s existing config with a gitleaks stage. Helper
+  `.pre-commit-install` bulk-installs across the monorepo. Docs:
+  `docs/PRECOMMIT_HOOKS.md`. detect-secrets intentionally skipped to avoid
+  baseline maintenance overhead.
 
-### Enrollment correctness sweep (identity-core-api)
-- `04db085 fix(enrollment): auto-create ENROLLED EMAIL_OTP row on first list`
-- `b91beae fix(enrollment): drop SMS_OTP, QR_CODE, EMAIL_OTP from AUTO_COMPLETE_TYPES`
-- `381aebd fix(enrollment): auto-bind QR_CODE alongside EMAIL_OTP`
-- `8d36c7d fix(mfa): exclude completed methods from next step's available list` — fixes "fingerprint required twice" report.
-- `c25b731 fix(users-list): use correct audit action + fall back to entity lastLoginAt`.
+### Changed
+- **IN-H4 — Compose hardening.**
+  - `identity-core-api/docker-compose.prod.yml`: `read_only: true` + tmpfs
+    `/tmp` + `/var/log`, `cap_drop: [ALL]`, CPU limit `2.0`, memory bumped
+    768 MB → 2 GB to give Spring Boot headroom.
+  - `biometric-processor/docker-compose.prod.yml`: same read_only / tmpfs /
+    cap_drop pattern, CPU limit `2.0` → `4.0` (ML workload). Memory already
+    4 GB.
+- **IN-LOW — compose hygiene.** Removed obsolete `version: '3.9'` key from
+  `biometric-processor/docker-compose.prod.yml` (Compose v5 warns on it).
 
-### Enrollment correctness sweep (web-app)
-- `b87593c fix(enrollment): mark TOTP enrollment ENROLLED after verify-setup`
-- `7049eb2 fix(enrollment): treat EMAIL_OTP as auto-bound, drop fake enroll path`
-- `e44211b fix(enrollment): require real OTP code before flipping SMS_OTP enrolled`
-- `13c3762 fix(enrollment): treat QR_CODE as auto-bound, drop fake enroll path`
-- `275d1a9 Merge branch 'fix/enrollment-correctness'` aggregates the four.
+### Not done (tracked)
+- **IN-C2** — Postgres superuser password rotation. Held for user sign-off +
+  maintenance window.
+- **IN-H1/H2/H3** — Traefik rate-limit buckets, admin-whitelist attachment,
+  TLS minVersion pinning. Not in this batch.
+- Compose services were **not restarted** — edits are on disk only.
 
-### Rescued agent work (web-app)
-- `47f7077 Merge branch 'fix/biometric-tools-network'` — biometric tools network error fix.
-- `fc16cdd fix(web): rescue stashed agent work — biometric tools, puzzles polish, MFA dedup` — diff-reviewed and shipped per the 2026-04-25 lesson "check working tree before re-dispatching dead agents".
-
-### Audit reports (parent)
-- `AUDIT_2026-04-26_SECURITY.md` (api), `AUDIT_2026-04-26_VERIFICATION.md` (web), `AUDIT_2026-04-24.md` (cross-cutting), and a multi-email design note. All four either closed by 2026-04-29 work or deferred to TODO Phase C/D/F backlog.
-
-### Archive sweep
-- Stale roadmap docs (`BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md`, `BIOMETRIC_ROADMAP_2026-04-28.md`) flagged as superseded; current state captured in `ROADMAP_2026-04-28.md`.
-
-### FK-cascade incident
-Hard-delete on a duplicate user row cascaded through ~13 FK-linked tables (`webauthn_credentials`, `nfc_cards`, `user_devices`, `totp_secrets`, …). Recovery: re-enroll affected user. Lesson saved as `feedback_no_hard_delete_users.md` — never `DELETE FROM users`; always patch `findByEmail` with `deletedAt IS NULL`.
-
----
-
-## [2026-04-24] — User-reported dashboard issues remediation + puzzle-page split + RBAC frontend gating
-
-Continuation of the 2026-04-24 audit work. This entry covers the evening pass. **6 api PRs + 7 web PRs merged + deployed** across the day. See `/opt/projects/TODO_POST_AUDIT_2026-04-24.md` for the full diff + open follow-ups.
-
-### Frontend RBAC gating shipped (PR web #38, last of the day)
-- **`src/config/sidebarPermissions.ts`** — single-source permission matrix per sidebar entry.
-- Sidebar filters per caller role: SUPER_ADMIN-only entries (all-tenants list, system permissions, platform audit) hidden for TENANT_ADMIN + below. Tenant-scoped entries (Users, Auth Flows, Devices, Enrollments, Audit Logs for own tenant, …) visible to TENANT_ADMIN + hidden for plain USER.
-- New `<RoleRoute roles={[...]}>` — non-admin users hitting `/tenants` redirect to dashboard instead of empty shell.
-- Dashboard counters scoped per Rule 3 — "Total Tenants" card hidden for non-SUPER_ADMIN; "Total Users" label adapts to "Users in your tenant".
-- Settings page trimmed (user audit) — removed unwired Compact View toggle + notification toggles; hidden 2FA section for users with no MFA enrolled; deduped active sessions (was showing 14+ duplicates).
-
-### Backend (identity-core-api, all MERGED + DEPLOYED)
-- **#19** hotfix — JWT RS256 env wiring + V40 idempotency (prod outage recovery from morning rebuild).
-- **#20** `fix/auth-retry-same-step` — METHOD_ALREADY_USED retry guard (login edge case #1).
-- **#21** users-list tenant-scope v1 (superseded by #23).
-- **#22** `fix/auth-method-video-interview-enum` — `/auth-methods` 500 (missing `VIDEO_INTERVIEW` enum).
-- **#23** `fix/users-list-tenant-scope-v2` — correct implementation via `RbacAuthorizationService.getCurrentUser()`; fail-closed zero-UUID sentinel.
-- **#24** `fix/backend-403s-tenant-scope` — 8 dashboard controllers refactored via new `TenantScopeResolver`; broken 3-arg `hasPermission(#id,'Type','action')` form replaced with `@rbac.hasPermission('perm:name')`; added GET `/verification/flows|stats|sessions` (frontend-API mismatch fix).
-
-### Frontend (web-app, all MERGED + DEPLOYED)
-- **#30** CSP: extract inline eruda loader + generate PWA icons (192/512/apple-touch) via `rsvg-convert`.
-- **#32** hosted-login single-factor flow (demo.fivucsas "session expired" on Marmara Simple Login fixed: mint code via `GET /oauth2/authorize` with Bearer token on the post-password path).
-- **#33** biometric-puzzles public access (drop `AdminRoute` + `adminOnly` on sidebar entry).
-- **#35** `decodeJwtPayload` UTF-8 fix — `atob()` + `TextDecoder` so Turkish `ü` no longer mojibakes to `Ã¼` on `demo.fivucsas.com`.
-- **#36** default-route CSP unified with biometric routes (`'unsafe-eval'` + `'wasm-unsafe-eval'` — SPA routes can't escape the initial-HTML CSP); ONNX `wasmPaths` → jsdelivr CDN (runtime WASM wasn't in `dist/`); **page split**: `/auth-methods-testing` (9 auth-method demos, renamed from the old "Biometric Puzzles") vs NEW `/biometric-puzzles` (23 real micro-challenges: 14 face + 9 hand). New `BiometricPuzzleId` enum + dedicated registry.
-- **#37** face-search 422 fix (pipe `useAuth().user.tenantId` into `BiometricService.searchFace` — backend `/api/v1/search` required `tenant_id` form field).
-
-### Concept clarification (user correction)
-**Biometric puzzle ≠ auth method.** A biometric puzzle is a small active-liveness micro-challenge: blink, smile, turn head left, wave, show N fingers, trace a shape. NOT email OTP / SMS / TOTP / QR / hardware key. The original registry conflated the two; #36 separates them into two routes.
-
-### Live-ops applied directly to prod DB (follow-up needed to capture in Flyway)
-- Granted Marmara TENANT_ADMIN ~30 tenant-scoped permissions (auth_flow:*, device:*, enrollment:*, guest.*, tenant.update/configure/members, verification:*, user_role.read/assign/revoke, permission.read, audit:read).
-- `users.user_type` for `ahmet.abdullah@marun.edu.tr` bumped `TENANT_MEMBER` → `TENANT_ADMIN` so `RbacAuthorizationService.isTenantAdmin()` returns true (AuditLogController gate).
-
-### Agents still running when session paused
-5 background agents: `rbac-frontend-gating` (web), `tenant-email-domains` (api — Marmara marmara.edu.tr + marun.edu.tr multi-domain), `login-edge-cases-3-5-6` (api), `professional-biometric-puzzles` (web — real per-challenge detection), `sarnic-pr22-copilot-nits` (Sarnic — 6 Copilot review nits).
-
-### Verification (deploy-verified as of 2026-04-24 T17:35 UTC)
-All 8 originally-leaking endpoints return 200 for `ahmet.abdullah@marun.edu.tr`:
-- `/audit-logs`, `/tenants/{marmara}/auth-flows`, `/devices`, `/enrollments`, `/verification/flows`, `/verification/stats`, `/verification/sessions`, `/auth-methods`.
-- `/users` scoped to Marmara (12 rows, not 23).
+### Deploy note
+To actually apply the compose hardening, during a maintenance window run:
+```
+cd /opt/projects/fivucsas/identity-core-api
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d identity-core-api
+cd /opt/projects/fivucsas/biometric-processor
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d biometric-api
+```
 
 ---
 
-## [Unreleased] - 2026-03-19
+## [2026-04-18f] — Hosted-first parity rewrite + APK MFA reload fix + TR i18n restore
+
+### Fixed
+- **Android APK — multi-factor auth page no longer hangs on reload.** On
+  process death / configuration change, `LoginViewModel` state reset,
+  `loginState.mfaSessionToken` came back `null`, and `MfaFlowScreen` sat on
+  `MfaFlowUiState.Idle` rendering a bare `CircularProgressIndicator()` with
+  no escape. `AppNavigation.kt` now re-keys the init `LaunchedEffect` on
+  the session token and pops back to Login if the token disappeared while
+  still `Idle`. `MfaFlowScreen.kt` Idle branch renders `MFA_PREPARING`
+  copy + a visible Cancel button (defense-in-depth).
+- **Turkish localisation — diacritics restored across
+  `client-apps/shared/.../StringResources.kt`.** ~600 `trStrings` entries
+  had been ASCII-flattened (`Giris` → `Giriş`, `Sifre` → `Şifre`,
+  `Dogrulama` → `Doğrulama`, `Kullanici` → `Kullanıcı`, etc.). Restored
+  by hand, verified `compileDebugKotlinAndroid` green. English map and
+  `StringKey` enum untouched.
+
+### Changed
+- **Client-apps parity matrix collapsed from 20 columns to 13** to match
+  the 2026-04-16 hosted-first pivot. Native clients are no longer
+  biometric reimplementers — they are thin OAuth 2.0 / OIDC clients that
+  redirect to `verify.fivucsas.com/login` (Chrome Custom Tabs on Android,
+  `ASWebAuthenticationSession` on iOS, RFC 8252 loopback on Desktop).
+  Platform status after rewrite: **Android 13/13** (v5.2.0-rc1), Desktop
+  (Win/Linux) 2/13 (scaffolding), iOS 0/13 (Phase 2). macOS explicitly
+  out of scope for v6 (no Mac hardware for `codesign`/`notarytool`).
+  Pre-pivot 20-row matrix preserved as Appendix A of
+  `docs/plans/CLIENT_APPS_PARITY.md`. New Phase J (Desktop hosted-first)
+  added to `ROADMAP.md`.
+
+### In flight (not landed this session)
+- Desktop OAuth 2.0 loopback client (RFC 8252), Windows DPAPI + Linux
+  libsecret token storage, `.deb` / `.msi` installer configs — four
+  background agents working in parallel, will land in separate commits.
+
+## [2026-04-18e] — Cross-platform deep review + Android 20/20 gap plan + doc sweep
+
+### Reviewed
+- **Cross-platform parity deep review.** Confirmed KMP genuineness (not a "shared scaffold with divergent platform folders"): `337` files under `shared/src/commonMain/` totalling ~`11,500` LOC of real shared domain / data / presentation code. The 22-row feature matrix in `docs/plans/CLIENT_APPS_PARITY.md` was re-baselined: **Android is at ~15/20**, not 13/20 as an earlier sketch implied. Web-app is the 20/20 reference.
+- **NFC port state (corrected).** Contrary to an earlier parity-matrix row that labelled NFC "scaffolded," the production NFC crypto stack is **already ported** into `client-apps/androidApp/src/main/kotlin/com/fivucsas/mobile/android/data/nfc/`: `PassportNfcReader` (873 LOC), `TurkishEidReader` (457), `BacAuthentication` (502), `SecureMessaging` (470), plus Dg1/Dg2/MRZ parsers and `CardReaderFactory` — **5,447 LOC total**. `NfcReadScreen.kt` (642 LOC, MRZ input UI + koinInject `INfcService`) also exists. The gap is integration only: `MfaFlowScreen.kt:324` still dispatches `NFC_DOCUMENT` to `GenericMethodStepInput`. Closing that dispatcher line + porting `MrzScannerScreen.kt` is Gap #1 of Phase I.
+- **Ship A + Ship D verification.** Ship A (CORS preflight on `/api/v1/auth/mfa/step`, verify-widget ORT 404, BlazeFace singleton, `dropConsole`, i18next banner) confirmed landed and green in prod. Ship D (Android TOTP authenticator v5.1.0 — RFC 6238 engine in commonMain, `EncryptedSharedPreferences` vault, Compose Material 3 UI, manual entry) tagged and shipped; QR-scan follow-up tracked under Phase I Gap #5.
+
+### Identified
+- **Five Android gaps to reach 20/20**, each one-liner here, full plan in `docs/plans/PATH_TO_20_20.md`:
+  1. Passport BAC MFA integration — wire existing NFC infra into multi-step dispatcher (~2 days).
+  2. GDPR/KVKK export mobile UI — repository + ViewModel + Profile row + `DownloadManager` + 8 i18n keys (~2 days).
+  3. FCM action buttons + `fivucsas://` deep-link per `NFC_PUSH_APPROVAL_PROTOCOL.md` (~2 days).
+  4. Dark mode toggle in Settings — palettes already in `AppColors.kt` (~1 day).
+  5. Authenticator QR scanner — reuse existing `QrScannerScreen` CameraX + ML Kit + `OtpauthUri.parse()` (~1 day).
+- Total: **~8 engineer-days, fully parallelizable** across 5 code agents (20A–20E).
+
+### Documented
+- **Canonical plan:** `docs/plans/PATH_TO_20_20.md` (new) — Wave 1/2/3/4 sequencing, per-gap table (# / Gap / Current state / Work / Files new / Files modified / Days), verification steps, out-of-scope list (iOS Phase 2, Desktop NFC/installer signing Phase 3, GitGuardian #29836028 rotation user-gated, Phase C Wave 0 2h maintenance window, biometric-processor 79-CVE triage, pre-existing `BiometricViewModelTest.enrollFace` failure).
+- **Doc sweep (8 files):** parent `ROADMAP.md` (new "Known open incidents" block + new Phase I section), parent `CHANGELOG.md` (this entry), parent `README.md` (client-apps 401 → 424, v5.1.0 Authenticator callout, mobile-app pointer), parent `CLAUDE.md` ("Last verified" + test count), `docs/plans/PATH_TO_20_20.md` (new), `client-apps/README.md` (feature coverage matrix + test count), `client-apps/CHANGELOG.md` ("[Unreleased] — v5.2.0 planning"), `client-apps/docs/TODO.md` (Phase A–E rewrite).
+
+### Deferred / out of scope
+- iOS parity (Phase 2 per `CLIENT_APPS_PARITY.md`).
+- Desktop NFC over PC/SC + Windows Authenticode / macOS notarization (Phase 3).
+- GitGuardian #29836028 keystore rotation — user-gated, `docs/SECURITY_INCIDENTS.md`.
+- Phase C Wave 0 secret rotation — requires scheduled 2-hour maintenance window.
+- Biometric-processor 79 CVE triage — separate workstream.
+- Pre-existing `BiometricViewModelTest.enrollFace` failure on `client-apps` — tracked under Phase D of `client-apps/docs/TODO.md`.
+
+## [2026-04-18d] — Security incident log + keystore rotation plan + parallel recovery round
+
+### Documented
+- **GitGuardian incident #29836028** — Android keystore password `fivucsas2026` leaked in public git history of `Rollingcat-Software/client-apps` (commit `db18fa7`, reachable via tag `v3.0.0`). Scaffolding to read from env vars / Gradle properties shipped `cb6eab9` same day. Rotation is still user-gated (keytool + GitHub secret paste). New `docs/SECURITY_INCIDENTS.md` logs the incident, blast-radius assessment, full remediation playbook, and the decision NOT to rewrite history (rotation makes the leaked password dead; history rewrite has higher blast radius than residual exposure). `ROADMAP.md` Phase C gets a new item **C6** covering this rotation.
+- **Plans shipped** to `docs/plans/`: `NFC_PUSH_APPROVAL_PROTOCOL.md` (cross-device NFC handoff mirroring e-Devlet — `fivucsas://nfc-session` deep link, Ed25519 device registration, FCM/APNS push, V39 migration sketch, 13-threat security review); `CLIENT_APPS_PARITY.md` (Android / iOS / Desktop parity — 22-row feature matrix, per-platform top-10 gaps, 4-phase rollout to 2026-08-01 GA).
+
+### Added
+- **Android keystore rotation scaffolding** (`client-apps` commit `cb6eab9`): `androidApp/build.gradle.kts` reads `ANDROID_KEYSTORE_PATH` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` from Gradle properties or env; release signing falls back to debug signing with a warning when creds absent (keeps PR / fork CI green). `.github/workflows/android-build.yml` gates the keystore decode step behind `workflow_dispatch` + `build_type=release`, materialises `ANDROID_KEYSTORE_BASE64` into `$RUNNER_TEMP`, wipes in `if: always()` post-step. New `client-apps/docs/RELEASE.md` documents 6-month rotation cadence and emergency revocation playbook. `README.md` adds a "Signed release builds" section.
+
+### In flight (background agents at commit time)
+- **Ship A** — critical prod fixes (CORS preflight on `/api/v1/auth/mfa/step`, `ort.min-*.js` 404 on verify.fivucsas.com, BlazeFace 4× re-init due to missing singleton, production console log noise, i18next Locize banner).
+- **Ship D** — RFC 6238 TOTP engine (Android-first, KMP commonMain): `TotpGenerator` + `OtpauthUri` parser + `TotpVault` (EncryptedSharedPreferences) + `AuthenticatorScreen` Compose UI. Manual entry only in v5.1.0; QR scan deferred to G2.
+
+### Fixed (Ship A landed)
+- **Verify-widget ORT 404** — root cause: `.gitignore` line 50 excludes
+  `verify-widget/html/assets/*.js` so the Dockerfile `COPY html/` step shipped
+  the image with an empty `assets/` directory. Added
+  `verify-widget/sync-assets.sh` to `rsync` `../web-app/dist-verify/assets/`
+  into `verify-widget/html/assets/` immediately before
+  `docker compose build`, matching `feedback_widget_deploy_sync` memory rule.
+  `curl -sI https://verify.fivucsas.com/assets/ort.min-CSPs-wzd.js` → 200.
+- **bys-demo SDK cache-bust** bumped to `?v=20260418d` on both
+  `index.html` and `callback.html`. SRI hash unchanged
+  (`sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6`)
+  because the SDK bundle was not rebuilt this round.
+- **CORS on `/api/v1/auth/mfa/step`** — preflight from
+  `https://verify.fivucsas.com` already returns 200 with correct
+  `Access-Control-Allow-*` headers in prod; no backend / filter-order change
+  needed. Runtime verified with `curl -X OPTIONS`.
+- See `web-app/CHANGELOG.md ## [2026-04-18d]` for BlazeFace singleton,
+  `dropConsole`, and i18n debug details.
+
+## [2026-04-18c] — Hosted-login UX recovery: callback data, stepper, locale, face retry, copy audit
+
+### Fixed
+- **Fix 3 — callback.html shows blank user / email / methods.** `FivucsasAuth.handleRedirectCallback()` now decodes the id_token returned by `/oauth2/token` (`sub` → `userId`, `email`, `name` → `displayName`, `amr` → `completedMethods`) and falls back to `GET /oauth2/userinfo` with the bearer access_token when any field is missing. `sessionId` is synthesized from the code prefix instead of empty-string. The BYS demo callback card now renders the real identity values; two new SDK tests cover both id_token extraction and userinfo fallback.
+- **Fix 5 — `locale: 'tr'` not honoured on hosted login.** `FivucsasAuth.loginRedirect()` appends OIDC `ui_locales` to the authorize URL; `identity-core-api/OAuth2Controller.authorize` now parses `ui_locales` and forwards it on the 302 to `verify.fivucsas.com/login`; `HostedLoginApp.tsx` resolves locale via `ui_locales → legacy locale → navigator.language → 'en'`, sets `document.documentElement.lang`, and switches i18next before paint. Backend test `authorize_WhenDisplayPageWithUiLocales_ShouldForwardLocale` locks the pass-through.
+- **Fix 1 — conflicting face failure UI.** `FaceCaptureStep.tsx` swaps captured-image alt text to `mfa.face.lastAttemptAlt`, applies a subtle grayscale filter on error, and shows three retry tips (lighting, framing, glasses) under the error Alert instead of the bare "Verification failed. Please try again. Captured face" mash-up. **No biometric threshold or model change.**
+
+### Added
+- **Fix 4 — consistent step progress across every method.** New reusable `src/verify-app/StepProgress.tsx` (ARIA-labeled counter + determinate bar, hides when `total <= 1`) mounted at the top of `LoginMfaFlow.tsx`. The inline "Step N of M" caption that only rendered during NFC has been removed; Face, TOTP, Email OTP, NFC, and picker now share one indicator.
+- **Fix 6 — copy audit across all 10 auth methods.** `widget.*` and `mfa.face.*` keys in `en.json` + `tr.json` rewritten to the "what happened + what to do" pattern: `loginFailed`, `verificationFailed`, `unexpectedError`, `missingParams`, `skipFailed`, `mfaRequired`, `cameraError`, `authComplete`, `noStepsRemaining`, `unknownMethod`, plus `mfa.face.retryTip{Lighting,Framing,Glasses}`, `capturedAlt`, `lastAttemptAlt`. JSON key parity verified: 0 missing in either locale.
+
+### Tests
+- Vitest: **599 / 599** passing (was 597). +2 SDK tests.
+- Maven unit: **839 / 839** passing (was 838). +1 locale-forwarding assertion.
+
+### Deployed
+- SDK rebuilt (`dist-sdk/fivucsas-auth.js` — SRI `sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6`), synced to `verify-widget/html/` alongside new verify-app bundle; Docker widget container recreated; web-app `dist/` rsync'd to Hostinger; `bys-demo/` pushed to Hostinger with `?v=20260418c` cache-bust and new integrity hash on both `index.html` and `callback.html`.
+- Live smoke tests: `curl -sI https://verify.fivucsas.com/fivucsas-auth.js` returns 200 with `cache-control: max-age=300`; grep confirms `ui_locales`, `oauth-`, `oauth2/userinfo` strings present in the live bundle; `curl https://api.fivucsas.com/.well-known/openid-configuration` returns a valid discovery JSON.
+
+## [2026-04-18b] — Demo login recovery, IC CI green, Vite dependabot closed
+
+### Fixed
+- **demo.fivucsas.com login** — button click was throwing `"Giriş başlatılamadı."` because `verify.fivucsas.com/fivucsas-auth.js` was the Apr-15 bundle (10,643 B) which predates the `loginRedirect` SDK method shipped in PR-1. Rebuilt `dist-sdk` (15,684 B), copied into `verify-widget/html/`, rebuilt container, updated SRI hashes in `bys-demo/{index,callback}.html`. rsync'd to Hostinger.
+- **Browser-cache trap** — after shipping the new bundle, users with a cached Apr-15 SDK still failed: their cached bytes didn't match the new SRI hash so the browser blocked the script. Fixed with two measures:
+  - `verify-widget/nginx.conf`: the specific `/fivucsas-auth.js` location block was being shadowed by the generic `\.js$` regex (nginx first-match semantics); moved it above the generic rule. `max-age=300, must-revalidate` on SDK files so future updates propagate in 5 minutes. Other static assets keep 1y immutable.
+  - `bys-demo/{index,callback}.html`: `?v=20260418` cache-bust on SDK URL.
+- **identity-core-api CI on `main` — 38 red tests → 0.** Root cause was systematic test-source drift from 25+ legitimate source changes while the broken self-hosted runner was silently skipping public PRs. 10 test files realigned to current source (no `@Disabled`, no weakened assertions):
+  - `AuthControllerTest`: corrected `UserRepository` JPA→domain-port import, added 13 `@MockBean`s for controller's grown 25-dep constructor.
+  - `EnrollmentControllerTest`, `TotpControllerTest`, `OtpControllerTest`, `UserEnrollmentFlowControllerTest`: added `EnrollmentHealthService` + related `@MockBean`s.
+  - `AuthenticateUserServiceTest`: 4 new mocks + migrated to 2-arg `generateAccessToken(email, amr)` form (RFC 8176).
+  - `GetCurrentUserServiceTest`: added `TenantRepository` mock.
+  - `ManageEnrollmentServiceTest`: `NfcCardRepositoryPort` + `WebAuthnCredentialRepositoryPort` mocks; re-enroll test switched to PASSWORD (TOTP not in `AUTO_COMPLETE_TYPES`).
+  - `NfcDocumentAuthHandlerTest`: `NfcCardRepositoryPort` mock + assertions aligned with current repository-lookup path.
+  - `TotpAuthHandlerTest`: `UserRepository` mock for Redis-miss→DB fallback in `resolveTotpSecret`.
+  - `mvn test`: 838 tests / 0 failures / 0 errors (27 skips are integration, gated on `RUN_INTEGRATION=true`).
+
+### Security
+- **Dependabot #28 merged** — Vite 6.4.1 → 6.4.2 in `landing-website/` (dev-dep only; path-traversal + `server.fs.deny` trim-slash fixes). Parent repo now at **0 open Dependabot PRs**.
+
+### Repo hygiene
+- **biometric-processor garbage purged** — `=0.10.0` (0-byte artefact of a shell-interpretation typo) and `2025-12-26-perfect-heres-the-exact-prompt-to-give-sonnet.txt` (25 KB personal prompt scratch) deleted from tracked files.
+- **Parent orphan cleanup** — `auth-test/` (empty dir with only a stray `.git/`) and `.github/ISSUE_TEMPLATE/` (empty) removed from working tree.
+- **`bys-demo/robots.txt`** — `Disallow: /test-elements.html` (dev Web Components demo kept in repo but not indexable).
+
+## [2026-04-18] — Deploy round 2: V37/V38, CI unblock, Dependabot sweep, MobileFaceNet out
+
+### Added
+- **Flyway V37** — `oauth2_clients.tenant_id` index (audit safety-net; V24 already declared it). Applied to prod.
+- **Flyway V38** — `fivucsas-web-dashboard` flipped to `confidential = false` because the SPA cannot hold a client secret (RFC 6749 §2.1 / RFC 8252 §8.4). Applied to prod; PKCE S256 was already mandatory.
+- **`marmara-bys-demo` OAuth2 client** — registered in prod for the BYS demo integration (`demo.fivucsas.com`).
+- **Phase A–L roadmap** — `ROADMAP.md` refreshed for 2026-04-18 with the full plan (A lint → B dependabot → C ops hardening → D security depth → E perf → F observability → G features → H code-quality → L docs) and a Timeline table. Identity-core-api now has its own `TODO.md` seeded from Phase C/D/E/H backend items; `web-app/TODO.md` sections split into "Open 2026-04-18" / "Completed 2026-04-18".
+
+### Changed
+- **web-app CI** — both jobs moved from self-hosted `hetzner-cx43` to `ubuntu-latest` (the runner group had `allows_public_repositories: false`, silently skipping this public repo for ~5 days). `.npmrc` added with `legacy-peer-deps=true` so Vite 8 + vite-plugin-pwa peer mismatch doesn't break `npm ci`.
+- **identity-core-api CI** — split into `test` (unit, ubuntu-latest, now `mvn -T 2C`) + `integration-tests` (self-hosted, Docker-required Testcontainers via `RUN_INTEGRATION=true`). Integration test classes gated with `@EnabledIfEnvironmentVariable(named = "RUN_INTEGRATION", matches = "true")`.
+- **Face embedding pipeline (web-app)** — MobileFaceNet stripped entirely (was blocked on an authenticated download). Now landmark-geometry only (`geometry-512`, 512-D from MediaPipe FaceLandmarker). Server remains authoritative via Alembic 0004 log-only observations per D2.
+
+### Fixed
+- **web-app lint** — 23 errors / 63 warnings → 0 errors / 33 warnings. Cleared `react-hooks/rules-of-hooks` in `HostedLoginApp.tsx` and `TwoFactorDispatcher.tsx`, `no-useless-escape` in `FivucsasAuth.ts`, stale `eslint-disable` in `postMessageBridge.ts`, 30 `exhaustive-deps` across 20 files. Tests: 597/597 passing.
+
+### Security
+- **Dependabot sweep** — 0 remaining vulnerabilities after merging:
+  - `protobufjs` 7.5.4 → 7.5.5 (CRITICAL, web-app #23)
+  - `follow-redirects` 1.15.11 → 1.16.0 (MODERATE, web-app #21)
+- **Still open:** `vite` 6.4.1 → 6.4.2 patch in `landing-website/` (parent #28, MODERATE, dev-server only — awaiting user decision).
+
+### Deployed
+- Docker rebuild of identity-core-api — V37/V38 + marmara-bys-demo client applied.
+- web-app `dist/` rsync'd to Hostinger after Dependabot merges.
+
+### Still on the human plate
+- Phase C (Wave 0 ops) — secret rotation + `git filter-repo` on `.env.prod` history. Destructive; needs maintenance window.
+- Phase D — DNN liveness, voice replay detection, voice STT verification, OIDC conformance.
+- DKIM CNAMEs still NXDOMAIN on Hostinger.
+
+## [2026-04-16] — PR-1 hosted-first auth V1 + GDPR compliance
+
+### Added
+
+- **Hosted-first OAuth 2.0 authorization code flow** — `verify.fivucsas.com/login` serves a top-level browsing context login page; tenants call `FivucsasAuth.loginRedirect({...})` and receive `?code=…&state=…` on their callback. Iframe widget remains available for inline step-up MFA only. Platform coverage: web, iOS (ASWebAuthenticationSession), Android (Chrome Custom Tabs), Electron (loopback per RFC 8252), CLI.
+- **GDPR Art. 17 / Art. 20 compliance** — `GET /api/v1/users/{id}/export` (JSON data bundle, rate-limited 1/h/user, audit event `USER_DATA_EXPORTED`), daily `SoftDeletePurgeJob` with 30-day retention (flag-gated, default off), `DELETE /api/v1/admin/purge/dry-run` for super-admin preview.
+- **Identity-core-api Maven CI workflow** — `.github/workflows/ci.yml` runs `mvn test` on every PR against main (Testcontainers backed). Previously only `deploy-hetzner.yml` existed; PRs had no automated test gate.
+- **8 missing `notifications.actions.*` i18n keys** — password reset, session revoke, email verification audit codes were rendering raw to Turkish users.
+
+### Changed
+
+- **Flyway V34** — `oauth2_clients.confidential` column; public clients now require PKCE S256.
+- **Flyway V35** — `mfa_sessions.consumed_at TIMESTAMP` replaces boolean flag for atomic code-mint replay guard.
+- **Flyway V36** — `mfa_sessions.client_id UUID` cross-client replay guard.
+- **biometric-processor CI consolidation** — 4 overlapping workflows (`ci.yml`, `ci-cd.yml`, `cd.yml`, `pr-validation.yml`) reduced to 2 (`ci.yml` + `deploy-hetzner.yml`). Removed dead GCP Cloud Run and Railway deployment code.
+- **Documentation archive sweep** — ~85 stale/redundant docs moved into per-repo `docs/archive/2026-04-16/` via `git mv` (biometric-processor 44, docs 45, client-apps 13, practice-and-test 13). Public doc tree now leads with current reality only.
+
+### Fixed
+
+- **PR-1 review blockers B1-B9** — SecurityConfig anonymous endpoints, cross-client replay guard, PKCE S256 mandate, code-mint atomicity, loopback redirect validation (IPv4-only, query rejection), OIDC nonce validation, 429 Retry-After, completedMethods derivation from MfaSession, hosted-login SDK + BYS demo flip.
+- **Deployment state:** PR-1 merged but **Docker image not yet rebuilt** — Flyway V34/V35/V36 apply on next container rebuild. Web-app `dist/` not yet rsynced to Hostinger.
+
+## [2026-04-15] — demo.fivucsas MFA hardening
+
+### Fixed
+- **Apache `.htaccess` Permissions-Policy parse error on Hostinger**: double-quoted `Header set` values with `\"` escapes leaked literal backslashes into the emitted header, breaking structured-header parsing and killing camera/mic iframe delegation. Switched to single-quoted outer delimiter with bare inner quotes. Camera/mic now delegate to `https://verify.fivucsas.com` correctly.
+- **MFA method-reuse AMR collision**: `AuthController` was storing AMR values (RFC 8176) in `MfaSession.completedMethods`, so EMAIL_OTP after TOTP hit a false "METHOD_ALREADY_USED" (both map to `"otp"`). Now stores `AuthMethodType.name()` (unique per method); AMR mapping happens only at JWT issuance. Also fixed `stepsData` initial value (`["pwd"]` → `["PASSWORD"]`) in `AuthenticateUserService`.
+- **Widget bundle sync**: `web-app/dist-verify/` was never rsync'd into `verify-widget/html/` before Docker build, so fixes shipped but container image kept old bundle. Documented 3-step sync (build → rsync → docker build). `PerfContext` also changed to return NOOP when provider absent so Face step works inside widget iframe.
+- **BlazeFace `@tensorflow/tfjs-converter` "Failed to resolve module specifier"**: earlier quick-fix had externalized the package in `vite.verify.config.ts`. Real fix: installed the package (`--legacy-peer-deps`) and removed from externals. Also added `https://tfhub.dev https://www.kaggle.com` to widget CSP `connect-src` so the model can be fetched.
+- **Voice login had no phrase prompt**: enrollment shows a passphrase but login didn't. Added `mfa.voice.promptPhrase` + `samplePhrase` i18n keys (en/tr) and a boxed prompt above the mic in `VoiceStep.tsx`.
+- **Face step back button off-screen**: camera view pushed "backToMethodSelection" below the fold. Moved button ABOVE step content with `ArrowBack` icon.
+- **BYS demo Turkish strings**: `dashboard.html` + `callback.html` were entirely English despite `lang="tr"`; `index.html` missing diacritics (Universitesi → Üniversitesi, Ogrenci → Öğrenci, Sifre → Şifre, Giris → Giriş, Iletisim → İletişim, …). Fully localized all three pages. Also fixed captcha input overflow (`min-width: 0` + `flex-wrap: wrap`).
+- **Success redirect gate**: `index.html` sessionStorage payload now includes `success: true`, `email`, `displayName`, `sessionId`, `completedMethods`, `timestamp` — `dashboard.html` auth check no longer kicks user back to login.
+- **Twilio SMS body localization**: `TwilioVerifySmsService.sendOtp` now calls `.setLocale("tr")` so Turkish users receive the OTP template in Turkish.
+
+### Known (regulatory, not a code bug)
+- **Twilio SMS sender shows "TWVerify"** instead of "FIVUCSAS". This is Twilio's default shared alpha sender; it cannot be changed by any SDK/API call. Custom alpha IDs in Turkey require BTK/İYS pre-registration + Twilio Support ticket to register the alpha on the Verify Service, then adding it under *Channel Configuration → SMS → Alternate Senders*. 1–4 week approval. See `docs/plans/SMS_ACTIVATION_PLAN.md` Appendix.
+
+### Verified
+- End-to-end 3-method login (PASSWORD + TOTP + EMAIL_OTP) on Brave PC succeeded; dashboard redirect worked; no console errors; Turkish dashboard rendered clean.
+
+## [2026-04-14/15] — Client-Side ML Split + V33 Deploy
+
+### Added
+- **Alembic 0004** `client_embedding_observations` table (biometric-processor) — vector(128), log-only per D2; populated via FastAPI BackgroundTasks so telemetry failures never break primary enrollment/verification
+- **Phase 3 build-time model delivery**: `web-app/scripts/fetch-models.mjs` + `public/models/manifest.json` (SHA256-pinned). `npm prebuild` runs fetch-models. `.onnx` files git-ignored. silero-vad + yolo-card-nano live at https://app.fivucsas.com/models/
+- **Phase 4 Silero VAD V1**: `VoiceVAD.ts` wraps silero-vad.onnx (512-sample frames, persisted h/c state); `TwoFactorDispatcher` gates VOICE uploads with graceful fallback when model unavailable or payload non-WAV
+- **CLIENT_SIDE_ML_PLAN.md v2.0**: honest pre-filter-only rewrite; D1-D4 decisions locked (pre-filter client, log-only server, SHA256 delivery, Silero V1/ECAPA V2 deferred)
+
+### Fixed
+- **V33 voice_enrollments migration DEPLOYED** (2026-04-14): rebuilt identity-core-api image after unblocking pre-existing `NfcController` compile error (exposed `findByCardSerialAndTenantId` on hexagonal port + adapter). Flyway history now V33.
+
+### Known
+- mobilefacenet.onnx pending — all public mirrors return 401/404; needs authenticated InsightFace/HuggingFace download. Graceful fallback active (auth works without it per D2).
+- VoiceStep uses MediaRecorder → WebM directly (4 consumer sites). VoiceVAD currently bypasses until VoiceStep is rewired to emit wav16k via useVoiceRecorder.
+
+## [2026-03-19] — Auth-Test Refinements + Backend Tracking
 
 ### Added - 2026-03-19 Auth-Test & Backend Refinements
 - **Auth-test page refinements**: Fingerprint username field hidden (WebAuthn + hardware token), Voice re-record enforcement after enrollment + delete enrollment button, NFC 409 "already enrolled" message + delete card button + response parsing fix (`res.success` -> `res.ok`), Face removed client-side CLAHE (caused verify mismatch) + camera 640x480 for mobile, Bank enrollment uses face-cropped images instead of full frame, Liveness server-authoritative verdict (was requiring both client+server), consistent Enroll/Verify/Who Is This?/Delete button order across all sections
@@ -463,7 +654,7 @@ All 8 originally-leaking endpoints return 200 for `ahmet.abdullah@marun.edu.tr`:
 
 ---
 
-## [Unreleased] - 2026-02-21
+## [2026-02-21] — Integration Closure + Step-Up Backend
 
 ### Added - 2026-03-13 Integration Closure Batch
 - **web-app test baseline mocks** under `src/core/repositories/__mocks__/`:
@@ -641,8 +832,8 @@ All 8 originally-leaking endpoints return 200 for `ahmet.abdullah@marun.edu.tr`:
 - Identity Core API with JWT authentication, RBAC, multi-tenancy
 - Biometric Processor with 46+ endpoints, 9 ML models
 - Web Admin Dashboard (React 18 + Material UI)
-- Landing Website deployed to `fivucsas.rollingcatsoftware.com`
-- Web Dashboard deployed to `ica-fivucsas.rollingcatsoftware.com`
+- Landing Website deployed to `fivucsas.com`
+- Web Dashboard deployed to `app.fivucsas.com`
 - Identity Core API deployed on Hetzner VPS (116.203.222.213)
 - 14 Flyway database migrations
 - Comprehensive documentation

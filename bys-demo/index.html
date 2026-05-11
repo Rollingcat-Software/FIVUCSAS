@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIVUCSAS Biyometrik Kimlik Doğrulama — Üniversite BYS Entegrasyon Demosu</title>
+    <meta name="description" content="Canlı entegrasyon demosu: FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite öğrenci bilgi sistemine nasıl entegre edildiğini gösterir. Marmara BYS arayüzü, demo veridir.">
+    <meta name="keywords" content="FIVUCSAS, biyometrik kimlik doğrulama, OAuth 2.0, OIDC, entegrasyon demosu, BYS, öğrenci bilgi sistemi, demo, biometric authentication demo">
+    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gültekin">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <!-- googlebot-specific directive mirrors the robots directives so Google
+         doesn't narrow to just index,follow when both tags are present. -->
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta property="og:title" content="FIVUCSAS — Üniversite BYS Biyometrik Kimlik Doğrulama Entegrasyon Demosu">
+    <meta property="og:description" content="FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite BYS'ye nasıl entegre edildiğini gösteren canlı demo. Marmara BYS arayüzü, demo veridir.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://demo.fivucsas.com/">
+    <meta property="og:site_name" content="FIVUCSAS Demo">
+    <meta property="og:image" content="https://fivucsas.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FIVUCSAS — Üniversite BYS Entegrasyon Demosu">
+    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik doğrulamanın bir üniversite BYS'ye nasıl entegre edildiğini gösteren canlı demo.">
+    <meta name="twitter:image" content="https://fivucsas.com/og-image.png">
+    <link rel="canonical" href="https://demo.fivucsas.com/">
+
+    <!-- JSON-LD WebPage schema: positions this page as a product demo, not a
+         real university portal. Reduces risk of Google mistaking it for
+         Marmara's official BYS. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "FIVUCSAS Biyometrik Kimlik Doğrulama — BYS Entegrasyon Demosu",
+      "description": "Canlı entegrasyon demosu: FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite öğrenci bilgi sistemine nasıl entegre edildiğini gösterir.",
+      "url": "https://demo.fivucsas.com/",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      },
+      "about": {
+        "@type": "SoftwareApplication",
+        "name": "FIVUCSAS Auth Widget",
+        "applicationCategory": "SecurityApplication",
+        "url": "https://fivucsas.com/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      },
+      "inLanguage": "tr"
+    }
+    </script>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%238B0000'/><text x='16' y='22' text-anchor='middle' fill='%23ffffff' font-size='18' font-weight='900'>M</text></svg>">
+</head>
+<body class="login-page">
+
+<!-- Top Utility Bar -->
+<div class="utility-bar">
+    <div class="utility-bar-inner">
+        <div class="utility-bar-left">
+            <span>T.C. Marmara Üniversitesi</span>
+        </div>
+        <div class="utility-bar-right">
+            <a href="#" onclick="return false;">İletişim</a>
+            <span class="util-sep">|</span>
+            <a href="#" onclick="return false;">Site Haritası</a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Header -->
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="index.html" class="header-brand">
+            <div class="mu-crest-sm">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <defs>
+                        <linearGradient id="crestGradSm" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8B0000"/>
+                            <stop offset="100%" stop-color="#5c0000"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="22" cy="22" r="21" fill="url(#crestGradSm)" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="22" cy="22" r="17" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.4"/>
+                    <text x="22" y="14" text-anchor="middle" fill="#ffffff" font-size="5.5" font-weight="700" font-family="serif" letter-spacing="0.5">MARMARA</text>
+                    <text x="22" y="30" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="900" font-family="serif">M</text>
+                    <text x="22" y="39" text-anchor="middle" fill="#ffffff" font-size="4.5" font-weight="600" font-family="serif" letter-spacing="2">1883</text>
+                </svg>
+            </div>
+            <div class="header-brand-text">
+                <div class="header-brand-title">T.C. Marmara Üniversitesi</div>
+                <div class="header-brand-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
+            </div>
+        </a>
+        <div class="header-right">
+            <div class="header-contact-line">
+                <svg role="img" aria-label="Telefon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                0216 777 00 00
+            </div>
+            <div class="header-contact-line">
+                <svg role="img" aria-label="E-posta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                bilgisistem@marmara.edu.tr
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Navigation Bar -->
+<nav class="bys-navbar">
+    <div class="bys-navbar-inner">
+        <ul class="bys-nav-list">
+            <li class="bys-nav-item active"><a href="index.html">Ana Sayfa</a></li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Öğrenci İşleri <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Kayıt Yenileme</a></li>
+                    <li><a href="#" onclick="return false;">Ders Seçimi</a></li>
+                    <li><a href="#" onclick="return false;">Mezuniyet Başvurusu</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Notlar <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Not Görüntüleme</a></li>
+                    <li><a href="#" onclick="return false;">Not İtiraz</a></li>
+                    <li><a href="#" onclick="return false;">Transkript</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Ders Programı <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Haftalık Program</a></li>
+                    <li><a href="#" onclick="return false;">Sınav Tarihleri</a></li>
+                    <li><a href="#" onclick="return false;">Devamsızlık</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item has-dropdown">
+                <a href="#" onclick="return false;">Belgeler <span class="nav-arrow">&#9660;</span></a>
+                <ul class="bys-dropdown">
+                    <li><a href="#" onclick="return false;">Öğrenci Belgesi</a></li>
+                    <li><a href="#" onclick="return false;">Burs Belgesi</a></li>
+                    <li><a href="#" onclick="return false;">Geçici Mezuniyet</a></li>
+                </ul>
+            </li>
+            <li class="bys-nav-item"><a href="#" onclick="return false;">Duyurular</a></li>
+            <li class="bys-nav-item"><a href="#" onclick="return false;">İletişim</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="login-main">
+    <div class="login-container">
+
+        <!-- University Logo / Crest -->
+        <div class="university-header">
+            <div class="mu-crest">
+                <svg viewBox="0 0 120 120" width="96" height="96">
+                    <defs>
+                        <linearGradient id="bigCrestGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8B0000"/>
+                            <stop offset="100%" stop-color="#4a0000"/>
+                        </linearGradient>
+                        <filter id="crestShadow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#8B000040"/>
+                        </filter>
+                    </defs>
+                    <circle cx="60" cy="60" r="56" fill="url(#bigCrestGrad)" stroke="#ffffff" stroke-width="2.5" filter="url(#crestShadow)"/>
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="#ffffff" stroke-width="0.7" opacity="0.4"/>
+                    <circle cx="60" cy="60" r="44" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.25"/>
+                    <path d="M 20 60 A 40 40 0 0 1 100 60" fill="none" stroke="#ffffff" stroke-width="0.4" opacity="0.2"/>
+                    <text x="60" y="32" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="2">MARMARA</text>
+                    <text x="60" y="44" text-anchor="middle" fill="#ffffff" font-size="7" font-weight="500" font-family="'Times New Roman',serif" letter-spacing="1">ÜNİVERSİTESİ</text>
+                    <text x="60" y="74" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="900" font-family="'Times New Roman',serif">M</text>
+                    <line x1="38" y1="84" x2="82" y2="84" stroke="#ffffff" stroke-width="0.8" opacity="0.5"/>
+                    <text x="60" y="95" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="3">1883</text>
+                </svg>
+            </div>
+            <h1 class="bys-title">Öğrenci Bilgi Sistemi</h1>
+            <p class="bys-subtitle">T.C. Marmara Üniversitesi &mdash; BYS Giriş Portalı</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+
+            <!-- Traditional Login Form -->
+            <form class="login-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="username">Kullanıcı Adı</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="text" id="username" placeholder="Öğrenci numarası veya kullanıcı adı" autocomplete="username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Şifre</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        <input type="password" id="password" placeholder="Şifrenizi giriniz" autocomplete="current-password">
+                    </div>
+                </div>
+
+                <!-- Fake CAPTCHA -->
+                <div class="captcha-area">
+                    <label>Güvenlik Kodu</label>
+                    <div class="captcha-row">
+                        <div class="captcha-image">
+                            <svg viewBox="0 0 160 48" width="160" height="48">
+                                <rect width="160" height="48" fill="#f0f1f3" rx="4"/>
+                                <line x1="0" y1="12" x2="160" y2="38" stroke="#d8d8d8" stroke-width="1"/>
+                                <line x1="10" y1="40" x2="150" y2="8" stroke="#e0e0e0" stroke-width="1"/>
+                                <line x1="40" y1="0" x2="120" y2="48" stroke="#ddd" stroke-width="0.8"/>
+                                <text x="15" y="34" fill="#445" font-size="22" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-6,15,34)">7</text>
+                                <text x="42" y="30" fill="#554" font-size="19" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(10,42,30)">X</text>
+                                <text x="68" y="35" fill="#435" font-size="24" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-4,68,35)">k</text>
+                                <text x="96" y="28" fill="#345" font-size="18" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(7,96,28)">9</text>
+                                <text x="122" y="33" fill="#453" font-size="21" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(-8,122,33)">P</text>
+                                <text x="145" y="30" fill="#534" font-size="17" font-weight="bold" font-family="'Courier New',monospace" transform="rotate(5,145,30)">2</text>
+                            </svg>
+                        </div>
+                        <button type="button" class="captcha-refresh" title="Yenile" aria-label="Güvenlik kodunu yenile" onclick="return false;">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                        </button>
+                        <input type="text" class="captcha-input" placeholder="Kodu giriniz" maxlength="6">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-giris" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-5-4l5-5-5-5m5 5H3"/></svg>
+                    Giriş Yap
+                </button>
+            </form>
+
+            <!-- Help Links -->
+            <div class="help-links">
+                <a href="#" onclick="return false;">Şifremi unuttum</a>
+                <span class="link-dot">&middot;</span>
+                <a href="#" onclick="return false;">Kullanıcı adımı unuttum</a>
+                <span class="link-dot">&middot;</span>
+                <a href="#" onclick="return false;">İlk şifremi oluştur</a>
+            </div>
+
+            <!-- Divider -->
+            <div class="login-divider"><span>veya</span></div>
+
+            <!-- e-Devlet Button (disabled) -->
+            <button class="btn-edevlet" disabled title="e-Devlet ile giris bu demoda devre disi">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                <span>e-Devlet ile Giriş</span>
+                <span class="edevlet-badge">Devre Disi</span>
+            </button>
+
+            <!-- Second Divider -->
+            <div class="login-divider"><span>veya</span></div>
+
+            <!-- FIVUCSAS Login Button — PRIMARY: hosted redirective OIDC flow -->
+            <button class="fivucsas-login-btn" id="fivucsas-login-btn" onclick="startFivucsasLogin()">
+                <span class="fivucsas-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </span>
+                <div class="fivucsas-btn-text">
+                    <div class="fivucsas-btn-label">FIVUCSAS ile Güvenli Giriş</div>
+                    <div class="fivucsas-btn-sub">Yönlendirmeli Giriş &mdash; Biyometrik Kimlik Doğrulama</div>
+                </div>
+                <svg class="fivucsas-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+            </button>
+
+            <!-- Secondary: inline widget (step-up MFA / advanced) -->
+            <div class="fivucsas-advanced">
+                <button type="button" class="fivucsas-advanced-btn" onclick="startFivucsasWidget()">
+                    İnline MFA (gelişmiş) &mdash; iframe widget örneği
+                </button>
+            </div>
+
+        </div><!-- /.login-card -->
+
+    </div><!-- /.login-container -->
+</main>
+
+<!-- Demo Notice Banner -->
+<div class="demo-banner">
+    <div class="demo-banner-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div>
+        <strong>Demonstrasyon Sayfası</strong> &mdash; Bu sayfa, FIVUCSAS biyometrik kimlik doğrulamanın bir üniversite BYS'ye nasıl entegre edildiğini göstermektedir.
+        Geleneksel giriş ve e-Devlet bu demoda devre dışıdır. <strong>&ldquo;FIVUCSAS ile Güvenli Giriş&rdquo;</strong> butonunu kullanarak OAuth widget akışını deneyebilirsiniz.
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="page-footer">
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="#" onclick="return false;">Gizlilik Politikasi</a>
+            <span>|</span>
+            <a href="#" onclick="return false;">Erişebilirlik</a>
+            <span>|</span>
+            <a href="#" onclick="return false;">Yardım</a>
+        </div>
+        <p>&copy; 2026 T.C. Marmara Üniversitesi &mdash; Bilgi İşlem Daire Başkanlığı</p>
+        <p class="footer-demo-note">Bu bir FIVUCSAS entegrasyon demosudur. <a href="https://fivucsas.com" target="_blank" rel="noopener">fivucsas.com</a></p>
+    </div>
+</footer>
+
+<!-- FIVUCSAS Official Auth SDK -->
+<script src="https://verify.fivucsas.com/fivucsas-auth.js?v=20260418d"
+        integrity="sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6"
+        crossorigin="anonymous"></script>
+<script>
+const FIVUCSAS_CONFIG = {
+    clientId: 'marmara-bys-demo',
+    baseUrl: 'https://verify.fivucsas.com',
+    apiBaseUrl: 'https://api.fivucsas.com/api/v1',
+    locale: 'tr',
+    theme: 'light'
+};
+
+// PRIMARY: hosted-first OIDC flow
+// Navigates the top-level browser to verify.fivucsas.com/login, which runs
+// MFA natively (Web NFC, passkeys, camera all work), then redirects back
+// to callback.html with ?code=...&state=... for code→token exchange.
+async function startFivucsasLogin() {
+    try {
+        const auth = new FivucsasAuth(FIVUCSAS_CONFIG);
+        await auth.loginRedirect({
+            redirectUri: window.location.origin + '/callback.html',
+            scope: 'openid profile email'
+        });
+    } catch (err) {
+        console.error('loginRedirect failed:', err);
+        alert('Giriş başlatılamadı. Lütfen tekrar deneyin.');
+    }
+}
+
+// SECONDARY: embedded iframe widget — kept for inline step-up MFA demos
+async function startFivucsasWidget() {
+    const auth = new FivucsasAuth(FIVUCSAS_CONFIG);
+    try {
+        const result = await auth.verify({
+            flow: 'login',
+            onStepChange: (step) => { if (location.hostname === 'localhost') console.log('Step:', step); },
+            onError: (err) => console.error('Auth error:', err),
+            onCancel: () => { if (location.hostname === 'localhost') console.log('Auth cancelled'); }
+        });
+
+        if (result.success) {
+            sessionStorage.setItem('fivucsas_auth', JSON.stringify({
+                success: true,
+                mode: 'widget',
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                userId: result.userId,
+                email: result.email,
+                displayName: result.displayName,
+                sessionId: result.sessionId,
+                completedMethods: result.completedMethods,
+                timestamp: result.timestamp
+            }));
+            window.location.href = 'callback.html';
+        }
+    } catch (err) {
+        console.error('Widget auth failed:', err);
+        alert('Kimlik doğrulama başarısız oldu. Lütfen tekrar deneyin.');
+    }
+}
+</script>
+
+</body>
+</html>

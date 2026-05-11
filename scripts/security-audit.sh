@@ -1,6 +1,6 @@
 #!/bin/bash
 # FIVUCSAS Production Security Audit
-BASE_URL="https://auth.rollingcatsoftware.com"
+BASE_URL="https://api.fivucsas.com"
 
 echo "=== FIVUCSAS Security Audit ==="
 echo "Target: $BASE_URL"

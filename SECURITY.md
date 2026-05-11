@@ -1,38 +1,63 @@
 # Security Policy
 
+## Supported Versions
+
+| Version | Supported |
+|---------|-----------|
+| 1.x     | Yes       |
+| < 1.0   | No        |
+
 ## Reporting a Vulnerability
 
-If you believe you've found a security vulnerability in FIVUCSAS — the multi-tenant biometric authentication platform — please report it privately so we can fix it before disclosing publicly.
+If you discover a security vulnerability, please report it responsibly.
 
-**Email:** info@app.fivucsas.com (subject prefix: `[SECURITY] FIVUCSAS`)
+**Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Please include:
-- A clear description of the issue and its impact.
-- Steps to reproduce, ideally with a minimal proof of concept.
-- Affected versions or commit SHAs if known.
-- Whether the issue is already public.
+Instead, please email: **security@fivucsas.com**
 
-We commit to:
-- Acknowledging your report within **3 business days**.
-- Providing a full assessment within **10 business days**.
-- Coordinating disclosure timing with you once a fix is ready.
+Include:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Suggested fix (if any)
 
-## Scope
+We will acknowledge receipt within 48 hours and provide a detailed response within 7 days.
 
-In scope:
-- Authentication/authorization bypass (JWT, OAuth2, refresh-token, MFA, WebAuthn).
-- Account takeover or session hijacking.
-- Biometric data integrity (tenant scoping, embedding-encryption-at-rest, replay).
-- Multi-tenant isolation breaks.
-- Server-side injection (SQL, command, log).
-- Data exposure beyond the authenticated principal's tenant.
+## Security Update Policy
 
-Out of scope:
-- Issues requiring physical access to a user's device.
-- Social-engineering of platform staff or end-users.
-- Best-practice hardening recommendations without a concrete attack path (please open a regular issue).
-- Self-XSS, missing security headers without exploit, clickjacking on non-state-changing pages.
+- Critical vulnerabilities: Patch within 48 hours
+- High severity: Patch within 1 week
+- Medium severity: Patch in next release
+- Low severity: Tracked in backlog
 
-## Safe-Harbor
+## Security Considerations
 
-Good-faith research that respects user privacy, doesn't degrade service, and follows this disclosure process is welcomed. We will not pursue legal action against researchers who follow this policy.
+### Authentication
+- JWT tokens with HS256 signing and automatic rotation
+- BCrypt password hashing (12 rounds)
+- Multi-factor authentication (10 methods supported)
+- Rate limiting on all authentication endpoints
+
+### Biometric Data
+- Face embeddings stored as vectors (not raw images)
+- Voice embeddings stored as 256-dimensional vectors
+- All biometric data encrypted at rest
+- Tenant-level data isolation with row-level security
+
+### Data Protection
+- HTTPS enforced for all API communication
+- CORS configured with explicit origin allowlists
+- CSP headers configured for web application
+- Input validation on all API endpoints
+
+### Infrastructure
+- Docker containers run as non-root users
+- Database connections use connection pooling with TLS
+- Redis authentication required
+- Monitoring endpoints bound to localhost only
+
+## Dependency Management
+
+- Dependencies are pinned to specific versions
+- Dependabot configured for automated security updates
+- `pip-audit` and `npm audit` run in CI pipeline

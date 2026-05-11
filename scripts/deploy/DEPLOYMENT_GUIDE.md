@@ -7,9 +7,9 @@ This guide covers deploying all 4 components of FIVUCSAS.
 | Component | Target | URL |
 |-----------|--------|-----|
 | Identity Core API | Hetzner VPS | http://116.203.222.213:8080 |
-| Web Dashboard | Hostinger | https://ica-fivucsas.rollingcatsoftware.com |
-| Landing Website | Hostinger | https://fivucsas.rollingcatsoftware.com |
-| Biometric API | Your Laptop via Cloudflare | https://bpa-fivucsas.rollingcatsoftware.com |
+| Web Dashboard | Hostinger | https://app.fivucsas.com |
+| Landing Website | Hostinger | https://fivucsas.com |
+| Biometric API | Your Laptop via Cloudflare | https://bio.fivucsas.com |
 
 ---
 
@@ -65,8 +65,8 @@ The web-app is already built. Files are in `web-app/dist/`.
    - Navigate to Files → File Manager
 
 2. **Navigate to subdomain directory**
-   - Find the directory for `ica-fivucsas.rollingcatsoftware.com`
-   - Usually under `domains/ica-fivucsas.rollingcatsoftware.com/public_html/`
+   - Find the directory for `app.fivucsas.com`
+   - Usually under `domains/app.fivucsas.com/public_html/`
 
 3. **Upload files**
    - Delete existing files (if any)
@@ -89,7 +89,7 @@ The web-app is already built. Files are in `web-app/dist/`.
    ```
 
 ### Verify
-- https://ica-fivucsas.rollingcatsoftware.com should show login page
+- https://app.fivucsas.com should show login page
 
 ---
 
@@ -105,8 +105,8 @@ The landing website is already built. Files are in `landing-website/dist/`.
    - Navigate to Files → File Manager
 
 2. **Navigate to main domain directory**
-   - Find the directory for `fivucsas.rollingcatsoftware.com`
-   - Usually under `domains/fivucsas.rollingcatsoftware.com/public_html/`
+   - Find the directory for `fivucsas.com`
+   - Usually under `domains/fivucsas.com/public_html/`
 
 3. **Upload files**
    - Delete existing files (if any)
@@ -117,7 +117,7 @@ The landing website is already built. Files are in `landing-website/dist/`.
      - `.htaccess`
 
 ### Verify
-- https://fivucsas.rollingcatsoftware.com should show landing page
+- https://fivucsas.com should show landing page
 
 ---
 
@@ -126,7 +126,7 @@ The landing website is already built. Files are in `landing-website/dist/`.
 ### Prerequisites
 - Windows 11 with WSL2 (you have v2.5.9.0 ✓)
 - NVIDIA GPU with drivers (you have GTX 1650 ✓)
-- Cloudflare account with `rollingcatsoftware.com` domain
+- Cloudflare account with `fivucsas.com` domain
 
 ### Step 1: WSL2 Setup
 
@@ -153,7 +153,7 @@ cloudflared tunnel create biometric-api
 # Note the tunnel ID (e.g., abc123-def456-...)
 
 # Route DNS
-cloudflared tunnel route dns biometric-api bpa-fivucsas.rollingcatsoftware.com
+cloudflared tunnel route dns biometric-api bio.fivucsas.com
 ```
 
 ### Step 3: Configure Tunnel
@@ -166,7 +166,7 @@ credentials-file: /home/<YOUR_USER>/.cloudflared/<YOUR_TUNNEL_ID>.json
 protocol: http2
 
 ingress:
-  - hostname: bpa-fivucsas.rollingcatsoftware.com
+  - hostname: bio.fivucsas.com
     service: http://localhost:8001
     originRequest:
       connectTimeout: 30s
@@ -195,7 +195,7 @@ cloudflared tunnel run biometric-api
 curl http://localhost:8001/api/v1/health
 
 # Via Cloudflare
-curl https://bpa-fivucsas.rollingcatsoftware.com/api/v1/health
+curl https://bio.fivucsas.com/api/v1/health
 ```
 
 ### Safety Notes
@@ -212,9 +212,9 @@ After all deployments:
 | Service | Check Command | Expected |
 |---------|--------------|----------|
 | Identity API | `curl http://116.203.222.213:8080/actuator/health` | `{"status":"UP"}` |
-| Web Dashboard | Browser: `https://ica-fivucsas.rollingcatsoftware.com` | Login page |
-| Landing | Browser: `https://fivucsas.rollingcatsoftware.com` | Landing page |
-| Biometric API | `curl https://bpa-fivucsas.rollingcatsoftware.com/api/v1/health` | `{"status":"healthy"}` |
+| Web Dashboard | Browser: `https://app.fivucsas.com` | Login page |
+| Landing | Browser: `https://fivucsas.com` | Landing page |
+| Biometric API | `curl https://bio.fivucsas.com/api/v1/health` | `{"status":"healthy"}` |
 
 ---
 
@@ -236,7 +236,7 @@ ssh -i ~/.ssh/hetzner_ed25519 root@116.203.222.213
 cloudflared tunnel info biometric-api
 
 # Check DNS
-dig bpa-fivucsas.rollingcatsoftware.com
+dig bio.fivucsas.com
 ```
 
 ### GPU Not Detected in WSL2
