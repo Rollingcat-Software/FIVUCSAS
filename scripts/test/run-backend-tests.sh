@@ -3,7 +3,7 @@
 # FIVUCSAS Backend Comprehensive Test Script
 # =============================================================================
 
-API_URL="https://auth.rollingcatsoftware.com"
+API_URL="https://api.fivucsas.com"
 PASS=0
 FAIL=0
 SKIP=0

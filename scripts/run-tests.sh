@@ -55,13 +55,13 @@ test_identity() {
 
     cd "$PROJECT_ROOT/identity-core-api" || exit 1
 
-    print_color "$CYAN" "Running Gradle tests..."
-    ./gradlew test --tests "*Integration*"
+    print_color "$CYAN" "Running Maven tests..."
+    mvn test
 
     local exit_code=$?
     if [ $exit_code -eq 0 ]; then
         print_color "$GREEN" "✓ identity-core-api tests PASSED"
-        print_color "$CYAN" "Test report: file://$PWD/build/reports/tests/test/index.html"
+        print_color "$CYAN" "Test report: file://$PWD/target/surefire-reports/"
     else
         print_color "$RED" "✗ identity-core-api tests FAILED"
     fi

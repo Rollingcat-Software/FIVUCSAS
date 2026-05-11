@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marmara BYS - Authentication | FIVUCSAS Demo</title>
+    <meta name="description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu. OAuth callback sayfası.">
+    <meta property="og:title" content="Marmara BYS Kimlik Doğrulama - FIVUCSAS Demo">
+    <meta property="og:description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://demo.fivucsas.com/callback.html">
+    <meta property="og:site_name" content="FIVUCSAS">
+    <meta property="og:image" content="https://fivucsas.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Marmara BYS Kimlik Doğrulama - FIVUCSAS Demo">
+    <meta name="twitter:description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu.">
+    <meta name="twitter:image" content="https://fivucsas.com/og-image.png">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23c8a84e' font-size='18' font-weight='900'>M</text></svg>">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+        <div class="navbar-logo">M</div>
+        <div>
+            <div class="navbar-title">Marmara Üniversitesi</div>
+            <div class="navbar-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
+        </div>
+    </a>
+</nav>
+
+<!-- Callback Processing -->
+<div class="callback-container">
+    <div class="card callback-card" id="callback-card">
+        <div class="card-body">
+            <!-- Loading State -->
+            <div id="loading-state">
+                <div class="spinner"></div>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulanıyor</h2>
+                <p style="color: var(--text-light);">FIVUCSAS ile kimliğiniz doğrulanıyor...</p>
+            </div>
+
+            <!-- Success State (hidden initially) -->
+            <div id="success-state" style="display: none;">
+                <div class="success-icon" style="color: var(--success);">&#x2705;</div>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarılı</h2>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Kimliğiniz FIVUCSAS üzerinden doğrulandı</p>
+
+                <dl class="token-info" id="token-info"></dl>
+
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
+                    <span id="countdown">5</span> saniye içinde panele yönlendiriliyorsunuz...
+                </p>
+                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;">Hemen Devam Et</button>
+            </div>
+
+            <!-- Error State (hidden initially) -->
+            <div id="error-state" style="display: none;">
+                <div class="success-icon" style="color: var(--danger);">&#x274C;</div>
+                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarısız</h2>
+                <p id="error-message" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
+                <a href="index.html" class="btn btn-primary">Tekrar Dene</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FIVUCSAS SDK for handleRedirectCallback() -->
+<script src="https://verify.fivucsas.com/fivucsas-auth.js?v=20260418d"
+        integrity="sha384-LLegFtvECu4lDPINAMXGPM3C5lo3SCnj9jaqBAi1LDvxGILTG8Bm86Db5TIkP1G6"
+        crossorigin="anonymous"></script>
+<script>
+(function() {
+    'use strict';
+
+    var params = new URLSearchParams(window.location.search);
+    var oauthError = params.get('error');
+    var oauthCode = params.get('code');
+
+    if (oauthError) {
+        showError('OAuth hatası: ' + (params.get('error_description') || oauthError));
+        return;
+    }
+
+    // Primary path: OAuth 2.0 authorization code from hosted login.
+    // SDK verifies state, exchanges code at /oauth2/token with PKCE verifier,
+    // and returns access/id/refresh tokens.
+    if (oauthCode) {
+        var auth = new FivucsasAuth({
+            clientId: 'marmara-bys-demo',
+            baseUrl: 'https://verify.fivucsas.com',
+            apiBaseUrl: 'https://api.fivucsas.com/api/v1',
+            locale: 'tr'
+        });
+
+        auth.handleRedirectCallback()
+            .then(function(tokens) {
+                var authData = {
+                    success: true,
+                    mode: 'hosted',
+                    accessToken: tokens.accessToken,
+                    refreshToken: tokens.refreshToken,
+                    idToken: tokens.idToken,
+                    tokenType: tokens.tokenType,
+                    expiresIn: tokens.expiresIn,
+                    userId: tokens.userId,
+                    email: tokens.email,
+                    displayName: tokens.displayName,
+                    sessionId: tokens.sessionId || ('oauth-' + Date.now()),
+                    completedMethods: tokens.completedMethods,
+                    timestamp: tokens.timestamp || Date.now()
+                };
+                sessionStorage.setItem('fivucsas_auth', JSON.stringify(authData));
+                showSuccess(authData);
+            })
+            .catch(function(err) {
+                console.error('Token exchange failed:', err);
+                showError('Kimlik doğrulama tamamlanamadı: ' + (err.message || 'Bilinmeyen hata'));
+            });
+        return;
+    }
+
+    // Fallback path: widget flow stashed tokens in sessionStorage
+    var authData = null;
+    try {
+        var stored = sessionStorage.getItem('fivucsas_auth');
+        if (stored) authData = JSON.parse(stored);
+    } catch(e) {
+        // ignore
+    }
+
+    if (!authData || (!authData.success && !authData.accessToken)) {
+        showError('Kimlik doğrulama verisi alınamadı. Lütfen tekrar giriş yapın.');
+        return;
+    }
+
+    showSuccess(authData);
+
+    function showSuccess(data) {
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+
+        // Display token info
+        var info = document.getElementById('token-info');
+        var fields = [
+            ['Kullanıcı ID', data.userId || data.displayName || '—'],
+            ['E-posta', data.email || '—'],
+            ['Doğrulama Yöntemleri', (data.completedMethods || []).join(', ') || '—'],
+            ['Zaman', data.timestamp ? new Date(data.timestamp).toLocaleString('tr-TR') : '—']
+        ];
+
+        if (data.accessToken) {
+            fields.push(['Erişim Belirteci', data.accessToken.substring(0, 30) + '...']);
+        }
+        if (data.refreshToken) {
+            fields.push(['Yenileme Belirteci', data.refreshToken.substring(0, 20) + '...']);
+        }
+        if (data.sessionId) {
+            fields.push(['Oturum ID', data.sessionId]);
+        }
+        if (data.authCode) {
+            fields.push(['Yetki Kodu', data.authCode.substring(0, 20) + '...']);
+        }
+
+        fields.forEach(function(f) {
+            var dt = document.createElement('dt');
+            dt.textContent = f[0];
+            var dd = document.createElement('dd');
+            dd.textContent = f[1];
+            info.appendChild(dt);
+            info.appendChild(dd);
+        });
+
+        // Countdown redirect
+        var count = 5;
+        var countEl = document.getElementById('countdown');
+        countEl.textContent = count;
+        var timer = setInterval(function() {
+            count--;
+            countEl.textContent = count;
+            if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = 'dashboard.html';
+            }
+        }, 1000);
+
+        var continueBtn = document.getElementById('continue-now');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', function() {
+                clearInterval(timer);
+                window.location.href = 'dashboard.html';
+            });
+        }
+    }
+
+    function showError(msg) {
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('error-state').style.display = 'block';
+        document.getElementById('error-message').textContent = msg;
+    }
+})();
+</script>
+
+</body>
+</html>

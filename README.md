@@ -1,17 +1,17 @@
-# FIVUCSAS - Face and Identity Verification Using Cloud-based SaaS
+# FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS
 
-![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-Production-brightgreen.svg)
-![Last verified](https://img.shields.io/badge/last%20verified-2026--04--28-informational.svg)
-
-> **Current state:** see [ROADMAP_2026-04-28.md](ROADMAP_2026-04-28.md)
-> for the canonical record. Older audits / roadmaps are in
-> [archive/2026-04-pre-roadmap-2028/](archive/2026-04-pre-roadmap-2028/).
+![Java](https://img.shields.io/badge/Java-21-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.12-yellow.svg)
+![React](https://img.shields.io/badge/React-18-blue.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0-purple.svg)
 
 ## Overview
 
-**FIVUCSAS** is a comprehensive, multi-tenant biometric authentication platform designed for secure identity verification. Developed as an Engineering Project at **Marmara University's Computer Engineering Department**.
+**FIVUCSAS** is a multi-tenant biometric authentication platform for secure identity verification. It supports ten authentication methods (password, email/SMS OTP, TOTP, QR code, face, voice, fingerprint, hardware key, NFC document) composable into tenant-configured MFA flows, and exposes a production-grade OAuth 2.0 / OIDC authorization server with hosted-first redirective login.
+
+Engineering Project at **Marmara University's Computer Engineering Department** — CSE4297 / CSE4197.
 
 ### Key Innovation: The Biometric Puzzle
 
@@ -48,14 +48,14 @@ Our unique **active liveness detection algorithm** requires users to perform a r
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **Backend Core** | Spring Boot 3.2+ (Java 21) | Identity & Auth Management |
-| **AI/ML Service** | FastAPI (Python 3.11+) | Biometric Processing |
-| **Mobile App** | Kotlin Multiplatform + Compose | Cross-platform (Android/iOS) |
-| **Web Dashboard** | React 18 + TypeScript | Admin Panel |
-| **Desktop Client** | Kotlin Multiplatform + Compose | Kiosk Mode |
-| **Database** | PostgreSQL 16 + pgvector | Data & Vector Storage |
-| **Cache/Queue** | Redis 7 | Session & Messaging |
-| **API Gateway** | NGINX | Routing & Rate Limiting |
+| **Backend Core** | Spring Boot 3.4.7 (Java 21) | Identity & Auth Management, OAuth 2.0 / OIDC |
+| **AI/ML Service** | FastAPI (Python 3.12) | Biometric Processing (DeepFace, MediaPipe, YOLO) |
+| **Mobile App** | Kotlin Multiplatform + Compose | Cross-platform (Android/iOS/Desktop) |
+| **Web Dashboard** | React 18 + TypeScript 5 + Vite 8 | Admin Panel, MUI, InversifyJS DI |
+| **Hosted Login / Widget** | verify.fivucsas.com | Hosted-first redirective + iframe step-up MFA |
+| **Database** | PostgreSQL 17 + pgvector | Data & HNSW vector indexes |
+| **Cache / Session** | Redis 7.4 | OTP TTL, rate limits, JWKS cache |
+| **Edge / Routing** | Traefik v3.6 | TLS, per-route CSP, redirect-URI allowlist |
 
 ## Repository Structure
 
@@ -116,6 +116,15 @@ docker-compose logs -f
 | Swagger UI (Spring) | http://localhost:8080/swagger-ui.html |
 | API Docs (FastAPI) | http://localhost:8001/docs |
 
+### Production URLs
+
+| Service | URL |
+|---------|-----|
+| Identity Core API | https://api.fivucsas.com |
+| Swagger UI | https://api.fivucsas.com/swagger-ui.html |
+| Web Admin Dashboard | https://app.fivucsas.com |
+| Landing Page | https://fivucsas.com |
+
 ## Development
 
 ### Running Individual Services
@@ -138,59 +147,50 @@ npm install && npm run dev
 ### Running Tests
 
 ```bash
-# Windows
-./scripts/run-all-tests.ps1
+# Backend (identity-core-api) — Testcontainers-backed integration + unit
+cd identity-core-api && mvn test
 
-# Linux/Mac
-./scripts/run-tests.sh
+# Biometric processor — pytest
+cd biometric-processor && pytest tests/unit/
 
-# Integration tests
-./scripts/test-integration.sh
+# Web-app unit + component — Vitest
+cd web-app && npm test
 
-# E2E tests (Playwright, against production)
+# Web-app E2E — Playwright against local or production
 cd web-app && npx playwright test
 
-# Mobile unit tests (requires Android SDK)
+# Mobile — requires Android SDK
 cd client-apps && ./gradlew :shared:test
 ```
 
 ## Documentation
 
-- **[Full Documentation](./docs/README.md)** - Start here
-- [Getting Started Guide](./docs/01-getting-started/)
-- [Architecture Analysis](./docs/02-architecture/)
+- **[Full Documentation](./docs/README.md)** — start here
+- [Getting Started](./docs/01-getting-started/)
+- [Architecture](./docs/02-architecture/)
 - [Development Guide](./docs/03-development/)
 - [API Documentation](./docs/04-api/)
-- [Implementation Status](./docs/IMPLEMENTATION_STATUS_REPORT.md)
 - [Multi-Modal Auth Architecture](./docs/09-auth-flows/README.md)
+- [Active Plans](./docs/plans/) — SMS activation, client-side ML split, BYOD, OAuth2 audit, multi-method 2FA
 
-## Project Status (March 2026)
+## Project Status (April 2026)
 
-### Completed
-- [x] Biometric Processor API (100%) - 46+ endpoints, 9 ML models, anti-spoofing support
-- [x] Web Admin Dashboard (100%) - React 18, Material-UI, deployed to Hostinger
-- [x] Database Schema (100%) - PostgreSQL 16 + pgvector, 17 Flyway migrations
-- [x] Comprehensive Documentation (100%)
-- [x] Identity Core API (100%) - JWT auth, RBAC, multi-tenancy, all 10 auth handlers, deployed on Hetzner
-- [x] Landing Website - deployed to `fivucsas.rollingcatsoftware.com`
-- [x] Multi-Modal Auth System - 10 auth handlers, device constraints, configurable auth flows
-- [x] Browser-Side Face Detection - MediaPipe Tasks API for real-time face quality checks
-- [x] Anti-Spoofing Integration - DeepFace 0.0.98 built-in + config for MiniFASNet
-- [x] CI/CD Pipeline - GitHub Actions for all 3 services
-- [x] E2E Testing - 224 Playwright tests (217 pass, 7 skipped) against production
-- [x] Mobile App Backend Integration - Production API URLs configured
-- [x] Fingerprint Step-Up Auth - ECDSA P-256 challenge-response, deployed on Hetzner VPS (V17)
-- [x] 528+ Unit Tests - including step-up, auth handlers, TestContainers integration
-- [x] Auth Flow Contract Alignment - backend-driven auth method sourcing and typed operation contracts in web-app
-- [x] QR Auth Runtime Integration - QR token generation wired to backend in multi-step flow with manual fallback
-- [x] WebAuthn Settings Integration - platform authenticator and hardware key enrollment dialogs added to Settings
-- [x] Auth Flow Guardrails Hardened - required-step restrictions expanded for unsupported methods (NFC/Fingerprint/Voice)
+Production-deployed. 99% complete. ~1,820+ tests across backend/web/mobile (633 backend + 619 web-app Vitest + 425 Kotlin + 27 Playwright specs).
 
-### In Progress
-- [ ] Mobile/Desktop Apps (70%) - 7 test files ready, need Android SDK to run
-- [ ] Biometric Processor deployment - Cloudflare Tunnel scripts ready, WSL2 setup pending
-- [ ] Full web-app Vitest stabilization - legacy e2e/service tests still contain baseline failures
-- [ ] biometric-processor submodule fast-forward blocked by local untracked-file conflict (`uniface_liveness_detector.py`)
+### What's shipped
+
+- **Identity Core API** — Spring Boot 3.4.7 on Java 21, JWT + RBAC + multi-tenancy, all 10 auth handlers, Flyway V1–V38 (V34–V36 ship hosted-login hardening: PKCE S256 mandate for public clients, atomic code-mint replay guard, cross-client replay guard; V37 tenant_id index; V38 SPA public client flip), deployed on Hetzner VPS
+- **Biometric Processor** — FastAPI on Python 3.12, DeepFace / MediaPipe / YOLO for face enroll + verify + liveness, Resemblyzer speaker embeddings for voice, document classifier + MRZ / TC OCR, deployed on Hetzner (internal Docker network, API-key gated, no public route)
+- **Web Dashboard** — React 18 + TypeScript 5 + Vite 8, Clean Architecture with InversifyJS DI, 17 admin pages, full i18n (en + tr), deployed to Hostinger
+- **Hosted Login + Widget** — `verify.fivucsas.com` serves a hosted-first redirective login (Auth0 / Okta pattern) at top-level browsing context; iframe widget remains available for inline step-up MFA
+- **Client Apps** — KMP for Android / iOS / Desktop, platform-native WebAuthn, Custom Tabs / ASWebAuthenticationSession for hosted-login handoff. **Android v5.1.0 ships a standalone TOTP Authenticator** (RFC 6238, AES-GCM EncryptedSharedPreferences vault, Compose Material 3 UI) as a drop-in for Google/Microsoft Authenticator.
+- **Identity Verification Pipeline** — 9 step types, 7 industry templates, selfie-to-document matching
+- **CI/CD** — self-hosted GitHub runner on the VPS; each submodule has its own `ci.yml` + `deploy-*.yml` workflow; Dependabot configured
+- **Security** — PKCE S256 mandatory for public clients, OIDC nonce validation, CSP per-route with frame-ancestors allowlist, GDPR Art. 17 / Art. 20 endpoints (data export + soft-delete purge), rate-limited on authorize-complete + login + export
+
+### Mobile app
+
+See [`client-apps/README.md`](./client-apps/README.md) for the KMP mobile + desktop app, including the v5.1.0 standalone TOTP Authenticator, the current Android feature-parity matrix (targeting 20/20), and the Phase I gap close-out plan in [`docs/plans/PATH_TO_20_20.md`](./docs/plans/PATH_TO_20_20.md).
 
 ## Team
 
@@ -206,7 +206,7 @@ cd client-apps && ./gradlew :shared:test
 
 ## License
 
-Copyright 2025 FIVUCSAS Team. Licensed under the MIT License.
+Copyright 2025-2026 FIVUCSAS Team. Licensed under the MIT License.
 
 ---
 

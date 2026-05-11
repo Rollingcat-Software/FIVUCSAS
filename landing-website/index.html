@@ -1,32 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="FIVUCSAS - Face and Identity Verification Using Cloud-based SaaS. Enterprise biometric authentication platform with 10 auth methods, multi-tenant architecture, and production-ready microservices." />
-    <meta name="keywords" content="biometric authentication, face verification, identity management, SaaS, multi-tenant, FIVUCSAS, OAuth2, MFA, GDPR, KVKK" />
-    <meta name="author" content="Ahmet Abdullah Gultekin" />
+    <meta name="theme-color" content="#070713" />
+    <meta name="color-scheme" content="dark" />
+    <!-- Meta description trimmed to 155 chars (Bing/Google sweet spot 150-160) and
+         leads with the full acronym expansion so the brand-anchor stays intact. -->
+    <meta name="description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
+    <meta name="keywords" content="biometric authentication, face verification, MFA, multi-factor authentication, OIDC, OAuth 2.0, SaaS, enterprise security, biyometrik doğrulama, yüz tanıma, kimlik doğrulama, FIVUCSAS" />
+    <meta name="author" content="RollingCat Software — Ahmet Abdullah Gültekin" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <!-- googlebot-specific directive mirrors the full robots directives so Google
+         does not fall back to the narrower pair when both tags are present. -->
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="FIVUCSAS - Biometric Authentication Platform" />
-    <meta property="og:description" content="A multi-tenant biometric authentication SaaS platform with 10 auth methods, face recognition, voice verification, and more." />
-    <meta property="og:url" content="https://fivucsas.rollingcatsoftware.com" />
+    <meta property="og:title" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS" />
+    <meta property="og:description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
+    <meta property="og:url" content="https://fivucsas.com/" />
     <meta property="og:site_name" content="FIVUCSAS" />
     <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="tr_TR" />
+    <meta property="og:image" content="https://fivucsas.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
-    <!-- Twitter Card -->
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="FIVUCSAS - Biometric Authentication Platform" />
-    <meta name="twitter:description" content="Multi-tenant biometric authentication SaaS with face, voice, and 10 auth methods." />
+    <meta name="twitter:title" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS" />
+    <meta name="twitter:description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
+    <meta name="twitter:image" content="https://fivucsas.com/og-image.png" />
 
-    <title>FIVUCSAS - Biometric Authentication Platform</title>
+    <link rel="canonical" href="https://fivucsas.com/" />
+    <!-- hreflang: same-URL bilingual SPA — EN + TR toggle via JS, not separate URLs. -->
+    <link rel="alternate" hreflang="x-default" href="https://fivucsas.com/" />
+    <link rel="alternate" hreflang="en" href="https://fivucsas.com/" />
+    <link rel="alternate" hreflang="tr" href="https://fivucsas.com/" />
+    <link rel="apple-touch-icon" href="https://fivucsas.com/og-image.png" />
+
+    <!-- JSON-LD Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "FIVUCSAS",
+      "alternateName": "Face and Identity Verification Using Cloud-based SaaS",
+      "url": "https://fivucsas.com/",
+      "logo": "https://fivucsas.com/og-image.png",
+      "description": "FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric authentication platform with ten auth methods, N-step MFA, OAuth 2.0 / OIDC hosted login, and a drop-in verification widget.",
+      "foundingDate": "2025",
+      "parentOrganization": {
+        "@type": "Organization",
+        "name": "RollingCat Software",
+        "url": "https://rollingcatsoftware.com"
+      },
+      "sameAs": [
+        "https://github.com/Rollingcat-Software/FIVUCSAS",
+        "https://github.com/Rollingcat-Software"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "rollingcat.help@gmail.com",
+        "availableLanguage": ["en", "tr"]
+      }
+    }
+    </script>
+
+    <!-- JSON-LD WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FIVUCSAS",
+      "alternateName": "Face and Identity Verification Using Cloud-based SaaS",
+      "url": "https://fivucsas.com/",
+      "description": "FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric authentication platform.",
+      "inLanguage": ["en", "tr"],
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://app.fivucsas.com/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FIVUCSAS Auth Widget",
+      "alternateName": "FIVUCSAS SDK",
+      "applicationCategory": "SecurityApplication",
+      "applicationSubCategory": "Biometric Authentication",
+      "operatingSystem": "Web iOS Android",
+      "url": "https://verify.fivucsas.com",
+      "downloadUrl": "https://verify.fivucsas.com/sdk.js",
+      "description": "Embeddable biometric authentication widget and SDK. Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. Works like reCAPTCHA or e-Devlet for identity verification.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free tier available"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "RollingCat Software",
+        "url": "https://rollingcatsoftware.com",
+        "founder": {
+          "@type": "Person",
+          "name": "Ahmet Abdullah Gultekin"
+        }
+      },
+      "sourceOrganization": {
+        "@type": "EducationalOrganization",
+        "name": "Marmara University",
+        "department": "Computer Science Engineering"
+      },
+      "featureList": [
+        "Face Recognition with Liveness Detection",
+        "Voice Verification",
+        "Fingerprint (WebAuthn/FIDO2)",
+        "Hardware Security Keys",
+        "NFC Document Scanning (Passport, TC Kimlik)",
+        "TOTP, Email OTP, SMS OTP",
+        "QR Code Authentication",
+        "N-Step Multi-Factor Authentication",
+        "OAuth 2.0 / OpenID Connect",
+        "Embeddable Auth Widget",
+        "Multi-Tenant Architecture",
+        "Identity Verification Pipeline"
+      ],
+      "publisher": {
+        "@type": "Organization",
+        "name": "FIVUCSAS",
+        "url": "https://fivucsas.com/"
+      }
+    }
+    </script>
+
+    <title>FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body class="noise">
+    <!-- Static H1 outside #root so crawlers that don't execute JavaScript
+         (Bingbot, social-card scrapers) still see the brand+expansion in the
+         initial HTML response. Visually hidden via the sr-only pattern; screen
+         readers still announce it. The animated hero H1 inside #root is the
+         primary visible heading for sighted users. -->
+    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS</h1>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

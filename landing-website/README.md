@@ -1,78 +1,41 @@
-# FIVUCSAS Landing Website
+# FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS — Landing Website
 
-![React](https://img.shields.io/badge/React-18-blue.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
-![Vite](https://img.shields.io/badge/Vite-6-purple.svg)
-![Tailwind](https://img.shields.io/badge/Tailwind-3-38bdf8.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+Official landing page for **FIVUCSAS** (Face and Identity Verification Using Cloud-based SaaS), a multi-tenant biometric authentication platform.
 
-## Overview
+**Live**: [fivucsas.com](https://fivucsas.com)
 
-Marketing landing page served at [`fivucsas.com`](https://fivucsas.com). Single-page React + Tailwind site with framer-motion scroll animations, animated counters, and a hero / features / footer layout.
+## Tech Stack
 
-This is **not** the admin dashboard (`app.fivucsas.com`, see `web-app/`) and **not** the hosted login (`verify.fivucsas.com`, also `web-app/`). This is the public-facing brochure site only.
-
-## Stack
-
-- React 18 + TypeScript 5
-- Vite 6 (build + dev server)
+- React 18 + TypeScript
 - Tailwind CSS 3
-- framer-motion (scroll-driven animations)
+- Framer Motion (animations)
+- Vite 6
 
-## Local Development
+## Development
 
 ```bash
-cd landing-website
 npm install
 npm run dev
 ```
 
-Vite dev server starts on `http://localhost:5173` by default.
-
-## Build
+## Build & Deploy
 
 ```bash
 npm run build
 ```
 
-Outputs static assets to `landing-website/dist/`. Served as plain HTML/CSS/JS — no SSR, no Node runtime required at the edge.
+Output is written to `dist/`. Deploy this folder to your web server.
 
-## Deploy
+## SEO
 
-Continuous deploy to Hostinger via `.github/workflows/deploy-landing.yml` in the parent repo. The workflow builds `dist/` and rsyncs it to Hostinger over SSH on every push to `main` that touches `landing-website/`.
+This is a Vite + React SPA, so the production HTML payload at `dist/index.html` does not contain any React-rendered content. Crawlers that don't execute JavaScript (Bingbot, social-card scrapers, some legacy bots) only see what's literally in `index.html`. To stay crawlable we keep three things directly in `index.html`:
 
-For an emergency manual deploy, build locally and rsync `dist/` to the same Hostinger target documented in the workflow.
+1. **A static `<h1>`** in `<body>` outside `#root`, visually hidden via the `sr-only` pattern (inline `clip: rect(0,0,0,0)` etc.). Screen readers still announce it; sighted users see the animated React hero instead.
+2. **Three JSON-LD blocks** — `Organization`, `WebSite`, and `SoftwareApplication` — with `alternateName: "Face and Identity Verification Using Cloud-based SaaS"` so search engines associate the brand token with its expansion.
+3. **Trimmed meta description** (≤160 chars) leading with `FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS`. Don't let descriptions creep beyond ~160 chars — Bing truncates and flags them.
 
-## Folder Structure
-
-```
-landing-website/
-├── index.html              # Vite entry HTML
-├── public/
-│   └── favicon.svg         # static assets copied verbatim into dist/
-├── src/
-│   ├── main.tsx            # React root
-│   ├── App.tsx             # all sections inline (Hero, Features, Stats, Footer)
-│   └── index.css           # Tailwind directives + custom CSS
-├── tailwind.config.js
-├── postcss.config.js
-├── tsconfig.json
-├── tsconfig.node.json
-├── vite.config.ts
-└── package.json
-```
-
-## Where to Edit Content
-
-All copy lives in `src/App.tsx`:
-
-- **Hero section** — search for `{/* ─── Hero Section ─── */}`
-- **Features grid** — `{/* ─── Features Section ─── */}` plus the `features` array near the top of the component
-- **Stats / counters** — `StatCard` instances inside the stats section
-- **Footer** — `{/* ─── Footer ─── */}`
-
-Site-wide styles (gradient-text, custom utilities) live in `src/index.css`. Theme colors are configured in `tailwind.config.js`.
+Sitemap + robots live in `public/` and get copied to `dist/` by Vite. When adding a new public surface (subdomain, marketing page), add a `<url>` entry to `public/sitemap.xml` and rebuild.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE) at repo root.
+MIT — See parent [FIVUCSAS](https://github.com/Rollingcat-Software/FIVUCSAS) repo.

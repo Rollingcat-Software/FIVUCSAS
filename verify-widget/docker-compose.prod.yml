@@ -1,0 +1,38 @@
+services:
+  verify-widget:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fivucsas-verify-widget
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.verify-widget.rule=Host(`verify.fivucsas.com`)"
+      - "traefik.http.routers.verify-widget.entrypoints=websecure"
+      - "traefik.http.routers.verify-widget.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.verify-widget.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.verify-widget.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          pids: 128
+
+networks:
+  proxy:
+    external: true
