@@ -519,3 +519,94 @@ The platform's **actual** CI/CD posture today:
 The single highest-leverage **operator** change is enabling branch protection on all 5 repos with `Require status checks: CI + gitleaks`. **Estimated effort: 30 min, no code changes.**
 
 — end of audit —
+
+## 2026-05-11 — Branch protection enabled
+
+Closes audit recommendation T3.1.d ("enable branch protection on all 5 repos").
+
+### Scope
+
+Branch protection was enabled on the following 6 branches:
+
+| Repo | Branch | Notes |
+| --- | --- | --- |
+| `Rollingcat-Software/FIVUCSAS` | `main` | parent default |
+| `Rollingcat-Software/FIVUCSAS` | `master` | integration branch (per `reference_fivucsas_branch_model.md`) |
+| `Rollingcat-Software/identity-core-api` | `main` | |
+| `Rollingcat-Software/biometric-processor` | `main` | |
+| `Rollingcat-Software/web-app` | `main` | |
+| `Rollingcat-Software/client-apps` | `main` | |
+
+### Settings applied (identical on all 6 branches)
+
+* **Required pull request reviews**: `1` approving review required
+* `dismiss_stale_reviews`: `false`
+* `require_code_owner_reviews`: `false`
+* **Required status checks**: `null` (not enforced — CI is still rolling, will be added later)
+* **`enforce_admins`**: `false` — **admin bypass allowed** (see policy below)
+* `restrictions`: `null` (anyone with push access can open the PR)
+* `required_linear_history`: `false` (merge commits allowed — important for the `master` integration pattern)
+* `allow_force_pushes`: `false` (force-push to protected branch blocked)
+* `allow_deletions`: `false` (branch cannot be deleted)
+* `required_conversation_resolution`: `true` (all review threads must be resolved before merge)
+
+### Admin-bypass policy
+
+`enforce_admins=false` was chosen deliberately for the solo-dev cadence (see memory note `feedback_pr_review_workflow.md`). Admin bypass is **only** to be used for:
+
+* **Emergency production hotfixes** when no second reviewer is available and the fix is small/auditable.
+* **Operator-only mechanical chores** (submodule pointer bumps, dependency-lock updates, doc-only changes that have already been reviewed elsewhere).
+
+Every admin-bypass merge **must** be documented in the PR description with the reason ("emergency hotfix for X" / "submodule pointer bump only"). PRs that bypass review without justification should be flagged in the next CICD audit.
+
+### Verification command
+
+```bash
+gh api repos/Rollingcat-Software/<repo>/branches/<branch>/protection
+```
+
+### Evidence — `Rollingcat-Software/FIVUCSAS` branch `main`
+
+```json
+{
+    "url": "https://api.github.com/repos/Rollingcat-Software/FIVUCSAS/branches/main/protection",
+    "required_pull_request_reviews": {
+        "url": "https://api.github.com/repos/Rollingcat-Software/FIVUCSAS/branches/main/protection/required_pull_request_reviews",
+        "dismiss_stale_reviews": false,
+        "require_code_owner_reviews": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 1
+    },
+    "required_signatures": {
+        "url": "https://api.github.com/repos/Rollingcat-Software/FIVUCSAS/branches/main/protection/required_signatures",
+        "enabled": false
+    },
+    "enforce_admins": {
+        "url": "https://api.github.com/repos/Rollingcat-Software/FIVUCSAS/branches/main/protection/enforce_admins",
+        "enabled": false
+    },
+    "required_linear_history": { "enabled": false },
+    "allow_force_pushes": { "enabled": false },
+    "allow_deletions": { "enabled": false },
+    "block_creations": { "enabled": false },
+    "required_conversation_resolution": { "enabled": true },
+    "lock_branch": { "enabled": false },
+    "allow_fork_syncing": { "enabled": false }
+}
+```
+
+### Verification summary (all 6 branches)
+
+```
+FIVUCSAS/main                       reviews=1 enforce_admins=false force_push=false del=false conv=true
+FIVUCSAS/master                     reviews=1 enforce_admins=false force_push=false del=false conv=true
+identity-core-api/main              reviews=1 enforce_admins=false force_push=false del=false conv=true
+biometric-processor/main            reviews=1 enforce_admins=false force_push=false del=false conv=true
+web-app/main                        reviews=1 enforce_admins=false force_push=false del=false conv=true
+client-apps/main                    reviews=1 enforce_admins=false force_push=false del=false conv=true
+```
+
+### Follow-up
+
+* When CI reaches stable green-rate per repo, add `required_status_checks` (e.g. `ci`, `gitleaks`, `e2e`) to each branch — see T3.1.e in the next CICD audit.
+* Optional future tightening: flip `enforce_admins` to `true` once a second reviewer is consistently available.
