@@ -1,8 +1,9 @@
 name: Deploy Landing to Hostinger
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master]
+    branches: [main, master]
     paths:
       - 'landing-website/**'
       - '.github/workflows/deploy-landing.yml'

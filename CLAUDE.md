@@ -108,6 +108,42 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 - My Profile page (enrollments, activity, data export, KVKK/GDPR)
 - Cross-device session management (view/revoke)
 
+## Biometric Pipeline (CRITICAL — Read Before Touching biometric-processor or web-app auth)
+
+**Architecture decision:** Auth kararı sunucuda olmalı — tarayıcı güvenilmez. Client geometry embedding (512-dim landmark distance) LOG-ONLY'dir, auth için kullanılmaz (D2 kararı).
+
+### Gerçek Üretim Durumu (2026-04-28 afternoon, post-fix)
+| Katman | Durum |
+|---|---|
+| Client detection (auth) | ✅ MediaPipe FaceLandmarker 478pt primary, BlazeFace fallback |
+| Server detection | ✅ MTCNN (bundled weights, deviation from centerface roadmap due to DeepFace bug) |
+| Server embedding | ✅ Facenet512 (512-dim) |
+| Server liveness (/verify) | ✅ UniFace MiniFASNet passive — `LIVENESS_BACKEND=uniface`, `LIVENESS_MODE=passive` |
+| Server liveness (/enroll) | ✅ Wired |
+| Server anti-spoofing | ✅ `ANTI_SPOOFING_ENABLED=true` |
+| Client passive liveness | ✅ `PASSIVE_LIVENESS_THRESHOLD=0.45` gate in useFaceChallenge |
+| Client quality scoring | ✅ Bbox fallback when no landmarks; weights redistribute to blur*0.55+lighting*0.45 |
+| pgvector search | ✅ Üretimde |
+| Adaptive threshold | ✅ `VERIFICATION_THRESHOLD_AGED_*` for >2yr-old embeddings |
+
+### Kural: Embedding Dimension Tutarlılığı
+`FACE_RECOGNITION_MODEL` ile `EMBEDDING_DIMENSION` her zaman eşleşmeli:
+- `Facenet` → `EMBEDDING_DIMENSION=128`
+- `Facenet512` → `EMBEDDING_DIMENSION=512`
+- Model değiştirince **tüm embeddingler geçersiz** — yeniden enrollment zorunlu
+
+### Kural: GPU Gerektiren Modeller
+`ALLOW_HEAVY_ML=false` (default) iken bu modeller boot'u engeller:
+- `FACE_DETECTION_BACKEND`: `retinaface`, `yolov8`, `yolov11*`, `yolov12*`
+- `FACE_RECOGNITION_MODEL`: `ArcFace`, `VGG-Face`, `GhostFaceNet`
+
+CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
+
+### Kural: Liveness Entegrasyonu
+`/liveness` endpoint'i ayrı çalışıyor. `/enroll` ve `/verify` liveness çağırmıyor — bu kasıtlı değil, açık bir boşluk. Faz 2'de düzeltilecek.
+
+**Detay:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md` | **Roadmap:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_ROADMAP_2026-04-28.md`
+
 ## Database
 
 - Flyway migrations V1-V38 (identity-core-api; V37 tenant_id index, V38 SPA public client flip) + Alembic 0001-0004 (biometric-processor)
