@@ -27,7 +27,7 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 | Auth Widget / SDK | https://verify.fivucsas.com |
 | BYS Demo | https://demo.fivucsas.com |
 | Uptime Monitor | https://status.fivucsas.com |
-| Swagger | https://api.fivucsas.com/swagger-ui.html |
+| Swagger | https://api.fivucsas.com/swagger-ui.html (admin-IP-gated since IN-H2 2026-04-19; allowlist in `infra/traefik/config/dynamic.yml`) |
 
 ### Internal Services (no public route)
 | Service | Access |
