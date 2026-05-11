@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#070713" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="FIVUCSAS — Biometric identity verification platform. Drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR, and more. OAuth 2.0 / OIDC compliant, multi-tenant, built for production." />
+    <!-- Meta description trimmed to 155 chars (Bing/Google sweet spot 150-160) and
+         leads with the full acronym expansion so the brand-anchor stays intact. -->
+    <meta name="description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
     <meta name="keywords" content="biometric authentication, face verification, MFA, multi-factor authentication, OIDC, OAuth 2.0, SaaS, enterprise security, biyometrik doğrulama, yüz tanıma, kimlik doğrulama, FIVUCSAS" />
     <meta name="author" content="RollingCat Software — Ahmet Abdullah Gültekin" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -18,7 +20,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS" />
-    <meta property="og:description" content="FIVUCSAS (Face and Identity Verification Using Cloud-based SaaS) — drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant. Multi-tenant biometric authentication, built for production." />
+    <meta property="og:description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
     <meta property="og:url" content="https://fivucsas.com/" />
     <meta property="og:site_name" content="FIVUCSAS" />
     <meta property="og:locale" content="en_US" />
@@ -30,7 +32,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS" />
-    <meta name="twitter:description" content="FIVUCSAS (Face and Identity Verification Using Cloud-based SaaS) — drop-in MFA with face, voice, fingerprint, NFC, TOTP, QR and more. OAuth 2.0 / OIDC compliant, multi-tenant." />
+    <meta name="twitter:description" content="FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS. Multi-tenant biometric MFA: face, voice, fingerprint, NFC, TOTP. OAuth 2.0 / OIDC ready." />
     <meta name="twitter:image" content="https://fivucsas.com/og-image.png" />
 
     <link rel="canonical" href="https://fivucsas.com/" />
@@ -157,6 +159,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
   <body class="noise">
+    <!-- Static H1 outside #root so crawlers that don't execute JavaScript
+         (Bingbot, social-card scrapers) still see the brand+expansion in the
+         initial HTML response. Visually hidden via the sr-only pattern; screen
+         readers still announce it. The animated hero H1 inside #root is the
+         primary visible heading for sighted users. -->
+    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS</h1>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -2,6 +2,69 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-11] SEO round 4 — brand disambiguation (FIVUCSAS vs "fivics" autocorrect)
+
+Single-session sweep across landing, app, api, docs, status, and developer-facing surfaces to push Google + Bing past the "Did you mean fivics?" autocorrect. The brand token "fivucsas" had been silently rewritten to the archery brand "fivics" in SERPs; the fix is layered on-page + off-page brand signals.
+
+### `landing-website/` (fivucsas.com)
+- `index.html` — meta description trimmed from 184 → 155 chars (Bing/Google sweet spot 150-160) with the full acronym expansion at the front. Same trim applied to `og:description` and `twitter:description` for consistency.
+- `index.html` — **static `<h1>` added in `<body>` (outside `#root`)** with the acronym expansion. Visually-hidden via the `sr-only` inline-style pattern so sighted users still see the animated React hero, but JS-less crawlers (Bingbot, social-card scrapers) see the H1 in the initial HTML response. Resolves Bing Webmaster Tools "H1 tag missing" finding.
+- `public/sitemap.xml` — added `https://docs.fivucsas.com/` entry; 8 URLs total.
+
+### `infra/traefik/config/dynamic.yml`
+- **Dedicated `noindex@file` middleware** split out of `secure-headers`. Before today, the `X-Robots-Tag: noindex, nofollow, noarchive` header lived inside `secure-headers.customResponseHeaders`, which is attached to most routers — so `docs.fivucsas.com` (brand-positive API docs) and `status.fivucsas.com` (Uptime Kuma transparency page) were getting noindex'd as collateral. `secure-headers` is now neutral on indexing; `noindex@file` is attached only to `fivucsas-api-admin` (swagger/actuator admin path router) and the docker-label `identity-api` router (public OAuth/auth/API).
+- **Empty-string `customResponseHeaders` are silently dropped by Traefik** — the stub `X-Robots-Tag: ""` that had been sitting in `secure-headers` since IN-H2 (2026-04-19) never actually shipped a noindex signal to Googlebot until now.
+- **Bonus: 24-day-old router-precedence bug fixed.** A Traefik restart (required because Edit-tool atomic-rename changes the bind-mount inode) corrected which router wins for `Host(api.fivucsas.com) && PathPrefix(/swagger-ui|/v3/api-docs|/actuator)`. The file-provider admin-whitelist router (defined in IN-H2 2026-04-19) had been silently losing to the docker-label `identity-api` router — so `/swagger-ui` and `/actuator/**` had been publicly reachable in violation of the IN-H2 design intent for almost a month. Post-restart they are correctly IP-gated.
+
+### `identity-core-api/`
+- `docker-compose.prod.yml` — `identity-api` Traefik router middlewares chain updated: `secure-headers@file,rate-limit@file` → `secure-headers@file,noindex@file,rate-limit@file`. Picks up the new dedicated noindex middleware. Required container `--force-recreate` to load the new label.
+- `README.md` H1 — brand anchor refreshed: leads with `FIVUCSAS — Face and Identity Verification Using Cloud-based SaaS`.
+- `README.md` lines 513/514/530 — example JWT-shaped strings (`"accessToken": "eyJ..."`, `"refreshToken": "eyJ..."`, `Authorization: Bearer eyJ...`) replaced with explicit `<JWT_ACCESS_TOKEN>` / `<JWT_REFRESH_TOKEN>` placeholders. Three pre-existing gitleaks `generic-api-key` + `curl-auth-header` findings cleared.
+
+### Submodule README brand-anchor refreshes
+Each submodule's top-level README H1 now leads with the full acronym expansion so it surfaces in GitHub's repo card and is indexed by GitHub-code search:
+- `biometric-processor/` — README.md H1 + repo description + topic `fivucsas`
+- `web-app/` — README.md H1 + repo description + topic `fivucsas`
+- `client-apps/` — README.md H1 + repo description + topic `fivucsas`
+- `identity-core-api/` — repo description + topic
+- `docs/` — repo description + topic
+- `practice-and-test/` — repo description + topic
+- `spoof-detector/` — repo description + topic
+
+### `web-app/` (app.fivucsas.com)
+- `public/sitemap.xml` — was missing `/widget-auth` (9 routes → 10) and had no `<lastmod>` entries. Rewritten with all 10 public routes from the robots.txt Allow set plus `<lastmod>2026-05-11</lastmod>` and per-route priorities. Deployed direct via SCP to Hostinger.
+
+### Uptime Kuma (`status.fivucsas.com`)
+- Monitor #3 ("Identity API") was hitting `https://api.fivucsas.com/actuator/health` externally; the IN-H2 router-precedence fix (above) means that endpoint now returns 403 to non-admin IPs. Monitor URL repointed to the docker-internal route `http://identity-core-api:8080/actuator/health` (uptime-kuma is on the `proxy` network with identity-core-api). Container restart loaded the new URL from the DB. Heartbeat went 0 (DOWN) → 1 (UP, 249 ms) at 05:02 UTC.
+
+### Off-page brand signals
+- 8 GitHub repo descriptions (FIVUCSAS + all submodules) refreshed with the full acronym expansion + `homepage=https://fivucsas.com` + `fivucsas` topic.
+- Portfolio site (`ahmetabdullah.gultek.in`) FIVUCSAS project card strengthened: tagline + summary (EN + TR) now lead with the full acronym expansion; `stack` chips include `Biometric Authentication`, `OAuth 2.0`, `OIDC`, `Multi-tenant SaaS`; meta keywords updated. Card link points at `https://fivucsas.com` (not GitHub) so link juice goes to the brand domain.
+- GitHub profile README (`github.com/ahmetabdullahgultekin/ahmetabdullahgultekin`) FIVUCSAS entry now `### [FIVUCSAS](https://fivucsas.com)` with the full acronym expansion as the tagline (previously: text-only heading + shortened "Face & Identity Verification Platform" tagline).
+
+### CI / deploy infra
+- `.github/workflows/deploy-landing.yml` — switched from `runs-on: [self-hosted, linux, x64]` to `runs-on: ubuntu-latest`. The Hetzner self-hosted runner had a stuck broker WebSocket session that wouldn't dispatch new jobs (returned `TaskAgentSessionConflictException` on re-register). The ubuntu-latest runner uses the same `HOSTINGER_SSH_KEY` repo secret and finishes deploy in ~30 s vs 8+ minute queue waits. Permanent improvement — landing-site deploys are now decoupled from Hetzner runner health.
+- `workflow_dispatch` trigger added to deploy-landing.yml so manual re-deploys can be fired from the GitHub Actions UI without a code change.
+
+### Operator actions completed (out-of-band)
+- DNS A record `bio.fivucsas.com` deleted (was returning 404 — dangling brand surface).
+- Google Search Console: domain property added, sitemap `https://fivucsas.com/sitemap.xml` submitted, "Request indexing" fired on root. 7 pages discovered; the +1 for `docs.fivucsas.com` will be picked up on next crawl.
+- Bing Webmaster Tools: site added, URL Inspection → Request indexing fired. Two flagged issues — "Meta Description too long or too short" + "H1 tag missing" — both addressed in this release.
+
+### PRs merged this round (16)
+- Parent FIVUCSAS: #42, #43, #44, #45, #46
+- `web-app`: #88, #89
+- `identity-core-api`: #93, #94, #95
+- `biometric-processor`: #93
+- `client-apps`: #37
+- `ahmetabdullah.gultek.in` (portfolio): #2, #3, #4
+- Direct push: `ahmetabdullahgultekin/ahmetabdullahgultekin` profile README
+
+### Not in this round
+- iOS/macOS scope (permanent — no Apple hardware).
+- `verify.fivucsas.com` HTML metadata — already `<meta robots="noindex, nofollow">` (deliberate; auth surface, never a SERP destination).
+- LinkedIn brand-anchor post (user does not post on social media).
+
 ## [2026-04-22] SEO upgrades — landing + bys-demo + app + verify-adjacent (round 3)
 
 Per user feedback: comprehensive SEO hardening across the public surfaces.
