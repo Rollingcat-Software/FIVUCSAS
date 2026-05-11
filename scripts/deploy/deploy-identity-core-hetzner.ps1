@@ -2,6 +2,8 @@
 # FIVUCSAS - Deploy Identity-Core-API to Hetzner VPS (PowerShell)
 # Target: 116.203.222.213
 # ============================================================================
+# Image-SHA tagging added 2026-04-29 per Ops-P2 #7 (parity with
+# /opt/projects/infra/deploy.sh e3e9056). Allows rollback without rebuild.
 
 $ErrorActionPreference = "Stop"
 
@@ -42,6 +44,23 @@ Write-Host "[2/4] Copying files to Hetzner VPS..." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "[3/4] Deploying..." -ForegroundColor Yellow
 & ssh -i $SSH_KEY $HETZNER_HOST "cd $REMOTE_DIR && docker compose down && docker compose up -d --build"
+
+# Step 3b: Tag built :latest images with :sha-<short> on the remote host so
+# we can roll back without rebuilding (Ops-P2 #7, parity with infra/deploy.sh).
+$SHORT_SHA = (& git -C $LOCAL_DIR rev-parse --short HEAD 2>$null)
+if ($LASTEXITCODE -ne 0 -or -not $SHORT_SHA) { $SHORT_SHA = "unknown" }
+Write-Host ""
+Write-Host "[3b/4] Tagging built images with sha-$SHORT_SHA..." -ForegroundColor Yellow
+$tagCmd = @"
+cd $REMOTE_DIR && \
+repos=`$(docker compose images 2>/dev/null | awk 'NR>1 {print `$2}' | sort -u | grep -v '^`$' || true); \
+for repo in `$repos; do \
+  if docker image inspect "`${repo}:latest" >/dev/null 2>&1; then \
+    docker tag "`${repo}:latest" "`${repo}:sha-$SHORT_SHA" && echo "  tagged `${repo}:sha-$SHORT_SHA"; \
+  fi; \
+done
+"@
+& ssh -i $SSH_KEY $HETZNER_HOST $tagCmd
 
 # Step 4: Verify
 Write-Host ""
