@@ -4,8 +4,8 @@
 **FIVUCSAS** (Face and Identity Verification Using Cloud-based SaaS)
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
-**Status**: Production deployed. Phases 0-8 complete. 1,800+ tests. All services healthy.
-**Last verified**: 2026-04-19 (APK MFA reload freeze fixed on the Idle branch; 14 remaining ASCII Turkish strings restored in `StringResources.kt` (974 diacritics); docs/CI/Dependabot audit done. Desktop hosted-first scaffolding landed: OAuth loopback client + SecureTokenStorage (DPAPI/libsecret/fallback). Android v5.2.0-rc1 remains 13/13 hosted-first.)
+**Status**: Production deployed. Phases 0-8 complete. ~1,900+ tests. All services healthy.
+**Last verified**: 2026-05-11 (Session shipped 11 PRs across 5 repos + Flyway repair on prod. Prod containers rebuilt: api image `179d34a5`, bio `75347c98`, both healthy. **V59 + V60 applied successfully** (audit_logs.tenant_id NULL count 140→0 via backfill + sentinel; `refresh_tokens.token` plaintext column dropped; only `token_secret_hash` remains). **Flyway repair on prod completed** — 7 NULL-checksum + description-mismatch rows fixed (V24, V40-V43, V49, V50); `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true` now enforced; Task #80 emergency override retired. **Branch protection live** on FIVUCSAS main+master, identity-core-api, biometric-processor, web-app, client-apps (1-review + admin bypass + force-push/deletion blocked). master+main parent branches reconciled and byte-identical. INVESTIGATION 2026-05-07 P1 residue closed: NFC MRZ wired (api→bio), real occlusion detector, anti-spoof verdict policy verified, dev-gate handlers confirmed, soft-delete purge default-on. Docs: tenant onboarding playbook + 8 ADRs + hierarchy consolidation. spoof-detector blink cache + EAR recalibration (paper P0). Operator-only items handed off in `infra/OPERATOR_HANDOFF_2026-05-11.md`.)
 
 ## Architecture
 
