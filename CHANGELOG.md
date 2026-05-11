@@ -2,6 +2,44 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-11] Session — INVESTIGATION P1 residue + ops hygiene + docs DX + paper P0
+
+User asked for a comprehensive professional session roadmap, then approved all 5 actionable tracks ("all of them"). 4 decisions confirmed at recommended defaults (AddressProof/Watchlist stay dev-gated; branch protection with admin bypass; drop `refresh_tokens.token` plaintext now). 7 parallel agents dispatched in isolated `/tmp/T*/` worktrees; main thread shipped runbook + ROADMAP refresh in parallel.
+
+**9 PRs merged** across api / bio / docs / spoof-detector / parent:
+
+- **api #96** `chore(handlers+purge)` — confirmed `@Profile("dev")` on `AddressProofHandler` + `WatchlistCheckHandler` (already in tree from PR #88 / #81 on 2026-05-07); javadoc documenting dev-only contract; **flipped `APP_PURGE_SOFT_DELETE_ENABLED` default-on in `application-prod.yml`** (GDPR Art. 17). +5 tests (`SoftDeletePurgeJobSchedulingTest` + `ProdProfilePurgeDefaultTest`). 1249/1249 pass.
+- **api #97** `feat(nfc): wire bio mrz_parser into NfcController` — new `POST /api/v1/nfc/verify-mrz` endpoint; calls bio's new `/api/v1/nfc/mrz`; document number masked to last-4 chars in audit log + response payload (PII); new `AuditLogPort#logNfcDocumentVerified` method; existing serial-only `/verify` preserved for backward compat. +7 controller tests.
+- **api #98** `feat(db): V59 + V60` — V59 backfills `audit_logs.tenant_id` from `users.tenant_id` JOIN + sentinel `00000000-0000-0000-0000-000000000000` for remaining NULLs (12.6% baseline from SENIOR_DB Appendix C Q3). `AuditLogAdapter.SYSTEM_TENANT_ID` constant; `resolveTenantIdByEmail` so failed auth attempts surface in target tenant's view. V60 `ALTER TABLE refresh_tokens DROP COLUMN IF EXISTS token` (T+7d soak elapsed since PR #71 Persistable<UUID> fix); `RefreshToken.token` demoted to `@Transient` preserving 5 wire-token call sites; 4 derived queries removed. Plus `scripts/db/reset-pg-stat-user-indexes.sh` + `docs/RUNBOOK_UNUSED_INDEX_AUDIT.md` for the 7-day audit window (kick 2026-05-11 → re-check 2026-05-18). +7 tests. 1250/1250 pass.
+
+- **bio #94** `feat(quality+liveness)` — real occlusion detector (`app/application/services/occlusion_detector.py`, 270 LOC). Eye-region variance ≤120 → sunglasses; mouth-region variance ≤130 → mask/hand; CIE-Lab ΔE ≤18 to distinguish fabric from skin-tone. Score weighting eyes=0.6 / mouth=0.4; critical regions list. Anti-spoof contradiction policy spot-check **confirmed already correct** since 2026-05-08 — `LIVENESS_VERDICT_POLICY=conservative` (default in `core/config.py:146`) unconditionally vetoes on `deepface_spoof_detected`; added 4 regression tests pinning behavior. +15 passing tests (616 → 631).
+- **bio #95** `feat(nfc): expose mrz_parser via /api/v1/nfc/mrz` — FastAPI route wraps existing `mrz_parser.py`; accepts `mrz_text` OR base64-encoded DG1 bytes (forward-compatible for ICAO chip-read); returns structured fields (document_number, issuing_country, dates, checksum_valid + per-field failure list). +10 unit tests covering TD1/TD3, checksum corruption (doc# + DOB), missing/ambiguous inputs, DG1 envelope round-trip, bad-base64.
+
+- **docs #13** `docs: tenant onboarding playbook + 8 ADRs + hierarchy consolidation (T4.12.d/e/f)`:
+  - `01-getting-started/tenant-onboarding.md` (215 lines, DX-first per `feedback_dx_first_planning.md`): leads with `npm install @fivucsas/auth-js` + `loginRedirect` snippet, then OIDC client provisioning, MFA flow customization, RFC 8252 redirect URIs, gotchas (CORS, PKCE, refresh-token family-revoke concurrent-tab trap), prod env vars, monitoring.
+  - `adr/` directory + 8 ADRs (572 lines, MADR shape): hosted-first OIDC / pgvector / MobileFaceNet removal / Facenet512 server-authoritative / RFC 6749 §10.4 family-revoke / V53 BEFORE-DELETE / Persistable<UUID> refresh tokens / spoof-detector standalone.
+  - Hierarchy consolidation: 14 `git mv`s preserving history (`guides/` → `01-getting-started/` + `06-deployment/`; `architecture/` → `02-architecture/`; `testing/` → `05-testing/`); 4 empty dirs removed; 4 broken `IMPLEMENTATION_STATUS_REPORT.md` links fixed; new Runbooks table in `06-deployment/README.md` cross-linking all 9 `/opt/projects/infra/RUNBOOK_*.md` files.
+
+- **spoof-detector #10** `perf(blink)` — per-frame `FaceLandmarker` cache (3.0× speedup at 3 faces, 4.9× at 5; blink-stage FPS 9.8 → 28.9). EAR threshold recalibration: `0.20 → 0.18`, `REOPEN_THRESHOLD 0.22 → 0.23`, `MIN_OPEN_BETWEEN 6 → 12`. Clean 60s live fixture: 17 bpm (in 15–20 target band, down from previous 38 bpm false rate). +13 tests (126 → 139 green). `ROADMAP.md` P0 items ticked.
+
+- **parent #48** `chore(branch-protection)` — enabled 1-review + admin-bypass on `main` across FIVUCSAS (+master), identity-core-api, biometric-processor, web-app, client-apps. `enforce_admins=false` (emergency hotfix path), `required_status_checks=null`, conversation-resolution required, force-push + deletion blocked, linear-history not required (master integration pattern preserved). `CICD_AUDIT_2026-05-04.md` extended with new "2026-05-11 — Branch protection enabled" section.
+- **parent #49** `docs(roadmap)` — ROADMAP refresh (3 weeks stale; Phase A/B/C/I closed; active waves reframed to INVESTIGATION 2026-05-07 residue + DOC_AUDIT_2026-05-04 T4.12 + paper push); `b8bc76a` submodule-pointer sync from PR #47 followup; `9214e3c` 2026-05-11 session pointer bumps (api 6b17e0e → 606f1f4, bio 6f69a7d → 750492c, docs ed4dd25 → 78a9b4a, spoof-detector abc7f05 → cc73cf0). Adds spoof-detector to `.gitmodules` on the SEO branch (was extracted on `main` via `a6ac35a`).
+
+**Operator deliverables (no code, runbook-only)**:
+- `/opt/projects/infra/RUNBOOK_FLYWAY_REPAIR.md` — full procedure for repairing V40/V41/V42/V43/V49/V50 NULL-checksum rows (SENIOR_DB Appendix C Q1) + flipping `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true`. Includes Testcontainers dry-run + rollback. Operator runs when ready.
+- `identity-core-api/scripts/db/reset-pg-stat-user-indexes.sh` + `docs/RUNBOOK_UNUSED_INDEX_AUDIT.md` — kicks off the 7-day unused-index audit window 2026-05-11 → re-check 2026-05-18.
+
+**Audit-delta before rebuild** per `feedback_audit_delta_before_rebuild.md`:
+- api: deployed image `386fe01e` built 2026-05-08 20:03 UTC (last image-included commit `5add915` per `7ee52de` parent bump). HEAD now `606f1f4`. **15+ commits**: today's 3 PRs + #91 APP_PURGE_SOFT_DELETE_ENABLED wiring + #92 V29 Testcontainers FK fix + #93/#94 README placeholders + #95 traefik noindex labels. **Migrations V59 + V60 will apply on next boot.** application-prod.yml: APP_PURGE_SOFT_DELETE_ENABLED default flipped to true. Safe to rebuild.
+- bio: deployed image `75604e33` built 2026-05-09 11:15 UTC (last image-included commit around `31a2667`). HEAD now `750492c`. **3+ commits**: today's 2 PRs + #79 fast-uri / #75 python-multipart deps + #92 requirements-lock clarification. **No env-var changes.** Safe to rebuild.
+
+**Rebuild pending** — operator action. T-FINAL of this session will trigger `docker compose build --no-cache` on both containers; flyway V59/V60 will apply at api boot; bio's new `/api/v1/nfc/mrz` route will register at startup.
+
+**Followup queue** (not in this session):
+- bio main has **79 pre-existing failing unit tests + 3 errors** at baseline (separate from today's PRs — agent ab901dec confirmed). Causes flagged: missing `memory_embedding_repository`, missing `NoFaceDetectedError`, `Landmark.name` attr drift. Dedicated investigation needed.
+- `biometric-processor/README.md` still has broken `docs/4-testing/` + `docs/5-performance/` links into its OWN docs tree (different convention from the docs-submodule). Out of scope for PR #13.
+- master/main reconciliation — both branches diverged this session (master gained PR #49's commits; main has spoof-detector restructure). Reconciliation merge deferred to next round.
+
 ## [2026-05-11] SEO round 4 — brand disambiguation (FIVUCSAS vs "fivics" autocorrect)
 
 Single-session sweep across landing, app, api, docs, status, and developer-facing surfaces to push Google + Bing past the "Did you mean fivics?" autocorrect. The brand token "fivucsas" had been silently rewritten to the archery brand "fivics" in SERPs; the fix is layered on-page + off-page brand signals.
