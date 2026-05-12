@@ -1,6 +1,6 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-05-12 — 11 PRs from the 2026-05-11 session shipped + verified live (see "Closed 2026-05-11 / 2026-05-12" section near the bottom). Supersedes the 2026-04-20 phase-A/B-centric roadmap. Phase A (lint), Phase B (Dependabot security), Phase C wave-0 ops hardening, Phase I Android 13/13, and the 2026-04-30 senior-review remediation are all closed. Active wave is now narrowed to the spoof-detector paper push + a handful of operator-gated items. See `INVESTIGATION_MASTER_2026-05-07.md` and `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-04.md` (on `main`) for the verbose tier breakdown.
+> Last updated: 2026-05-12 — 11 PRs from the 2026-05-11 session shipped + verified live (see "Closed 2026-05-11 / 2026-05-12" section near the bottom). Supersedes the 2026-04-20 phase-A/B-centric roadmap. Phase A (lint), Phase B (Dependabot security), Phase C wave-0 ops hardening, Phase I Android 13/13, and the 2026-04-30 senior-review remediation are all closed. Active wave is now narrowed to the spoof-detector paper push + a handful of operator-gated items. See `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md` and `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-04.md` for the verbose tier breakdown.
 
 ## Project status summary
 
@@ -22,10 +22,10 @@
 
 ## Active wave — INVESTIGATION 2026-05-07 P1/P2 residue + paper push
 
-The 2026-05-07 six-lens audit (`INVESTIGATION_MASTER_2026-05-07.md`) surfaced 10 P0 + ~25 P1 + ~50 P2/P3. All 10 P0 closed same-day. The 2026-05-08 batch (`7ee52de`) closed ~12 P1 items. The 2026-05-11 session closed the next 5 P1 items (NFC MRZ wiring, real occlusion detector, anti-spoof verdict policy, dev-gate handlers, soft-delete purge default-on) — see "Closed 2026-05-11 / 2026-05-12" below. **Remaining open from that audit:**
+The 2026-05-07 six-lens audit (`archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`) surfaced 10 P0 + ~25 P1 + ~50 P2/P3. All 10 P0 closed same-day. The 2026-05-08 batch (`7ee52de`) closed ~12 P1 items. The 2026-05-11 session closed the next 5 P1 items (NFC MRZ wiring, real occlusion detector, anti-spoof verdict policy, dev-gate handlers, soft-delete purge default-on) — see "Closed 2026-05-11 / 2026-05-12" below. **Remaining open from that audit:**
 
 - ~14 pre-existing bio unit-test failures (baseline rot, handed off to a parallel agent on 2026-05-12; PR forthcoming).
-- Long-tail P2/P3 items deferred per backlog tiering — see `INVESTIGATION_MASTER_2026-05-07.md` for the full list.
+- Long-tail P2/P3 items deferred per backlog tiering — see `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md` for the full list.
 
 ## Active wave — Ops + DB hygiene
 
@@ -48,7 +48,7 @@ Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 - iBeta PAD-Level-1 certification submission — Phase 5 trigger.
 - Hetzner self-hosted GitHub Actions runner re-pairing — currently shows online but doesn't pull jobs; ubuntu-latest fallbacks live so not blocking.
 - Custom postgres image with `postgresql-16-partman` + `postgresql-16-cron` (V57 Option A) — V57 is fail-soft live so not blocking; only needed for Option-A monthly-partition automation.
-- `amispoof.com` domain purchase (`RESEARCH_PROCTORING_AMISPOOF_2026-05-02.md` Option B defers this).
+- `amispoof.com` domain purchase (`archive/2026-05/plans/RESEARCH_PROCTORING_AMISPOOF_2026-05-02.md` Option B defers this).
 
 ## Long-running scheduled
 
@@ -69,10 +69,10 @@ Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 
 | Doc | Scope | Location |
 |---|---|---|
-| `INVESTIGATION_MASTER_2026-05-07.md` | 6-lens audit + P0/P1/P2 backlog | fivucsas root (on `main`) |
-| `ROADMAP_OPTIMIZED_2026-05-04.md` | Tier-by-tier backlog (T0…T7) | fivucsas root (on `main`) |
-| `CICD_AUDIT_2026-05-04.md` | CI/CD pipeline audit + branch protection plan | fivucsas root (on `main`) |
-| `SENIOR_DB_REVIEW_2026-05-04.md` Appendix C | Prod-query findings (Flyway NULL checksums, audit_logs NULL tenant_id, unused indexes, dead-tuple ratio) | fivucsas root (on `main`) |
+| `INVESTIGATION_MASTER_2026-05-07.md` | 6-lens audit + P0/P1/P2 backlog | `archive/2026-05/reviews/` |
+| `ROADMAP_OPTIMIZED_2026-05-04.md` | Tier-by-tier backlog (T0…T7) | `archive/2026-05/roadmaps/` |
+| `CICD_AUDIT_2026-05-04.md` | CI/CD pipeline audit + branch protection plan | `archive/2026-05/audits/` |
+| `SENIOR_DB_REVIEW_2026-05-04.md` Appendix C | Prod-query findings (Flyway NULL checksums, audit_logs NULL tenant_id, unused indexes, dead-tuple ratio) | `archive/2026-05/reviews/` |
 | `/opt/projects/SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root |
 | `spoof-detector/ROADMAP.md` | Anti-spoof research + paper roadmap | spoof-detector submodule |
 | `client-apps/docs/plans/CLIENT_APPS_PARITY.md` | Android/Desktop hosted-first parity matrix | client-apps submodule |
