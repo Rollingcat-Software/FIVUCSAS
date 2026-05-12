@@ -1,0 +1,175 @@
+http:
+  routers:
+    fivucsas-comtr-redirect:
+      rule: "Host(`fivucsas.com.tr`) || Host(`www.fivucsas.com.tr`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-online-redirect:
+      rule: "Host(`fivucsas.online`) || Host(`www.fivucsas.online`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-info-redirect:
+      rule: "Host(`fivucsas.info`) || Host(`www.fivucsas.info`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-www-redirect:
+      rule: "Host(`www.fivucsas.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-www-to-apex
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    rollingcat-apex-redirect:
+      rule: "Host(`rollingcatsoftware.com`) || Host(`www.rollingcatsoftware.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    rollingcat-ica-redirect:
+      rule: "Host(`ica-fivucsas.rollingcatsoftware.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas-api
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    rollingcat-bys-redirect:
+      rule: "Host(`bys-demo.rollingcatsoftware.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - redirect-to-fivucsas-demo
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    # IN-H2 (2026-04-19): admin surface on api.fivucsas.com.
+    # Swagger UI, OpenAPI JSON, and Spring actuator endpoints are gated by
+    # admin-whitelist (IP allowlist). The docker-label router `identity-api@docker`
+    # keeps carrying the full Host(`api.fivucsas.com`) rule for public OAuth/auth/
+    # API traffic; Traefik resolves to THIS router for matching admin paths
+    # because its combined Host+Path rule has higher specificity (longer match)
+    # than a bare Host rule. Kept deliberately narrow — public /oauth2/**,
+    # /auth/**, /api/v1/** routes stay on the docker-label router without ACL.
+    fivucsas-api-admin:
+      rule: "Host(`api.fivucsas.com`) && (PathPrefix(`/swagger-ui`) || PathPrefix(`/v3/api-docs`) || PathPrefix(`/actuator`) || Path(`/swagger-ui.html`))"
+      entryPoints:
+        - websecure
+      middlewares:
+        - admin-whitelist@file
+        - secure-headers@file
+        - noindex@file
+        - rate-limit@file
+      service: identity-api@docker
+      tls:
+        certResolver: letsencrypt
+
+    # P4.2 / IN-M3 (2026-04-20): Grafana observability dashboard.
+    # The active router is created via docker labels on the grafana container
+    # (see infra/observability/docker-compose.yml). This file-provider entry
+    # is intentionally NOT live — it documents the routing contract so anyone
+    # grepping dynamic.yml for fivucsas hosts finds it. If you ever move the
+    # grafana container out of the compose stack, uncomment and point service
+    # to an explicit URL (file provider cannot resolve docker service names).
+    #
+    # grafana-observability:
+    #   rule: "Host(`grafana.fivucsas.com`)"
+    #   entryPoints:
+    #     - websecure
+    #   middlewares:
+    #     - admin-whitelist@file
+    #     - secure-headers@file
+    #     - rate-limit@file
+    #   service: grafana@docker
+    #   tls:
+    #     certResolver: letsencrypt
+
+  middlewares:
+    redirect-to-fivucsas:
+      redirectRegex:
+        regex: "^https?://[^/]+(.*)"
+        replacement: "https://fivucsas.com${1}"
+        permanent: true
+
+    redirect-www-to-apex:
+      redirectRegex:
+        regex: "^https?://www\\.fivucsas\\.com(.*)"
+        replacement: "https://fivucsas.com${1}"
+        permanent: true
+
+    redirect-to-fivucsas-api:
+      redirectRegex:
+        regex: "^https?://[^/]+(.*)"
+        replacement: "https://api.fivucsas.com${1}"
+        permanent: true
+
+    redirect-to-fivucsas-demo:
+      redirectRegex:
+        regex: "^https?://[^/]+(.*)"
+        replacement: "https://demo.fivucsas.com${1}"
+        permanent: true
+
+    secure-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "DENY"
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), geolocation=(), payment=(), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
+
+    # SEO indexability gate (2026-05-11): the noindex header is split out of
+    # secure-headers so that secure-headers stays neutral on crawler signals.
+    # Attach `noindex@file` ONLY to surfaces that must not appear in SERPs
+    # (api.fivucsas.com + the admin/swagger/actuator router). Public surfaces
+    # — docs.fivucsas.com, status.fivucsas.com, mizan/sarnic marketing pages —
+    # intentionally do NOT attach this and remain indexable. verify.fivucsas.com
+    # already carries its own HTML `<meta robots>` noindex, so the header is
+    # redundant there (defense-in-depth only).
+    noindex:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow, noarchive"
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+
+    admin-whitelist:
+      ipAllowList:
+        sourceRange:
+          - "127.0.0.1/32"
+          - "10.8.0.0/24"
+          - "193.140.73.0/24"
+          - "46.104.0.0/16"
