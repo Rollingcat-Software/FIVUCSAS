@@ -1,0 +1,10 @@
+# LaTeX build artefacts — keep .tex / .pdf / preview-*.png; ignore the rest.
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg

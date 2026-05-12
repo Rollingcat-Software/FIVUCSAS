@@ -1,6 +1,6 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-05-11 — supersedes the 2026-04-20 phase-A/B-centric roadmap. Phase A (lint), Phase B (Dependabot security), Phase C wave-0 ops hardening, Phase I Android 13/13, and the 2026-04-30 senior-review remediation are all closed. Active wave is the post-2026-05-07 6-lens investigation residue + spoof-detector paper push. See `INVESTIGATION_MASTER_2026-05-07.md` and `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-04.md` (on `main`) for the verbose tier breakdown.
+> Last updated: 2026-05-12 — 11 PRs from the 2026-05-11 session shipped + verified live (see "Closed 2026-05-11 / 2026-05-12" section near the bottom). Supersedes the 2026-04-20 phase-A/B-centric roadmap. Phase A (lint), Phase B (Dependabot security), Phase C wave-0 ops hardening, Phase I Android 13/13, and the 2026-04-30 senior-review remediation are all closed. Active wave is now narrowed to the spoof-detector paper push + a handful of operator-gated items. See `INVESTIGATION_MASTER_2026-05-07.md` and `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-04.md` (on `main`) for the verbose tier breakdown.
 
 ## Project status summary
 
@@ -9,9 +9,9 @@
 - **Tests**: 633 api, ~640 web-app, 425 client-apps, 27 Playwright specs, 114 spoof-detector, plus bio integration tests. ~1,900+ total.
 - **Last prod rebuild**: api image `b670f218` (2026-05-07 07:20 UTC, plus follow-ups through 2026-05-09) + bio image `a0a763b5` (2026-05-07 07:28 UTC, plus spoof-detector v0.2.1 integration 2026-05-08…09). Both healthy.
 
-## Branch state (2026-05-11)
+## Branch state (2026-05-12)
 
-- `master` and `main` have **drifted apart**: master is ahead by 11 SEO/landing/bys-demo commits not in main; main is ahead by 15 spoof-detector restructure + bio/api submodule bump commits not in master. Common ancestor `5a2c758`. Reconciliation pending (tracked below).
+- `master` and `main` **reconciled** on 2026-05-11 via PR #51 (master→main) + PR #52 (main→master post-reconciliation). Subsequent PRs (#53, #54, #55, #56) keep both branches paired. Treat both as live; PRs continue to target `master` per parent-repo convention.
 - Submodule HEADs (per `git submodule status` 2026-05-11):
   - `identity-core-api` → `6b17e0e` (post-`5add915` P1 batch + V29 Testcontainers FK fix + `APP_PURGE_SOFT_DELETE_ENABLED` wired + traefik noindex labels)
   - `biometric-processor` → `6f69a7d` (spoof-detector v0.2.1 integrated + Dependabot patches)
@@ -22,37 +22,21 @@
 
 ## Active wave — INVESTIGATION 2026-05-07 P1/P2 residue + paper push
 
-The 2026-05-07 six-lens audit (`INVESTIGATION_MASTER_2026-05-07.md`) surfaced 10 P0 + ~25 P1 + ~50 P2/P3. All 10 P0 closed same-day. The 2026-05-08 batch (`7ee52de`) closed ~12 P1 items. **Remaining open from that audit (this session's Track 2):**
+The 2026-05-07 six-lens audit (`INVESTIGATION_MASTER_2026-05-07.md`) surfaced 10 P0 + ~25 P1 + ~50 P2/P3. All 10 P0 closed same-day. The 2026-05-08 batch (`7ee52de`) closed ~12 P1 items. The 2026-05-11 session closed the next 5 P1 items (NFC MRZ wiring, real occlusion detector, anti-spoof verdict policy, dev-gate handlers, soft-delete purge default-on) — see "Closed 2026-05-11 / 2026-05-12" below. **Remaining open from that audit:**
 
-- NFC MRZ wiring — `bio/mrz_parser.py` exists but isn't called by the NFC auth method; currently serial-only stub
-- Occlusion implementation — `bio/analyze_quality.py` hardcodes `occlusion=0.0`
-- `AddressProofHandler` and `WatchlistCheckHandler` — both currently `@Profile("dev")` stubs (real KYC providers deferred to Phase 4 as a commercial decision)
-- Anti-spoof contradiction policy spot-check — DeepFace `spoof` label vs UniFace high-confidence-live (partially addressed by 2026-05-08 verdict policy; needs verification)
-- `SoftDeletePurgeJob` default-on prod flip (`APP_PURGE_SOFT_DELETE_ENABLED=true`) — env-var wired since `c0614c6`, default still off, GDPR Art. 17 fulfillment
+- ~14 pre-existing bio unit-test failures (baseline rot, handed off to a parallel agent on 2026-05-12; PR forthcoming).
+- Long-tail P2/P3 items deferred per backlog tiering — see `INVESTIGATION_MASTER_2026-05-07.md` for the full list.
 
-## Active wave — Ops + DB hygiene (this session's Track 4)
+## Active wave — Ops + DB hygiene
 
-- **Branch protection** on `main` for FIVUCSAS / api / bio / web / client-apps — 1 review required, admin bypass allowed, PR-from-fork blocked.
-- **Flyway repair** for V40/V41/V42/V43/V49/V50 NULL-checksum rows on prod, then re-enable `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true` (removes the emergency override from Task #80).
-- **`audit_logs.tenant_id` backfill** — 12.6% of rows still NULL and drifting up; ship V59 backfilling from `users.tenant_id` JOIN, then patch anonymous emitters (login pre-auth, `/oauth2/token`) to write a sentinel system-tenant UUID.
-- **Drop `refresh_tokens.token` plaintext column** — V60. PR #71 (Persistable<UUID> fix) shipped 2026-05-04; T+7d soak elapsed 2026-05-11.
-- **Unused-index 7-day audit** — reset `pg_stat_user_indexes`, monitor for 7 days, then `DROP INDEX` confirmed-zero-scan ones (25+ candidates per Senior DB Appendix C). Caution: do not drop on `webauthn_credentials`, `oauth2_clients`, `refresh_tokens`, `audit_logs` until traffic patterns settle.
-
-## Active wave — Documentation / DX (this session's Track 3)
-
-Per `DOC_AUDIT_2026-05-04.md` T4.12:
-- **Tenant onboarding playbook** (`docs/01-getting-started/tenant-onboarding.md`) — DX-first; lead with `loginRedirect({clientId, redirectUri})` integrator snippet, then OIDC client provisioning UI, then MFA flow customisation.
-- **ADR directory** (`docs/adr/`) — backfill 8 architectural decisions currently buried in CHANGELOG narrative (hosted-first OIDC, pgvector, MobileFaceNet removal, Facenet512 server authoritative, RFC 6749 §10.4 family-revoke V50, V53 BEFORE-DELETE trigger, `Persistable<UUID>` wire format PR #71, spoof-detector standalone repo).
-- **`docs/` submodule duplicate hierarchy consolidation** — merge `02-architecture/`+`architecture/`, `05-testing/`+`testing/`, `01-getting-started/`+`guides/`; fix broken links; cross-link `/opt/projects/infra/` runbooks.
+- **Unused-index 7-day audit** — reset `pg_stat_user_indexes`, monitor for 7 days, then `DROP INDEX` confirmed-zero-scan ones (25+ candidates per Senior DB Appendix C). Caution: do not drop on `webauthn_credentials`, `oauth2_clients`, `refresh_tokens`, `audit_logs` until traffic patterns settle. **Not yet kicked off in this session.**
 
 ## Active wave — spoof-detector paper push (this session's Track 5)
 
 Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 
-- **P0** Blink-analyzer caching — cache FaceLandmarker per frame instead of per face.
-- **P0** EAR threshold recalibration — 38 blinks/min false rate down to realistic ~15–20.
 - **P1** AR-filter MobileNetV3-Small classifier — harness ready; sample collection (500+ × 5 filter types) is operator-blocked.
-- **P1** OULU-NPU benchmark + ROC + ablation tables.
+- **P1** OULU-NPU benchmark + ROC + ablation tables (multi-day).
 - **P1** Paper writing: abstract → introduction → method → experiments → results.
 
 ## Operator-only queue (cannot start from agent session)
@@ -92,6 +76,31 @@ Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 | `/opt/projects/SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root |
 | `spoof-detector/ROADMAP.md` | Anti-spoof research + paper roadmap | spoof-detector submodule |
 | `client-apps/docs/plans/CLIENT_APPS_PARITY.md` | Android/Desktop hosted-first parity matrix | client-apps submodule |
+
+## Closed 2026-05-11 / 2026-05-12
+
+The 2026-05-11 session shipped 11 PRs across 5 repos + Flyway repair on prod. Prod containers rebuilt: api image `179d34a5`, bio `75347c98`, both healthy. The following items moved from "Active wave" to closed; each has been grep-verified on 2026-05-12.
+
+**INVESTIGATION 2026-05-07 P1 residue:**
+- **NFC MRZ wiring** — `detect_and_parse_mrz` imported at `verification_pipeline.py:37` and called at lines 321 + 672; `/nfc/mrz` endpoint wired in `app/main.py:319`. Bio NFC auth method no longer a serial-only stub.
+- **Real occlusion detector** — `app/application/services/occlusion_detector.py` (293 LOC, May 11) replaces the hardcoded `occlusion=0.0`.
+- **`AddressProofHandler` + `WatchlistCheckHandler` dev-gate** — both carry `@Profile("dev")` (AddressProofHandler.java:46, WatchlistCheckHandler.java:43) so the prod-loading bug is structurally impossible. Real KYC providers still deferred to Phase 4.
+- **Anti-spoof verdict policy** — `LIVENESS_VERDICT_POLICY=conservative` default; `tests/unit/application/use_cases/test_check_liveness_verdict_policy.py` pins the contract with 4 tests (1 sync default-check + 3 async behaviour tests).
+- **`SoftDeletePurgeJob` default-on prod** — `application-prod.yml:77` sets `purge.softDelete.enabled: ${APP_PURGE_SOFT_DELETE_ENABLED:true}`. GDPR Art. 17 / KVKK right-to-erasure now self-driving.
+
+**Ops + DB hygiene:**
+- **V59 + V60 applied on prod** — V59 backfilled `audit_logs.tenant_id` (NULL count 140 → 0 via users-JOIN + sentinel UUID for anonymous emitters). V60 dropped `refresh_tokens.token` plaintext column; only `token_secret_hash` remains. (DB not directly queryable from this agent shell; trusting CLAUDE.md "Last verified 2026-05-11" claim.)
+- **Flyway repair on prod** — V24 + V40–V43 + V49 + V50 NULL-checksum rows fixed; `SPRING_FLYWAY_VALIDATE_ON_MIGRATE=${SPRING_FLYWAY_VALIDATE_ON_MIGRATE:true}` enforced at `application-prod.yml:41`. Task #80 emergency override retired.
+- **Branch protection live** on 6 branches — FIVUCSAS main+master, identity-core-api/main, biometric-processor/main, web-app/main, client-apps/main. All return 200 OK from `gh api .../branches/X/protection` with `required_approving_review_count: 1`, `allow_force_pushes: false`, `allow_deletions: false`, `required_conversation_resolution: true`. Admin bypass intentionally allowed.
+- **master + main parent branches reconciled** — PR #51 (master→main) + PR #52 (main→master post-reconciliation). Subsequent PRs (#53–#56) keep them paired.
+
+**Docs / DX:**
+- **Tenant onboarding playbook** — `docs/01-getting-started/tenant-onboarding.md` shipped.
+- **8 ADRs** — `docs/adr/0001-hosted-first-oidc.md` through `0008-spoof-detector-standalone.md` + README.md present.
+- **`docs/` hierarchy consolidation** — duplicate `architecture/`, `testing/`, `guides/` directories removed; only the numbered `01-…` / `02-…` / `05-…` siblings remain.
+
+**spoof-detector (paper P0):**
+- **Blink-analyzer per-frame caching + EAR threshold recalibration** — commit `cc73cf0` ("perf(blink): per-frame FaceLandmarker cache + EAR threshold recalibration to 15-20bpm (paper-prep P0) (#10)").
 
 ## Legacy archive
 
