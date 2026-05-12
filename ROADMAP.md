@@ -29,7 +29,7 @@ The 2026-05-07 six-lens audit (`archive/2026-05/reviews/INVESTIGATION_MASTER_202
 
 ## Active wave — Ops + DB hygiene
 
-- **Unused-index 7-day audit** — reset `pg_stat_user_indexes`, monitor for 7 days, then `DROP INDEX` confirmed-zero-scan ones (25+ candidates per Senior DB Appendix C). Caution: do not drop on `webauthn_credentials`, `oauth2_clients`, `refresh_tokens`, `audit_logs` until traffic patterns settle. **Not yet kicked off in this session.**
+- **Unused-index 7-day audit** — runbook ready at `infra/RUNBOOK_UNUSED_INDEX_AUDIT.md` (2026-05-12). Uses a sidecar `public.ops_unused_index_baseline` snapshot (NOT `pg_stat_reset`), monitors deltas over 7 days, then `DROP INDEX` confirmed-zero-scan candidates > 10 MB only. Forbidden tables hard-coded in every script: `webauthn_credentials`, `oauth2_clients`, `refresh_tokens`, `audit_logs`. Day-0 / Day-7 / Drop template SQL in `infra/scripts/unused-index-{baseline,delta,verify,drop-template}.sql`. Operator runs Day-0 from runbook Step 2; agent does not touch prod. Candidate list (~25 per `archive/2026-05/reviews/SENIOR_DB_REVIEW_2026-05-04.md` Appendix C); net expected drops post-soak: `idx_api_keys_key_hash` (clean duplicate-of-UNIQUE) + `idx_voice_embeddings_ivfflat` (928 kB, largest waste), plus whatever Day-7 verification surfaces.
 
 ## Active wave — spoof-detector paper push (this session's Track 5)
 
