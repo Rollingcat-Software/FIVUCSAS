@@ -4,21 +4,22 @@
 
 # Environment variables
 .env
-.env.local
 .env.*.local
-.env.prod
 .env.gcp
+.env.local
+.env.prod
+.env.staging
 
-# IDE
+# IDE / editor
+*.swo
+*.swp
+*~
 .idea/
 .vscode/
-*.swp
-*.swo
-*~
 
 # Logs
-logs/
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -26,14 +27,21 @@ yarn-error.log*
 # Docker
 docker-compose.override.yml
 
+# Python build artefacts
+*.pyc
+*.pyo
+__pycache__/
+
 # Temporary files
-*.tmp
+*.bak
+*.tar.gz
 *.temp
+*.tmp
 .cache/
 
 # OS files
-Thumbs.db
 .DS_Store
+Thumbs.db
 nul
 
 # Build artifacts
@@ -46,6 +54,6 @@ nul
 .claude/
 
 # Generated verify-widget bundle artifacts (built via npm run build:widget)
+verify-widget/html/assets/*.css
 verify-widget/html/assets/*.js
 verify-widget/html/assets/*.js.map
-verify-widget/html/assets/*.css
