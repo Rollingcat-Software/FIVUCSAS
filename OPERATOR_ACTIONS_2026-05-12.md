@@ -385,13 +385,14 @@ the prod profile literal.
 | 8 | ANTISPOOF_BLOCK_ENFORCE canary | MEDIUM  | n/a         | Bio-Python PR + item 7 |
 | 9 | EAR liveness model deploy     | LOW      | 5 min       | item 7                 |
 | 10 | identity-core-api puzzle proxy | LOW    | 1 PR cycle  | follow-up agent / dev  |
+| 11 | bio_models volume cleanup     | LOW      | 2 min       | bake-in PR (Team B)    |
 
-Recommended order if attacking all ten in one session:
+Recommended order if attacking all eleven in one session:
 4 (instant) → 3 (post-merge verify) → 5 + 6 + 7 batched (single
 api+bio rebuild flips JWT aud + HS512 kid + SHA pin + ANTISPOOF block
-all at once) → 8 (24-48h soak then decide) → 1 (maintenance window) →
-2 (longer maintenance window, covers RLS smoke-test) → 9 + 10 (low-risk
-follow-ups).
+all at once) → 8 (24-48h soak then decide) → 11 (verify bake-in
+self-heal) → 1 (maintenance window) → 2 (longer maintenance window,
+covers RLS smoke-test) → 9 + 10 (low-risk follow-ups).
 
 ---
 
@@ -571,3 +572,68 @@ with the same API-key middleware contract used by other bio proxies.
 **Acceptance check.** After deploy, web-app browser console should stop
 printing `[biometric-puzzles] /biometric/puzzles/verify-challenge proxy
 not deployed yet` warnings on first puzzle completion.
+
+---
+
+## 11. bio_models volume cleanup — post bake-in PR (LOW)
+
+**Background.** 2026-05-12 Team B PR `fix/2026-05-12-bake-mini-fasnet-models`
+(bio repo PR #104, parent PR also `fix/2026-05-12-bake-mini-fasnet-models`)
+bakes the four DeepFace / Facenet model weights into the bio image layer
+and adds an entrypoint shim that:
+
+1. chowns the externally-mounted cache volume to uid 100 / gid 101 (the
+   `app` user inside the container), and
+2. seeds missing weight files from `/opt/baked-models/` so a wiped named
+   volume is self-healing.
+
+Before this PR a hot-fix from earlier in the day had manually `docker cp`'d
+`2.7_80x80_MiniFASNetV2.pth` and `4_0_0_80x80_MiniFASNetV1SE.pth` into the
+running container's volume. That fix was load-bearing on operator memory:
+the next `docker volume rm` would have re-triggered the false-spoof-verdict
+chain. With the bake-in shipped, that operator memory is no longer
+load-bearing — but two cleanup paths exist depending on how aggressively
+you want to verify the bake-in.
+
+This is the 4th recurrence of the pattern documented in
+`feedback_readonly_rootfs_cache_dirs` (prior: DeepFace, Numba, UniFace).
+After this PR ships the contract is **bake at build-time + self-heal at
+boot-time**, not "remember to docker-cp".
+
+**Blast radius.** Either path causes a brief (~5s) bio-api restart. No data
+loss; `biometric_uploads` and `biometric_uniface` volumes are untouched.
+
+**Maintenance window.** 2 minutes.
+
+**Dependencies.** Rebuild bio image from the merged Team B PR first.
+
+**Option A — Wipe & verify self-heal (recommended).**
+
+```bash
+cd /opt/projects/fivucsas/biometric-processor
+docker compose -f docker-compose.prod.yml --env-file .env.prod down biometric-api
+docker volume rm biometric-processor_biometric_models
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d biometric-api
+# Confirm the entrypoint shim re-seeded the cache:
+docker exec biometric-api ls -la /tmp/.deepface/.deepface/weights/
+# Expected: all four files owned by 100:101 with the SHAs documented in
+# item 6 (facenet512) and the bio-PR description (centerface, MiniFASNetV2,
+# MiniFASNetV1SE).
+```
+
+**Option B — Keep & re-own the existing volume.**
+
+```bash
+# Fix ownership on the existing volume in-place (one-time, host side).
+chown -R 100:101 /var/lib/docker/volumes/biometric-processor_biometric_models/_data
+# Restart bio-api so it picks up the corrected ownership.
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart biometric-api
+```
+
+**Acceptance check.** Either path: `docker exec biometric-api stat -c '%u:%g'
+/tmp/.deepface/.deepface/weights/facenet512_weights.h5` returns `100:101`.
+
+**Why this is LOW priority.** The container is currently healthy with the
+docker-cp'd files in place. This cleanup item exists to remove an
+undocumented assumption (operator memory of the manual `docker cp`), not
+to fix a live failure.
