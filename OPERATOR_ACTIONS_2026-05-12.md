@@ -352,6 +352,23 @@ curl -sS -H "Authorization: Bearer <revoked-kid-token>" \
 # expect 401 with body referencing "kid revoked" or generic invalid
 ```
 
+**Co-shipped behavior change to anticipate: JWT `aud` claim enforcement.**
+Team Auth-Java PR #100 also binds and validates the `aud` claim on every
+access token (default `fivucsas-api`). After the same api container
+rebuild that activates the HS512 kid revocation, **every access token
+currently in flight will fail validation** because pre-rebuild tokens
+were minted without `aud`. The client SDK silently calls `/refresh` and
+re-mints — so user-visible impact is zero, but `/refresh` traffic will
+spike for ~15 minutes (one extra call per active session). Watch the
+Loki dashboard for the spike to confirm it decays cleanly. If `/refresh`
+stays elevated after 30 minutes, something is wrong (likely a service
+account or background job holding a long-lived token without refresh
+logic — investigate, do not roll back).
+
+If a tenant needs a non-default audience, set `APP_SECURITY_JWT_AUDIENCE`
+in `.env.prod` BEFORE the rebuild; otherwise `fivucsas-api` is baked into
+the prod profile literal.
+
 ---
 
 ## Quick reference: per-item severity + dependency matrix
@@ -363,8 +380,194 @@ curl -sS -H "Authorization: Bearer <revoked-kid-token>" \
 | 3 | web-app .env.production leak  | HIGH     | 5 min       | Team Web-Hygiene PR    |
 | 4 | parent main fast-forward      | HIGH     | 1 min       | nothing                |
 | 5 | HS512 kid revocation          | MEDIUM   | rolling     | Team Auth-Java PR      |
+| 6 | DEEPFACE_FACENET512_SHA256 pin | HIGH    | 2 min       | Team Bio-Python PR     |
+| 7 | Bio container rebuild         | HIGH     | 1-2 min     | items 5 + 6 + Bio-Python PR |
+| 8 | ANTISPOOF_BLOCK_ENFORCE canary | MEDIUM  | n/a         | Bio-Python PR + item 7 |
+| 9 | EAR liveness model deploy     | LOW      | 5 min       | item 7                 |
+| 10 | identity-core-api puzzle proxy | LOW    | 1 PR cycle  | follow-up agent / dev  |
 
-Recommended order if attacking all five in one session:
-4 (instant, unblocks reviewers) → 3 (post-merge verify) → 5 (post-PR
-rebuild) → 1 (maintenance window slot) → 2 (longer maintenance window,
-covers RLS smoke-test).
+Recommended order if attacking all ten in one session:
+4 (instant) → 3 (post-merge verify) → 5 + 6 + 7 batched (single
+api+bio rebuild flips JWT aud + HS512 kid + SHA pin + ANTISPOOF block
+all at once) → 8 (24-48h soak then decide) → 1 (maintenance window) →
+2 (longer maintenance window, covers RLS smoke-test) → 9 + 10 (low-risk
+follow-ups).
+
+---
+
+## 6. DEEPFACE_FACENET512_SHA256 pinning — pending Team Bio-Python PR (HIGH)
+
+**Background.** Team Bio-Python PR #102 flips `DEEPFACE_SHA256_REQUIRED=true`
+by default, which raises `RuntimeError` on biometric-processor boot if
+`DEEPFACE_FACENET512_SHA256` is empty (was previously a WARN + skip). The
+running container's Facenet512 weight was hashed during the agent's
+investigation:
+
+```
+DEEPFACE_FACENET512_SHA256=3f76b5117a9ca574d536af8199e6720089eb4ad3dc7e93534496d88265de864f
+```
+
+The agent already wrote this value into the gitignored
+`/opt/projects/fivucsas/biometric-processor/.env.prod` on the host. Verify
+it's present before rebuilding:
+
+```bash
+grep '^DEEPFACE_FACENET512_SHA256=' /opt/projects/fivucsas/biometric-processor/.env.prod
+# Expected: DEEPFACE_FACENET512_SHA256=3f76b5117a9ca574...
+```
+
+If the value is missing or wrong, the bio container will fail-fast on
+startup — that is by design (defense in depth for model integrity per
+the FIVUCSAS ML Split D1-D4 decision).
+
+**Blast radius.** Without the pin set, bio container does not start
+after the next rebuild → /verify and /enroll fail 5xx until the pin is
+in place.
+
+**Maintenance window.** 2 minutes to edit + verify.
+
+**Acceptance check.** After rebuild (item 7), `docker logs bio-api 2>&1 | grep -i 'sha256'` should show pin-validated, not fail-closed.
+
+---
+
+## 7. Bio container rebuild — coordinated with items 5 + 6 (HIGH)
+
+**Background.** PR #102 changes default behavior for three things at
+once: `DEEPFACE_SHA256_REQUIRED=true`, `ANTISPOOF_BLOCK_ENFORCE=true`,
+new `/api/v1/liveness/verify-challenge` endpoint. Plus PR #102 has a
+hard dependency on spoof-detector PR #18 (the new public-namespace shim
+that exposes `BlinkAnalyzer` + `compute_ear`). Merge order must be
+**spoof-detector #18 → bio #102 → web-app #90**, then rebuild bio.
+
+**Commands.**
+
+```bash
+# 1. Confirm prerequisites are merged in the correct order
+# spoof-detector main has the shim; bio main pins the submodule pointer past it
+cd /opt/projects/fivucsas/biometric-processor
+git pull && git submodule update --init --recursive
+git -C ../spoof-detector log --oneline -3   # expect commit 12da821 or its successor in main
+
+# 2. Pin DEEPFACE_FACENET512_SHA256 per item 6, then rebuild
+docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache biometric-api
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d biometric-api
+```
+
+**Acceptance check.**
+
+```bash
+# Health probe
+curl -fsS https://api.fivucsas.com/api/v1/biometric/health || echo FAIL
+# Confirm anti-spoof block is enforcing
+docker logs bio-api 2>&1 | tail -50 | grep -E "ANTISPOOF_BLOCK_ENFORCE|sha256"
+```
+
+If the container fail-fast loops, most common causes:
+- Item 6 pin missing → SHA mismatch RuntimeError
+- spoof-detector pointer not advanced past PR #18 → ImportError on
+  `compute_ear` / `BlinkAnalyzer`
+- Submodule recursion not run → stale pointer
+
+---
+
+## 8. ANTISPOOF_BLOCK_ENFORCE canary decision (MEDIUM)
+
+**Background.** Bio PR #102 ships `ANTISPOOF_BLOCK_ENFORCE=true` as
+default. When the assembler verdict (or any sub-signal:
+`face_usability_block`, `hybrid_fusion_is_spoof`) returns
+`recommended_action='block'`, /verify will now return HTTP 403 with
+`{error_code:"ANTISPOOF_BLOCKED", reason:...}` instead of just logging.
+
+Before this PR the action was advisory only — anti-spoof has been
+running but not blocking. Flipping the switch is what the 2026-05-12
+ML review called out as a P0 ("anti-spoof is structurally unreachable
+from /verify because the verdict is advisory"). The change is correct;
+the canary question is how confident we are in the default thresholds
+and the sub-signal calibration.
+
+**Two acceptable rollout paths.**
+
+1. **Default-ON, monitor (recommended).** Leave `ANTISPOOF_BLOCK_ENFORCE=true`
+   in the image, watch the Loki dashboard for 24-48 hours, focus on the
+   ratio of `ANTISPOOF_BLOCKED` responses on /verify. A spike to >2% of
+   /verify traffic implies a false-positive issue with the new EAR check
+   (which is OFF by default — see item 9 — so the spike would have to
+   come from face-usability or hybrid-fusion).
+2. **Flip-false-for-observation.** Add
+   `ANTISPOOF_BLOCK_ENFORCE=false` to `.env.prod`, redeploy, and consume
+   the bio audit log feed for 24-48 hours to count "would-have-blocked"
+   events. Flip back to true once the rate looks tolerable.
+
+**Blast radius.** False positives = real users get 403 on /verify.
+Existing audit logs already record the verdict — so the question is one
+of UX (cost of a wrongly-rejected verify call) versus security (cost of
+a successfully-rejected spoof attempt).
+
+**Decision deadline.** Within 48h of bio container rebuild; otherwise
+the canary signal degrades.
+
+---
+
+## 9. EAR liveness model deployment (LOW)
+
+**Background.** Bio PR #102 wires `compute_ear` from
+`spoof_detector.infrastructure.analyzers.blink_analyzer` into /verify
+as a single-still-frame liveness check. Closed eyes → veto. The check
+defaults OFF (`ANTISPOOF_EAR_VETO_ENABLED=false`) until the
+MediaPipe FaceLandmarker model is deployed at
+`models/face_landmarker.task` — if the model is missing the helper
+fails-soft to None and the verdict is "no signal" (not "fail").
+
+**Commands.**
+
+```bash
+# Copy face_landmarker.task into the bio container's model volume.
+# Path inside container: ${FACE_LANDMARKER_MODEL_PATH} (e.g. /models/face_landmarker.task)
+# Download canonical from MediaPipe:
+# https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
+docker cp face_landmarker.task bio-api:/models/face_landmarker.task
+# Or rebuild image with the model baked in via Dockerfile COPY
+
+# Then flip the flag in .env.prod
+echo 'ANTISPOOF_EAR_VETO_ENABLED=true' >> .env.prod
+# Set the SHA256 pin for the model
+echo 'FACE_LANDMARKER_MODEL_SHA256=<compute-sha256>' >> .env.prod
+
+# Bounce only bio-api, no rebuild needed if the model is in a volume
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart biometric-api
+```
+
+**Acceptance check.** Trigger a `/verify` call with eyes-closed selfie
+in the testbed; expect `eyes_closed: true` in the bio audit log
+verdict. Trigger normal verify; expect `eyes_closed: false`.
+
+---
+
+## 10. identity-core-api puzzle proxy — follow-up PR (LOW)
+
+**Background.** Web-app PR #90 adds `useBiometricPuzzleServer` hook
+which POSTs to `POST /api/v1/biometric/puzzles/verify-challenge`. That
+proxy needs to live in identity-core-api (it forwards to bio
+`/api/v1/liveness/verify-challenge` with the bio API key). The agent
+deferred this because the identity-core-api repo was on the
+`fix/2026-05-12-infra-hygiene` branch with concurrent edits from another
+session.
+
+Until the proxy lands, FacePuzzle + HandGesturePuzzle soft-pass with a
+`console.warn` (404 → soft-pass per `useBiometricPuzzleServer.ts:140`).
+User-visible behavior is unchanged from pre-PR baseline.
+
+**Commands.** None — this is a follow-up coding task, not an operator
+action. Dispatch a small agent to add:
+
+```
+PostMapping("/api/v1/biometric/puzzles/verify-challenge")
+  → BiometricProcessorClient.verifyChallenge(...)
+  → bio POST /api/v1/liveness/verify-challenge
+```
+
+with the same API-key middleware contract used by other bio proxies.
+
+**Acceptance check.** After deploy, web-app browser console should stop
+printing `[biometric-puzzles] /biometric/puzzles/verify-challenge proxy
+not deployed yet` warnings on first puzzle completion.
