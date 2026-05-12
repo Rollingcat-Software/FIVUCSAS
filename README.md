@@ -173,9 +173,9 @@ cd client-apps && ./gradlew :shared:test
 - [Multi-Modal Auth Architecture](./docs/09-auth-flows/README.md)
 - [Active Plans](./docs/plans/) — SMS activation, client-side ML split, BYOD, OAuth2 audit, multi-method 2FA
 
-## Project Status (April 2026)
+## Project Status (May 2026)
 
-Production-deployed. 99% complete. ~1,820+ tests across backend/web/mobile (633 backend + 619 web-app Vitest + 425 Kotlin + 27 Playwright specs).
+Production-deployed. ~1,900+ tests across backend/web/mobile/spoof-detector (633 api + 619 web-app Vitest + 425 Kotlin + 114 spoof-detector + 27 Playwright specs).
 
 ### What's shipped
 
