@@ -330,7 +330,7 @@ export default function App() {
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="font-display text-base font-semibold tracking-tight">FIVUCSAS</span>
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">identity · verified</span>
+                <span lang="en" className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">identity · verified</span>
               </div>
             </a>
 
@@ -453,6 +453,13 @@ export default function App() {
                 >
                   <Icon name="github" className="w-4 h-4" fill />
                   {text(t.hero.ctaGit)}
+                </a>
+                <a
+                  href="/amispoof/"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-rose-500/20 hover:from-amber-500/30 hover:to-rose-500/30 border border-amber-500/30 hover:border-amber-500/50 font-semibold text-[0.95rem] text-amber-200 transition-all hover:-translate-y-0.5"
+                >
+                  <Icon name="shield" className="w-4 h-4" fill />
+                  amispoof — browser anti-spoof tester
                 </a>
               </div>
 
@@ -754,10 +761,14 @@ export default function App() {
               <a href="https://app.fivucsas.com" className="hover:text-white transition-colors">Dashboard</a>
               <a href="https://demo.fivucsas.com" className="hover:text-white transition-colors">Demo</a>
               <a href="https://verify.fivucsas.com" className="hover:text-white transition-colors">Widget</a>
+              <a href="/amispoof/" className="hover:text-amber-200 transition-colors">amispoof</a>
               <a href="https://api.fivucsas.com/swagger-ui.html" className="hover:text-white transition-colors">API</a>
               <a href="https://status.fivucsas.com" className="hover:text-white transition-colors">Status</a>
+              <a href="https://github.com/Rollingcat-Software/spoof-detector" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                <Icon name="github" className="w-4 h-4" fill /> spoof-detector
+              </a>
               <a href="https://github.com/Rollingcat-Software/FIVUCSAS" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                <Icon name="github" className="w-4 h-4" fill /> GitHub
+                <Icon name="github" className="w-4 h-4" fill /> FIVUCSAS
               </a>
             </div>
 
