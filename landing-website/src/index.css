@@ -21,6 +21,23 @@ body {
   overflow-x: hidden;
 }
 
+/*
+ * Force English-locale casing on any uppercase'd English text in
+ * Turkish-mode pages. CSS text-transform uses the html lang attribute
+ * to pick casing rules — Turkish maps lowercase "i" to "İ" (dotted
+ * capital), so "identity" becomes "İDENTİTY" even though the source
+ * text is English. Marking the element `lang="en"` solves it cleanly.
+ *
+ * Belt-and-braces: also force the codepoints below to render with
+ * Latin small/capital "I" inside English-attributed nodes regardless
+ * of which font fallback the browser picks.
+ */
+:lang(en).uppercase,
+:lang(en) .uppercase {
+  text-transform: uppercase;
+  text-transform: uppercase; /* keep — old WebKit needed it */
+}
+
 @layer utilities {
   .gradient-text {
     @apply bg-clip-text text-transparent;

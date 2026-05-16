@@ -26,6 +26,7 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 | Landing Site | https://fivucsas.com |
 | Auth Widget / SDK | https://verify.fivucsas.com |
 | BYS Demo | https://demo.fivucsas.com |
+| amispoof — browser anti-spoof tester | https://fivucsas.com/amispoof/ |
 | Uptime Monitor | https://status.fivucsas.com |
 | Swagger | https://api.fivucsas.com/swagger-ui.html (admin-IP-gated since IN-H2 2026-04-19; allowlist in `infra/traefik/config/dynamic.yml`) |
 
@@ -61,6 +62,12 @@ scp -P 65002 -r dist/* u349700627@46.202.158.52:~/domains/app.fivucsas.com/publi
 
 # BYS demo deploy
 scp -P 65002 -r /opt/projects/fivucsas/bys-demo/* u349700627@46.202.158.52:~/domains/demo.fivucsas.com/public_html/
+
+# /amispoof/ deploy (TypeScript spoof-detector + webcam tester to fivucsas.com/amispoof/)
+cd /opt/projects/fivucsas/spoof-detector/web
+npm run build && npm run amispoof:bundle
+scp -P 65002 amispoof/index.html amispoof/app.js u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/amispoof/
+scp -P 65002 amispoof/lib/spoof-detector.js amispoof/lib/spoof-detector.js.map u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/amispoof/lib/
 
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
