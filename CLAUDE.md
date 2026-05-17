@@ -26,7 +26,7 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 | Landing Site | https://fivucsas.com |
 | Auth Widget / SDK | https://verify.fivucsas.com |
 | BYS Demo | https://demo.fivucsas.com |
-| amispoof — browser anti-spoof tester | https://fivucsas.com/amispoof/ |
+| amispoof — browser anti-spoof tester | https://amispoof.fivucsas.com/ (old https://fivucsas.com/amispoof/ now 301s to the subdomain) |
 | Uptime Monitor | https://status.fivucsas.com |
 | Swagger | https://api.fivucsas.com/swagger-ui.html (admin-IP-gated since IN-H2 2026-04-19; allowlist in `infra/traefik/config/dynamic.yml`) |
 
@@ -63,11 +63,16 @@ scp -P 65002 -r dist/* u349700627@46.202.158.52:~/domains/app.fivucsas.com/publi
 # BYS demo deploy
 scp -P 65002 -r /opt/projects/fivucsas/bys-demo/* u349700627@46.202.158.52:~/domains/demo.fivucsas.com/public_html/
 
-# /amispoof/ deploy (TypeScript spoof-detector + webcam tester to fivucsas.com/amispoof/)
+# amispoof deploy (TypeScript spoof-detector + webcam tester to amispoof.fivucsas.com)
+# Migrated 2026-05-17 from fivucsas.com/amispoof/ → amispoof.fivucsas.com subdomain.
+# Old URL serves a 301 to the new one via ~/domains/fivucsas.com/public_html/amispoof/.htaccess.
+# We deploy to the NEW subdomain root; the lazy chunks under lib/ + models/ need to be sent too.
 cd /opt/projects/fivucsas/spoof-detector/web
 npm run build && npm run amispoof:bundle
-scp -P 65002 amispoof/index.html amispoof/app.js u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/amispoof/
-scp -P 65002 amispoof/lib/spoof-detector.js amispoof/lib/spoof-detector.js.map u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/amispoof/lib/
+scp -P 65002 amispoof/index.html amispoof/app.js u349700627@46.202.158.52:~/domains/amispoof.fivucsas.com/public_html/
+scp -P 65002 amispoof/lib/spoof-detector.js amispoof/lib/spoof-detector.js.map amispoof/lib/spoof-detector-*.js amispoof/lib/spoof-detector-*.js.map u349700627@46.202.158.52:~/domains/amispoof.fivucsas.com/public_html/lib/
+# Models only need to be sent once after the subdomain is created; subsequent deploys can skip these.
+# scp -P 65002 amispoof/models/minifasnet_v2.onnx amispoof/models/face_landmarker.task u349700627@46.202.158.52:~/domains/amispoof.fivucsas.com/public_html/models/
 
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
