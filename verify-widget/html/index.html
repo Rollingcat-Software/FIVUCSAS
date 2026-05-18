@@ -3,34 +3,214 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="index, follow" />
+    <meta name="description" content="FIVUCSAS Verify — hosted login page and embeddable auth widget. Face, voice, fingerprint, NFC ID, TOTP, WebAuthn passkeys, SMS/email OTP, OAuth 2.0 / OpenID Connect. Used by tenants to authenticate users without writing biometric or session code." />
+    <meta name="keywords" content="FIVUCSAS, hosted login, auth widget, OAuth 2.0, OpenID Connect, face authentication, biometric authentication, passkey, WebAuthn, NFC ID, MFA" />
+    <link rel="canonical" href="https://verify.fivucsas.com/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://verify.fivucsas.com/" />
+    <meta property="og:title" content="FIVUCSAS Verify — hosted login + embeddable auth widget" />
+    <meta property="og:description" content="Hosted login and embeddable auth widget for FIVUCSAS. Face, voice, NFC, passkeys, OAuth 2.0 / OIDC. Multi-factor authentication as a service." />
+    <meta property="og:site_name" content="FIVUCSAS" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="tr_TR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FIVUCSAS Verify — hosted login + embeddable auth widget" />
+    <meta name="twitter:description" content="Hosted login and embeddable auth widget for FIVUCSAS. Face, voice, NFC, passkeys, OAuth 2.0 / OIDC." />
+
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' data: blob: https:;
-        connect-src 'self' https://api.fivucsas.com https://bio.fivucsas.com https://cdn.jsdelivr.net https://storage.googleapis.com https://tfhub.dev https://www.kaggle.com;
+        connect-src 'self' https://api.fivucsas.com https://cdn.jsdelivr.net https://storage.googleapis.com;
         media-src 'self' blob:;
         worker-src 'self' blob:;
         base-uri 'self';
         form-action 'self';
     " />
     <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), geolocation=()" />
-    <title>FIVUCSAS Verify</title>
+    <title>FIVUCSAS Verify — hosted login + embeddable auth widget</title>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FIVUCSAS Verify",
+      "url": "https://verify.fivucsas.com/",
+      "description": "Hosted login page and embeddable auth widget for FIVUCSAS. Face, voice, NFC, passkeys, OAuth 2.0 / OpenID Connect — multi-factor authentication as a service.",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@type": "Organization", "name": "FIVUCSAS", "url": "https://fivucsas.com/" }
+    }
+    </script>
+
     <style>
         /* Minimal reset for iframe embedding */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0e1116; color: #e6edf3; }
+
+        /* Static landing — visible by default for direct visitors + crawlers.
+           Hidden once the React SPA mounts (main.tsx sets data-mounted="true"). */
+        #verify-root[data-mounted="true"] ~ #verify-landing { display: none; }
+
+        #verify-landing {
+            min-height: 100vh;
+            padding: 48px 24px 64px;
+            display: flex; flex-direction: column; align-items: center;
+            background:
+              radial-gradient(900px 540px at 70% 110%, rgba(63, 185, 80, 0.08), transparent 70%),
+              radial-gradient(700px 420px at 12% -10%, rgba(88, 166, 255, 0.10), transparent 70%),
+              #0e1116;
+        }
+        #verify-landing .wrap { width: 100%; max-width: 880px; }
+        #verify-landing .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
+        #verify-landing .brand-mark {
+            width: 44px; height: 44px; background: #161b22;
+            border: 1px solid #30363d; border-radius: 11px;
+            display: grid; place-items: center;
+            font-size: 22px; font-weight: 800; color: #58a6ff;
+        }
+        #verify-landing .brand-name { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+        #verify-landing .brand-name .accent { color: #58a6ff; }
+        #verify-landing h1 {
+            font-size: clamp(28px, 5vw, 44px);
+            font-weight: 800; letter-spacing: -0.025em; line-height: 1.1;
+            margin-bottom: 16px;
+        }
+        #verify-landing h1 .accent { color: #58a6ff; }
+        #verify-landing .lede {
+            font-size: 18px; line-height: 1.5; color: #8b949e; max-width: 660px;
+            margin-bottom: 28px;
+        }
+        #verify-landing .cta-row {
+            display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 40px;
+        }
+        #verify-landing .cta {
+            display: inline-block; padding: 12px 22px; border-radius: 10px;
+            font-size: 15px; font-weight: 600; text-decoration: none;
+            border: 1px solid transparent; transition: opacity 0.15s;
+        }
+        #verify-landing .cta:hover { opacity: 0.85; }
+        #verify-landing .cta-primary { background: #238636; color: #ffffff; border-color: #2ea043; }
+        #verify-landing .cta-secondary { background: #21262d; color: #c9d1d9; border-color: #30363d; }
+
+        #verify-landing .grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px; margin-bottom: 40px;
+        }
+        #verify-landing .card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+            padding: 20px;
+        }
+        #verify-landing .card h3 { font-size: 16px; margin-bottom: 8px; color: #e6edf3; }
+        #verify-landing .card p { font-size: 14px; line-height: 1.5; color: #8b949e; }
+
+        #verify-landing .methods {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 40px;
+        }
+        #verify-landing .pill {
+            font-size: 13px; font-weight: 500; padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(88,166,255,0.08); color: #58a6ff;
+            border: 1px solid rgba(88,166,255,0.25);
+        }
+        #verify-landing pre {
+            background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+            padding: 16px; overflow-x: auto;
+            font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+            font-size: 13px; line-height: 1.6; color: #c9d1d9;
+            margin-bottom: 32px;
+        }
+        #verify-landing pre .k { color: #ff7b72; }
+        #verify-landing pre .s { color: #a5d6ff; }
+        #verify-landing pre .c { color: #8b949e; }
+        #verify-landing footer {
+            padding-top: 24px; border-top: 1px solid #30363d;
+            font-size: 13px; color: #8b949e; line-height: 1.6;
+        }
+        #verify-landing footer a { color: #58a6ff; text-decoration: none; }
+        #verify-landing footer a:hover { text-decoration: underline; }
     </style>
-  <script type="module" crossorigin src="/assets/index-DGYB7Ly1.js"></script>
+  <script type="module" crossorigin src="/assets/index-Byra9y2i.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-COnpUsM8.js">
-  <link rel="modulepreload" crossorigin href="/assets/mui-vendor-DkSS5YNQ.js">
-  <link rel="modulepreload" crossorigin href="/assets/react-vendor-BkVLglrX.js">
+  <link rel="modulepreload" crossorigin href="/assets/mui-vendor-DBcPUQKw.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-vendor-CQvEWkwi.js">
   <link rel="stylesheet" crossorigin href="/assets/index-Ci_SIW9g.css">
 </head>
 <body>
     <div id="verify-root"></div>
+    <main id="verify-landing">
+      <div class="wrap">
+        <div class="brand">
+          <div class="brand-mark">F</div>
+          <div class="brand-name">FIVUCSAS<span class="accent"> Verify</span></div>
+        </div>
+
+        <h1>Hosted login and embeddable <span class="accent">auth widget</span> for FIVUCSAS.</h1>
+        <p class="lede">
+          Authenticate your users with face, voice, fingerprint, NFC ID, passkeys, TOTP, and OTP — without writing
+          biometric or session code. Drop-in OAuth 2.0 / OpenID Connect for web, mobile, and desktop apps.
+        </p>
+
+        <div class="cta-row">
+          <a class="cta cta-primary" href="/login">Try hosted login</a>
+          <a class="cta cta-secondary" href="https://fivucsas.com/" rel="noopener">Learn about FIVUCSAS</a>
+          <a class="cta cta-secondary" href="https://app.fivucsas.com/" rel="noopener">Dashboard sign-in</a>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>Hosted login (recommended)</h3>
+            <p>Redirect users to <code>verify.fivucsas.com/login</code>, get a code back, exchange for tokens. Standard OAuth 2.0 + PKCE.</p>
+          </div>
+          <div class="card">
+            <h3>Embeddable widget</h3>
+            <p>Iframe-friendly step-up MFA for sensitive actions. Camera, microphone, and WebAuthn delegated to the widget origin.</p>
+          </div>
+          <div class="card">
+            <h3>Multi-factor by default</h3>
+            <p>Tenants configure which factors are required per flow. Backend enforces the policy — clients can't downgrade.</p>
+          </div>
+        </div>
+
+        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;">10 supported auth methods</h2>
+        <div class="methods">
+          <span class="pill">PASSWORD</span>
+          <span class="pill">EMAIL_OTP</span>
+          <span class="pill">SMS_OTP</span>
+          <span class="pill">TOTP</span>
+          <span class="pill">FACE</span>
+          <span class="pill">VOICE</span>
+          <span class="pill">FINGERPRINT</span>
+          <span class="pill">HARDWARE_KEY</span>
+          <span class="pill">QR_CODE</span>
+          <span class="pill">NFC_DOCUMENT</span>
+        </div>
+
+        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;">Integrate in three lines</h2>
+        <pre><span class="c">// Web (loadFivucsasAuth from https://verify.fivucsas.com/fivucsas-auth.esm.js)</span>
+<span class="k">const</span> auth = <span class="k">await</span> loadFivucsasAuth({ apiBaseUrl: <span class="s">"https://api.fivucsas.com"</span> });
+<span class="k">await</span> auth.loginRedirect({ clientId: <span class="s">"YOUR_CLIENT_ID"</span>, redirectUri: <span class="s">"https://your-app.com/callback"</span> });
+<span class="c">// User lands back at redirectUri with ?code=… — exchange at /oauth2/token.</span></pre>
+
+        <footer>
+          <p>
+            <strong style="color:#e6edf3;">Direct here without an auth flow?</strong>
+            You probably came from a tenant integration that hasn't started the flow yet, or you're a developer evaluating FIVUCSAS.
+            See <a href="https://fivucsas.com/" rel="noopener">fivucsas.com</a> for the product, or
+            <a href="https://amispoof.fivucsas.com/" rel="noopener">amispoof.fivucsas.com</a> for the browser-side anti-spoof tester.
+          </p>
+          <p style="margin-top: 12px;">
+            FIVUCSAS · multi-tenant biometric authentication platform · operated from Türkiye.
+            Operator: <a href="mailto:rollingcat.help@gmail.com">rollingcat.help@gmail.com</a>.
+          </p>
+        </footer>
+      </div>
+    </main>
 </body>
 </html>
