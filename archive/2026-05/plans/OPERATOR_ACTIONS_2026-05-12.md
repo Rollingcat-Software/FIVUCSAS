@@ -1,14 +1,16 @@
 # OPERATOR ACTIONS — 2026-05-12
 
-Items surfaced by the 2026-05-12 senior reviews (backend, DB, infra, security)
-that agents should not autonomously execute. Each is a checklist with explicit
-commands, a maintenance-window estimate, and explicit dependencies. Severity
-labels:
+The 11 items below were surfaced by the 2026-05-12 senior reviews (backend, DB,
+infra, security) that agents should not autonomously execute. (This checklist
+started as five items in PR #67 and grew to 11 as the 2026-05-12 branch work
+landed.) Each is a checklist with explicit commands, a maintenance-window
+estimate, and explicit dependencies. Severity labels:
 
 - **CRITICAL** — exposes a live, exploitable security or correctness gap.
 - **HIGH** — drift between deployed config and committed config; reviewers
   cannot reason about prod from code.
 - **MEDIUM** — hygiene + cosmetic; safe to defer but easy to land.
+- **LOW** — non-urgent follow-up or cleanup; no live failure if deferred.
 
 ---
 
@@ -117,7 +119,7 @@ SELECT relname, relrowsecurity, relforcerowsecurity
 ```
 
 **Blast radius.**
-A SQL-injection (or a deliberately misuse of `JdbcTemplate.queryForList`)
+A SQL-injection (or a deliberate misuse of `JdbcTemplate.queryForList`)
 that omits a `tenant_id =` predicate returns rows from every tenant. The
 admin-IP whitelist on `/swagger-ui` and `/actuator` does not help here —
 the entry point is the application code itself.
@@ -196,8 +198,9 @@ SELECT relname, relforcerowsecurity FROM pg_class
 Commit `6bdedd2` (2026-04-30 morning, since-rotated) committed the
 biometric API key plaintext into `web-app/.env.production`. The bio-side
 key was rotated 2026-04-30 05:05 UTC and confirmed dead — the live value
-is now `API_KEY_SECRET=fcb06b7…` (verified by the 2026-05-12 security
-review). However the on-disk template at
+is now `API_KEY_SECRET=<redacted>` (verified by the 2026-05-12 security
+review; fetch the real value from the host `.env.prod` / secret store, not
+this doc). However the on-disk template at
 `/opt/projects/fivucsas/web-app/.env.production` still contains the
 leaked literal in `VITE_BIOMETRIC_API_KEY=…` form (2 occurrences,
 verified today by `grep -c`).
@@ -302,8 +305,12 @@ git fetch origin
 # already on master, so this is a fast-forward).
 git merge-base --is-ancestor origin/main origin/master \
   && echo "OK: main is an ancestor of master, fast-forward safe."
-# Apply:
-git push origin master:main --force-with-lease
+# Apply (normal fast-forward — the ancestor check above guarantees this
+# is non-destructive; no force needed):
+git push origin master:main
+# Reserve `--force-with-lease` ONLY for a documented recovery scenario
+# (e.g. main was accidentally advanced and the ancestor check above fails),
+# and only when branch protection allows it.
 ```
 
 **Acceptance check.**
