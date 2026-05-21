@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="tr" data-lang="tr">
+<head>
+<meta charset="utf-8">
+<title>FIVUCSAS — A0 Academic Poster · View · Download · Share</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="FIVUCSAS A0 academic poster — view, download (HTML / PDF / TeX / PNG / text brief), or share. Marmara University CSE4298 graduation project, Spring 2025–2026.">
+<meta property="og:title" content="FIVUCSAS — A0 Academic Poster">
+<meta property="og:description" content="Face & Identity Verification using Cloud-based SaaS Models. A0 poster + downloads + source files.">
+<meta property="og:image" content="files/fivucsas-poster-preview.png">
+<meta property="og:url" content="https://fivucsas.com/poster/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap">
+<style>
+/* Language gating — applied immediately to prevent flash */
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+:root{
+  --bg:#0B2545; --bg-2:#112F5A; --paper:#F5EFE0; --card:#FFFCEF;
+  --ink:#161616; --ink-2:#2A2A2A; --muted:#5C5F66;
+  --cyan:#2BA8B3; --cyan-2:#1d8a93; --gold:#FBE9A3; --crimson:#9A2D2D;
+  --rule:rgba(255,255,255,.14);
+  --serif:"IBM Plex Serif", "Times New Roman", Georgia, serif;
+  --sans:"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:var(--sans); color:#F6F1E4;
+  background:radial-gradient(1200px 800px at 20% -10%, rgba(43,168,179,.18), transparent 60%), linear-gradient(180deg,#0B2545 0%,#0B2545 80%,#091C36 100%);
+  min-height:100vh; line-height:1.5;
+}
+a{ color:var(--cyan); text-decoration:none; }
+a:hover{ color:#FBF7EC; }
+
+.shell{ max-width:1180px; margin:0 auto; padding:32px 24px 80px 24px; }
+
+/* Nav */
+.nav{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 0 30px 0;
+  font-family:var(--mono); font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+}
+.nav .brand{ display:flex; align-items:center; gap:10px; }
+.nav .brand .mark{ font-weight:700; color:var(--cyan); font-size:18px; letter-spacing:-.01em; text-transform:none; }
+.nav .brand .mark .angle{ color:var(--gold); font-weight:500; }
+.nav .links a{ margin-left:20px; color:#9CB2D1; }
+.nav .links a:hover{ color:#FBF7EC; }
+
+/* Hero */
+.hero{
+  display:grid; grid-template-columns: minmax(280px, 460px) 1fr; gap:48px; align-items:center;
+  padding:24px 0 50px 0;
+}
+.hero-preview{
+  position:relative; aspect-ratio: 841/1189; border-radius:14px; overflow:hidden;
+  background:#fff; box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.35);
+  transform: rotate(-1.2deg); transition: transform .3s ease;
+}
+.hero-preview:hover{ transform: rotate(0deg) scale(1.01); }
+.hero-preview img{ width:100%; height:100%; object-fit:cover; display:block; }
+.hero-preview .badge{
+  position:absolute; top:14px; left:14px;
+  background:rgba(11,37,69,.85); color:var(--cyan); padding:6px 12px; border-radius:6px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  backdrop-filter: blur(4px);
+}
+
+.hero-info .eyebrow{
+  font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:.22em; text-transform:uppercase;
+}
+.hero-info h1{
+  font-family:var(--serif); font-size:52px; line-height:1.05; font-weight:500;
+  margin:14px 0 18px 0; color:#FBF7EC; letter-spacing:-.01em;
+}
+.hero-info h1 em{ font-style:italic; color:var(--cyan); font-weight:600; }
+.hero-info .acronym{
+  font-family:var(--mono); font-size:68px; font-weight:700; line-height:1;
+  color:var(--cyan); letter-spacing:-.02em; margin:0 0 18px 0;
+}
+.hero-info .acronym .angle{ color:var(--gold); font-weight:500; font-size:50px; }
+.hero-info .lede{ font-size:18px; color:#DDE6F2; line-height:1.55; margin-bottom:24px; max-width:560px; }
+.hero-info .meta{
+  font-family:var(--mono); font-size:13px; color:#9CB2D1; letter-spacing:.06em;
+  padding:14px 0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
+  display:flex; flex-wrap:wrap; gap:10px 24px;
+}
+.hero-info .meta b{ color:#FBF7EC; font-weight:500; }
+
+/* Action bar */
+.action-bar{
+  display:flex; flex-wrap:wrap; gap:12px; margin-top:24px;
+}
+.btn{
+  display:inline-flex; align-items:center; gap:10px; padding:14px 22px;
+  border-radius:10px; font-family:var(--sans); font-size:15px; font-weight:600;
+  border:none; cursor:pointer; transition: transform .15s ease, background .15s ease;
+  text-decoration:none; line-height:1;
+}
+.btn svg{ width:18px; height:18px; }
+.btn:hover{ transform: translateY(-1px); }
+.btn-primary{ background:var(--cyan); color:#0B2545; }
+.btn-primary:hover{ background:#3ec0cb; color:#0B2545; }
+.btn-ghost{ background:transparent; color:#FBF7EC; border:1px solid var(--rule); }
+.btn-ghost:hover{ background:rgba(255,255,255,.06); color:#FBF7EC; }
+.btn-share{ background:rgba(251,233,163,.15); color:var(--gold); border:1px solid rgba(251,233,163,.3); }
+
+/* Sections */
+.section{ margin-top:60px; }
+.section-h{
+  display:flex; align-items:baseline; gap:16px; margin-bottom:24px;
+  padding-bottom:16px; border-bottom:1px solid var(--rule);
+}
+.section-h .num{ font-family:var(--mono); font-size:24px; color:var(--cyan); font-weight:700; letter-spacing:-.02em; }
+.section-h h2{ font-family:var(--serif); font-size:32px; color:#FBF7EC; margin:0; font-weight:500; }
+.section-h .tag{ font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.18em; text-transform:uppercase; margin-left:auto; }
+
+/* Format cards */
+.formats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+.format-card{
+  background:rgba(255,255,255,.04); border:1px solid var(--rule);
+  border-radius:14px; padding:24px; transition: border-color .2s ease, background .2s ease;
+}
+.format-card:hover{ border-color: var(--cyan); background:rgba(43,168,179,.06); }
+.format-card .icon{
+  width:48px; height:48px; border-radius:10px;
+  background:rgba(43,168,179,.12); color:var(--cyan);
+  display:grid; place-items:center; margin-bottom:16px;
+}
+.format-card .icon svg{ width:24px; height:24px; }
+.format-card h3{
+  font-family:var(--serif); font-size:22px; margin:0 0 6px 0; color:#FBF7EC; font-weight:600;
+}
+.format-card .size{
+  font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.08em; margin-bottom:14px;
+}
+.format-card p{
+  font-size:14px; color:#DDE6F2; line-height:1.5; margin:0 0 18px 0; opacity:.85;
+}
+.format-card .row{ display:flex; gap:8px; flex-wrap:wrap; }
+.format-card .row a{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 14px; border-radius:8px; font-family:var(--mono); font-size:13px; font-weight:500;
+  background:rgba(255,255,255,.08); color:#FBF7EC; border:1px solid var(--rule);
+}
+.format-card .row a:hover{ background:var(--cyan); color:#0B2545; border-color:var(--cyan); }
+.format-card .row .primary{ background:var(--cyan); color:#0B2545; border-color:var(--cyan); }
+.format-card .row .primary:hover{ background:#3ec0cb; }
+
+/* Embedded preview */
+.embed-card{
+  background:rgba(255,255,255,.04); border:1px solid var(--rule);
+  border-radius:14px; padding:8px; margin-top:16px;
+}
+.embed-card iframe{
+  width:100%; height:760px; border:none; border-radius:8px; background:white; display:block;
+}
+.embed-toolbar{
+  display:flex; align-items:center; justify-content:space-between; padding:6px 10px 12px 10px;
+  font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.06em;
+}
+.embed-toolbar a{ color:var(--cyan); }
+
+/* Facts grid */
+.facts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; }
+.fact{
+  background:rgba(255,255,255,.04); border:1px solid var(--rule);
+  border-radius:12px; padding:18px 20px;
+}
+.fact .v{ font-family:var(--serif); font-size:32px; line-height:1; color:#FBF7EC; font-weight:600; letter-spacing:-.02em; }
+.fact .v small{ font-size:14px; color:var(--cyan); margin-left:2px; }
+.fact .l{ font-family:var(--mono); font-size:11px; color:#9CB2D1; letter-spacing:.14em; text-transform:uppercase; margin-top:8px; }
+
+/* Share modal */
+.share-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+.copy-link{
+  display:inline-flex; align-items:center; gap:10px;
+  background:rgba(0,0,0,.3); border:1px dashed var(--rule); border-radius:10px; padding:12px 16px;
+  font-family:var(--mono); font-size:13px; color:#DDE6F2;
+}
+.copy-link button{
+  background:var(--cyan); color:#0B2545; border:none; padding:8px 14px; border-radius:6px;
+  font-family:var(--mono); font-size:12px; font-weight:600; cursor:pointer;
+}
+.copy-link button.copied{ background: var(--gold); }
+
+/* Footer */
+.footer{
+  margin-top:80px; padding:32px 0; border-top:1px solid var(--rule);
+  font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.08em;
+  display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px;
+}
+.footer a{ color:#FBF7EC; }
+
+@media (max-width: 860px){
+  .hero{ grid-template-columns: 1fr; gap:32px; }
+  .hero-preview{ max-width:380px; margin:0 auto; transform: rotate(0deg); }
+  .hero-info h1{ font-size:40px; }
+  .hero-info .acronym{ font-size:54px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="/" class="brand">
+      <span class="mark"><span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span></span>
+    </a>
+    <div class="links">
+      <a href="/">Home</a>
+      <a href="https://verify.fivucsas.com">Verify</a>
+      <a href="https://app.fivucsas.com">Admin</a>
+      <a href="https://demo.fivucsas.com">Demo</a>
+      <a href="https://amispoof.fivucsas.com">amispoof</a>
+      <a href="https://links.fivucsas.com">Links</a>
+      <span class="lang-switch" role="group" aria-label="Language" style="display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.18); border-radius:99px; padding:3px; margin-left:14px;">
+        <button type="button" data-set="tr" class="active" style="background:#2BA8B3; color:#0B2545; border:none; cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; padding:4px 10px; border-radius:99px;">TR</button>
+        <button type="button" data-set="en" style="background:transparent; color:#9CB2D1; border:none; cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; padding:4px 10px; border-radius:99px;">EN</button>
+      </span>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-preview">
+      <span class="badge">A0 · 841 × 1189 mm</span>
+      <img src="files/fivucsas-poster-preview.png" alt="FIVUCSAS poster preview">
+    </div>
+    <div class="hero-info">
+      <div class="eyebrow" data-tr>Bitirme projesi posteri · Marmara Üniversitesi CSE4298</div>
+      <div class="eyebrow" data-en>Graduation project poster · Marmara University CSE4298</div>
+      <div class="acronym"><span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span></div>
+      <h1>Face &amp; Identity Verification using <em>Cloud-based SaaS</em> Models</h1>
+      <p class="lede" data-tr>
+        Üretime alınmış, çok kiracılı biyometrik kimlik SaaS'i — tek hosted OAuth 2.0 / OIDC giriş,
+        10 kompoze edilebilir auth faktörü, 23-yapboz aktif canlılık, 19-analyzer pasif PAD, ICAO 9303 NFC.
+        Bu sayfa posteri görüntülemenizi, 5 formatta indirmenizi ve paylaşmanızı sağlar.
+      </p>
+      <p class="lede" data-en>
+        Production-deployed multi-tenant biometric identity SaaS — one hosted OAuth 2.0 / OIDC login,
+        10 composable auth factors, 23-puzzle active liveness, 19-analyzer passive PAD, ICAO 9303 NFC.
+        This page lets you view the poster, download it in 5 formats, or share it.
+      </p>
+      <div class="meta">
+        <span><b><span data-tr>Yazarlar</span><span data-en>Authors</span></b> Ahmet Abdullah Gültekin · Ayşe Gülsüm Eren · Ayşenur Arıcı</span>
+        <span><b><span data-tr>Danışman</span><span data-en>Supervisor</span></b> Doç. Dr. Mustafa Ağaoğlu</span>
+        <span><b><span data-tr>Tarih</span><span data-en>Date</span></b> 2026-05-19 · v3</span>
+      </div>
+
+      <div class="action-bar">
+        <a class="btn btn-primary" href="files/fivucsas-poster.html" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span data-tr>HTML görüntüle</span><span data-en>View HTML</span>
+        </a>
+        <a class="btn btn-ghost" href="files/fivucsas-poster.pdf" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span data-tr>PDF görüntüle</span><span data-en>View PDF</span>
+        </a>
+        <a class="btn btn-ghost" href="files/fivucsas-poster.pdf" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span data-tr>PDF indir</span><span data-en>Download PDF</span>
+        </a>
+        <button class="btn btn-share" id="shareBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span data-tr>Paylaş</span><span data-en>Share</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section 01 — All formats -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">01</div>
+      <h2><span data-tr>5 formatta indir veya görüntüle</span><span data-en>Download or view in 5 formats</span></h2>
+      <div class="tag">view · download · share</div>
+    </div>
+
+    <div class="formats">
+      <!-- HTML -->
+      <div class="format-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <h3>Interactive HTML</h3>
+        <div class="size">102 KB · self-contained · responsive</div>
+        <p>A0 poster as a single HTML file. Inline SVG, IBM Plex fonts via CDN, no JavaScript dependency. Print-ready (Ctrl-P → A0 portrait).</p>
+        <div class="row">
+          <a class="primary" href="files/fivucsas-poster.html" target="_blank" rel="noopener">View</a>
+          <a href="files/fivucsas-poster.html" download="fivucsas-poster.html">Download</a>
+        </div>
+      </div>
+
+      <!-- PDF -->
+      <div class="format-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        </div>
+        <h3>PDF (HTML-rendered)</h3>
+        <div class="size">1.3 MB · A0 print · headless Chrome</div>
+        <p>v3 HTML posterinden üretilmiş PDF (headless Chrome render). Yazıcıya / plotter'a / baskı atölyesine doğrudan gönderilebilir.</p>
+        <div class="row">
+          <a class="primary" href="files/fivucsas-poster.pdf" target="_blank" rel="noopener">View</a>
+          <a href="files/fivucsas-poster.pdf" download="FIVUCSAS-poster.pdf">Download</a>
+        </div>
+      </div>
+
+
+      <!-- PNG -->
+      <div class="format-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <h3>PNG preview</h3>
+        <div class="size">334 KB · ~1.2k × ~1.7k px</div>
+        <p>v3 HTML poster önizleme görseli — slayt deck'ler, sosyal medya, hızlı görsel önizleme için.</p>
+        <div class="row">
+          <a class="primary" href="files/fivucsas-poster-preview.png" target="_blank" rel="noopener">View</a>
+          <a href="files/fivucsas-poster-preview.png" download="FIVUCSAS-poster.png">Download .png</a>
+        </div>
+      </div>
+
+      <!-- Text brief -->
+      <div class="format-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+        </div>
+        <h3>Text brief (Markdown)</h3>
+        <div class="size">37 KB · evidence-pinned · file:line refs</div>
+        <p>Every poster claim with its source pointer (<span style="font-family:var(--mono)">file:line</span> or doc reference). 10 sections + Numbers Inventory appendix. Useful for thesis defence Q&amp;A.</p>
+        <div class="row">
+          <a class="primary" href="files/fivucsas-poster-brief.md" target="_blank" rel="noopener">View</a>
+          <a href="files/fivucsas-poster-brief.md" download="FIVUCSAS-poster-brief.md">Download .md</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 02 — Inline HTML preview -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">02</div>
+      <h2><span data-tr>Sayfa içi önizleme · HTML versiyon</span><span data-en>Inline preview · HTML version</span></h2>
+      <div class="tag">live · interactive · scrollable</div>
+    </div>
+    <div class="embed-card">
+      <iframe src="files/fivucsas-poster.html" title="FIVUCSAS A0 poster · interactive preview" loading="lazy"></iframe>
+      <div class="embed-toolbar">
+        <span>Embedded preview — for full A0 dimensions open in a new tab.</span>
+        <a href="files/fivucsas-poster.html" target="_blank" rel="noopener">↗ open full-screen</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 03 — Key facts -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">03</div>
+      <h2><span data-tr>Posterdeki anahtar bilgiler</span><span data-en>What's on the poster · key facts</span></h2>
+      <div class="tag">all numbers from /POSTER_BRIEF.md · file:line cited</div>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="v">10</div><div class="l">composable auth factors</div></div>
+      <div class="fact"><div class="v">23</div><div class="l">biometric puzzle micro-challenges</div></div>
+      <div class="fact"><div class="v">19</div><div class="l">spoof-detector analyzers</div></div>
+      <div class="fact"><div class="v">~691<small>k</small></div><div class="l">lines of code</div></div>
+      <div class="fact"><div class="v">~2 768</div><div class="l">automated tests</div></div>
+      <div class="fact"><div class="v">60</div><div class="l">database migrations</div></div>
+      <div class="fact"><div class="v">9</div><div class="l">production subdomains</div></div>
+      <div class="fact"><div class="v">0</div><div class="l">GPUs required</div></div>
+      <div class="fact"><div class="v">63<small>ms</small></div><div class="l">per-frame PAD latency · CPU</div></div>
+      <div class="fact"><div class="v">217</div><div class="l">browser bundle vitest green</div></div>
+      <div class="fact"><div class="v">0.945</div><div class="l">AUC · CASIA-FASD zero-shot</div></div>
+      <div class="fact"><div class="v">1</div><div class="l">Hetzner CX43 (8 vCPU / 16 GB / no GPU)</div></div>
+    </div>
+  </section>
+
+  <!-- Section 04 — Share -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">04</div>
+      <h2><span data-tr>Paylaş &amp; alıntıla</span><span data-en>Share &amp; cite</span></h2>
+      <div class="tag">copy · share · cite</div>
+    </div>
+    <div class="copy-link">
+      <span id="shareUrl">https://fivucsas.com/poster/</span>
+      <button id="copyBtn" type="button">Copy link</button>
+    </div>
+    <div class="share-row">
+      <a class="btn btn-ghost" href="https://twitter.com/intent/tweet?text=FIVUCSAS%20%E2%80%94%20Face%20%26%20Identity%20Verification%20SaaS%20%E2%80%94%20Marmara%20University%20graduation%20project%20A0%20poster.&url=https%3A%2F%2Ffivucsas.com%2Fposter%2F" target="_blank" rel="noopener">Share on X / Twitter</a>
+      <a class="btn btn-ghost" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Ffivucsas.com%2Fposter%2F" target="_blank" rel="noopener">Share on LinkedIn</a>
+      <a class="btn btn-ghost" href="mailto:?subject=FIVUCSAS%20A0%20Poster&body=https%3A%2F%2Ffivucsas.com%2Fposter%2F">Email a link</a>
+    </div>
+
+    <div style="margin-top:24px; padding:18px 22px; background:rgba(255,255,255,.04); border:1px solid var(--rule); border-radius:10px; font-family:var(--mono); font-size:13px; color:#DDE6F2; line-height:1.6;">
+      <b style="color:var(--cyan); letter-spacing:.16em; text-transform:uppercase; font-size:11px;">Suggested citation</b><br>
+      Gültekin, A. A., Eren, A. G., &amp; Arıcı, A. (2026). <i>FIVUCSAS — Face &amp; Identity Verification using Cloud-based SaaS Models.</i> Graduation Project Poster, Marmara University, Department of Computer Engineering. Supervisor: Mustafa Ağaoğlu. https://fivucsas.com/poster/
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>FIVUCSAS · Marmara Üniversitesi · CSE4297 / CSE4298 Engineering Project · Spring 2025 – 2026</div>
+    <div><a href="/links/">All links</a> · <a href="/">Home</a> · <a href="https://amispoof.fivucsas.com">amispoof</a></div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  // Language switcher
+  var sw = document.querySelector('.lang-switch');
+  var html = document.documentElement;
+  function applyLang(lang){
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang);
+    if (sw) sw.querySelectorAll('button').forEach(function(b){
+      var active = b.dataset.set === lang;
+      b.classList.toggle('active', active);
+      b.style.background = active ? '#2BA8B3' : 'transparent';
+      b.style.color = active ? '#0B2545' : '#9CB2D1';
+    });
+    try { history.replaceState(null, '', lang === 'tr' ? '#' : '#en'); } catch(e){}
+  }
+  var initial = (location.hash === '#en') ? 'en'
+              : (location.hash === '#tr') ? 'tr'
+              : (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr'
+              : 'tr';
+  applyLang(initial);
+  if (sw) sw.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-set]');
+    if (b) applyLang(b.dataset.set);
+  });
+
+  var url = location.href;
+  document.getElementById('shareUrl').textContent = url;
+
+  var copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', function(){
+    navigator.clipboard.writeText(url).then(function(){
+      copyBtn.textContent = 'Copied ✓';
+      copyBtn.classList.add('copied');
+      setTimeout(function(){
+        copyBtn.textContent = 'Copy link';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+
+  var shareBtn = document.getElementById('shareBtn');
+  shareBtn.addEventListener('click', async function(){
+    var data = {
+      title: 'FIVUCSAS — A0 Academic Poster',
+      text: 'Face & Identity Verification using Cloud-based SaaS Models — Marmara University CSE4298 graduation project.',
+      url: url
+    };
+    if (navigator.share) {
+      try { await navigator.share(data); } catch(e){ /* dismissed */ }
+    } else {
+      // Fallback — scroll to share section
+      document.querySelector('.copy-link').scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+  });
+})();
+</script>
+</body>
+</html>

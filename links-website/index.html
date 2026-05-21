@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="tr" data-lang="tr">
+<head>
+<meta charset="utf-8">
+<title>FIVUCSAS — Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="FIVUCSAS link hub — all subdomains, team and project artifacts in one page.">
+<meta property="og:title" content="FIVUCSAS — Hub">
+<meta property="og:description" content="Tüm subdomain'ler, ekip ve poster — tek sayfada. / All subdomains, team and poster — one page.">
+<meta property="og:url" content="https://links.fivucsas.com/">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&display=swap">
+<style>
+:root{
+  --cyan:#2BA8B3; --gold:#FBE9A3; --rule:rgba(255,255,255,.12); --rule-2:rgba(255,255,255,.22);
+  --serif:"IBM Plex Serif", Georgia, serif;
+  --sans:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+/* Language gating — applied immediately via inline style + JS to avoid TR+EN flash */
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+body{
+  font-family:var(--sans); color:#F6F1E4; line-height:1.5;
+  background:
+    radial-gradient(900px 600px at 80% -10%, rgba(43,168,179,.18), transparent 60%),
+    linear-gradient(180deg,#0B2545 0%,#0B2545 80%,#091C36 100%);
+  min-height:100vh;
+}
+a{ color:inherit; text-decoration:none; }
+.shell{ max-width:560px; margin:0 auto; padding:30px 22px 60px 22px; }
+
+/* Topbar */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:36px;
+}
+.topbar .brand{
+  font-family:var(--mono); font-weight:700; color:var(--cyan); font-size:16px; letter-spacing:-.01em;
+}
+.topbar .brand .angle{ color:var(--gold); font-weight:500; }
+.lang-switch{
+  display:inline-flex; gap:0; border:1px solid var(--rule-2); border-radius:99px; padding:3px;
+}
+.lang-switch button{
+  background:transparent; border:none; color:#9CB2D1; cursor:pointer;
+  font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em;
+  padding:5px 12px; border-radius:99px; transition: background .15s ease, color .15s ease;
+}
+.lang-switch button.active{ background:var(--cyan); color:#0B2545; }
+
+/* Hero */
+.hero{ text-align:center; margin-bottom:32px; }
+.hero .logo{
+  width:88px; height:88px; margin:0 auto 18px auto;
+  background:linear-gradient(135deg, var(--cyan), #1d8a93);
+  color:#0B2545; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; font-size:32px; letter-spacing:-.02em;
+  box-shadow:0 8px 30px rgba(43,168,179,.35);
+}
+.hero h1{
+  font-family:var(--serif); font-size:32px; line-height:1.1; font-weight:600;
+  margin:0 0 8px 0; color:#FBF7EC; letter-spacing:-.01em;
+}
+.hero .tagline{ font-size:14.5px; color:#9CB2D1; line-height:1.4; }
+
+/* Link buttons */
+.buttons{ display:flex; flex-direction:column; gap:10px; }
+.lnk{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 20px; border-radius:14px;
+  background:rgba(255,255,255,.06); border:1px solid var(--rule);
+  font-size:15.5px; font-weight:500; color:#FBF7EC;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.lnk:hover{ transform: translateY(-1px); background:rgba(43,168,179,.12); border-color: var(--cyan); }
+.lnk .ico{
+  width:32px; height:32px; flex-shrink:0;
+  background:rgba(43,168,179,.14); color:var(--cyan);
+  border-radius:8px; display:grid; place-items:center;
+}
+.lnk .ico svg{ width:16px; height:16px; }
+.lnk .meta{ flex:1; min-width:0; }
+.lnk .meta .nm{ font-weight:600; }
+.lnk .meta .sub{ font-family:var(--mono); font-size:11.5px; color:#9CB2D1; margin-top:2px; letter-spacing:.04em; }
+.lnk .arrow{ color:#9CB2D1; font-size:18px; }
+.lnk:hover .arrow{ color:var(--cyan); }
+.lnk.primary{ background:var(--cyan); color:#0B2545; border-color:var(--cyan); }
+.lnk.primary .ico{ background:rgba(11,37,69,.15); color:#0B2545; }
+.lnk.primary .meta .sub{ color:rgba(11,37,69,.7); }
+.lnk.primary .arrow{ color:rgba(11,37,69,.7); }
+.lnk.primary:hover{ background:#3ec0cb; }
+.lnk.muted{ opacity:.7; cursor:not-allowed; }
+.lnk.muted:hover{ transform:none; background:rgba(255,255,255,.06); border-color:var(--rule); }
+.lnk .badge{
+  font-family:var(--mono); font-size:9.5px; color:var(--gold); letter-spacing:.16em;
+  padding:2px 8px; border:1px solid rgba(251,233,163,.4); border-radius:99px;
+  text-transform:uppercase;
+}
+
+/* Section divider */
+.divider{
+  text-align:center; margin:30px 0 16px 0;
+  font-family:var(--mono); font-size:10px; color:#9CB2D1; letter-spacing:.32em; text-transform:uppercase;
+}
+
+/* Team cards */
+.team-grid{ display:flex; flex-direction:column; gap:12px; }
+.member{
+  background:rgba(255,255,255,.04); border:1px solid var(--rule); border-radius:14px;
+  padding:16px 18px;
+}
+.member.lead{ border-color:rgba(43,168,179,.4); background:rgba(43,168,179,.06); }
+.member.supervisor{ border-color:rgba(251,233,163,.4); background:rgba(251,233,163,.04); }
+.member .nm{ font-family:var(--serif); font-size:17px; color:#FBF7EC; font-weight:600; line-height:1.2; }
+.member .rl{ font-family:var(--mono); font-size:11px; color:var(--cyan); letter-spacing:.14em; text-transform:uppercase; margin-top:4px; }
+.member.supervisor .rl{ color:var(--gold); }
+.member .socials{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.member .socials a{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 11px; background:rgba(255,255,255,.06); border:1px solid var(--rule);
+  border-radius:7px; font-family:var(--mono); font-size:11px; color:#FBF7EC;
+  transition: background .15s ease, border-color .15s ease;
+}
+.member .socials a:hover{ background:var(--cyan); color:#0B2545; border-color:var(--cyan); }
+.member .socials svg{ width:12px; height:12px; }
+
+.footer{
+  margin-top:38px; padding-top:20px; border-top:1px solid var(--rule);
+  font-family:var(--mono); font-size:11px; color:#9CB2D1; letter-spacing:.06em;
+  text-align:center; line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <a class="brand" href="https://fivucsas.com">
+      <span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span>
+    </a>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" data-set="tr" class="active">TR</button>
+      <button type="button" data-set="en">EN</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="logo">FV</div>
+    <h1>FIVUCSAS</h1>
+    <p class="tagline" data-tr>Marmara CSE bitirme projesi · Yüz &amp; Kimlik Doğrulama SaaS<br>tüm bağlantılar tek sayfada</p>
+    <p class="tagline" data-en>Marmara CSE graduation project · Face &amp; Identity Verification SaaS<br>all links · one page</p>
+  </header>
+
+  <!-- LIVE SITES -->
+  <div class="buttons">
+
+    <a class="lnk primary" href="https://fivucsas.com/poster/">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Akademik Poster</span><span data-en>Academic Poster</span></span>
+        <span class="sub"><span data-tr>A0 · görüntüle · indir · paylaş</span><span data-en>A0 · view · download · share</span></span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Ana sayfa</span><span data-en>Landing site</span></span>
+        <span class="sub">fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://verify.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Doğrulama / Hosted login</span><span data-en>Verify / Hosted login</span></span>
+        <span class="sub">verify.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://app.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Yönetici paneli</span><span data-en>Admin console</span></span>
+        <span class="sub">app.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://demo.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Marmara BYS demosu</span><span data-en>Marmara BYS demo</span></span>
+        <span class="sub">demo.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://amispoof.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4v6c0 5-3.8 9.4-9 10-5.2-.6-9-5-9-10V6l9-4z"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>amispoof · tarayıcı anti-spoof testeri</span><span data-en>amispoof · browser anti-spoof tester</span></span>
+        <span class="sub">amispoof.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://api.fivucsas.com/swagger-ui.html" title="Swagger UI · admin-IP gated (VPN / Marmara campus / operator)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>API · Swagger arayüzü</span><span data-en>API · Swagger UI</span></span>
+        <span class="sub">api.fivucsas.com/swagger-ui</span>
+      </span>
+      <span class="badge"><span data-tr>kısıtlı</span><span data-en>gated</span></span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://docs.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4V4z"/><path d="M4 4v12a4 4 0 0 0 4 4"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Dokümantasyon</span><span data-en>Documentation</span></span>
+        <span class="sub">docs.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://status.fivucsas.com">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Sistem durumu</span><span data-en>System status</span></span>
+        <span class="sub">status.fivucsas.com</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <div class="lnk muted" title="Internal only — no public DNS">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span class="meta">
+        <span class="nm">Grafana · Prometheus · Loki</span>
+        <span class="sub"><span data-tr>Sunucu içi gözlemlenebilirlik · sadece operatör erişimi</span><span data-en>Server-side observability · operator-only access</span></span>
+      </span>
+      <span class="badge">internal</span>
+    </div>
+
+  </div>
+
+  <!-- REPOS -->
+  <div class="divider"><span data-tr>Depolar</span><span data-en>Repos</span></div>
+
+  <div class="buttons">
+    <a class="lnk" href="https://github.com/Rollingcat-Software">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.16c-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.95 10.95 0 0 1 5.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.69 5.37-5.25 5.65.41.36.78 1.06.78 2.14v3.17c0 .3.21.66.79.55C20.21 21.39 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg></span>
+      <span class="meta">
+        <span class="nm">Rollingcat-Software</span>
+        <span class="sub"><span data-tr>GitHub organizasyonu · tüm public repo'lar</span><span data-en>GitHub organization · all public repos</span></span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="lnk" href="https://github.com/Rollingcat-Software/spoof-detector">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4v6c0 5-3.8 9.4-9 10-5.2-.6-9-5-9-10V6l9-4z"/></svg></span>
+      <span class="meta">
+        <span class="nm">spoof-detector</span>
+        <span class="sub"><span data-tr>MIT açık kaynak · v0.2.1 · paper draft</span><span data-en>MIT open source · v0.2.1 · paper draft</span></span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+
+  <!-- TEAM -->
+  <div class="divider"><span data-tr>Ekip</span><span data-en>Team</span></div>
+
+  <div class="team-grid">
+
+    <div class="member lead">
+      <div class="nm">Ahmet Abdullah Gültekin</div>
+      <div class="rl"><span data-tr>Baş Mühendis · Sistem Mimarı · Spoof-Detector</span><span data-en>Lead Engineer · System Architect · Spoof-Detector</span></div>
+      <div class="socials">
+        <a href="https://github.com/ahmetabdullahgultekin" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.16c-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.95 10.95 0 0 1 5.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.69 5.37-5.25 5.65.41.36.78 1.06.78 2.14v3.17c0 .3.21.66.79.55C20.21 21.39 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/ahmet-abdullah-gultekin/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.56c0-1.33-.03-3.03-1.85-3.03-1.85 0-2.13 1.45-2.13 2.94v5.65H9.36V9h3.4v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.99 0 1.78-.77 1.78-1.72V1.72C24 .77 23.21 0 22.22 0z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://ahmetabdullah.gultek.in" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Portfolio
+        </a>
+        <a href="mailto:ahmet.abdullah@marun.edu.tr" title="Marmara student e-mail · for academic correspondence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          marun.edu.tr
+        </a>
+        <a href="mailto:ahmetabdullahgultekin@gmail.com" title="Public / open-source / GitHub-linked">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          gmail · public
+        </a>
+      </div>
+    </div>
+
+    <div class="member">
+      <div class="nm">Ayşe Gülsüm Eren</div>
+      <div class="rl"><span data-tr>Çapraz Platform Mühendisi · Canlılık Ar-Ge</span><span data-en>Cross-Platform Engineer · Liveness R&amp;D</span></div>
+      <div class="socials">
+        <a href="https://github.com/aysegulsum" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.16c-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.95 10.95 0 0 1 5.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.69 5.37-5.25 5.65.41.36.78 1.06.78 2.14v3.17c0 .3.21.66.79.55C20.21 21.39 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/ayse-gulsum-eren/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.56c0-1.33-.03-3.03-1.85-3.03-1.85 0-2.13 1.45-2.13 2.94v5.65H9.36V9h3.4v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.99 0 1.78-.77 1.78-1.72V1.72C24 .77 23.21 0 22.22 0z"/></svg>
+          LinkedIn
+        </a>
+        <a href="mailto:ayse.gulsum@marun.edu.tr" title="Marmara student e-mail · for academic correspondence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          marun.edu.tr
+        </a>
+        <a href="mailto:aysegulsumeren@gmail.com" title="Public / open-source / GitHub-linked">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          gmail · public
+        </a>
+      </div>
+    </div>
+
+    <div class="member">
+      <div class="nm">Ayşenur Arıcı</div>
+      <div class="rl"><span data-tr>Geliştirici · anti-spoof hattı · füzyon · kapılar · cihaz-spoof savunması</span><span data-en>Developer · anti-spoof pipeline · fusion · gates · device-spoof defence</span></div>
+      <div class="socials">
+        <a href="https://github.com/Aysenur15" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.16c-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.95 10.95 0 0 1 5.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.69 5.37-5.25 5.65.41.36.78 1.06.78 2.14v3.17c0 .3.21.66.79.55C20.21 21.39 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/ay%C5%9Fenur-ar%C4%B1c%C4%B1/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.56c0-1.33-.03-3.03-1.85-3.03-1.85 0-2.13 1.45-2.13 2.94v5.65H9.36V9h3.4v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.99 0 1.78-.77 1.78-1.72V1.72C24 .77 23.21 0 22.22 0z"/></svg>
+          LinkedIn
+        </a>
+        <a href="mailto:aysenurarici@marun.edu.tr" title="Marmara student e-mail · for academic correspondence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          marun.edu.tr
+        </a>
+        <a href="mailto:aysenurarici@hotmail.com" title="Public / personal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          hotmail · public
+        </a>
+      </div>
+    </div>
+
+    <div class="member supervisor">
+      <div class="nm"><span data-tr>Doç. Dr.</span><span data-en>Assoc. Prof. Dr.</span> Mustafa Ağaoğlu</div>
+      <div class="rl"><span data-tr>Danışman · Marmara Bilgisayar Mühendisliği</span><span data-en>Supervisor · Marmara Computer Engineering</span></div>
+      <div class="socials">
+        <a href="https://avesis.marmara.edu.tr/agaoglu" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          AVESİS
+        </a>
+        <a href="https://scholar.google.com.tr/citations?user=Lp1rX_gAAAAJ" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 5 2 9l10 4 10-4v6"/><path d="M6 10.5V16a6 3 0 0 0 12 0v-5.5"/></svg>
+          Scholar
+        </a>
+        <a href="mailto:agaoglu@marmara.edu.tr" title="Marmara faculty e-mail · academic correspondence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          marmara.edu.tr
+        </a>
+        <a href="mailto:agaoglum@gmail.com" title="Personal gmail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          gmail
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- INSTITUTIONS -->
+  <div class="divider"><span data-tr>Kurumlar</span><span data-en>Institutions</span></div>
+
+  <div class="buttons">
+    <a class="lnk" href="https://www.marmara.edu.tr" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Marmara Üniversitesi</span><span data-en>Marmara University</span></span>
+        <span class="sub">marmara.edu.tr</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+    <a class="lnk" href="https://eng.marmara.edu.tr/en" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Mühendislik Fakültesi</span><span data-en>Faculty of Engineering</span></span>
+        <span class="sub">eng.marmara.edu.tr</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+    <a class="lnk" href="https://cse-eng.marmara.edu.tr/en" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+      <span class="meta">
+        <span class="nm"><span data-tr>Bilgisayar Mühendisliği</span><span data-en>Computer Engineering</span></span>
+        <span class="sub">cse-eng.marmara.edu.tr</span>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    <span data-tr>FIVUCSAS · Marmara Üniversitesi · CSE4297 / CSE4298 · Bahar 2025 – 2026</span>
+    <span data-en>FIVUCSAS · Marmara University · CSE4297 / CSE4298 · Spring 2025 – 2026</span><br>
+    <span data-tr>Eksik veya yanlış bilgi gördüğünüzde ekibe bildirin, güncellenecektir.</span>
+    <span data-en>If you spot any missing or incorrect info, let the team know — it will be updated.</span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var sw = document.querySelector('.lang-switch');
+  var html = document.documentElement;
+  function apply(lang){
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang);
+    sw.querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.set === lang);
+    });
+    try { history.replaceState(null, '', lang === 'tr' ? '#' : '#en'); } catch(e){}
+  }
+  var initial = (location.hash === '#en') ? 'en'
+              : (location.hash === '#tr') ? 'tr'
+              : (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr'
+              : 'tr';
+  apply(initial);
+  sw.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-set]');
+    if (b) apply(b.dataset.set);
+  });
+})();
+</script>
+</body>
+</html>

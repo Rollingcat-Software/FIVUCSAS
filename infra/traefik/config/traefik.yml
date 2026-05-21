@@ -1,0 +1,64 @@
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    # XFF hardening (2026-05-12): Traefik is directly internet-facing on :80
+    # (no upstream proxy). trustedIPs is empty so Traefik strips any
+    # client-supplied X-Forwarded-* headers and writes its own using the
+    # connection's peer IP. This closes the per-IP rate-limit bypass surfaced
+    # by senior reviews (RateLimitInterceptor.getClientIP uses
+    # `XFF.split(",")[0]` and would otherwise honour an attacker-controlled
+    # value).
+    forwardedHeaders:
+      trustedIPs: []
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+    # XFF hardening (2026-05-12): same rationale as :80 entryPoint above.
+    # Empty trustedIPs means Traefik overwrites X-Forwarded-For with the
+    # peer IP on every request. If a CDN or upstream proxy is ever placed
+    # in front of Traefik, list its egress IPs / CIDRs here so legitimate
+    # forwarded headers are honoured. Internal Docker subnet (`proxy`
+    # network 172.20.0.0/24) is NOT listed because external clients never
+    # connect from that range — only the docker-network containers do, and
+    # those don't set X-Forwarded-For.
+    forwardedHeaders:
+      trustedIPs: []
+    http:
+      middlewares:
+        - secure-headers@file
+        - rate-limit@file
+      tls:
+        certResolver: letsencrypt
+
+providers:
+  docker:
+    endpoint: "http://docker-socket-proxy:2375"
+    exposedByDefault: false
+    network: proxy
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: rollingcat.help@gmail.com
+      storage: /acme.json
+      httpChallenge:
+        entryPoint: web
+
+log:
+  level: WARN
+
+accessLog:
+  filePath: /var/log/traefik/access.log
+  bufferingSize: 100

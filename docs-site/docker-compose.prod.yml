@@ -1,0 +1,30 @@
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fivucsas-docs
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fivucsas-docs.rule=Host(`docs.fivucsas.com`)"
+      - "traefik.http.routers.fivucsas-docs.entrypoints=websecure"
+      - "traefik.http.routers.fivucsas-docs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.fivucsas-docs.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          pids: 128
+
+networks:
+  proxy:
+    external: true
