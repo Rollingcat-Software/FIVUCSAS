@@ -1,6 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-lang="en">
 <head>
+<style>
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+.lang-switch-fix{ position: fixed; top: 14px; right: 14px; z-index: 9999;
+  display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:2px;
+  background:rgba(15,15,35,.85); }
+.lang-switch-fix button{ background:transparent; border:none; color:rgba(255,255,255,.7); cursor:pointer;
+  font-family: ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.12em;
+  padding:4px 10px; border-radius:99px; }
+.lang-switch-fix button.active{ background:#6366f1; color:#fff; }
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIVUCSAS API Documentation</title>
@@ -406,6 +417,24 @@
     </style>
 </head>
 <body>
+<span class="lang-switch-fix" role="group" aria-label="Language">
+  <button type="button" data-set="tr">TR</button>
+  <button type="button" data-set="en" class="active">EN</button>
+</span>
+<script>
+(function(){
+  var sw = document.querySelector('.lang-switch-fix');
+  var html = document.documentElement;
+  function apply(lang){
+    html.setAttribute('data-lang', lang); html.setAttribute('lang', lang);
+    sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.set === lang); });
+    try { history.replaceState(null,'', lang==='en' ? '#' : '#tr'); } catch(e){}
+  }
+  var initial = (location.hash === '#tr') ? 'tr' : 'en';
+  apply(initial);
+  sw.addEventListener('click', function(e){ var b = e.target.closest('button[data-set]'); if (b) apply(b.dataset.set); });
+})();
+</script>
 <!-- FIVUCSAS suite bar — cross-site nav -->
 <div style="background:#0a0d12;border-bottom:1px solid #1f2937;padding:6px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12px;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#94a3b8;">
   <a href="https://fivucsas.com/" style="color:#818cf8;text-decoration:none;font-weight:600;">← FIVUCSAS</a>
@@ -445,18 +474,18 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             Developer Documentation
         </div>
-        <h1>FIVUCSAS API Documentation</h1>
+        <h1><span data-en>FIVUCSAS API Documentation</span><span data-tr>FIVUCSAS API Dokümantasyonu</span></h1>
         <p>Integrate identity verification, biometric authentication, and multi-factor security into your applications with our comprehensive API platform.</p>
     </section>
 
     <section class="cards-section">
-        <h2>API Reference</h2>
+        <h2><span data-en>API Reference</span><span data-tr>API Referansı</span></h2>
         <div class="cards-grid">
             <a href="/identity/" class="card">
                 <div class="card-icon identity">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
-                <h3>Identity Core API</h3>
+                <h3><span data-en>Identity Core API</span><span data-tr>Kimlik Çekirdek API</span></h3>
                 <p>User management, authentication flows, OAuth 2.0/OIDC, enrollment management, session handling, and role-based access control.</p>
                 <span class="card-tag rest">REST API</span>
             </a>
@@ -464,7 +493,7 @@
                 <div class="card-icon biometric">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7"/><circle cx="12" cy="11" r="3"/></svg>
                 </div>
-                <h3>Biometric Processor API</h3>
+                <h3><span data-en>Biometric Processor API</span><span data-tr>Biyometrik İşlemci API</span></h3>
                 <p>Face recognition, liveness detection, embedding extraction, and face search powered by AI/ML models. Internal microservice.</p>
                 <span class="card-tag internal">Internal</span>
             </a>
@@ -472,7 +501,7 @@
                 <div class="card-icon sdk">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </div>
-                <h3>Widget SDK</h3>
+                <h3><span data-en>Widget SDK</span><span data-tr>Widget SDK</span></h3>
                 <p>Embeddable authentication widget for third-party integration. Drop-in JavaScript component with full customization support.</p>
                 <span class="card-tag js">JavaScript</span>
             </a>
@@ -480,7 +509,7 @@
     </section>
 
     <section class="code-section">
-        <h2>Quick Start</h2>
+        <h2><span data-en>Quick Start</span><span data-tr>Hızlı Başlangıç</span></h2>
         <div class="code-block">
             <div class="code-header">
                 <span class="dot red"></span>
@@ -511,7 +540,7 @@
     </section>
 
     <section class="arch-section">
-        <h2>Architecture Overview</h2>
+        <h2><span data-en>Architecture Overview</span><span data-tr>Mimari Genel Bakış</span></h2>
         <div class="arch-diagram">
             <div class="arch-flow">
                 <div class="arch-box client">Your Application</div>

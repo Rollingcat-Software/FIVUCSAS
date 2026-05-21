@@ -1,0 +1,397 @@
+% =============================================================================
+%  FIVUCSAS  —  CSE4198 Engineering Project Poster  —  VISUAL variant
+%  Marmara University, Department of Computer Engineering — Spring 2025-2026
+%
+%  Design goal: image / icon driven, minimum text. Every block leads with a
+%  picture; words are reduced to short captions.
+%
+%  Visual assets:
+%    assets/icons/*.pdf  — OpenMoji colour glyphs (CC BY-SA 4.0, hfg-gmuend/openmoji)
+%                          + Tabler line icons (MIT) for fingerprint / qrcode / usb
+%    assets/logos/*.pdf  — Simple Icons brand marks, brand-coloured
+%    assets/*.{png,jpg}  — official Marmara University + Faculty crests
+%
+%  Compile:  pdflatex poster.tex && pdflatex poster.tex
+% =============================================================================
+\pdfminorversion=7  % allow inclusion of rsvg-convert PDF/1.7 assets
+\documentclass[a0paper,portrait]{tikzposter}
+\tikzposterlatexaffectionproofoff
+\geometry{paperwidth=841mm,paperheight=1189mm}
+
+% ---------- Packages ---------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{{./}{../../assets/}{../../assets/icons/}{../../assets/logos/}}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{fontawesome5}
+\usepackage{qrcode}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,shapes.misc,arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing,patterns}
+
+% ---------- Marmara palette --------------------------------------------------
+\definecolor{MarmaraNavy}{HTML}{0B2545}
+\definecolor{MarmaraBlue}{HTML}{13315C}
+\definecolor{MarmaraTeal}{HTML}{1E96A8}
+\definecolor{MarmaraGold}{HTML}{F4B400}
+\definecolor{MarmaraGray}{HTML}{E9ECEF}
+\definecolor{MarmaraInk}{HTML}{1B1F23}
+\definecolor{MarmaraSubtle}{HTML}{F6F8FB}
+\definecolor{Spoof}{HTML}{C0392B}
+\definecolor{Live}{HTML}{27AE60}
+
+% ---------- Theme ------------------------------------------------------------
+\definelayouttheme{MarmaraCSE}{
+  \usecolorstyle[colorPalette=MarmaraStyle]{Default}
+  \usebackgroundstyle{Default}
+  \usetitlestyle{Filled}
+  \useblockstyle{Default}
+  \useinnerblockstyle{Default}
+  \usenotestyle{Default}
+}
+\definecolorpalette{MarmaraStyle}{
+  \definecolor{colorOne}{named}{MarmaraNavy}
+  \definecolor{colorTwo}{named}{MarmaraBlue}
+  \definecolor{colorThree}{named}{MarmaraTeal}
+}
+\usetheme{MarmaraCSE}
+\colorlet{backgroundcolor}{MarmaraSubtle}
+\colorlet{framecolor}{MarmaraNavy}
+\colorlet{titlefgcolor}{white}
+\colorlet{titlebgcolor}{MarmaraNavy}
+\colorlet{blocktitlebgcolor}{MarmaraBlue}
+\colorlet{blocktitlefgcolor}{white}
+\colorlet{blockbodybgcolor}{white}
+\colorlet{blockbodyfgcolor}{MarmaraInk}
+\colorlet{innerblocktitlebgcolor}{MarmaraTeal}
+\colorlet{innerblocktitlefgcolor}{white}
+
+% ---------- Asset helpers ----------------------------------------------------
+\newcommand{\ic}[2][3.2cm]{\raisebox{-0.15\height}{\includegraphics[height=#1,keepaspectratio]{#2}}}
+\newcommand{\logo}[2][3cm]{\raisebox{-0.15\height}{\includegraphics[height=#1,keepaspectratio]{#2}}}
+\newcommand{\unicrest}[1][3cm]{\includegraphics[height=#1,keepaspectratio]{marmara-university.png}}
+\newcommand{\faccrest}[1][3cm]{\includegraphics[height=#1,keepaspectratio]{muhendislik-fakultesi.jpg}}
+
+% Icon tile: glyph above, short label below
+\newcommand{\icontile}[4][MarmaraGray]{% [framecolor] {icon}{label}{fill}
+  \begin{tikzpicture}
+    \node[fill=#4, draw=#1, line width=2.5pt, rounded corners=10pt,
+          minimum width=6.6cm, minimum height=6.6cm, inner sep=0pt] (t) {};
+    \node at ([yshift=8mm]t.center) {\includegraphics[height=3.2cm,keepaspectratio]{#2}};
+    \node[font=\large\bfseries, text=MarmaraInk] at ([yshift=-21mm]t.center) {#3};
+  \end{tikzpicture}}
+
+% ---------- Header info ------------------------------------------------------
+\title{\parbox{0.97\linewidth}{\centering
+  \begin{minipage}[c]{0.13\linewidth}\centering\unicrest[5.4cm]\end{minipage}\hfill
+  \begin{minipage}[c]{0.70\linewidth}\centering
+    {\fontsize{96}{100}\selectfont\bfseries FIVUCSAS}\\[0.18em]
+    {\LARGE Biometric identity verification, as a cloud service}\\[0.30em]
+    {\Large\textsl{Active-liveness anti-spoofing\ \ $\cdot$\ \ ten composable auth factors\ \ $\cdot$\ \ multi-tenant SaaS}}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.13\linewidth}\centering\faccrest[5.6cm]\end{minipage}
+}}
+
+\author{%
+  \large \textbf{Ahmet Abdullah Gültekin} \quad
+  \textbf{Ayşe Gülsüm Eren} \quad
+  \textbf{Ayşenur Arıcı}\\[0.20em]
+  \large \textbf{Advisor:} Assoc.\ Prof.\ Dr.\ Mustafa Ağaoğlu \, $\cdot$ \,
+  CSE4197 / CSE4198 \, $\cdot$ \, Spring 2025--2026}
+\institute{Marmara University \, $\cdot$ \, Faculty of Engineering \, $\cdot$ \, Department of Computer Engineering}
+
+% =============================================================================
+\begin{document}
+\maketitle[width=\paperwidth, titletotopverticalspace=6mm]
+
+% =================== KPI STRIP — three icons, three numbers ==================
+\block[bodyoffsety=-15mm, bodyinnersep=6mm]{}{%
+\centering
+\begin{tikzpicture}[every node/.style={align=center}]
+  % --- group 1 : 0% ---
+  \node at (-32,0) {\ic[5.6cm]{shield}};
+  \node[font=\fontsize{80}{80}\selectfont\bfseries, text=Live, anchor=west]      at (-28.3,1.4) {0\,\%};
+  \node[font=\Large\bfseries, text=MarmaraInk, anchor=west]                      at (-28.3,-1.1) {replay attacks blocked};
+  \node[font=\large, text=gray, anchor=west]                                    at (-28.3,-2.7) {0 / 120 recorded-video attempts};
+  % --- group 2 : <1s ---
+  \node at (-7,0) {\ic[5.6cm]{stopwatch}};
+  \node[font=\fontsize{80}{80}\selectfont\bfseries, text=MarmaraTeal, anchor=west] at (-3.3,1.4) {<\,1\,s};
+  \node[font=\Large\bfseries, text=MarmaraInk, anchor=west]                        at (-3.3,-1.1) {end-to-end face verification};
+  \node[font=\large, text=gray, anchor=west]                                      at (-3.3,-2.7) {P95 = 950\,ms on a commodity CPU};
+  % --- group 3 : 10 ---
+  \node at (18,0) {\ic[5.6cm]{puzzle}};
+  \node[font=\fontsize{80}{80}\selectfont\bfseries, text=MarmaraGold, anchor=west] at (21.7,1.4) {10};
+  \node[font=\Large\bfseries, text=MarmaraInk, anchor=west]                        at (21.7,-1.1) {composable auth factors};
+  \node[font=\large, text=gray, anchor=west]                                      at (21.7,-2.7) {any subset $\to$ a tenant MFA flow};
+  % dividers
+  \draw[draw=MarmaraGray, line width=1.4pt] (-12.2,-3.4) -- (-12.2,3.0);
+  \draw[draw=MarmaraGray, line width=1.4pt] ( 13.2,-3.4) -- ( 13.2,3.0);
+\end{tikzpicture}}
+
+% =================== HERO — 3-step pipeline, picture driven ==================
+\block[titleoffsety=-12mm, bodyinnersep=7mm]
+{\faEye~~How it works\,---\,capture, challenge, verdict}{%
+\centering
+\begin{tikzpicture}[every node/.style={font=\large}]
+
+% ---- STEP 1 : capture ----
+\begin{scope}[shift={(-21,0)}]
+  \draw[fill=MarmaraNavy, draw=MarmaraNavy, rounded corners=10pt] (-6.6,-6.4) rectangle (6.6,6.4);
+  \draw[fill=white, draw=none, rounded corners=6pt] (-6.0,-4.6) rectangle (6.0,5.6);
+  \fill[MarmaraGray] (0,0.7) ellipse (3.2 and 4.1);
+  \foreach \x/\y in {-2.8/-1.6,-2.5/-2.6,-2.0/-3.4,-1.2/-3.9,-0.3/-4.0,0.3/-4.0,1.2/-3.9,2.0/-3.4,2.5/-2.6,2.8/-1.6,
+    -1.7/1.7,-1.3/1.9,-0.9/1.7, 0.9/1.7,1.3/1.9,1.7/1.7,
+    -1.9/2.5,-1.3/2.6, 1.3/2.6,1.9/2.5,
+    0/1.0,0/0.4,0/-0.2,-0.4/-0.6,0.4/-0.6,
+    -1.1/-1.7,-0.4/-1.9,0.4/-1.9,1.1/-1.7,0/-1.85,0/-2.3,
+    -2.5/0.4,2.5/0.4,-2.7/1.4,2.7/1.4,-1.2/3.4,0/3.6,1.2/3.4}
+    {\fill[MarmaraTeal] (\x,\y) circle (0.10);}
+  \draw[MarmaraGold,line width=2pt] (-1.7,1.7) .. controls (-1.3,2.1) and (-0.9,2.1) .. (-0.9,1.7)
+        .. controls (-1.3,1.4) and (-1.7,1.4) .. (-1.7,1.7);
+  \draw[MarmaraGold,line width=2pt] (0.9,1.7) .. controls (1.3,2.1) and (1.7,2.1) .. (1.7,1.7)
+        .. controls (1.3,1.4) and (0.9,1.4) .. (0.9,1.7);
+  \node[fill=MarmaraNavy, text=MarmaraGold, font=\Large\bfseries, rounded corners=4pt, inner sep=4pt] at (3.9,4.9) {\faClock~2.1\,s};
+  \node at (-3.9,4.8) {\ic[1.5cm]{camera}};
+  \node[fill=MarmaraGold, text=MarmaraNavy, font=\LARGE\bfseries, rounded corners=6pt, minimum width=9cm, minimum height=1.3cm] at (0,-5.2) {\faEye~~BLINK NOW};
+\end{scope}
+
+% ---- STEP 2 : random challenge ----
+\begin{scope}[shift={(0,0)}]
+  \node[font=\large\bfseries, text=MarmaraInk] at (0,5.5) {random 3--5 step action set};
+  \node[fill=Live, rounded corners=8pt, minimum width=2.9cm, minimum height=2.9cm] (c1) at (-4.7,3.6) {};
+  \node at (-4.7,3.6) {\ic[1.7cm]{grinface}};
+  \node[fill=Live, rounded corners=8pt, minimum width=2.9cm, minimum height=2.9cm] (c2) at (-1.55,3.6) {};
+  \node at (-1.55,3.6) {\ic[1.7cm]{eye}};
+  \node[fill=MarmaraGold, rounded corners=8pt, minimum width=2.9cm, minimum height=2.9cm] (c3) at (1.6,3.6) {};
+  \node at (1.6,3.6) {\ic[1.7cm]{pointup}};
+  \node[fill=MarmaraGray, rounded corners=8pt, minimum width=2.9cm, minimum height=2.9cm] (c4) at (4.75,3.6) {};
+  \node at (4.75,3.6) {\ic[1.7cm]{speaker}};
+  \foreach \a/\b in {c1/c2,c2/c3,c3/c4}{\draw[-Latex,line width=2pt,MarmaraNavy] (\a) -- (\b);}
+  % EAR sparkline — scaled tall so it anchors the panel at y=0
+  \node[font=\large\bfseries, text=MarmaraInk] at (0,1.7) {Eye-Aspect-Ratio over 60 frames};
+  \def\xo{-6}\def\yo{-4.6}\def\ys{1.5}
+  \draw[MarmaraNavy,line width=0.6pt] (\xo,\yo) -- (\xo+12,\yo) (\xo,\yo) -- (\xo,{\yo+3.4*\ys});
+  \draw[Spoof,dashed,line width=0.8pt] (\xo,{\yo+1.35*\ys}) -- (\xo+12,{\yo+1.35*\ys});
+  \node[font=\small,text=Spoof,anchor=west] at (\xo+0.2,{\yo+1.72*\ys}) {blink threshold};
+  \draw[MarmaraTeal,line width=2.4pt] plot coordinates {
+    (\xo+0,{\yo+2.6*\ys}) (\xo+0.8,{\yo+2.6*\ys}) (\xo+1.6,{\yo+2.5*\ys}) (\xo+2.4,{\yo+2.6*\ys})
+    (\xo+3.2,{\yo+2.6*\ys}) (\xo+4.0,{\yo+2.5*\ys}) (\xo+4.8,{\yo+2.4*\ys}) (\xo+5.6,{\yo+1.7*\ys})
+    (\xo+6.0,{\yo+0.7*\ys}) (\xo+6.4,{\yo+1.6*\ys}) (\xo+7.2,{\yo+2.5*\ys}) (\xo+8.0,{\yo+2.6*\ys})
+    (\xo+8.4,{\yo+1.6*\ys}) (\xo+8.8,{\yo+0.7*\ys}) (\xo+9.2,{\yo+1.7*\ys}) (\xo+10.0,{\yo+2.5*\ys})
+    (\xo+11.0,{\yo+2.6*\ys}) (\xo+12.0,{\yo+2.6*\ys})};
+  \node[font=\small,text=MarmaraInk] at (\xo+6.0,{\yo+0.2*\ys}) {blink 1};
+  \node[font=\small,text=MarmaraInk] at (\xo+8.8,{\yo+0.2*\ys}) {blink 2};
+\end{scope}
+
+% ---- STEP 3 : verdict ----
+\begin{scope}[shift={(21,0)}]
+  \draw[fill=Live!8, draw=Live, line width=3pt, rounded corners=12pt] (-6.4,-6.4) rectangle (6.4,6.4);
+  \node at (0,3.2) {\ic[5.0cm]{check}};
+  \node[font=\LARGE\bfseries, text=Live] at (0,0.0) {LIVE \& VERIFIED};
+  \node at (0,-1.9) {\ic[1.6cm]{lock}};
+  \node[font=\large\bfseries, text=MarmaraInk] at (0,-3.2) {AES-128 Fernet encryption};
+  \node[font=\normalsize, text=gray, align=center] at (0,-4.5) {embeddings encrypted at rest\\[-2pt]Postgres $+$ pgvector};
+\end{scope}
+
+% flow arrows + step captions
+\draw[-Latex,line width=3pt,MarmaraNavy] (-13.8,0) -- (-7.6,0);
+\draw[-Latex,line width=3pt,MarmaraNavy] (7.6,0)  -- (13.8,0);
+\node[font=\Large\bfseries, text=MarmaraInk] at (-21,-7.7)
+  {\textcolor{MarmaraGold}{\textbf{1}}\ \ Capture face mesh};
+\node[font=\Large\bfseries, text=MarmaraInk] at (0,-7.7)
+  {\textcolor{MarmaraGold}{\textbf{2}}\ \ Pass the random challenge};
+\node[font=\Large\bfseries, text=MarmaraInk] at (21,-7.7)
+  {\textcolor{MarmaraGold}{\textbf{3}}\ \ Encrypt \& return verdict};
+\end{tikzpicture}}
+
+% ============================ COLUMNS ROW ====================================
+\begin{columns}
+
+% --------------------------- LEFT COLUMN -------------------------------------
+\column{0.34}
+
+\block{\faExclamationTriangle~~The problem}{%
+\centering
+\begin{tikzpicture}[every node/.style={align=center}]
+  \foreach \i/\lbl/\x in {key/passwords/-9.3, phone/SMS OTP/-3.1, masks/deepfake/3.1, video/replay clip/9.3}{
+    \node at (\x,1.7) {\ic[2.8cm]{\i}};
+    \node at (\x+1.0,3.1) {\ic[1.5cm]{cross}};
+    \node[font=\large\bfseries,text=MarmaraInk] at (\x,-0.7) {\lbl};
+  }
+\end{tikzpicture}\\[0.4em]
+{\large One passive signal\,---\,a selfie or a clip\,---\,is all a prepared attacker needs.}
+}
+
+\block{\faProjectDiagram~~Architecture}{%
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\normalsize, align=center},
+  box/.style={draw=MarmaraBlue, fill=white, rounded corners=6pt, line width=1pt,
+              minimum width=6.4cm, minimum height=3.2cm},
+  ml/.style ={draw=MarmaraTeal, fill=MarmaraTeal!8, rounded corners=6pt, line width=1pt,
+              minimum width=6.4cm, minimum height=3.2cm},
+  gw/.style ={draw=MarmaraGold, fill=MarmaraGold!18, rounded corners=6pt, line width=1.4pt,
+              minimum width=14.6cm, minimum height=2.6cm},
+  arr/.style={-Latex, draw=MarmaraNavy, line width=1.3pt}]
+  \node[box] (web)    at (-5,7)  {\logo[2.0cm]{react}\\[2pt]\textbf{Web}};
+  \node[box] (mob)    at ( 5,7)  {\logo[2.0cm]{kotlin}\\[2pt]\textbf{Mobile / Desktop}};
+  \node[gw]  (gw)     at ( 0,3.4){\logo[1.9cm]{traefikproxy}\quad\textbf{\large API Gateway}};
+  \node[box] (api)    at (-5,-0.6){\logo[2.0cm]{springboot}\\[2pt]\textbf{Identity Core}};
+  \node[ml]  (bio)    at ( 5,-0.6){\logo[2.0cm]{fastapi}\\[2pt]\textbf{Biometric ML}};
+  \node[box] (db)     at (-5,-5.0){\logo[2.0cm]{postgresql}\\[2pt]\textbf{Postgres $+$ pgvector}};
+  \node[box] (redis)  at ( 5,-5.0){\logo[2.0cm]{redis}\\[2pt]\textbf{Redis 7.4}};
+  \draw[arr] (web) -- (gw);  \draw[arr] (mob) -- (gw);
+  \draw[arr] (gw) -- (api);  \draw[arr] (gw) -- (bio);
+  \draw[arr] (api) -- (db);  \draw[arr] (bio) -- (redis);
+  \draw[arr,<->,dashed] (api) -- node[above,font=\small]{API-key} (bio);
+\end{tikzpicture}\\[0.2em]
+{\large Biometric ML has \textbf{no public route}\,---\,private Docker network only.}
+}
+
+\block{\faCogs~~Engineering at a glance}{%
+\centering
+\begin{tikzpicture}[every node/.style={align=center}]
+  \foreach \i/\num/\lbl/\x in {%
+      database/60/Flyway migrations/-9.3,
+      check/1820+/automated tests/-3.1,
+      puzzle/5/Git submodules/3.1,
+      chart/8/architecture ADRs/9.3}{
+    \node at (\x,1.6) {\ic[2.4cm]{\i}};
+    \node[font=\fontsize{30}{30}\selectfont\bfseries, text=MarmaraTeal] at (\x,-0.6) {\num};
+    \node[font=\normalsize\bfseries, text=MarmaraInk] at (\x,-2.0) {\lbl};
+  }
+\end{tikzpicture}
+}
+
+% --------------------------- MIDDLE COLUMN -----------------------------------
+\column{0.32}
+
+\block{\faLayerGroup~~Ten composable auth factors}{%
+\centering
+\icontile{key}{Password}{white}\hfill
+\icontile{email}{Email OTP}{white}\hfill
+\icontile{phone}{SMS OTP}{white}\\[0.45em]
+\icontile{stopwatch}{TOTP}{white}\hfill
+\icontile{qrcode}{QR code}{white}\hfill
+\icontile{usb}{WebAuthn}{white}\\[0.45em]
+\icontile[MarmaraGold]{face}{Face}{MarmaraGold!15}\hfill
+\icontile[MarmaraGold]{speaker}{Voice}{MarmaraGold!15}\hfill
+\icontile[MarmaraGold]{fingerprint}{Fingerprint}{MarmaraGold!15}\\[0.45em]
+\icontile[MarmaraGold]{idcard}{NFC document}{MarmaraGold!15}\hfill
+\begin{tikzpicture}
+  \node[fill=MarmaraNavy, rounded corners=10pt, minimum width=13.7cm, minimum height=6.6cm, inner sep=0pt] (t){};
+  \node at ([xshift=-42mm]t.center) {\ic[3.4cm]{shield}};
+  \node[text=MarmaraGold, font=\Large\bfseries, align=center] at ([xshift=20mm]t.center)
+    {Gold tiles =\\[2pt]active liveness};
+\end{tikzpicture}
+}
+
+\block{\faBalanceScale~~Passive vs.\ active liveness}{%
+\centering
+\begin{tikzpicture}[every node/.style={align=center}]
+  % passive card
+  \node[fill=Spoof!8, draw=Spoof, line width=2.5pt, rounded corners=10pt,
+        minimum width=10.2cm, minimum height=10cm] (p) at (-5.6,0) {};
+  \node[font=\Large\bfseries, text=Spoof] at (-5.6,4.2) {Passive only};
+  \node at (-7.6,2.2) {\ic[2.0cm]{camera}}; \node at (-5.6,2.2){\Large$\to$}; \node at (-3.6,2.2){\ic[1.7cm]{check}};
+  \node at (-7.6,-0.3){\ic[2.0cm]{video}};  \node at (-5.6,-0.3){\Large$\to$};\node at (-3.6,-0.3){\ic[1.7cm]{check}};
+  \node at (-7.6,-2.8){\ic[2.0cm]{masks}};  \node at (-5.6,-2.8){\Large$\to$};\node at (-3.6,-2.8){\ic[1.7cm]{check}};
+  \node[font=\small\bfseries,text=Spoof] at (-5.6,-4.4){photo, clip \& deepfake all \emph{pass}};
+  % active card
+  \node[fill=Live!8, draw=Live, line width=2.5pt, rounded corners=10pt,
+        minimum width=10.2cm, minimum height=10cm] (a) at (5.6,0) {};
+  \node[font=\Large\bfseries, text=Live] at (5.6,4.2) {Active challenge};
+  \node at (3.6,2.2) {\ic[2.0cm]{camera}};  \node at (5.6,2.2){\Large$\to$}; \node at (7.6,2.2){\ic[1.7cm]{cross}};
+  \node at (3.6,-0.3){\ic[2.0cm]{video}};   \node at (5.6,-0.3){\Large$\to$};\node at (7.6,-0.3){\ic[1.7cm]{cross}};
+  \node at (3.6,-2.8){\ic[2.0cm]{masks}};   \node at (5.6,-2.8){\Large$\to$};\node at (7.6,-2.8){\ic[1.7cm]{cross}};
+  \node[font=\small\bfseries,text=Live] at (5.6,-4.4){random sequence \emph{blocks} all three};
+\end{tikzpicture}
+}
+
+% --------------------------- RIGHT COLUMN ------------------------------------
+\column{0.34}
+
+\block{\faStopwatch~~Where the second goes}{%
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[font=\fontsize{46}{46}\selectfont\bfseries,text=Live] at (10,5.0) {950\,ms};
+  \node[font=\large,text=MarmaraInk] at (10,3.4) {end-to-end P95 face verification, single CPU server};
+  % segments: detection 120, mesh 180, embed 240, spoof 210, search 200 (sum 950)
+  \definecolor{s1}{HTML}{1E96A8}\definecolor{s2}{HTML}{13315C}
+  \definecolor{s3}{HTML}{F4B400}\definecolor{s4}{HTML}{C0392B}\definecolor{s5}{HTML}{27AE60}
+  \fill[s1] (0,0)      rectangle (2.526,2.4);
+  \fill[s2] (2.526,0)  rectangle (6.316,2.4);
+  \fill[s3] (6.316,0)  rectangle (11.368,2.4);
+  \fill[s4] (11.368,0) rectangle (15.789,2.4);
+  \fill[s5] (15.789,0) rectangle (20,2.4);
+  \draw[MarmaraNavy,line width=1pt] (0,0) rectangle (20,2.4);
+  \node[white,font=\small\bfseries]      at (1.26,1.2){120};
+  \node[white,font=\small\bfseries]      at (4.42,1.2){180};
+  \node[MarmaraInk,font=\small\bfseries] at (8.84,1.2){240};
+  \node[white,font=\small\bfseries]      at (13.58,1.2){210};
+  \node[white,font=\small\bfseries]      at (17.89,1.2){200};
+  % legend with icons
+  \node[anchor=west] at (0.2,-1.1)  {\ic[1.0cm]{magnify}};
+  \node[anchor=west,font=\normalsize] at (1.3,-1.1) {detection};
+  \node[anchor=west] at (7.0,-1.1)  {\ic[1.0cm]{face}};
+  \node[anchor=west,font=\normalsize] at (8.1,-1.1) {face mesh};
+  \node[anchor=west] at (14.0,-1.1) {\ic[1.0cm]{brain}};
+  \node[anchor=west,font=\normalsize] at (15.1,-1.1){embedding};
+  \node[anchor=west] at (0.2,-2.6)  {\ic[1.0cm]{shield}};
+  \node[anchor=west,font=\normalsize] at (1.3,-2.6) {anti-spoof};
+  \node[anchor=west] at (7.0,-2.6)  {\ic[1.0cm]{database}};
+  \node[anchor=west,font=\normalsize] at (8.1,-2.6) {vector search};
+\end{tikzpicture}
+}
+
+\block{\faCheckCircle~~Proven on the live deployment}{%
+\centering
+\begin{tikzpicture}[every node/.style={align=center}]
+  \foreach \i/\num/\lbl/\x in {%
+      check/{0 / 120}/{replay\\false-accepts}/-8.4,
+      check/0.97/{passive-spoof\\AUC}/0,
+      check/1820+/{tests gate\\every PR}/8.4}{
+    \node at (\x,2.0) {\ic[2.3cm]{\i}};
+    \node[font=\fontsize{32}{32}\selectfont\bfseries,text=MarmaraTeal] at (\x,-0.3) {\num};
+    \node[font=\normalsize\bfseries,text=MarmaraInk,align=center] at (\x,-2.0) {\lbl};
+  }
+\end{tikzpicture}
+}
+
+\block{\faMicrochip~~Built with}{%
+\centering
+\logo[2.6cm]{springboot}\hfill\logo[2.6cm]{openjdk}\hfill\logo[2.6cm]{python}\hfill\logo[2.6cm]{fastapi}\\[0.5em]
+\logo[2.6cm]{react}\hfill\logo[2.6cm]{kotlin}\hfill\logo[2.6cm]{mediapipe}\hfill\logo[2.6cm]{docker}\\[0.5em]
+\logo[2.6cm]{postgresql}\hfill\logo[2.6cm]{redis}\hfill\logo[2.6cm]{traefikproxy}\hfill\logo[2.6cm]{githubactions}
+}
+
+\block{\faQrcode~~See it live}{%
+\centering
+\begin{minipage}[c]{0.40\linewidth}\centering
+  \qrcode[height=6.2cm,version=4,level=H]{https://verify.fivucsas.com}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\linewidth}\centering
+  \ic[3.4cm]{camera}\\[0.4em]
+  {\LARGE\bfseries Scan to try a verification}\\[0.25em]
+  {\large\texttt{verify.fivucsas.com}}
+\end{minipage}
+}
+
+\end{columns}
+
+% =============================== FOOTER STRIP ================================
+\block[bodyinnersep=2mm, bodyverticalshift=0mm]{}{%
+\colorbox{MarmaraNavy}{\parbox{0.985\linewidth}{\centering\color{MarmaraGold}%
+\vspace{2mm}\bfseries\large
+\faGithub~~\texttt{github.com/Rollingcat-Software/FIVUCSAS}
+\quad$\cdot$\quad
+\faGlobe~~\texttt{fivucsas.com}
+\quad$\cdot$\quad
+\faEnvelope~~\texttt{ahmetabdullahgultekin@gmail.com}
+\quad$\cdot$\quad
+Marmara University \, \textbf{2026}\vspace{2mm}}}}
+
+\end{document}

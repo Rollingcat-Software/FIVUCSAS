@@ -1,6 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-lang="en">
 <head>
+<style>
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+.lang-switch-fix{ position: fixed; top: 14px; right: 14px; z-index: 9999;
+  display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:2px;
+  background:rgba(15,15,35,.85); }
+.lang-switch-fix button{ background:transparent; border:none; color:rgba(255,255,255,.7); cursor:pointer;
+  font-family: ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.12em;
+  padding:4px 10px; border-radius:99px; }
+.lang-switch-fix button.active{ background:#6366f1; color:#fff; }
+</style>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="robots" content="index, follow" />
@@ -143,6 +154,24 @@
   <link rel="stylesheet" crossorigin href="/assets/index-Ci_SIW9g.css">
 </head>
 <body>
+    <span class="lang-switch-fix" role="group" aria-label="Language">
+      <button type="button" data-set="tr">TR</button>
+      <button type="button" data-set="en" class="active">EN</button>
+    </span>
+    <script>
+    (function(){
+      var sw = document.querySelector('.lang-switch-fix');
+      var html = document.documentElement;
+      function apply(lang){
+        html.setAttribute('data-lang', lang); html.setAttribute('lang', lang);
+        sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.set === lang); });
+        try { history.replaceState(null,'', lang==='en' ? '#' : '#tr'); } catch(e){}
+      }
+      var initial = (location.hash === '#tr') ? 'tr' : 'en';
+      apply(initial);
+      sw.addEventListener('click', function(e){ var b = e.target.closest('button[data-set]'); if (b) apply(b.dataset.set); });
+    })();
+    </script>
     <div id="verify-root"></div>
     <main id="verify-landing">
       <div class="wrap">
@@ -151,7 +180,7 @@
           <div class="brand-name">FIVUCSAS<span class="accent"> Verify</span></div>
         </div>
 
-        <h1>Hosted login and embeddable <span class="accent">auth widget</span> for FIVUCSAS.</h1>
+        <h1><span data-en>Hosted login and embeddable <span class="accent">auth widget</span> for FIVUCSAS.</span><span data-tr>FIVUCSAS için hosted login ve gömülebilir <span class="accent">auth widget</span>.</span></h1>
         <p class="lede">
           Authenticate your users with face, voice, fingerprint, NFC ID, passkeys, TOTP, and OTP — without writing
           biometric or session code. Drop-in OAuth 2.0 / OpenID Connect for web, mobile, and desktop apps.
@@ -165,20 +194,20 @@
 
         <div class="grid">
           <div class="card">
-            <h3>Hosted login (recommended)</h3>
+            <h3><span data-en>Hosted login (recommended)</span><span data-tr>Hosted login (önerilen)</span></h3>
             <p>Redirect users to <code>verify.fivucsas.com/login</code>, get a code back, exchange for tokens. Standard OAuth 2.0 + PKCE.</p>
           </div>
           <div class="card">
-            <h3>Embeddable widget</h3>
+            <h3><span data-en>Embeddable widget</span><span data-tr>Gömülebilir widget</span></h3>
             <p>Iframe-friendly step-up MFA for sensitive actions. Camera, microphone, and WebAuthn delegated to the widget origin.</p>
           </div>
           <div class="card">
-            <h3>Multi-factor by default</h3>
+            <h3><span data-en>Multi-factor by default</span><span data-tr>Varsayılan çok faktörlü</span></h3>
             <p>Tenants configure which factors are required per flow. Backend enforces the policy — clients can't downgrade.</p>
           </div>
         </div>
 
-        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;">10 supported auth methods</h2>
+        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;"><span data-en>10 supported auth methods</span><span data-tr>10 desteklenen auth yöntemi</span></h2>
         <div class="methods">
           <span class="pill">PASSWORD</span>
           <span class="pill">EMAIL_OTP</span>
@@ -192,7 +221,7 @@
           <span class="pill">NFC_DOCUMENT</span>
         </div>
 
-        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;">Integrate in three lines</h2>
+        <h2 style="font-size: 18px; margin-bottom: 12px; color: #e6edf3;"><span data-en>Integrate in three lines</span><span data-tr>Üç satırda entegrasyon</span></h2>
         <pre><span class="c">// Web (loadFivucsasAuth from https://verify.fivucsas.com/fivucsas-auth.esm.js)</span>
 <span class="k">const</span> auth = <span class="k">await</span> loadFivucsasAuth({ apiBaseUrl: <span class="s">"https://api.fivucsas.com"</span> });
 <span class="k">await</span> auth.loginRedirect({ clientId: <span class="s">"YOUR_CLIENT_ID"</span>, redirectUri: <span class="s">"https://your-app.com/callback"</span> });

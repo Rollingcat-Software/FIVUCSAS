@@ -1,6 +1,21 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-lang="tr">
 <head>
+<style>
+/* Language gating (injected) */
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+.lang-switch-bys{
+  display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:2px;
+  margin-left:14px; vertical-align:middle;
+}
+.lang-switch-bys button{
+  background:transparent; border:none; color:rgba(255,255,255,.7); cursor:pointer;
+  font-family:Inter, sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em;
+  padding:3px 9px; border-radius:99px; transition: background .15s ease, color .15s ease;
+}
+.lang-switch-bys button.active{ background:#ffffff; color:#8B0000; }
+</style>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,8 +121,8 @@
                 </svg>
             </div>
             <div class="header-brand-text">
-                <div class="header-brand-title">T.C. Marmara Üniversitesi</div>
-                <div class="header-brand-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
+                <div class="header-brand-title"><span data-tr>T.C. Marmara Üniversitesi</span><span data-en>Republic of Türkiye · Marmara University</span></div>
+                <div class="header-brand-subtitle"><span data-tr>Öğrenci Bilgi Sistemi (BYS)</span><span data-en>Student Information System (BYS)</span></div>
             </div>
         </a>
         <div class="header-right">
@@ -119,15 +134,37 @@
                 <svg role="img" aria-label="E-posta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 bilgisistem@marmara.edu.tr
             </div>
+            <span class="lang-switch-bys" role="group" aria-label="Language">
+                <button type="button" data-set="tr" class="active">TR</button>
+                <button type="button" data-set="en">EN</button>
+            </span>
         </div>
     </div>
 </header>
+<script>
+(function(){
+  var sw = document.querySelector('.lang-switch-bys');
+  var html = document.documentElement;
+  function apply(lang){
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang);
+    sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.set === lang); });
+    try { history.replaceState(null, '', lang === 'tr' ? '#' : '#en'); } catch(e){}
+  }
+  var initial = (location.hash === '#en') ? 'en' : 'tr';
+  apply(initial);
+  sw.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-set]');
+    if (b) apply(b.dataset.set);
+  });
+})();
+</script>
 
 <!-- Navigation Bar -->
 <nav class="bys-navbar">
     <div class="bys-navbar-inner">
         <ul class="bys-nav-list">
-            <li class="bys-nav-item active"><a href="index.html">Ana Sayfa</a></li>
+            <li class="bys-nav-item active"><a href="index.html"><span data-tr>Ana Sayfa</span><span data-en>Home</span></a></li>
             <li class="bys-nav-item has-dropdown">
                 <a href="#" onclick="return false;">Öğrenci İşleri <span class="nav-arrow">&#9660;</span></a>
                 <ul class="bys-dropdown">
@@ -194,7 +231,7 @@
                     <text x="60" y="95" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700" font-family="'Times New Roman',serif" letter-spacing="3">1883</text>
                 </svg>
             </div>
-            <h1 class="bys-title">Öğrenci Bilgi Sistemi</h1>
+            <h1 class="bys-title"><span data-tr>Öğrenci Bilgi Sistemi</span><span data-en>Student Information System</span></h1>
             <p class="bys-subtitle">T.C. Marmara Üniversitesi &mdash; BYS Giriş Portalı</p>
         </div>
 
@@ -280,7 +317,7 @@
                     </svg>
                 </span>
                 <div class="fivucsas-btn-text">
-                    <div class="fivucsas-btn-label">FIVUCSAS ile Güvenli Giriş</div>
+                    <div class="fivucsas-btn-label"><span data-tr>FIVUCSAS ile Güvenli Giriş</span><span data-en>Sign in securely with FIVUCSAS</span></div>
                     <div class="fivucsas-btn-sub">Yönlendirmeli Giriş &mdash; Biyometrik Kimlik Doğrulama</div>
                 </div>
                 <svg class="fivucsas-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
@@ -304,7 +341,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </div>
     <div>
-        <strong>Demonstrasyon Sayfası</strong> &mdash; Bu sayfa, FIVUCSAS biyometrik kimlik doğrulamanın bir üniversite BYS'ye nasıl entegre edildiğini göstermektedir.
+        <strong><span data-tr>Demonstrasyon Sayfası</span><span data-en>Demonstration Page</span></strong> &mdash; <span data-tr>Bu sayfa, FIVUCSAS biyometrik kimlik doğrulamanın bir üniversite BYS'ye nasıl entegre edildiğini göstermektedir.</span><span data-en>This page demonstrates how FIVUCSAS biometric identity verification integrates into a university Student Information System (BYS).</span>
         Geleneksel giriş ve e-Devlet bu demoda devre dışıdır. <strong>&ldquo;FIVUCSAS ile Güvenli Giriş&rdquo;</strong> butonunu kullanarak OAuth widget akışını deneyebilirsiniz.
     </div>
 </div>
