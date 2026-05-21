@@ -5,7 +5,7 @@
 Multi-tenant biometric auth platform | Marmara University CSE4297 | Hexagonal Architecture
 
 **Status**: Production deployed. Phases 0-8 complete. ~1,900+ tests. All services healthy.
-**Last verified**: 2026-05-12 (Carry-forward from 2026-05-11: 11 PRs shipped across 5 repos + Flyway repair on prod, V59/V60 applied, branch protection on 6 branches, master/main reconciled, INVESTIGATION 2026-05-07 P1 residue closed, tenant onboarding playbook + 8 ADRs + docs/ hierarchy consolidated, spoof-detector blink cache + EAR recalibration paper-P0. **Added today**: parent PR #57 (poster suite: A0 default + 4 style variants compliant with CSE4198 §5.1) + parent PR #58 (archived 18 dated 2026-04/2026-05-04 docs into `archive/2026-05/{audits,plans,reviews,roadmaps,sessions}/`, tidied `.gitignore`); bio PR #99 (closed issue #91: 32 stale unit tests + 3 asyncio-fixture leaks fixed, no production code touched, module-scoped TestClient pattern documented for follow-ups); bio Dependabot #97/#98 in flight (rebased post-#99). Submodule pointer for biometric-processor bumped to post-#99 main.)
+**Last verified**: 2026-05-21 (2026-05-21: `links.fivucsas.com` hub — API tile → `/swagger-ui.html` with admin-IP "gated" badge (raw API root returned 401), Turkish i18n role-label fixes (English under `lang=tr` was İ-mangling Latin `i` under uppercase), team contact info, Ayşenur LinkedIn URL fix; poster author contact block + **regenerated A0 PDF/PNG** from `landing-website/public/poster/files/fivucsas-poster.html`; attribution — Ayşe Gülsüm Eren GitHub `@aysegulsum` + `marun.edu.tr` academic emails across `spoof-detector` + `practice-and-test` (forensic git-author records left intact); bilingual TR/EN switchers completed on `bys-demo`/`docs-site`/`verify-widget`. Consolidated into PR #69 → `master` (whole `fix/2026-05-12-bake-mini-fasnet-models` branch). NOTE: `api.fivucsas.com/` returns 401 by design (it's an API origin, not a page); Swagger/`/v3/api-docs`/`/actuator` are admin-IP gated (403 public), OIDC discovery is public (200). Carry-forward from 2026-05-12 / 2026-05-11: 11 PRs shipped across 5 repos + Flyway repair on prod, V59/V60 applied, branch protection on 6 branches, master/main reconciled, INVESTIGATION 2026-05-07 P1 residue closed, tenant onboarding playbook + 8 ADRs + docs/ hierarchy consolidated, spoof-detector blink cache + EAR recalibration paper-P0. **Added today**: parent PR #57 (poster suite: A0 default + 4 style variants compliant with CSE4198 §5.1) + parent PR #58 (archived 18 dated 2026-04/2026-05-04 docs into `archive/2026-05/{audits,plans,reviews,roadmaps,sessions}/`, tidied `.gitignore`); bio PR #99 (closed issue #91: 32 stale unit tests + 3 asyncio-fixture leaks fixed, no production code touched, module-scoped TestClient pattern documented for follow-ups); bio Dependabot #97/#98 in flight (rebased post-#99). Submodule pointer for biometric-processor bumped to post-#99 main.)
 
 ## Architecture
 
@@ -74,6 +74,16 @@ scp -P 65002 amispoof/lib/spoof-detector.js amispoof/lib/spoof-detector.js.map a
 # Models only need to be sent once after the subdomain is created; subsequent deploys can skip these.
 # scp -P 65002 amispoof/models/minifasnet_v2.onnx amispoof/models/face_landmarker.task u349700627@46.202.158.52:~/domains/amispoof.fivucsas.com/public_html/models/
 
+# Deploy links hub (links.fivucsas.com — single static index.html)
+scp -P 65002 /opt/projects/fivucsas/links-website/index.html u349700627@46.202.158.52:~/domains/links.fivucsas.com/public_html/index.html
+
+# Regenerate + deploy the poster PDF/PNG from the canonical HTML (A0 841×1189mm).
+# Canonical poster = landing-website/public/poster/files/fivucsas-poster.html (served at fivucsas.com/poster/files/; the viewer poster/index.html links only to files/*).
+cd /opt/projects/fivucsas/landing-website/public/poster/files
+google-chrome-stable --headless=new --no-sandbox --virtual-time-budget=20000 --no-pdf-header-footer --print-to-pdf=fivucsas-poster.pdf "file://$PWD/fivucsas-poster.html"
+google-chrome-stable --headless=new --no-sandbox --virtual-time-budget=20000 --window-size=3179,4494 --screenshot=fivucsas-poster-preview.png "file://$PWD/fivucsas-poster.html"
+scp -P 65002 fivucsas-poster.pdf fivucsas-poster-preview.png u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/files/
+
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
@@ -92,6 +102,7 @@ FIVUCSAS/                    # Parent repo (submodules)
 ├── docs/                    # Architecture docs + plans
 ├── bys-demo/                # Demo site (static HTML)
 ├── landing-website/         # Landing page → Hostinger
+├── links-website/           # links.fivucsas.com hub (static index.html) → Hostinger
 ├── practice-and-test/       # R&D experiments
 ├── scripts/                 # Deploy scripts, setup-twilio.sh
 └── ROADMAP.md               # Product roadmap
