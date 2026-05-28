@@ -21,9 +21,20 @@ sudo cp /opt/projects/fivucsas/infra/traefik/config/traefik.yml \
 sudo cp /opt/projects/fivucsas/infra/traefik/config/dynamic.yml \
         /opt/projects/infra/traefik/config/dynamic.yml
 
-# 2. Validate (Traefik watches dynamic.yml live; traefik.yml requires restart)
+# 2a. Validate the Compose file itself (interpolation, service shape).
+#     NOTE: this does NOT validate Traefik's own traefik.yml/dynamic.yml.
 docker compose -f /opt/projects/infra/traefik/docker-compose.yml \
   --env-file /opt/projects/infra/traefik/.env config
+
+# 2b. Validate Traefik's YAML (syntax + semantics) before restarting.
+#     Traefik has no offline "lint" subcommand, so do a one-shot dry-run:
+#     boot a throwaway container against the live config and watch for
+#     "configuration error" lines. It exits non-zero on a fatal parse error.
+docker run --rm \
+  -v /opt/projects/infra/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro \
+  -v /opt/projects/infra/traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro \
+  traefik:v3 traefik --configfile=/etc/traefik/traefik.yml 2>&1 \
+  | grep -iE "error|invalid" || echo "no config errors detected"
 
 # 3. Apply
 #    dynamic.yml changes: zero-restart, picked up via inotify (`watch: true`)
@@ -31,8 +42,13 @@ docker compose -f /opt/projects/infra/traefik/docker-compose.yml \
 docker compose -f /opt/projects/infra/traefik/docker-compose.yml \
   --env-file /opt/projects/infra/traefik/.env restart traefik
 
-# 4. Verify access log writes peer IP, not client-supplied XFF
-docker logs traefik 2>&1 | tail -20
+# 4. Verify access log writes peer IP, not client-supplied XFF.
+#    NOTE: traefik.yml sets `accessLog.filePath: /var/log/traefik/access.log`,
+#    so access logs go to that FILE inside the container, not stdout —
+#    `docker logs traefik` shows only Traefik's own runtime/error log.
+#    Read the access log from the file instead:
+docker exec traefik tail -20 /var/log/traefik/access.log
+#    (Traefik's startup/error log is still on stdout: `docker logs traefik`.)
 ```
 
 ## XFF / Rate-Limit Hardening (2026-05-12)
