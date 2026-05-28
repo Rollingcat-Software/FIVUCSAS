@@ -207,21 +207,6 @@
     </style>
 </head>
 <body>
-<!-- FIVUCSAS suite bar — cross-site nav -->
-<div style="background:#0a0d12;border-bottom:1px solid #1f2937;padding:6px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12px;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#94a3b8;">
-  <a href="https://fivucsas.com/" style="color:#818cf8;text-decoration:none;font-weight:600;">← FIVUCSAS</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://app.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Dashboard</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://demo.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Demo</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://verify.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Widget</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://amispoof.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">amispoof</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://docs.fivucsas.com/" style="color:#94a3b8;text-decoration:none;" aria-current="page">Docs</a>
-  <a href="https://status.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;margin-left:auto;">Status &uarr;</a>
-</div>
 
     <header class="header">
         <div class="header-inner">
@@ -534,5 +519,7 @@ container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas:s
 <span class="cm">// user.name = display name</span></pre>
         </div>
     </div>
+<!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+<script src="https://app.fivucsas.com/launcher.js?v=2026-05-28" defer></script>
 </body>
 </html>

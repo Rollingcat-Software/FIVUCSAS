@@ -5,19 +5,9 @@
 /* Language gating (injected) */
 html[data-lang="tr"] [data-en]{ display:none !important; }
 html[data-lang="en"] [data-tr]{ display:none !important; }
-.lang-switch-bys{
-  display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:2px;
-  margin-left:14px; vertical-align:middle;
-}
-.lang-switch-bys button{
-  background:transparent; border:none; color:rgba(255,255,255,.7); cursor:pointer;
-  font-family:Inter, sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em;
-  padding:3px 9px; border-radius:99px; transition: background .15s ease, color .15s ease;
-}
-.lang-switch-bys button.active{ background:#ffffff; color:#8B0000; }
 </style>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com https://app.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIVUCSAS Biyometrik Kimlik Doğrulama — Üniversite BYS Entegrasyon Demosu</title>
     <meta name="description" content="Canlı entegrasyon demosu: FIVUCSAS biyometrik kimlik doğrulama platformunun bir üniversite öğrenci bilgi sistemine nasıl entegre edildiğini gösterir. Marmara BYS arayüzü, demo veridir.">
@@ -134,31 +124,9 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
                 <svg role="img" aria-label="E-posta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 bilgisistem@marmara.edu.tr
             </div>
-            <span class="lang-switch-bys" role="group" aria-label="Language">
-                <button type="button" data-set="tr" class="active">TR</button>
-                <button type="button" data-set="en">EN</button>
-            </span>
         </div>
     </div>
 </header>
-<script>
-(function(){
-  var sw = document.querySelector('.lang-switch-bys');
-  var html = document.documentElement;
-  function apply(lang){
-    html.setAttribute('data-lang', lang);
-    html.setAttribute('lang', lang);
-    sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.set === lang); });
-    try { history.replaceState(null, '', lang === 'tr' ? '#' : '#en'); } catch(e){}
-  }
-  var initial = (location.hash === '#en') ? 'en' : 'tr';
-  apply(initial);
-  sw.addEventListener('click', function(e){
-    var b = e.target.closest('button[data-set]');
-    if (b) apply(b.dataset.set);
-  });
-})();
-</script>
 
 <!-- Navigation Bar -->
 <nav class="bys-navbar">
@@ -328,6 +296,10 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
                 <button type="button" class="fivucsas-advanced-btn" onclick="startFivucsasWidget()">
                     İnline MFA (gelişmiş) &mdash; iframe widget örneği
                 </button>
+                <p class="fivucsas-widget-note" style="margin-top:10px;font-size:12.5px;line-height:1.5;color:#94a3b8;max-width:420px;">
+                    <span data-tr>Bu satır içi (iframe) widget, FIVUCSAS'ın <strong>gömülebilir kimlik doğrulama</strong> yeteneğini göstermek için buradadır (vitrin). Güvenlik gereği (clickjacking koruması) canlı iframe yalnızca FIVUCSAS demo alanlarında etkindir, harici müşteri/kiracılara açılmaz. Birincil ve önerilen entegrasyon yukarıdaki <strong>yönlendirmeli (redirect)</strong> butondur.</span>
+                    <span data-en>This inline (iframe) widget is here to showcase FIVUCSAS's <strong>embeddable authentication</strong> capability. For security (clickjacking protection), the live iframe is enabled only on FIVUCSAS demo origins and is not offered to external customers/tenants. The primary, recommended integration is the <strong>redirect</strong> button above.</span>
+                </p>
             </div>
 
         </div><!-- /.login-card -->
@@ -424,5 +396,7 @@ async function startFivucsasWidget() {
 }
 </script>
 
+<!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+<script src="https://app.fivucsas.com/launcher.js?v=2026-05-28" defer></script>
 </body>
 </html>
