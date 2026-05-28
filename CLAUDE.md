@@ -227,4 +227,5 @@ CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 - **Python**: Clean Architecture, Pydantic, async/await
 - No hardcoded secrets — use .env.prod
 - Do NOT dockerize static sites (keep on Hostinger)
-- Recommend first, implement only after explicit approval
+- Autonomy (2026-05-28): commit/push/merge (incl. PR `--admin`) without per-action approval; spawn concurrent agents for independent stacked tasks. Recommend-first is reserved for significant DESIGN/product choices and destructive/irreversible actions.
+- Always keep related docs up to date (CLAUDE.md, READMEs, deploy runbooks) and commit them with the change.
