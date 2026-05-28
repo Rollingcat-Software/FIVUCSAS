@@ -70,6 +70,7 @@ Dispositions: **FIX** (in-scope, do it) · **ELEVATED** (must-fix; mobile owns t
 | gap | amispoof ↔ web-app integration — integrate the TS engine into enroll/verify, or keep standalone? |
 | gap | Video-interview AI analysis — build or defer |
 | M1/M2/M3 | Minor: web voice WAV dedupe; encoding consistency; spoof staging-copy cleanup |
+| repro | spoof-detector `requirements.txt` uses floating `>=` pins for `uniface`/`onnxruntime` → paper AUC not reproducible (calibrated reproduced 0.9424 vs committed 0.9497; surfaced by PR #61). Pin the ML deps and re-run §8.2+§8.3 in one env so the paper's calibrated AUC is single-valued. |
 
 ## Suggested execution order (after owner review + QA phase planning)
 1. **B-side server trust + A-side authz P0s** (S1, S2, S3, S9, S10, S6) — highest risk.
