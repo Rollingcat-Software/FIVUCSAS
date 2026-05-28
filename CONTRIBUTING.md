@@ -26,8 +26,8 @@ Thank you for your interest in contributing to the FIVUCSAS Identity Verificatio
 
 ```bash
 # Clone with submodules
-git clone --recurse-submodules https://github.com/fivucsas/fivucsas.git
-cd fivucsas
+git clone --recurse-submodules https://github.com/Rollingcat-Software/FIVUCSAS.git
+cd FIVUCSAS
 
 # Copy environment files
 cp .env.example .env
@@ -42,7 +42,7 @@ docker compose -f docker-compose.dev.yml up --build
 
 ```bash
 cd identity-core-api
-./gradlew bootRun
+./mvnw spring-boot:run
 ```
 
 **Biometric Processor (Python / FastAPI)**
@@ -151,12 +151,12 @@ test(core-api): add RBAC permission tests
 
 ## Pull Request Process
 
-1. **Create a branch** from `main` using the naming convention above.
+1. **Create a branch** from `master` (parent repo) or `main` (submodules) using the naming convention above.
 2. **Make your changes** with clear, atomic commits.
 3. **Write/update tests** for any new or changed functionality.
 4. **Run the test suite** locally and ensure all tests pass.
 5. **Update documentation** if you changed APIs, configuration, or behavior.
-6. **Open a pull request** against `main` using the PR template.
+6. **Open a pull request** against `master` (parent repo) or `main` (submodules) using the PR template.
 7. **Request review** from at least one maintainer.
 8. **Address feedback** -- push new commits (do not force-push during review).
 9. **Merge** after approval. Squash merge is preferred for feature branches.
@@ -186,7 +186,7 @@ test(core-api): add RBAC permission tests
 
 ```bash
 # Java unit tests
-cd identity-core-api && ./gradlew test
+cd identity-core-api && ./mvnw test
 
 # Python tests
 cd biometric-processor && pytest
@@ -202,12 +202,11 @@ cd web-app && npx playwright test
 
 For a detailed overview of the platform architecture, see:
 
-- [Biometric Engine Architecture](docs/BIOMETRIC_ENGINE_ARCHITECTURE.md)
-- [Platform Status](PLATFORM_STATUS.md)
-- [Roadmap](ROADMAP_V2.md)
+- [Biometric Engine Architecture](https://github.com/Rollingcat-Software/docs/blob/main/02-architecture/BIOMETRIC_ENGINE_ARCHITECTURE.md)
+- [Roadmap](ROADMAP.md)
 
 ## Questions?
 
-If you have questions about contributing, feel free to open a [Discussion](https://github.com/fivucsas/fivucsas/discussions) or reach out to the maintainers.
+If you have questions about contributing, feel free to open a [Discussion](https://github.com/Rollingcat-Software/FIVUCSAS/discussions) or reach out to the maintainers.
 
 Thank you for helping improve FIVUCSAS!

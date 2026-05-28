@@ -33,7 +33,7 @@ We will acknowledge receipt within 48 hours and provide a detailed response with
 ## Security Considerations
 
 ### Authentication
-- JWT tokens with HS256 signing and automatic rotation
+- JWT tokens with RS256 signing (default since 2026-04-20); HMAC (HS256/HS512) is a legacy-fallback opt-in only
 - BCrypt password hashing (12 rounds)
 - Multi-factor authentication (10 methods supported)
 - Rate limiting on all authentication endpoints

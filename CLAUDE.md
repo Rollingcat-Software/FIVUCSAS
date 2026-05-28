@@ -169,7 +169,7 @@ CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 
 ## Database
 
-- Flyway migrations V1-V38 (identity-core-api; V37 tenant_id index, V38 SPA public client flip) + Alembic 0001-0004 (biometric-processor)
+- Flyway migrations V1-V60 (identity-core-api; V37 tenant_id index, V38 SPA public client flip, V59 audit_logs tenant_id backfill, V60 refresh_tokens plaintext column drop) + Alembic 0001-0004 (biometric-processor)
 - Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
 - pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 
