@@ -18,7 +18,7 @@ All 15 P0 + 6 elevated verified vs fresh origin/main: **13 CONFIRMED, 2 NUANCED,
 ## A. Backend / server security — FIX (client-agnostic, top priority)
 | ID | Disposition | Item | Evidence |
 | --- | --- | --- | --- |
-| S1 | FIX | Cross-tenant write on `PUT /tenants/{id}` — add `canAccessTenant` | `ManageTenantService.java:123` |
+| S1 | ✅ DONE — PR #107 merged 2026-05-28 | Cross-tenant write on `PUT /tenants/{id}` — add `canAccessTenant` | `ManageTenantService.java:123` |
 | S2 | FIX | `VerificationController` 5 endpoints lack `@PreAuthorize` + ownership | `VerificationController.java:32,39,47,52,130` |
 | S3 | FIX | proctor endpoints: tenant-scope + drop `X-Reviewer-ID` trust | `proctor.py` |
 | S4 | FIX | `/enroll/multi` must call liveness | `enrollment.py:223` |
@@ -33,7 +33,7 @@ All 15 P0 + 6 elevated verified vs fresh origin/main: **13 CONFIRMED, 2 NUANCED,
 | F11 | FIX | Voice replay detector never called | `voice.py` |
 | F12 | FIX | Voice `SEARCH_THRESHOLD` distance/similarity semantics | `voice.py:191` |
 | F14 | FIX | GDPR export returns empty voiceEnrollments | `UserDataExportService.java:83` |
-| S15(web) | FIX | TOTP secret/email → third-party QR; generate locally (web) | `TotpEnrollment.tsx:325` |
+| S15(web) | ✅ DONE — PR #99 merged 2026-05-28 (QRCodeSVG local render) | TOTP secret/email → third-party QR; generate locally (web) | `TotpEnrollment.tsx:325` |
 | F13 | FIX | VoiceEnrollmentDialog swallows failure (web) | `VoiceEnrollmentDialog.tsx:59` |
 | F9(web) | FIX | Surface `OTP_ATTEMPTS_EXHAUSTED` (web) | `OtpManagement.tsx:113` |
 
