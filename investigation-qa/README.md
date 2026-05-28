@@ -21,8 +21,11 @@ investigation-qa/
     05-nfc-document.md
     06-tenant-admin-orchestration.md
   backlog/
-    gaps.md                     # consolidated MISSING functionality (built after inventory)
-    issues.md                   # consolidated BROKEN/buggy pipelines (built after inventory)
+    gaps.md                     # consolidated MISSING functionality
+    issues.md                   # consolidated BROKEN/buggy pipelines
+    remediation-plan.md         # scoped fix list (re-triaged against the client support matrix)
+  design/
+    client-support-matrix.md    # web=full / mobile=native-essential / desktop=thin (decided 2026-05-28)
   quality-assurance/            # QA test plans + results (phase 3)
 ```
 
