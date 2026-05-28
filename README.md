@@ -190,7 +190,7 @@ cd client-apps && ./gradlew :shared:test
 
 ## Project Status (May 2026)
 
-Production-deployed. ~1,900+ tests across backend/web/mobile/spoof-detector (633 api + 619 web-app Vitest + 425 Kotlin + 114 spoof-detector + 27 Playwright specs).
+Production-deployed. **3,412 tests** across all suites (1,176 JUnit api + 804 web-app Vitest + 785 bio pytest + 505 Kotlin client-apps + 142 spoof-detector pytest; measured 2026-05-28 via runner collection mode; excludes Playwright E2E specs).
 
 ### What's shipped
 

@@ -320,12 +320,16 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
 | **TOTAL** | **~691,446** |
 
 ### Tests
-| Suite | Count |
-|---|---|
-| Spring (Java) | 944 |
-| Pytest | 265 |
-| Vitest/Jest | 1,559 |
-| **TOTAL** | **~2,768** |
+> Counts measured 2026-05-28 via runner collection mode (`vitest list`, `pytest --collect-only`, static `@Test` grep). Identity-core-api and client-apps counts are static (runner not invokable without Docker/device).
+
+| Suite | Count | Method |
+|---|---|---|
+| identity-core-api (JUnit 5) | 1,176 | static: `@Test` + `@ParameterizedTest` |
+| web-app (Vitest) | 804 | `npx vitest list` |
+| biometric-processor (pytest) | 785 | `pytest --collect-only` (3 import errors) |
+| client-apps (Kotlin/KMP) | 505 | static: commonTest + androidTest + desktopTest |
+| spoof-detector (pytest) | 142 | `pytest --collect-only` |
+| **TOTAL** | **3,412** | |
 
 ### Concrete Configuration Values
 | Param | Value | Source |
