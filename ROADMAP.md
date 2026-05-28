@@ -6,7 +6,7 @@
 
 - **Overall completion**: production-running, in maintenance + hardening + research-paper phase.
 - **Production services** (Hetzner CX43): Identity Core API (`api.fivucsas.com`), Biometric Processor (Docker-internal, API-key-gated), Web Dashboard (`app.fivucsas.com` → Hostinger), Landing (`fivucsas.com` → Hostinger), Verify Widget / Hosted Login (`verify.fivucsas.com`), BYS demo (`demo.fivucsas.com` → Hostinger), Uptime monitor (`status.fivucsas.com`), Docs (`docs.fivucsas.com`), Grafana + Loki + Promtail observability sidecar.
-- **Tests**: 633 api, ~640 web-app, 425 client-apps, 27 Playwright specs, 114 spoof-detector, plus bio integration tests. ~1,900+ total.
+- **Tests**: 3,412 total (measured 2026-05-28): 1,176 JUnit (identity-core-api, static count) + 804 Vitest (web-app) + 785 pytest (biometric-processor, 3 collection errors) + 505 Kotlin (client-apps, static count) + 142 pytest (spoof-detector). Excludes Playwright E2E specs.
 - **Last prod rebuild**: api image `b670f218` (2026-05-07 07:20 UTC, plus follow-ups through 2026-05-09) + bio image `a0a763b5` (2026-05-07 07:28 UTC, plus spoof-detector v0.2.1 integration 2026-05-08…09). Both healthy.
 
 ## Branch state (2026-05-12)
