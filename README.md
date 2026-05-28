@@ -65,12 +65,21 @@ FIVUCSAS/
 ├── identity-core-api/       # Spring Boot microservice (submodule)
 ├── client-apps/             # Kotlin Multiplatform apps (submodule)
 ├── web-app/                 # React admin dashboard (submodule)
+├── spoof-detector/          # Anti-spoof research + browser TypeScript port (submodule)
 ├── docs/                    # Comprehensive documentation (submodule)
 ├── practice-and-test/       # R&D experiments (submodule)
+├── bys-demo/                # BYS demo site → demo.fivucsas.com
+├── landing-website/         # Landing page → fivucsas.com
+├── links-website/           # Links hub → links.fivucsas.com
+├── verify-widget/           # Embeddable auth widget → verify.fivucsas.com
+├── docs-site/               # Documentation site → docs.fivucsas.com
 ├── nginx/                   # API Gateway configuration
 ├── monitoring/              # Prometheus/Grafana configs
 ├── load-tests/              # Performance testing
 ├── scripts/                 # Utility scripts
+├── infra/                   # Traefik, runbooks, infrastructure config
+├── poster/                  # Conference poster assets
+├── archive/                 # Archived dated docs
 ├── docker-compose.yml       # Main development environment
 ├── docker-compose.dev.yml   # Development overrides
 ├── docker-compose.prod.yml  # Production configuration
@@ -121,9 +130,15 @@ docker-compose logs -f
 | Service | URL |
 |---------|-----|
 | Identity Core API | https://api.fivucsas.com |
-| Swagger UI | https://api.fivucsas.com/swagger-ui.html |
+| Swagger UI | https://api.fivucsas.com/swagger-ui.html (admin-IP-gated) |
 | Web Admin Dashboard | https://app.fivucsas.com |
 | Landing Page | https://fivucsas.com |
+| Auth Widget / Hosted Login | https://verify.fivucsas.com |
+| BYS Demo | https://demo.fivucsas.com |
+| Documentation | https://docs.fivucsas.com |
+| Uptime Monitor | https://status.fivucsas.com |
+| Anti-Spoof Tester | https://amispoof.fivucsas.com |
+| Links Hub | https://links.fivucsas.com |
 
 ## Development
 
@@ -179,7 +194,7 @@ Production-deployed. ~1,900+ tests across backend/web/mobile/spoof-detector (633
 
 ### What's shipped
 
-- **Identity Core API** — Spring Boot 3.4.7 on Java 21, JWT + RBAC + multi-tenancy, all 10 auth handlers, Flyway V1–V38 (V34–V36 ship hosted-login hardening: PKCE S256 mandate for public clients, atomic code-mint replay guard, cross-client replay guard; V37 tenant_id index; V38 SPA public client flip), deployed on Hetzner VPS
+- **Identity Core API** — Spring Boot 3.4.7 on Java 21, JWT + RBAC + multi-tenancy, all 10 auth handlers, Flyway V1–V60 (V34–V36 ship hosted-login hardening: PKCE S256 mandate for public clients, atomic code-mint replay guard, cross-client replay guard; V37 tenant_id index; V38 SPA public client flip; V59 audit_logs tenant_id backfill; V60 refresh_tokens plaintext column drop), deployed on Hetzner VPS
 - **Biometric Processor** — FastAPI on Python 3.12, DeepFace / MediaPipe / YOLO for face enroll + verify + liveness, Resemblyzer speaker embeddings for voice, document classifier + MRZ / TC OCR, deployed on Hetzner (internal Docker network, API-key gated, no public route)
 - **Web Dashboard** — React 18 + TypeScript 5 + Vite 8, Clean Architecture with InversifyJS DI, 17 admin pages, full i18n (en + tr), deployed to Hostinger
 - **Hosted Login + Widget** — `verify.fivucsas.com` serves a hosted-first redirective login (Auth0 / Okta pattern) at top-level browsing context; iframe widget remains available for inline step-up MFA

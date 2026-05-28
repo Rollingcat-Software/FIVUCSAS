@@ -73,7 +73,7 @@ Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 | `ROADMAP_OPTIMIZED_2026-05-04.md` | Tier-by-tier backlog (T0…T7) | `archive/2026-05/roadmaps/` |
 | `CICD_AUDIT_2026-05-04.md` | CI/CD pipeline audit + branch protection plan | `archive/2026-05/audits/` |
 | `SENIOR_DB_REVIEW_2026-05-04.md` Appendix C | Prod-query findings (Flyway NULL checksums, audit_logs NULL tenant_id, unused indexes, dead-tuple ratio) | `archive/2026-05/reviews/` |
-| `/opt/projects/SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root |
+| `SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root **(server-local, not in repo)** |
 | `spoof-detector/ROADMAP.md` | Anti-spoof research + paper roadmap | spoof-detector submodule |
 | `client-apps/docs/plans/CLIENT_APPS_PARITY.md` | Android/Desktop hosted-first parity matrix | client-apps submodule |
 
