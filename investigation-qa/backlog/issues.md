@@ -4,6 +4,8 @@ Consolidated from `pipeline-inventory/*.md` (2026-05-28). Every item is code-evi
 
 Priority: **P0** security/integrity · **P1** functional correctness · **P2** minor/cosmetic.
 
+> **Independent review 2026-05-28** (`findings-review-2026-05-28.md`) verified these: 13 CONFIRMED / 2 NUANCED / 0 refuted. Key corrections: **S2** is an *authenticated* IDOR → fix is object-level authz (+ a write-side IDOR in `createSession`); **S5** is liveness-only (cross-tenant is voice = F10); **S10/F16** NFC paths corrected and moot until **S9**; **S6** targets `bio.fivucsas.com` (API-key-in-APK risk). See the review doc for the authoritative per-item verdict.
+
 ## P0 — Security / integrity
 | ID | Domain | Evidence | Problem | Fix direction |
 | --- | --- | --- | --- | --- |

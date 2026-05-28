@@ -4,6 +4,17 @@ Re-triage of `issues.md` + `gaps.md` against `../design/client-support-matrix.md
 
 Dispositions: **FIX** (in-scope, do it) · **ELEVATED** (must-fix; mobile owns this) · **DESCOPE** (won't-fix; remove half-built native screen, route to hosted web) · **ADD** (missing functionality to build) · **TRIAGE** (needs a design/intent decision first).
 
+## Independent review (2026-05-28) — verdict GO (see `findings-review-2026-05-28.md`)
+All 15 P0 + 6 elevated verified vs fresh origin/main: **13 CONFIRMED, 2 NUANCED, 0 REFUTED.** Corrections to apply:
+- **S2 — reword.** Authenticated IDOR, not unauthenticated: `SecurityConfig.java:166` catch-all requires a JWT on `/api/v1/**`. Fix = **object-level/ownership authz** in `ManageVerificationService` (NOT `@PreAuthorize("isAuthenticated()")` — that's a no-op). Extends to a **write-side IDOR in `createSession`** (trusts client `userId`+`tenantId`) — in-scope.
+- **S5 — narrower.** No tenant gap: face `/search` already requires `tenant_id` (`search.py:27`). S5 is **liveness/anti-spoof-only**. Cross-tenant search is **voice-specific = F10**.
+- **S10 / F16 — path/claim fixes.** `NfcCardReader.kt` path is stale; passports DO propagate `sodValid` (sub-claim refuted); Turkish eID never computes it (null, not hardcoded true). F16: chip photo is sent by the client and **discarded by the server** (no receiving endpoint). Both **moot until S9** is fixed.
+- **S6 — target.** Mobile hits `bio.fivucsas.com` (public subdomain), not docker `:8001`. Open question: either unrouted (mobile face 404s in prod) or the **shared API key ships in the APK** — investigate first.
+- **S8 — confirmed TRIAGE.** Anti-spoof flags default OFF in code + `.env.example`, but `ANTISPOOF_BLOCK_ENFORCE` defaults ON; true posture depends on prod `.env.prod` (not in snapshot).
+
+**Sequencing:** S9 must hard-gate S10/F16; S7 depends on S8 (landmarks pointless until the gate flag is on).
+**Fix-first (highest confidence):** S9 → S1 → S2 → S15 → S3.
+
 ## A. Backend / server security — FIX (client-agnostic, top priority)
 | ID | Disposition | Item | Evidence |
 | --- | --- | --- | --- |
