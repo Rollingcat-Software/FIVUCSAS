@@ -4,13 +4,6 @@
 <style>
 html[data-lang="tr"] [data-en]{ display:none !important; }
 html[data-lang="en"] [data-tr]{ display:none !important; }
-.lang-switch-fix{ position: fixed; top: 14px; right: 14px; z-index: 9999;
-  display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.25); border-radius:99px; padding:2px;
-  background:rgba(15,15,35,.85); }
-.lang-switch-fix button{ background:transparent; border:none; color:rgba(255,255,255,.7); cursor:pointer;
-  font-family: ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.12em;
-  padding:4px 10px; border-radius:99px; }
-.lang-switch-fix button.active{ background:#6366f1; color:#fff; }
 </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -417,40 +410,6 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
     </style>
 </head>
 <body>
-<span class="lang-switch-fix" role="group" aria-label="Language">
-  <button type="button" data-set="tr">TR</button>
-  <button type="button" data-set="en" class="active">EN</button>
-</span>
-<script>
-(function(){
-  var sw = document.querySelector('.lang-switch-fix');
-  var html = document.documentElement;
-  function apply(lang){
-    html.setAttribute('data-lang', lang); html.setAttribute('lang', lang);
-    sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.set === lang); });
-    try { history.replaceState(null,'', lang==='en' ? '#' : '#tr'); } catch(e){}
-  }
-  var initial = (location.hash === '#tr') ? 'tr' : 'en';
-  apply(initial);
-  sw.addEventListener('click', function(e){ var b = e.target.closest('button[data-set]'); if (b) apply(b.dataset.set); });
-})();
-</script>
-<!-- FIVUCSAS suite bar — cross-site nav -->
-<div style="background:#0a0d12;border-bottom:1px solid #1f2937;padding:6px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12px;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#94a3b8;">
-  <a href="https://fivucsas.com/" style="color:#818cf8;text-decoration:none;font-weight:600;">← FIVUCSAS</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://app.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Dashboard</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://demo.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Demo</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://verify.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">Widget</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://amispoof.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;">amispoof</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://docs.fivucsas.com/" style="color:#94a3b8;text-decoration:none;" aria-current="page">Docs</a>
-  <a href="https://status.fivucsas.com/" style="color:#cbd5e1;text-decoration:none;margin-left:auto;">Status &uarr;</a>
-</div>
-
     <header class="header">
         <div class="header-inner">
             <a href="/" class="logo">
@@ -565,5 +524,7 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
             </div>
         </div>
     </footer>
+<!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+<script src="https://app.fivucsas.com/launcher.js" defer></script>
 </body>
 </html>

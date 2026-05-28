@@ -274,6 +274,15 @@ export default function App() {
       else if ((navigator.language || 'en').toLowerCase().startsWith('tr')) initial = 'tr'
     } catch { /* noop */ }
     setLang(initial)
+
+    // The shared suite launcher (app.fivucsas.com/launcher.js) owns the global
+    // EN/TR toggle and fires this event when it changes — keep landing in sync.
+    const onLangChange = (e: Event) => {
+      const next = (e as CustomEvent<{ lang?: Lang }>).detail?.lang
+      if (next === 'en' || next === 'tr') setLang(next)
+    }
+    window.addEventListener('fivucsas:languagechange', onLangChange as EventListener)
+    return () => window.removeEventListener('fivucsas:languagechange', onLangChange as EventListener)
   }, [])
 
   useEffect(() => {
@@ -284,8 +293,6 @@ export default function App() {
       : 'FIVUCSAS — Biometric Identity Verification Platform'
     try { localStorage.setItem('fivucsas-lang', lang) } catch { /* noop */ }
   }, [lang])
-
-  const toggleLang = () => setLang(prev => prev === 'en' ? 'tr' : 'en')
 
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
@@ -347,13 +354,6 @@ export default function App() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {text(t.nav.status)}
               </a>
-              <button
-                onClick={toggleLang}
-                aria-label="Toggle language"
-                className="ml-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:border-white/20 transition-colors"
-              >
-                {lang === 'en' ? 'TR' : 'EN'}
-              </button>
               <a
                 href="https://app.fivucsas.com"
                 className="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-sm font-semibold shadow-glow-primary transition-all"
@@ -385,9 +385,6 @@ export default function App() {
                 </a>
               ))}
               <div className="flex gap-2 pt-2">
-                <button onClick={toggleLang} className="flex-1 px-3 py-2 text-sm font-mono rounded-lg border border-white/10 bg-white/5 text-slate-300">
-                  {lang === 'en' ? 'Türkçe' : 'English'}
-                </button>
                 <a href="https://app.fivucsas.com" className="flex-1 text-center px-3 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 text-sm font-semibold shadow-glow-primary">
                   {text(t.nav.signIn)}
                 </a>
