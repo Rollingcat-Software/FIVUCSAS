@@ -77,6 +77,17 @@ scp -P 65002 amispoof/lib/spoof-detector.js amispoof/lib/spoof-detector.js.map a
 # Deploy links hub (links.fivucsas.com — single static index.html)
 scp -P 65002 /opt/projects/fivucsas/links-website/index.html u349700627@46.202.158.52:~/domains/links.fivucsas.com/public_html/index.html
 
+# Deploy verify.fivucsas.com (hosted login + auth widget — Docker/nginx via Traefik, NOT Hostinger)
+# CRITICAL: build:verify needs VITE_API_BASE_URL. vite.verify.config.ts sets envDir=project root
+# so .env.production is loaded — without it env.ts throws at boot and /login renders blank
+# (#verify-root never mounts). Preserve the SDK files (fivucsas-auth*.js) at the html root.
+cd /opt/projects/fivucsas/web-app && npm run build:verify
+rsync -a --delete dist-verify/assets/ ../verify-widget/html/assets/   # assets/ = verify build only
+cp dist-verify/index.html ../verify-widget/html/index.html            # keep html/fivucsas-auth*.js
+cd /opt/projects/fivucsas/verify-widget
+docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d
+# Verify: curl -s https://verify.fivucsas.com/ | grep assets/index-  (new hash) — /login must mount React
+
 # Regenerate + deploy the poster PDF/PNG from the canonical HTML (A0 841×1189mm).
 # Canonical poster = landing-website/public/poster/files/fivucsas-poster.html (served at fivucsas.com/poster/files/; the viewer poster/index.html links only to files/*).
 cd /opt/projects/fivucsas/landing-website/public/poster/files
