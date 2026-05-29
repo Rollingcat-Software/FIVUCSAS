@@ -1,12 +1,48 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-05-12 — 11 PRs from the 2026-05-11 session shipped + verified live (see "Closed 2026-05-11 / 2026-05-12" section near the bottom). Supersedes the 2026-04-20 phase-A/B-centric roadmap. Phase A (lint), Phase B (Dependabot security), Phase C wave-0 ops hardening, Phase I Android 13/13, and the 2026-04-30 senior-review remediation are all closed. Active wave is now narrowed to the spoof-detector paper push + a handful of operator-gated items. See `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md` and `archive/2026-05/roadmaps/ROADMAP_OPTIMIZED_2026-05-04.md` for the verbose tier breakdown.
+> Last updated: 2026-05-29 — operator admin-walkthrough session: 9 PRs (api+web+parent) fixing reported admin bugs + shipping guest-invitation email and tenant email-domain management; full headless-Chrome admin-UI sweep now passes 21/21 pages. See CHANGELOG `[2026-05-29]`. Prior wave (2026-05-12, 11 PRs) and the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
+
+## Where we are (2026-05-29) — honest state
+
+The platform is **production-deployed and feature-complete for the Marmara use case**, but **not yet a self-serve multi-tenant SaaS**. Integration pipelines status (see also each repo's README):
+
+| Pipeline | State |
+|---|---|
+| Hosted login (OIDC redirect + PKCE/JWKS/discovery) | ✅ complete |
+| Embeddable auth widget (`<fivucsas-verify>` iframe step-up) | ✅ complete |
+| OAuth2/OIDC for third-party tenants (client reg, /userinfo) | ✅ complete |
+| KYC verification pipeline (doc scan + face match + liveness) | ✅ complete |
+| Biometric enroll/verify (face/voice, pgvector, anti-spoof) | ✅ complete |
+| Guest invitations (email + accept page) | ✅ complete (shipped 2026-05-29) |
+| Tenant email-domain auto-binding + admin mgmt + enforce | ✅ complete (shipped 2026-05-29) |
+| Android app (KMP) | ✅ v5.2.0-rc1 signed APK |
+| **Tenant self-service onboarding** | ❌ admin/ROOT-provisioned only — no signup |
+| **JS/TS SDK published to npm** | ❌ CDN script-tag only, no `@fivucsas/*` npm packages |
+| iOS app | ❌ Phase 2 (blocked on Apple Developer enrollment) |
+| Email-domain DNS ownership verification | ❌ future (domains are admin-asserted, not DNS-proven) |
+
+**Tenant creation today:** SUPER_ADMIN (ROOT / platform owner) only, via `app.fivucsas.com/tenants/create` → `POST /api/v1/tenants` (`@rbac.isRoot()`). No self-service.
+
+## Recommended roadmap (what's next) — prioritized
+
+**Theme: turn a working multi-tenant platform into a self-serve SaaS.** Recommended order:
+
+1. **P0 — Tenant self-service onboarding** *(top recommendation).* A public "Create your organization" flow: `POST /tenants/register` → creates tenant + first TENANT_ADMIN + claims an email domain + seeds a sensible default auth flow, gated by email verification (and later DNS-domain proof). This is the single biggest gap between "Marmara's platform" and "a SaaS others can adopt," and it ties together the email-domain work just shipped. ~1 backend feature + 1 onboarding UI.
+2. **P0 — Publish the SDK to npm** (`@fivucsas/auth-js`, `-react`, `-elements`) with semver + a release CI job. The code exists (`web-app/src/verify-app/sdk/`); it just isn't packaged. Unblocks real tenant integrations beyond a CDN `<script>`.
+3. **P1 — Finish the email-domain feature** built on 2026-05-29: **DNS-TXT domain verification** (prove ownership before a domain auto-binds — what Okta/Auth0/Google Workspace require), **JIT provisioning**, and a configurable **default-role-on-auto-join**.
+4. **P1 — iOS app** (Phase 2) — pending Apple Developer enrollment (operator-gated).
+5. **P2 — Liveness symmetry** — `/enroll` should call the liveness check the way `/verify` does (close the documented asymmetry).
+6. **P2 — Billing/metering** (Stripe) for a commercial SaaS (operator-gated; payment provisioning).
+
+**Research track (parallel, operator-blocked):** spoof-detector paper push (BIOSIG/IJCB 2026) — AR-filter classifier sample collection, OULU-NPU benchmark/ROC/ablation, paper writing.
+
+**Ongoing hardening/ops:** unused-index 7-day audit, iBeta PAD-Level-1 cert submission, DKIM, Twilio/SMTP credential rotation, APK keystore + GitHub secrets (unblocks GitGuardian #29836028).
 
 ## Project status summary
 
 - **Overall completion**: production-running, in maintenance + hardening + research-paper phase.
 - **Production services** (Hetzner CX43): Identity Core API (`api.fivucsas.com`), Biometric Processor (Docker-internal, API-key-gated), Web Dashboard (`app.fivucsas.com` → Hostinger), Landing (`fivucsas.com` → Hostinger), Verify Widget / Hosted Login (`verify.fivucsas.com`), BYS demo (`demo.fivucsas.com` → Hostinger), Uptime monitor (`status.fivucsas.com`), Docs (`docs.fivucsas.com`), Grafana + Loki + Promtail observability sidecar.
-- **Tests**: 3,412 total (measured 2026-05-28): 1,176 JUnit (identity-core-api, static count) + 804 Vitest (web-app) + 785 pytest (biometric-processor, 3 collection errors) + 505 Kotlin (client-apps, static count) + 142 pytest (spoof-detector). Excludes Playwright E2E specs.
+- **Tests**: 633 api, ~640 web-app, 425 client-apps, 27 Playwright specs, 114 spoof-detector, plus bio integration tests. ~1,900+ total.
 - **Last prod rebuild**: api image `b670f218` (2026-05-07 07:20 UTC, plus follow-ups through 2026-05-09) + bio image `a0a763b5` (2026-05-07 07:28 UTC, plus spoof-detector v0.2.1 integration 2026-05-08…09). Both healthy.
 
 ## Branch state (2026-05-12)
@@ -73,7 +109,7 @@ Source: `spoof-detector/ROADMAP.md`. Target BIOSIG 2026 / IJCB 2026 submission.
 | `ROADMAP_OPTIMIZED_2026-05-04.md` | Tier-by-tier backlog (T0…T7) | `archive/2026-05/roadmaps/` |
 | `CICD_AUDIT_2026-05-04.md` | CI/CD pipeline audit + branch protection plan | `archive/2026-05/audits/` |
 | `SENIOR_DB_REVIEW_2026-05-04.md` Appendix C | Prod-query findings (Flyway NULL checksums, audit_logs NULL tenant_id, unused indexes, dead-tuple ratio) | `archive/2026-05/reviews/` |
-| `SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root **(server-local, not in repo)** |
+| `/opt/projects/SECURITY_REVIEW_2026-05-01.md` + `TEST_REVIEW_2026-05-01.md` + `QUALITY_REVIEW_2026-05-01.md` + `FRONTEND_REVIEW_2026-05-01.md` | Senior-reviewer deferred items | `/opt/projects/` root |
 | `spoof-detector/ROADMAP.md` | Anti-spoof research + paper roadmap | spoof-detector submodule |
 | `client-apps/docs/plans/CLIENT_APPS_PARITY.md` | Android/Desktop hosted-first parity matrix | client-apps submodule |
 
