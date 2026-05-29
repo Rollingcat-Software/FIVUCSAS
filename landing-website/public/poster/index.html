@@ -212,18 +212,6 @@ a:hover{ color:#FBF7EC; }
     <a href="/" class="brand">
       <span class="mark"><span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span></span>
     </a>
-    <div class="links">
-      <a href="/">Home</a>
-      <a href="https://verify.fivucsas.com">Verify</a>
-      <a href="https://app.fivucsas.com">Admin</a>
-      <a href="https://demo.fivucsas.com">Demo</a>
-      <a href="https://amispoof.fivucsas.com">amispoof</a>
-      <a href="https://links.fivucsas.com">Links</a>
-      <span class="lang-switch" role="group" aria-label="Language" style="display:inline-flex; gap:0; border:1px solid rgba(255,255,255,.18); border-radius:99px; padding:3px; margin-left:14px;">
-        <button type="button" data-set="tr" class="active" style="background:#2BA8B3; color:#0B2545; border:none; cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; padding:4px 10px; border-radius:99px;">TR</button>
-        <button type="button" data-set="en" style="background:transparent; color:#9CB2D1; border:none; cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; padding:4px 10px; border-radius:99px;">EN</button>
-      </span>
-    </div>
   </nav>
 
   <!-- Hero -->
@@ -414,29 +402,9 @@ a:hover{ color:#FBF7EC; }
 
 <script>
 (function(){
-  // Language switcher
-  var sw = document.querySelector('.lang-switch');
-  var html = document.documentElement;
-  function applyLang(lang){
-    html.setAttribute('data-lang', lang);
-    html.setAttribute('lang', lang);
-    if (sw) sw.querySelectorAll('button').forEach(function(b){
-      var active = b.dataset.set === lang;
-      b.classList.toggle('active', active);
-      b.style.background = active ? '#2BA8B3' : 'transparent';
-      b.style.color = active ? '#0B2545' : '#9CB2D1';
-    });
-    try { history.replaceState(null, '', lang === 'tr' ? '#' : '#en'); } catch(e){}
-  }
-  var initial = (location.hash === '#en') ? 'en'
-              : (location.hash === '#tr') ? 'tr'
-              : (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr'
-              : 'tr';
-  applyLang(initial);
-  if (sw) sw.addEventListener('click', function(e){
-    var b = e.target.closest('button[data-set]');
-    if (b) applyLang(b.dataset.set);
-  });
+  // Language is driven globally by the FIVUCSAS suite launcher
+  // (sets html[data-lang]; the [data-tr]/[data-en] CSS at the top of this
+  // file keys off it). No per-page switcher here.
 
   var url = location.href;
   document.getElementById('shareUrl').textContent = url;
@@ -469,5 +437,7 @@ a:hover{ color:#FBF7EC; }
   });
 })();
 </script>
+<!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+<script src="https://app.fivucsas.com/launcher.js?v=2026-05-29" defer></script>
 </body>
 </html>
