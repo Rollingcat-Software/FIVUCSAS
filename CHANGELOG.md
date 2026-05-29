@@ -2,6 +2,24 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-29] Session — operator-reported admin bugs, guest email, tenant email-domain mgmt, full admin-UI sweep
+
+Operator drove a live walkthrough of the admin dashboard; every reported issue was root-caused from production logs / a real-browser sweep, fixed, deployed, and verified. **9 PRs merged across api + web + parent**, api container rebuilt twice (healthy), web redeployed to Hostinger. Final headless-Chrome admin sweep: **21/21 pages green**.
+
+**Bug fixes (root-caused in prod):**
+- **api #115** — two admin 500s: Auth Flows "Make Default" hit the `uq_auth_flow_default` partial unique index (now dethrones the prior default with `saveAndFlush` so the per-statement index slot frees first); `/enrollments` list 500'd via `EntityNotFoundException` on a soft-deleted user's lazy proxy (now rendered null-safe). Same rebuild applied **V61** (`audit_logs.tenant_id NOT NULL`).
+- **api #120** — **SUPER_ADMIN `GET /auth/me` 500**: the domain `Role` model required a non-null tenant, but global system roles (SUPER_ADMIN — the platform owner role) have `tenant_id NULL`. The real platform admin could not load the dashboard. Now only tenant-scoped roles require a tenant. (Found via the admin sweep.)
+- **web #118** — Verification Flows page crashed into the ErrorBoundary whenever flows existed: it read `flow.flowType`/`flow.status` but the API returns `operationType`/`isActive`/`stepCount`. `listFlows` now maps the response to the UI shape.
+- **web #114** — Enrollments eye-button fell through to the dashboard (no `/enrollments/:id` route): added a real Enrollment Details page + route; quality/liveness columns show "N/A" for non-biometric methods; surfaced raw `user_id` for soft-deleted owners (api #117).
+
+**Features:**
+- **Set-default lockout guardrail** (api #117 + web #114): new advisory `GET /tenants/{id}/auth-flows/{flowId}/default-impact` (activeUsers / usersAtRisk / per-method coverage); the "Make Default" dialog warns before locking users out of a flow requiring an un-enrolled method.
+- **Guest invitation email** (api #119 + web #116): invitations now actually send an email with a tokenized accept link (`app.frontend-base-url`); new `/accept-invite` public page + `POST /guests/{id}/resend`. (Previously invitations were created but never delivered.)
+- **Tenant email-domain management** (api #121 + web #117): admin CRUD for a tenant's allowed email domains (`/tenants/{id}/email-domains` GET/POST/DELETE + PATCH `/primary`) on the Tenant edit page, plus an opt-in **`enforce_domain_matching`** flag (Flyway **V62**) — when on, registrants whose email domain isn't allowed are rejected (422) instead of silently joining the default tenant. Builds on the existing V44 auto-binding (Marmara: `marmara.edu.tr` staff + `marun.edu.tr` students bind identically; `is_primary` is display-only).
+- **Sidebar cleanup** (web #115): removed the redundant hardcoded "FIVUCSAS suite" bar — the shared `<fivucsas-launcher>` FAB is the single cross-site app-switcher.
+
+**Testing infra:** built a repeatable headless-Chrome admin-UI sweep (`/tmp/web-sweep`, Playwright via system Chrome) covering all 21 admin/super-admin routes with screenshots + console/HTTP/banner capture, driven by an isolated password-only SUPER_ADMIN test account in a throwaway tenant. Cleaned up 14 orphaned test tenants. `ahabgu@gmail.com` granted both SUPER_ADMIN + Fivucsas TENANT_ADMIN per operator request.
+
 ## [2026-05-11] Session — INVESTIGATION P1 residue + ops hygiene + docs DX + paper P0
 
 User asked for a comprehensive professional session roadmap, then approved all 5 actionable tracks ("all of them"). 4 decisions confirmed at recommended defaults (AddressProof/Watchlist stay dev-gated; branch protection with admin bypass; drop `refresh_tokens.token` plaintext now). 7 parallel agents dispatched in isolated `/tmp/T*/` worktrees; main thread shipped runbook + ROADMAP refresh in parallel.
