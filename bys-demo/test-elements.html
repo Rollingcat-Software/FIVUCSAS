@@ -68,20 +68,6 @@
   </style>
 </head>
 <body>
-<!-- FIVUCSAS suite bar — cross-site nav -->
-<div style="background:#0a0d12;border-bottom:1px solid #1f2937;padding:6px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12px;font-family:system-ui,-apple-system,sans-serif;color:#9ca3af;margin:-1rem -1rem 1rem -1rem;">
-  <a href="https://fivucsas.com/" style="color:#60a5fa;text-decoration:none;font-weight:600;">← FIVUCSAS</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://app.fivucsas.com/" style="color:#d1d5db;text-decoration:none;">Dashboard</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://demo.fivucsas.com/" style="color:#d1d5db;text-decoration:none;" aria-current="page">Demo</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://verify.fivucsas.com/" style="color:#d1d5db;text-decoration:none;">Widget</a>
-  <span style="color:#374151;">|</span>
-  <a href="https://amispoof.fivucsas.com/" style="color:#d1d5db;text-decoration:none;">amispoof</a>
-  <a href="https://status.fivucsas.com/" style="color:#d1d5db;text-decoration:none;margin-left:auto;">Status &uarr;</a>
-</div>
-
   <h1>FIVUCSAS Web Components <span class="badge">Phase C</span></h1>
   <p>
     Vanilla test page for <code>&lt;fivucsas-verify&gt;</code> and
@@ -187,5 +173,8 @@
 
     addLog('[page]', 'loaded — custom elements registered', null);
   </script>
+
+  <!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+  <script src="https://app.fivucsas.com/launcher.js?v=2026-05-29" defer></script>
 </body>
 </html>
