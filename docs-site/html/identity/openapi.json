@@ -2069,18 +2069,6 @@
         "responses": { "200": { "description": "Voice search results" } }
       }
     },
-    "/biometric/card-detect": {
-      "post": {
-        "operationId": "detectCardType",
-        "summary": "Detect card type from image (Turkish ID, passport, driver's license, etc.)",
-        "tags": ["Biometric"],
-        "requestBody": {
-          "required": true,
-          "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } }
-        },
-        "responses": { "200": { "description": "Card detection result" } }
-      }
-    },
     "/auth/biometric/devices": {
       "post": {
         "operationId": "registerAuthDevice",
