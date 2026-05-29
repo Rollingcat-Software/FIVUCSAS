@@ -92,34 +92,6 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
-/* ───────── Utility Bar (top slim strip) ───────── */
-.utility-bar {
-    background: var(--util-bar-bg);
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.74rem;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.utility-bar-inner {
-    width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.utility-bar a {
-    color: rgba(255, 255, 255, 0.85);
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background .2s;
-}
-.utility-bar a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-.util-sep { color: rgba(255, 255, 255, 0.35); margin: 0 4px; }
-
 /* ───────── Main Header ───────── */
 .main-header {
     background: linear-gradient(135deg, var(--mu-red) 0%, var(--mu-red-dark) 100%);
@@ -1099,8 +1071,6 @@ tbody tr { transition: background .15s; }
     .bys-nav-list { gap: 0; }
     .bys-nav-item > a { padding: 12px 14px; font-size: 0.82rem; }
     .bys-dropdown { position: static; opacity: 1; visibility: visible; transform: none; display: none; }
-    .utility-bar-inner { flex-direction: column; height: auto; padding: 4px 16px; gap: 2px; }
-    .utility-bar { height: auto; padding: 4px 0; }
     .login-card { padding: 24px 20px; }
     .university-header { margin-bottom: 20px; }
     .dashboard-welcome { padding: 22px 24px; }
