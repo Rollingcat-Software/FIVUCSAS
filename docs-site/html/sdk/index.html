@@ -240,11 +240,11 @@
                 <div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
                 <span>HTML</span>
             </div>
-            <pre><span class="kw">&lt;fivucsas-auth</span>
+            <pre><span class="kw">&lt;fivucsas-verify</span>
     <span class="op">client-id</span>=<span class="str">"your-client-id"</span>
-    <span class="op">theme</span>=<span class="str">"dark"</span>
-    <span class="op">lang</span>=<span class="str">"en"</span>
-<span class="kw">&gt;&lt;/fivucsas-auth&gt;</span></pre>
+    <span class="op">theme</span>=<span class="str">'{"mode":"dark"}'</span>
+    <span class="op">locale</span>=<span class="str">"en"</span>
+<span class="kw">&gt;&lt;/fivucsas-verify&gt;</span></pre>
         </div>
 
         <h2>Quick Start</h2>
@@ -257,19 +257,18 @@
             </div>
             <pre><span class="cm">// Initialize the auth widget</span>
 <span class="kw">const</span> auth = <span class="kw">new</span> <span class="fn">FivucsasAuth</span>({
-  <span class="op">clientId</span>: <span class="str">'your-oauth-client-id'</span>,
-  <span class="op">container</span>: <span class="str">'#auth-container'</span>,
-  <span class="op">onSuccess</span>: (<span class="op">result</span>) =&gt; {
-    console.<span class="fn">log</span>(<span class="str">'Authentication successful'</span>, result.token);
-    console.<span class="fn">log</span>(<span class="str">'User:'</span>, result.user);
-  },
-  <span class="op">onError</span>: (<span class="op">error</span>) =&gt; {
-    console.<span class="fn">error</span>(<span class="str">'Authentication failed'</span>, error.message);
-  }
+  <span class="op">clientId</span>: <span class="str">'your-oauth-client-id'</span>
 });
 
-<span class="cm">// Start the verification flow</span>
-auth.<span class="fn">verify</span>();</pre>
+<span class="cm">// Start the verification flow — verify() resolves to an AuthResult.</span>
+<span class="cm">// There is no onSuccess/onError constructor callback.</span>
+<span class="kw">try</span> {
+  <span class="kw">const</span> result = <span class="kw">await</span> auth.<span class="fn">verify</span>({ <span class="op">container</span>: <span class="str">'#auth-container'</span> });
+  console.<span class="fn">log</span>(<span class="str">'Authentication successful'</span>, result.accessToken);
+  console.<span class="fn">log</span>(<span class="str">'User:'</span>, result.userId, result.email);
+} <span class="kw">catch</span> (error) {
+  console.<span class="fn">error</span>(<span class="str">'Authentication failed'</span>, error.message);
+}</pre>
         </div>
 
         <h3>React Integration</h3>
@@ -290,14 +289,12 @@ auth.<span class="fn">verify</span>();</pre>
     script.onload = () =&gt; {
       <span class="kw">const</span> auth = <span class="kw">new</span> window.<span class="fn">FivucsasAuth</span>({
         <span class="op">clientId</span>: <span class="str">'your-client-id'</span>,
-        <span class="op">container</span>: containerRef.current,
-        <span class="op">theme</span>: <span class="str">'dark'</span>,
-        <span class="op">onSuccess</span>: (<span class="op">result</span>) =&gt; {
-          <span class="cm">// Handle successful verification</span>
-          console.<span class="fn">log</span>(<span class="str">'Verified:'</span>, result);
-        }
+        <span class="op">theme</span>: { <span class="op">mode</span>: <span class="str">'dark'</span> }
       });
-      auth.<span class="fn">verify</span>();
+      auth.<span class="fn">verify</span>({ <span class="op">container</span>: containerRef.current }).<span class="fn">then</span>((<span class="op">result</span>) =&gt; {
+        <span class="cm">// Handle successful verification (resolved AuthResult)</span>
+        console.<span class="fn">log</span>(<span class="str">'Verified:'</span>, result);
+      });
     };
     document.body.<span class="fn">appendChild</span>(script);
 
@@ -309,7 +306,7 @@ auth.<span class="fn">verify</span>();</pre>
         </div>
 
         <h2>Constructor Options</h2>
-        <p>Pass these options when creating a new <code>FivucsasAuth</code> instance.</p>
+        <p>Pass these options when creating a new <code>FivucsasAuth</code> instance. There are no <code>onSuccess</code>/<code>onError</code> constructor callbacks — success is the resolved value of <code>verify()</code> (see Methods). <code>container</code>, <code>redirectUri</code>, <code>scope</code>, <code>methods</code> and <code>onCancel</code> are passed to <code>verify(options)</code>, not the constructor.</p>
 
         <table class="options-table">
             <thead>
@@ -326,66 +323,30 @@ auth.<span class="fn">verify</span>();</pre>
                     <td>Your OAuth 2.0 client ID, obtained from the FIVUCSAS developer portal.</td>
                 </tr>
                 <tr>
-                    <td>container<span class="required">*</span></td>
-                    <td>string | Element</td>
-                    <td>CSS selector or DOM element where the widget will be rendered.</td>
-                </tr>
-                <tr>
-                    <td>onSuccess</td>
-                    <td>function</td>
-                    <td>Callback invoked on successful authentication. Receives <code>{ token, user, expiresAt }</code>.</td>
-                </tr>
-                <tr>
-                    <td>onError</td>
-                    <td>function</td>
-                    <td>Callback invoked on authentication failure. Receives <code>{ code, message }</code>.</td>
-                </tr>
-                <tr>
-                    <td>onCancel</td>
-                    <td>function</td>
-                    <td>Callback invoked when the user cancels the verification flow.</td>
-                </tr>
-                <tr>
                     <td>theme</td>
-                    <td>string</td>
-                    <td>Widget theme: <code>"light"</code> or <code>"dark"</code>. Defaults to <code>"light"</code>.</td>
+                    <td>object</td>
+                    <td>Widget theme object, e.g. <code>{ mode: "light" }</code> or <code>{ mode: "dark" }</code>. As a Web Component attribute pass JSON: <code>theme='{"mode":"dark"}'</code>. Defaults to <code>{ mode: "light" }</code>.</td>
                 </tr>
                 <tr>
-                    <td>lang</td>
+                    <td>locale</td>
                     <td>string</td>
-                    <td>Language code: <code>"en"</code> or <code>"tr"</code>. Defaults to browser locale.</td>
-                </tr>
-                <tr>
-                    <td>redirectUri</td>
-                    <td>string</td>
-                    <td>OAuth 2.0 redirect URI. Must match a registered URI for the client.</td>
-                </tr>
-                <tr>
-                    <td>scope</td>
-                    <td>string</td>
-                    <td>OAuth 2.0 scopes, space-separated. Defaults to <code>"openid profile"</code>.</td>
-                </tr>
-                <tr>
-                    <td>methods</td>
-                    <td>string[]</td>
-                    <td>Allowed auth methods: <code>"face"</code>, <code>"voice"</code>, <code>"fingerprint"</code>, <code>"webauthn"</code>, <code>"nfc"</code>.</td>
+                    <td>Language code: <code>"en"</code> or <code>"tr"</code>. Defaults to <code>"en"</code>.</td>
                 </tr>
             </tbody>
         </table>
 
         <h2>Methods</h2>
 
-        <h3><code>verify()</code></h3>
-        <p>Starts the verification flow. Opens the widget UI and guides the user through the configured authentication steps.</p>
+        <h3><code>verify(options)</code></h3>
+        <p>Starts the verification flow. Opens the widget UI and guides the user through the configured authentication steps. Accepts per-call options (<code>container</code>, <code>redirectUri</code>, <code>scope</code>, <code>methods</code>, <code>onCancel</code>). Resolves to an <code>AuthResult</code> on success; there is no constructor-level <code>onSuccess</code> callback.</p>
+        <p>The resolved <code>AuthResult</code> has shape <code>{ success, sessionId, userId, email, displayName, completedMethods, accessToken, refreshToken, idToken, expiresIn }</code> — note there are no <code>token</code>, <code>user</code>, or <code>expiresAt</code> fields.</p>
         <div class="code-block">
             <div class="code-header">
                 <div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
                 <span>JavaScript</span>
             </div>
-            <pre>auth.<span class="fn">verify</span>();
-<span class="cm">// Returns a Promise&lt;AuthResult&gt;</span>
-<span class="cm">// Can also be used with async/await:</span>
-<span class="kw">const</span> result = <span class="kw">await</span> auth.<span class="fn">verify</span>();</pre>
+            <pre><span class="cm">// Returns a Promise&lt;AuthResult&gt;</span>
+<span class="kw">const</span> result = <span class="kw">await</span> auth.<span class="fn">verify</span>({ <span class="op">container</span>: <span class="str">'#auth-container'</span> });</pre>
         </div>
 
         <h3><code>destroy()</code></h3>
@@ -398,37 +359,32 @@ auth.<span class="fn">verify</span>();</pre>
             <pre>auth.<span class="fn">destroy</span>();</pre>
         </div>
 
-        <h3><code>setTheme(theme)</code></h3>
-        <p>Dynamically switch the widget theme between <code>"light"</code> and <code>"dark"</code>.</p>
+        <h3><code>loginRedirect(options)</code></h3>
+        <p>Initiates the hosted-first redirective OIDC flow: the user is sent to <code>verify.fivucsas.com/login</code>, completes MFA, then returns to your <code>redirectUri</code> with <code>?code=…&amp;state=…</code> for token exchange.</p>
 
-        <h3><code>setLang(lang)</code></h3>
-        <p>Change the widget language at runtime. Supported: <code>"en"</code>, <code>"tr"</code>.</p>
+        <h3><code>handleRedirectCallback()</code></h3>
+        <p>Call on your redirect-URI page to complete the hosted OIDC flow. Validates <code>state</code> and resolves the returned authorization code.</p>
 
         <h2>Events</h2>
-        <p>The widget emits custom DOM events on the container element. You can listen for these in addition to (or instead of) the callback options.</p>
+        <p>The element dispatches hyphenated <code>CustomEvent</code>s on the container. (The colon-namespaced forms — <code>fivucsas:ready</code> etc. — are internal SDK&#8596;iframe <code>postMessage</code> types and are never dispatched on the container.)</p>
 
         <div class="event-card">
-            <div class="event-name">fivucsas:ready</div>
-            <p class="event-desc">Fired when the widget is fully loaded and ready to start verification.</p>
+            <div class="event-name">fivucsas-step-change</div>
+            <p class="event-desc">Fired when the user advances to a new verification step. Detail: <code>{ method, progress, total }</code>.</p>
         </div>
 
         <div class="event-card">
-            <div class="event-name">fivucsas:step</div>
-            <p class="event-desc">Fired when the user advances to a new verification step. Detail: <code>{ step, total, method }</code>.</p>
+            <div class="event-name">fivucsas-complete</div>
+            <p class="event-desc">Fired on successful authentication. Detail: the <code>AuthResult</code> (<code>{ success, sessionId, userId, email, displayName, completedMethods, accessToken, refreshToken, idToken, expiresIn }</code>).</p>
         </div>
 
         <div class="event-card">
-            <div class="event-name">fivucsas:success</div>
-            <p class="event-desc">Fired on successful authentication. Detail: <code>{ token, user, expiresAt }</code>.</p>
-        </div>
-
-        <div class="event-card">
-            <div class="event-name">fivucsas:error</div>
+            <div class="event-name">fivucsas-error</div>
             <p class="event-desc">Fired on authentication failure. Detail: <code>{ code, message }</code>.</p>
         </div>
 
         <div class="event-card">
-            <div class="event-name">fivucsas:cancel</div>
+            <div class="event-name">fivucsas-cancel</div>
             <p class="event-desc">Fired when the user cancels the verification flow.</p>
         </div>
 
@@ -440,17 +396,17 @@ auth.<span class="fn">verify</span>();</pre>
             </div>
             <pre><span class="kw">const</span> container = document.<span class="fn">getElementById</span>(<span class="str">'auth-container'</span>);
 
-container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas:success'</span>, (e) =&gt; {
-  <span class="kw">const</span> { token, user } = e.detail;
+container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas-complete'</span>, (e) =&gt; {
+  <span class="kw">const</span> { accessToken } = e.detail;
   <span class="cm">// Send token to your backend for validation</span>
   <span class="fn">fetch</span>(<span class="str">'/api/login'</span>, {
     <span class="op">method</span>: <span class="str">'POST'</span>,
-    <span class="op">headers</span>: { <span class="str">'Authorization'</span>: <span class="str">`Bearer ${token}`</span> }
+    <span class="op">headers</span>: { <span class="str">'Authorization'</span>: <span class="str">`Bearer ${accessToken}`</span> }
   });
 });
 
-container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas:step'</span>, (e) =&gt; {
-  console.<span class="fn">log</span>(<span class="str">`Step ${e.detail.step}/${e.detail.total}: ${e.detail.method}`</span>);
+container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas-step-change'</span>, (e) =&gt; {
+  console.<span class="fn">log</span>(<span class="str">`Step ${e.detail.progress}/${e.detail.total}: ${e.detail.method}`</span>);
 });</pre>
         </div>
 
