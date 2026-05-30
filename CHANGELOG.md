@@ -2,6 +2,16 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-30] Identifier-first login — SHIPPED + DEPLOYED (Marmara canary)
+
+The config-driven login engine now drives an **identifier-first** hosted/dashboard login: screen 1 collects identity only (email), and every factor — password included — is presented afterward. Live on the Marmara canary; the global engine switch stays OFF, so all other tenants are byte-identical to the legacy single-screen email+password form and the redesign reverts with the env flag (no web redeploy).
+
+- **identity-core-api #168** — `GET /auth/login-config` now returns `engineActive` (true when the engine is ON for the tenant). It is the single signal the UI uses to switch on identifier-first; additive field, no migration. Unit tests pin both branches.
+- **web-app #141** — identifier-first UI: `PasswordStep` `presetEmail` mode (read-only identity + "Change", password-only), `LoginMfaFlow` opens on the `identifier` phase under `engineActive`, `Layer1Shortcuts` narrowed to the genuinely no-email passkey shortcut. Engine OFF ⇒ unchanged legacy screen.
+- **web-app #142** — fix: re-derive the opening phase once `login-config` lands (it is fetched async; the `useState`-frozen phase used to stay on the null-config legacy screen, so the canary opened legacy). Guarded to act only pre-interaction. +2 regression tests. Caught by a live browser check of `verify.fivucsas.com?client_id=marmara-bys-demo`.
+
+**Deployed + verified:** api rebuilt (`engineActive` live — Marmara `engineActive:true`, others `false`); web → Hostinger (dashboard) + `verify.fivucsas.com` Docker (`index-ey31RA6D.js`); identifier-first 2-step flow browser-verified for the Marmara canary, dashboard login unchanged (no regression). Roadmap: `ROADMAP_AUTH_2026-05-30.md`. **Reversible:** `APP_AUTH_CONFIG_DRIVEN_LOGIN`/`_TENANTS` env flags, no redeploy.
+
 ## [2026-05-30] Stabilize-&-harden backlog — COMPLETE
 
 The 2026-05-30 stabilize-&-harden roadmap (P0-1/P0-2/P0-2b, P1-1…P1-5, P2-1/P2-2/P2-3 + frontend tests) is fully shipped and, where applicable, deployed. Two prod deploys done (identity-core-api P1-5 Flyway repair; biometric-processor P0-2b canonical reproducible build).
