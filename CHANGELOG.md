@@ -2,6 +2,20 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-30] Stabilize-&-harden backlog — COMPLETE
+
+The 2026-05-30 stabilize-&-harden roadmap (P0-1/P0-2/P0-2b, P1-1…P1-5, P2-1/P2-2/P2-3 + frontend tests) is fully shipped and, where applicable, deployed. Two prod deploys done (identity-core-api P1-5 Flyway repair; biometric-processor P0-2b canonical reproducible build).
+
+- **P1-1** (identity-core-api #155/#156) — cross-tenant isolation ITs promoted to a REQUIRED, blocking CI gate (`-Dtest='*IntegrationTest,*IT'`, no `continue-on-error`, asserts they ran); 3 unit tests fixed to unblock `needs: test`.
+- **P1-5** (identity-core-api #157, DEPLOYED) — Flyway chain DR-safe from a fresh DB: V29 resolves Default-Login + EMAIL_OTP by natural keys; V40 pkey collision + V40/V41 `COMMENT` syntax fixed; applies 71/71 from empty DB; one-time `flyway repair` (validate-on-migrate=true). Runbook: `identity-core-api/docs/RUNBOOK_FLYWAY_V29_REPAIR.md`.
+- **P0-2b** (biometric-processor #125, DEPLOYED) — canonical reproducible bio build restored: digest-pinned base + lock-as-constraints; boots clean under prod `read_only`+`cap_drop` runtime; overlay demoted to fallback.
+- **P2-2** (biometric-processor #124–#129) — CI honestly green (647 pass); masking removed.
+- **P2-1** (spoof-detector #68) — results-integrity cleanup (leaked 100%/0.00%-ACER withdrawn, EER-on-test opt-in, weights heuristic; runtime unchanged).
+- **P2-3** (parent #100) — `OPERATOR_SECURITY_RUNBOOKS.md` added.
+- **Frontend tests** (web-app #133/#134) — +80 edge-case specs; suite 914 passing, 0 failing.
+
+**Operator follow-ups:** (1) add the `Integration tests (Testcontainers)` required status check in identity-core-api branch protection; (2) execute `OPERATOR_SECURITY_RUNBOOKS.md`.
+
 ## [2026-05-30] Identity & account-linking (Phases 1-5) + ROOT role/user_type unification — SHIPPED
 
 A person operating multiple tenant accounts no longer re-enrols biometrics per account, and the platform-owner tier is now unambiguous. All deployed 2026-05-30. Design of record: `identity-core-api/docs/IDENTITY_ACCOUNT_LINKING_DESIGN.md` + `IDENTITY_ROLE_UNIFICATION.md`. See each submodule CHANGELOG/CLAUDE.md for granular detail.
