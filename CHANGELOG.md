@@ -2,6 +2,21 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-05-30] Identity & account-linking (Phases 1-5) + ROOT role/user_type unification — SHIPPED
+
+A person operating multiple tenant accounts no longer re-enrols biometrics per account, and the platform-owner tier is now unambiguous. All deployed 2026-05-30. Design of record: `identity-core-api/docs/IDENTITY_ACCOUNT_LINKING_DESIGN.md` + `IDENTITY_ROLE_UNIFICATION.md`. See each submodule CHANGELOG/CLAUDE.md for granular detail.
+
+**Identity & account-linking (Model A — IdP-authority biometrics):**
+- **Phase 1** — person/identity layer (Flyway V65-V67); zero behavior change.
+- **Phase 2** — account linking: `/identity/link/initiate|confirm`, `/unlink`, `/identity/me`; web **"Linked Accounts"** Profile section. Login stays per-account; linking is additive.
+- **Phase 3** — biometric + per-tenant consent (V68 `identity_tenant_biometric_consent`). The api orchestrates the canonical (identity,method) enrollment; the biometric-processor store is **NOT** re-keyed; **default-DENY**. web per-tenant **Biometric Consent** toggle.
+- **Phase 4** — OIDC pairwise `sub` per RP. **Ships DORMANT** — flag `app.identity.oidc-subject-identity` **default OFF** (`subject_types_supported=public`, `sub` unchanged).
+- **Phase 5** — unified login + in-session membership switch: `POST /auth/switch-membership` (token-exchange, same-identity hard gate); web TopBar **account/workspace switcher** (distinct from the ROOT `X-Tenant-ID` data-switcher).
+
+**ROOT role/user_type unification:** `user_type` is the sole platform-tier authority (`ROOT` › `TENANT_ADMIN` › `TENANT_MEMBER` › `GUEST`); `role` is purely within-tenant RBAC. The global **`SUPER_ADMIN` role was renamed to `ROOT`** everywhere (V69 rename + tier backfill, V71 grants ROOT all 48 permissions); `/auth/me` now returns `userType`; UI label = **"Root"**.
+
+**Browser-sweep fixes (2026-05-30):** user-centric `/my` endpoints 500/404 under a foreign-tenant scope, fixed via `TenantFilterBypass` (auth-methods enrollment 500, `/auth/sessions/my` 404, `/guests` soft-deleted-proxy 500); accept-invite existing-email 500→409; web biometric-consent path-doubling + mobile tenant switcher.
+
 ## [2026-05-29] Session — operator-reported admin bugs, guest email, tenant email-domain mgmt, full admin-UI sweep
 
 Operator drove a live walkthrough of the admin dashboard; every reported issue was root-caused from production logs / a real-browser sweep, fixed, deployed, and verified. **9 PRs merged across api + web + parent**, api container rebuilt twice (healthy), web redeployed to Hostinger. Final headless-Chrome admin sweep: **21/21 pages green**.

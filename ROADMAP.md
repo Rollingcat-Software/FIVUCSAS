@@ -1,6 +1,19 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-05-29 — operator admin-walkthrough session: 9 PRs (api+web+parent) fixing reported admin bugs + shipping guest-invitation email and tenant email-domain management; full headless-Chrome admin-UI sweep now passes 21/21 pages. See CHANGELOG `[2026-05-29]`. Prior wave (2026-05-12, 11 PRs) and the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
+> Last updated: 2026-05-30 — **Identity & account-linking (Phases 1-5) + ROOT role/user_type unification SHIPPED** (see the "Identity & Account-Linking — SHIPPED 2026-05-30" section directly below). Prior 2026-05-29 admin-walkthrough wave (9 PRs) + the 2026-05-12 wave (11 PRs) + the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
+
+## Identity & Account-Linking (Phases 1-5) + ROOT unification — SHIPPED 2026-05-30
+
+A person operating multiple tenant accounts (the same human on FIVUCSAS and Marmara) no longer re-enrols biometrics per account, and the platform-owner tier is now unambiguous. All deployed 2026-05-30. Design: `identity-core-api/docs/IDENTITY_ACCOUNT_LINKING_DESIGN.md` + `IDENTITY_ROLE_UNIFICATION.md`.
+
+- **Identity & account-linking (Model A — IdP-authority biometrics):**
+  - **Phase 1** — person/identity layer (Flyway V65-V67); zero behavior change.
+  - **Phase 2** — account linking: `/identity/link/initiate|confirm`, `/unlink`, `/identity/me`; web **"Linked Accounts"** Profile section. Login stays per-account; linking is additive.
+  - **Phase 3** — biometric + per-tenant consent (V68 `identity_tenant_biometric_consent`). The api orchestrates the canonical (identity,method) enrollment; the biometric-processor store is **NOT** re-keyed; **default-DENY**. web per-tenant **Biometric Consent** toggle.
+  - **Phase 4** — OIDC pairwise `sub` (`base64url(SHA-256(sector|identityId|salt))` per RP). **Ships DORMANT** — flag `app.identity.oidc-subject-identity` **default OFF** (`subject_types_supported=public`, `sub` unchanged).
+  - **Phase 5** — unified login + in-session membership switch: `POST /auth/switch-membership` (token-exchange, same-identity hard gate); web TopBar **account/workspace switcher** (distinct from the ROOT `X-Tenant-ID` data-switcher).
+- **ROOT role/user_type unification:** `user_type` is the sole platform-tier authority (`ROOT` › `TENANT_ADMIN` › `TENANT_MEMBER` › `GUEST`); `role` is purely within-tenant RBAC. The global **`SUPER_ADMIN` role was renamed to `ROOT`** everywhere (V69 rename + tier backfill, V71 grants ROOT all 48 permissions); `/auth/me` now returns `userType`; UI label = **"Root"**.
+- **Browser-sweep fixes (2026-05-30):** user-centric `/my` endpoints that 500/404'd under a foreign-tenant scope, fixed via `TenantFilterBypass` (auth-methods enrollment 500, `/auth/sessions/my` 404, `/guests` soft-deleted-proxy 500); accept-invite existing-email 500→409; web biometric-consent path-doubling + mobile tenant switcher.
 
 ## Where we are (2026-05-29) — honest state
 
@@ -15,13 +28,14 @@ The platform is **production-deployed and feature-complete for the Marmara use c
 | Biometric enroll/verify (face/voice, pgvector, anti-spoof) | ✅ complete |
 | Guest invitations (email + accept page) | ✅ complete (shipped 2026-05-29) |
 | Tenant email-domain auto-binding + admin mgmt + enforce | ✅ complete (shipped 2026-05-29) |
+| Identity & account-linking (Phases 1-5) + ROOT unification | ✅ complete (shipped 2026-05-30; Phase 4 OIDC `sub` dormant, flag OFF) |
 | Android app (KMP) | ✅ v5.2.0-rc1 signed APK |
 | **Tenant self-service onboarding** | ❌ admin/ROOT-provisioned only — no signup |
 | **JS/TS SDK published to npm** | ❌ CDN script-tag only, no `@fivucsas/*` npm packages |
 | iOS app | ❌ Phase 2 (blocked on Apple Developer enrollment) |
 | Email-domain DNS ownership verification | ❌ future (domains are admin-asserted, not DNS-proven) |
 
-**Tenant creation today:** SUPER_ADMIN (ROOT / platform owner) only, via `app.fivucsas.com/tenants/create` → `POST /api/v1/tenants` (`@rbac.isRoot()`). No self-service.
+**Tenant creation today:** ROOT (platform owner; the tier formerly labelled SUPER_ADMIN — renamed 2026-05-30) only, via `app.fivucsas.com/tenants/create` → `POST /api/v1/tenants` (`@rbac.isRoot()`). No self-service.
 
 ## Recommended roadmap (what's next) — prioritized
 
