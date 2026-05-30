@@ -1,5 +1,9 @@
 # FIVUCSAS — Product Roadmap
 
+> **Auth program (cross-device / authenticator / config-driven login):** see the consolidated
+> tracker `ROADMAP_AUTH_2026-05-30.md` (shipped passkey hybrid login + approve-login + NFC
+> trust + mobile v5.2.3; in-flight feature-flagged config-driven login; operator + backlog items).
+
 > Last updated / verified: 2026-05-30 — **stabilize-&-harden backlog COMPLETE** (see "Stabilize & harden — COMPLETE 2026-05-30" directly below) **plus** the same-day Identity & account-linking (Phases 1-5) + ROOT role/user_type unification ship (section after it). Prior 2026-05-29 admin-walkthrough wave (9 PRs) + the 2026-05-12 wave (11 PRs) + the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
 
 ## Stabilize & harden — COMPLETE 2026-05-30
