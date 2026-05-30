@@ -1,6 +1,25 @@
 # FIVUCSAS — Product Roadmap
 
-> Last updated: 2026-05-30 — **Identity & account-linking (Phases 1-5) + ROOT role/user_type unification SHIPPED** (see the "Identity & Account-Linking — SHIPPED 2026-05-30" section directly below). Prior 2026-05-29 admin-walkthrough wave (9 PRs) + the 2026-05-12 wave (11 PRs) + the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
+> Last updated / verified: 2026-05-30 — **stabilize-&-harden backlog COMPLETE** (see "Stabilize & harden — COMPLETE 2026-05-30" directly below) **plus** the same-day Identity & account-linking (Phases 1-5) + ROOT role/user_type unification ship (section after it). Prior 2026-05-29 admin-walkthrough wave (9 PRs) + the 2026-05-12 wave (11 PRs) + the phase-A/B/C/I closures remain valid below. Verbose tier breakdown: `archive/2026-05/reviews/INVESTIGATION_MASTER_2026-05-07.md`.
+
+## Stabilize & harden — COMPLETE 2026-05-30
+
+The 2026-05-30 stabilize-&-harden roadmap (P0-1/P0-2/P0-2b, P1-1…P1-5, P2-1/P2-2/P2-3) is **fully shipped and (where applicable) deployed**:
+
+| Item | What shipped | Where |
+|---|---|---|
+| **P0-1 / P0-2 / P1-2 / P1-3 / P1-4** | earlier in this wave — see each repo's CHANGELOG/CLAUDE.md | api / bio / web |
+| **P0-2b** | Canonical reproducible bio build RESTORED — both `Dockerfile` `FROM` lines digest-pinned (`python:3.12-slim@sha256:090ba77e…`) + known-good lock as pip constraints; boots clean (no segfault) under prod `read_only`+`cap_drop` runtime; `Dockerfile.liveness-overlay` demoted to fallback. **DEPLOYED.** | biometric-processor #125 |
+| **P1-1** | Cross-tenant isolation ITs are now a REQUIRED CI gate — `integration-tests` actually RUNS the ITs (`-Dtest='*IntegrationTest,*IT'`), BLOCKS (no `continue-on-error`), asserts they executed; 3 unit tests fixed to unblock `needs: test`. | identity-core-api #155 / #156 |
+| **P1-5** | Flyway chain DR-safe from a fresh DB — V29 resolves Default-Login flow + EMAIL_OTP by natural keys (was prod-only hardcoded UUIDs); fixed V40 pkey collision + V40/V41 `COMMENT 'a'||'b'` syntax; applies 71/71 from empty DB; shipped via one-time `flyway repair` (validate-on-migrate=true). Runbook: `identity-core-api/docs/RUNBOOK_FLYWAY_V29_REPAIR.md`. **DEPLOYED.** | identity-core-api #157 |
+| **P2-1** | spoof-detector results-integrity cleanup — leaked 100%/0.00%-ACER synthetic numbers withdrawn, EER-threshold-on-test made opt-in, fuser weights marked heuristic. Runtime unchanged. | spoof-detector #68 |
+| **P2-2** | bio CI honestly green (647 pass) — `--ignore` / `continue-on-error` masking removed; lazy DeepFace import; stack-dependent ITs env-gated, not hidden. | biometric-processor #124–#129 |
+| **P2-3** | `OPERATOR_SECURITY_RUNBOOKS.md` added (operator-gated security-hygiene runbooks). | parent #100 |
+| **Frontend tests** | +80 edge-case specs (linking / consent / switcher / formatApiError); suite **914 passing, 0 failing**. | web-app #133 / #134 |
+
+**Operator follow-ups (2 remaining):**
+1. Add the `Integration tests (Testcontainers)` REQUIRED status check in `identity-core-api` `main`-branch protection (so the P1-1 gate can't be merged around).
+2. Execute the steps in parent `OPERATOR_SECURITY_RUNBOOKS.md` (P2-3 — operator-gated hygiene).
 
 ## Identity & Account-Linking (Phases 1-5) + ROOT unification — SHIPPED 2026-05-30
 
