@@ -1111,15 +1111,18 @@ tbody tr { transition: background .15s; }
     .student-info-grid { grid-template-columns: 1fr 1fr; }
     .grid-2 { grid-template-columns: 1fr; }
     .schedule-time { min-width: 88px; }
-    /* Dashboard navbar — was overflowing the page horizontally on mobile (the
-       brand text + the user-name pill didn't fit at ~390px). Tighten padding,
-       let the brand text shrink, and truncate the user pill. */
-    .navbar { padding: 10px 14px; gap: 8px; }
-    .navbar-brand { min-width: 0; gap: 8px; }
-    .navbar-title { font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .navbar-subtitle { font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .navbar-actions { gap: 8px; }
-    .navbar-user { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; padding: 5px 10px; }
+    /* Dashboard navbar — at ~390px the logo+brand+badge+user-pill+logout did not
+       fit; the brand text never shrank (inner wrapper had no min-width:0) so the
+       "FIVUCSAS Doğrulandı" badge overlapped the title. Fix: let the brand flex
+       + truncate for real, hide the decorative badge, and keep the actions tight. */
+    .navbar { padding: 10px 12px; gap: 10px; }
+    .navbar-brand { flex: 1 1 auto; min-width: 0; gap: 8px; }
+    .navbar-brand > div { min-width: 0; overflow: hidden; }   /* the text wrapper must shrink */
+    .navbar-title { font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .navbar-subtitle { font-size: 0.66rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .navbar-actions { flex: 0 0 auto; gap: 8px; }
+    .fivucsas-badge { display: none; }   /* decorative verified-pill — drop on mobile to free space */
+    .navbar-user { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.76rem; padding: 5px 10px; }
     .table-wrapper { max-width: 100%; }
     .callback-card .card-body { padding: 36px 22px; }
     .token-info { grid-template-columns: 1fr; gap: 2px 0; }
