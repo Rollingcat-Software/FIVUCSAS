@@ -242,34 +242,34 @@
                         <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/users/{id}</span></div>
                         <div class="endpoint"><span class="method put">PUT</span><span class="endpoint-path">/api/v1/users/{id}</span></div>
                         <div class="endpoint"><span class="method delete">DELETE</span><span class="endpoint-path">/api/v1/users/{id}</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/users/me</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/auth/me</span></div>
                     </div>
 
                     <div class="endpoint-group">
                         <h3>Enrollment</h3>
                         <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/enrollments</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/enrollments</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/users/{userId}/enrollments</span></div>
                         <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/enrollments/{id}</span></div>
-                        <div class="endpoint"><span class="method patch">PATCH</span><span class="endpoint-path">/api/v1/enrollments/{id}/complete</span></div>
+                        <div class="endpoint"><span class="method put">PUT</span><span class="endpoint-path">/api/v1/users/{userId}/enrollments/{methodType}/complete</span></div>
                         <div class="endpoint"><span class="method delete">DELETE</span><span class="endpoint-path">/api/v1/enrollments/{id}</span></div>
                     </div>
 
                     <div class="endpoint-group">
                         <h3>OAuth 2.0 / OIDC</h3>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/oauth2/authorize</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/oauth2/token</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/oauth2/userinfo</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/oauth2/jwks</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/oauth2/authorize</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/oauth2/token</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/oauth2/userinfo</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/.well-known/jwks.json</span></div>
                         <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/.well-known/openid-configuration</span></div>
                     </div>
 
                     <div class="endpoint-group">
                         <h3>Auth Flows</h3>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/auth-flows</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/auth-flows</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/auth-flows/{id}</span></div>
-                        <div class="endpoint"><span class="method put">PUT</span><span class="endpoint-path">/api/v1/auth-flows/{id}</span></div>
-                        <div class="endpoint"><span class="method delete">DELETE</span><span class="endpoint-path">/api/v1/auth-flows/{id}</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/tenants/{tenantId}/auth-flows</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/tenants/{tenantId}/auth-flows</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/tenants/{tenantId}/auth-flows/{id}</span></div>
+                        <div class="endpoint"><span class="method put">PUT</span><span class="endpoint-path">/api/v1/tenants/{tenantId}/auth-flows/{id}</span></div>
+                        <div class="endpoint"><span class="method delete">DELETE</span><span class="endpoint-path">/api/v1/tenants/{tenantId}/auth-flows/{id}</span></div>
                     </div>
 
                     <div class="endpoint-group">
@@ -281,17 +281,16 @@
 
                     <div class="endpoint-group">
                         <h3>WebAuthn (Passkeys)</h3>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/register/begin</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/register/finish</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/authenticate/begin</span></div>
-                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/authenticate/finish</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/register/options/{userId}</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/register/verify</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/authenticate-options</span></div>
+                        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/api/v1/webauthn/authenticate</span></div>
                     </div>
 
                     <div class="endpoint-group">
                         <h3>System</h3>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/health</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/ping</span></div>
-                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/statistics</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/api/v1/auth/health</span></div>
+                        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/.well-known/openid-configuration</span></div>
                     </div>
                 </div>
             </div>
