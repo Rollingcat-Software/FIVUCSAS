@@ -155,7 +155,7 @@ const t = {
   },
   team: {
     heading: { en: 'Project team.', tr: 'Proje ekibi.' },
-    sub:     { en: 'Marmara University — Computer Engineering · CSE4297 / CSE4197', tr: 'Marmara Üniversitesi — Bilgisayar Mühendisliği · CSE4297 / CSE4197' },
+    sub:     { en: 'Marmara University — Computer Engineering · CSE4297 / CSE4298', tr: 'Marmara Üniversitesi — Bilgisayar Mühendisliği · CSE4297 / CSE4298' },
     supervisor: { en: 'Supervisor: Assoc. Prof. Dr. Mustafa Ağaoğlu', tr: 'Danışman: Doç. Dr. Mustafa Ağaoğlu' },
     year:       { en: 'Engineering Project · 2025–2026', tr: 'Mühendislik Projesi · 2025–2026' },
   },
