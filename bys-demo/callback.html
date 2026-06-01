@@ -1,6 +1,11 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-lang="tr">
 <head>
+<style>
+/* Language gating (injected) */
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+</style>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,8 +24,10 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003366'/><text x='16' y='22' text-anchor='middle' fill='%23c8a84e' font-size='18' font-weight='900'>M</text></svg>">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23003D72'/><text x='16' y='22' text-anchor='middle' fill='%23ffffff' font-size='18' font-weight='900' font-family='Georgia,serif'>M</text></svg>">
+    <meta name="theme-color" content="#003D72">
 </head>
 <body>
 <!-- Navbar -->
@@ -29,7 +36,7 @@
         <div class="navbar-logo">M</div>
         <div>
             <div class="navbar-title">Marmara Üniversitesi</div>
-            <div class="navbar-subtitle">Öğrenci Bilgi Sistemi (BYS)</div>
+            <div class="navbar-subtitle"><span data-tr>Bilgi Yönetim Sistemi</span><span data-en>Information Management System</span></div>
         </div>
     </a>
 </nav>
