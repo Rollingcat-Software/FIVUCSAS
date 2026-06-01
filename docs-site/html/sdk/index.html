@@ -461,7 +461,7 @@ container.<span class="fn">addEventListener</span>(<span class="str">'fivucsas-s
                 <span>Server-side validation (Node.js)</span>
             </div>
             <pre><span class="cm">// Validate the token server-side</span>
-<span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.fivucsas.com/oauth2/userinfo'</span>, {
+<span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.fivucsas.com/api/v1/oauth2/userinfo'</span>, {
   <span class="op">headers</span>: { <span class="str">'Authorization'</span>: <span class="str">`Bearer ${token}`</span> }
 });
 
