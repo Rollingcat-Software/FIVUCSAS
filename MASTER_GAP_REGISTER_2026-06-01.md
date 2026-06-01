@@ -23,6 +23,7 @@
 | NFC login regression | Re-enabled serial-only (compose `environment:` gap — the flag in `.env.prod` never reached the container) + canonicalize on the live `/auth/mfa/step` handler (#189) + **V79 backfill** of pre-WS2 non-canonical stored serials + prod data fix. İstanbulkart/student-card login works again. | ✅ live |
 | **Config-driven zero-factor login bypass** (P0) | `AuthenticateUserService.execute()` could mint a full token with **no factor verified** (optional non-PASSWORD Layer-1). Added the step-1-always-runs filter + fail-closed guard. | ✅ deployed (api rebuilt 17:59) |
 | NFC hint over-claim | Step hint promised passport/national-ID/residence-permit (random-UID chips that can't work). Softened to "your enrolled NFC card". | ✅ committed (web deploy pending) |
+| **P0-2 lockout + account-status** (P0) | **Doubly broken** — missing on the live `/auth/mfa/step` path AND the legacy `execute()` strike-counter was **rolled back on throw** (staging-confirmed: stayed 0; the audit only caught the first). New `LoginAccountStateGuard` (mutators in `REQUIRES_NEW` so they survive the rollback) + `enforceLoginAllowed` at every entry + `JwtAuthenticationFilter` rejects disabled tokens + `AccountNotActiveException`→403. Staging-verified (5 wrong→423, suspended→403, no regression), deployed. | ✅ live (api `e8466d0`, rollback img `rollback-pre-p0-2-20260601`) |
 
 ---
 
@@ -101,6 +102,21 @@ Plus **21 "partial"** features (work with caveats) — see `FEATURE_COMPLETENESS
 Landing site, links hub, amispoof tester, status page (modulo P1-11), the hosted-login + dashboard login *forms*, OAuth/OIDC discovery + JWKS + token, **face enroll/verify + liveness end-to-end in prod**, password + TOTP + EMAIL_OTP login, multi-tenancy isolation, audit logs, RBAC, account-linking, the auth-flow builder, GDPR export. 96/144 features verified working.
 
 ---
+
+## 8. New findings (2026-06-01 PM — from live testing + investigation)
+
+**Login-flow UX (web-app; 4 concrete bugs + 1 design item) — verify + dashboard:**
+- **B1 [bug] "Change email" is password-only.** The change-identity affordance is wired only into `PasswordStep` (`PasswordStep.tsx:92-97`), never other factor steps — inconsistent (operator: "all factors or none"). Fix: persistent shell-level "restart / not you?" control (next to `StepProgress` in `LoginMfaFlow`/`TwoFactorDispatcher`), shown once an identifier is committed; remove the per-step prop.
+- **B2 [bug] passkey/usernameless shortcuts show AFTER the identifier step.** `HostedLoginApp.tsx:809-834` renders `Layer1Shortcuts` ungated below `LoginMfaFlow`; the dashboard gates it correctly (`LoginPage.tsx:701-702,1202`). Fix: gate hosted shortcuts to the initial identity-entry phase only (usernameless = identifier *alternative*).
+- **B3 [bug] step counter double-counts the identifier.** `LoginMfaFlow.tsx:501-519`: the email/identifier screen shows "1/N" AND the first factor also "1/N". The identifier is a pre-step, not a counted step. Fix: don't number the identifier screen (first real factor = 1/N); unify the denominator on backend `totalSteps`.
+- **B4 [bug] password autofill turns the box light-blue.** `PasswordStep.tsx` lacks the `input:-webkit-autofill` override that `LoginPage.tsx:1032-1118` already has. Fix: add the override globally in `theme.ts` MuiCssBaseline (covers verify + MFA password). Exact CSS captured.
+- **D1 [design] enrollments are per-membership, not identity-wide.** `user_enrollments` is keyed `(user_id, tenant_id)`, no `identity_id`, so a linked person re-enrolls per tenant. Model A (V68 consent) already routes FACE/VOICE *verify* cross-tenant but doesn't surface enrollment *status*. Lowest-risk first step: make the auth-methods page + login `enrolled` flag identity-aware (reuse `findCanonicalEnrollment` + consent gate). Non-biometric methods (TOTP/NFC/WebAuthn/OTP) need re-keying (bigger). Needs product sign-off.
+
+**Enrollment-button labels (web-app):**
+- **B5 [bug] NFC/Fingerprint/HardwareKey enrolled-button says "Yenile" (Renew) for multi-instance methods** — should be "Add another" (`MethodCardsGrid.tsx:236-240`). The action correctly ADDS (new serial → new row; WebAuthn `excludeCredentials`), so it's a label-only fix.
+- ✅ **VERIFIED REAL — Face/Voice "İyileştir" (optimize)** genuinely improves the template via quality-weighted incremental centroid fusion (`embedding_fusion_service.fuse_incremental`). NOT fake — safe to demo truthfully.
+
+**Confirmed:** server latency is fine (TTFB 70–140 ms); web sluggishness = MediaPipe FaceLandmarker initializing on the pre-auth login (P2 — lazy-load off login). NFC: İstanbulkart (static UID) works; the success→fail flash for an unenrolled card is cosmetic.
 
 ### Suggested order for tomorrow
 1. P0-2, P0-3, P0-4 (the remaining criticals) — security questions professors will probe.
