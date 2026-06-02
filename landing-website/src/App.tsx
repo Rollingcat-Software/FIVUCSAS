@@ -58,7 +58,7 @@ const t = {
       {
         icon: 'cube',
         title: { en: 'Multi-tenant by design',      tr: 'Çok kiracılı tasarım' },
-        body:  { en: 'Isolated data, per-tenant auth flows, and row-level security. Configure each tenant’s MFA independently.', tr: 'İzole veri, kiracı başına doğrulama akışları ve satır düzeyi güvenlik. Her kiracının MFA’sını bağımsız yapılandırın.' },
+        body:  { en: 'Isolated data with per-tenant auth flows and application-layer filter-based isolation. Configure each tenant’s MFA independently.', tr: 'İzole veri, kiracı başına doğrulama akışları ve uygulama katmanında filtre tabanlı izolasyon. Her kiracının MFA’sını bağımsız yapılandırın.' },
       },
       {
         icon: 'bolt',
@@ -73,7 +73,7 @@ const t = {
       {
         icon: 'globe',
         title: { en: 'Cross-platform SDKs',         tr: 'Çapraz platform SDK’ları' },
-        body:  { en: 'Web iframe widget, Android & iOS via Kotlin Multiplatform, desktop via loopback (RFC 8252), and CLI.', tr: 'Web iframe widget’ı, Kotlin Multiplatform ile Android & iOS, loopback ile masaüstü (RFC 8252) ve CLI.' },
+        body:  { en: 'Web CDN SDK + iframe widget, Android (Kotlin Multiplatform), desktop via loopback (RFC 8252), and CLI. (iOS host app on the roadmap.)', tr: 'Web CDN SDK + iframe widget’ı, Android (Kotlin Multiplatform), loopback ile masaüstü (RFC 8252) ve CLI. (iOS uygulaması yol haritasında.)' },
       },
     ],
   },
@@ -100,7 +100,7 @@ const t = {
       { icon: 'sparkle',   title: { en: 'Register tenant',   tr: 'Kiracıyı kaydet' },
         body: { en: 'Create a tenant, pick your MFA flow, and copy the client_id + redirect URI.', tr: 'Bir kiracı oluşturun, MFA akışınızı seçin ve client_id + redirect URI’yi kopyalayın.' } },
       { icon: 'arrow',     title: { en: 'Redirect users',    tr: 'Kullanıcıları yönlendir' },
-        body: { en: 'Call loginRedirect() from web, iOS, Android, desktop, or CLI. Your users land on verify.fivucsas.com.', tr: 'Web, iOS, Android, masaüstü veya CLI’dan loginRedirect() çağırın. Kullanıcılar verify.fivucsas.com’a gelir.' } },
+        body: { en: 'Call loginRedirect() from web, Android, desktop, or CLI. Your users land on verify.fivucsas.com.', tr: 'Web, Android, masaüstü veya CLI’dan loginRedirect() çağırın. Kullanıcılar verify.fivucsas.com’a gelir.' } },
       { icon: 'check',     title: { en: 'Exchange & done',   tr: 'Takas & bitir' },
         body: { en: 'Receive the authorization code at your callback. Exchange it for an access + ID token at /oauth2/token.', tr: 'Geri aramanızda yetkilendirme kodunu alın. /oauth2/token üzerinden access + ID jetonuyla takas edin.' } },
     ],
@@ -145,7 +145,7 @@ const t = {
   trust: {
     heading: { en: 'Trust signals.', tr: 'Güven göstergeleri.' },
     items: [
-      { k: { en: 'OIDC certified ready',        tr: 'OIDC’e hazır' }, v: { en: 'RFC 6749 / OpenID Connect', tr: 'RFC 6749 / OpenID Connect' } },
+      { k: { en: 'OIDC discovery + JWKS',       tr: 'OIDC keşif + JWKS' }, v: { en: 'RFC 6749 / OpenID Connect', tr: 'RFC 6749 / OpenID Connect' } },
       { k: { en: 'JWT signing',                 tr: 'JWT imzalama' },     v: { en: 'RS256 default + JWKS',        tr: 'Varsayılan RS256 + JWKS' } },
       { k: { en: 'At-rest encryption',          tr: 'Depoda şifreleme' }, v: { en: 'AES-GCM-256 / Fernet at rest',      tr: 'Depoda AES-GCM-256 / Fernet' } },
       { k: { en: 'Audit retention',             tr: 'Denetim saklama' },  v: { en: 'Monthly partitioned logs',    tr: 'Aylık bölümlenmiş günlükler' } },
