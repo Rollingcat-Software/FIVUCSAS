@@ -31,7 +31,7 @@ This script is what to **say** at the poster — the poster shows headlines + vi
 
 Point to the **side-by-side table** on the poster (e-Devlet · reCAPTCHA · FIVUCSAS columns).
 
-> "On a feature-by-feature basis, FIVUCSAS is the only one that combines biometric authentication, NFC document verification, ten composable MFA factors, multi-tenant Postgres Row-Level Security, KVKK and GDPR compliance, and ISO/IEC 30107-3 Level 1 anti-spoofing submission — in an open-source, self-hostable stack."
+> "On a feature-by-feature basis, FIVUCSAS is the only one that combines biometric authentication, NFC document verification, ten composable MFA factors, multi-tenant application-layer tenant isolation, KVKK and GDPR compliance, and ISO/IEC 30107-3 Level 1 anti-spoofing readiness — in an open-source, self-hostable stack."
 
 Anticipated jury question: *"How is this different from Auth0 / Okta?"*
 
@@ -142,8 +142,8 @@ Point to the **QR code** and `links.fivucsas.com`.
 | "Did you write the spoof-detector yourselves?" | Architecture and session engine: yes (Ahmet). Algorithms ported into the production pipeline: yes (Ayşenur's `working_spoof_detection` branch, fully credited in `AUTHORS.md`). The MiniFASNet backbone is a frozen public UniFace ONNX — we did not retrain it. |
 | "Why is the paper not yet submitted?" | The paper is a CSE4298 capstone artefact (Mustafa Hocam is a co-author). §7 and §8 await OULU-NPU / SiW dataset access — `tests/benchmark/run.py` will reproduce the missing rows the moment access is granted. Target venue: BIOSIG 2026 (Darmstadt). |
 | "How does this compare to Auth0 / Okta?" | See §3 above — three differences: server-side biometric decision, native government NFC, single-VM self-host. |
-| "How is KVKK / GDPR compliance achieved?" | Embeddings are Fernet AES-128 encrypted at rest. Tenant data is isolated by Postgres Row-Level Security on nine tables (Flyway V25). Audit logs are partitioned by `tenant_id` via pg_partman (V40 + V57). All data lives on EU / TR-accessible Hetzner. Soft-delete via `deleted_at` + Hibernate `@SQLRestriction`. |
-| "How many lines of code? How many tests?" | About 691 000 lines across 12 submodules; about 2 768 automated tests (Spring 944, Pytest 265, Vitest/Jest 1 559). 60 Flyway migrations. About 1 847 commits in the last six months. |
+| "How is KVKK / GDPR compliance achieved?" | Embeddings are Fernet AES-128 encrypted at rest. Tenant data is isolated at the application layer by Hibernate `@Filter` on the tenant-scoped tables (a Postgres RLS schema exists from V25, but enforcement is at the application layer). Audit logs are partitioned by `tenant_id` via pg_partman (V40 + V57). All data lives on EU / TR-accessible Hetzner. Soft-delete via `deleted_at` + Hibernate `@SQLRestriction`. |
+| "How many lines of code? How many tests?" | About 691 000 lines across 12 submodules; about 2 768 automated tests (Spring 944, Pytest 265, Vitest/Jest 1 559). 79 Flyway migrations. About 1 847 commits in the last six months. |
 | "Why GPU-less?" | An architectural choice that keeps the system self-hostable on commodity hardware. `ALLOW_HEAVY_ML=false` boot-time sentinel refuses GPU-only models. The spoof-detector browser port runs CPU-only via WebAssembly with optional WebGPU. |
 | "Is it really production-deployed?" | Yes — Marmara is the live anchor tenant at `demo.fivucsas.com`. Hosted login at `verify.fivucsas.com`. Admin console at `app.fivucsas.com`. Spoof-detector browser tester at `amispoof.fivucsas.com`. All HTTP 200, all on Hetzner CX43. |
 | "How can a developer integrate this?" | Roughly fifteen lines of code: SDK init, `loginRedirect()`, token exchange. OIDC discovery and JWKS are automatic. Or one HTML anchor tag pointing at `verify.fivucsas.com/oauth2/authorize` with PKCE S256. |
