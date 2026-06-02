@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIVUCSAS — Architecture & Flow Diagrams</title>
+<style>
+  :root { --bg:#0b1220; --panel:#111a2e; --ink:#e7eefc; --mut:#9CB2D1; --cyan:#39d0d8; --gold:#e8b64c; --line:#22304d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:linear-gradient(180deg,#0b1220,#0b1220ee); border-bottom:1px solid var(--line); padding:14px 22px; }
+  header h1 { margin:0; font-size:18px; letter-spacing:.01em; }
+  header h1 b { color:var(--cyan); } header h1 span { color:var(--gold); font-weight:500; }
+  header p { margin:4px 0 0; color:var(--mut); font-size:12.5px; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; padding:10px 22px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:58px; z-index:4; }
+  nav a { color:var(--mut); text-decoration:none; font-size:13px; padding:4px 10px; border:1px solid var(--line); border-radius:6px; }
+  nav a:hover { color:var(--ink); border-color:var(--cyan); }
+  main { max-width:1180px; margin:0 auto; padding:24px 22px 80px; }
+  section { margin-bottom:36px; }
+  h2 { color:var(--cyan); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:34px; }
+  h3 { color:var(--gold); margin-top:26px; }
+  p, li { color:#cdd9ef; }
+  code { background:#0e1830; color:var(--cyan); padding:1px 5px; border-radius:4px; font-size:13px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13.5px; }
+  th, td { border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  th { background:#0e1830; color:var(--mut); }
+  blockquote { border-left:3px solid var(--cyan); margin:12px 0; padding:2px 14px; color:var(--mut); background:#0e1830; }
+  pre.mermaid { background:#0e1830; border:1px solid var(--line); border-radius:10px; padding:16px; margin:14px 0; text-align:center; overflow-x:auto; }
+  .loading { color:var(--mut); padding:40px; text-align:center; }
+  a.gh { color:var(--cyan); }
+  /* ---- mobile responsiveness (page previously had NO @media → horizontal overflow on phones) ---- */
+  html, body { max-width:100%; overflow-x:hidden; }
+  p, li, td, th, blockquote { overflow-wrap:anywhere; }
+  code { overflow-wrap:anywhere; word-break:break-word; }
+  main table { display:block; max-width:100%; overflow-x:auto; }
+  @media (max-width:760px){
+    header { padding:10px 14px; } header h1 { font-size:15.5px; } header p { font-size:11px; }
+    nav { padding:8px 12px; gap:6px; top:62px; } nav a { font-size:12px; padding:3px 8px; }
+    main { padding:16px 12px 76px; } h2 { font-size:19px; } h3 { font-size:16px; }
+    pre.mermaid { padding:10px; }
+  }
+  /* ---- per-diagram hover toolbar ---- */
+  pre.mermaid.dgm { position:relative; }
+  .dgm-bar { position:absolute; top:8px; right:10px; display:flex; gap:6px; opacity:0; transition:opacity .15s; z-index:2; }
+  pre.mermaid.dgm:hover .dgm-bar, pre.mermaid.dgm:focus-within .dgm-bar { opacity:1; }
+  .dgm-btn { background:var(--panel); color:var(--mut); border:1px solid var(--line); border-radius:6px; padding:3px 9px; font-size:12px; cursor:pointer; }
+  .dgm-btn:hover { color:var(--ink); border-color:var(--cyan); }
+  @media (max-width:760px){ .dgm-bar { opacity:1; } }
+  pre.mermaid.dgm svg { cursor:zoom-in; }
+  /* ---- fullscreen zoom/pan overlay ---- */
+  .zoom-ov { position:fixed; inset:0; background:rgba(7,12,22,.97); z-index:50; display:none; flex-direction:column; }
+  .zoom-ov.on { display:flex; }
+  .zoom-top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); }
+  .zoom-title { color:var(--cyan); font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .zoom-ctrls { display:flex; gap:8px; flex:none; }
+  .zoom-ctrls button { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:7px; width:36px; height:36px; font-size:17px; line-height:1; cursor:pointer; }
+  .zoom-ctrls button:hover { border-color:var(--cyan); }
+  .zoom-stage { flex:1; overflow:hidden; cursor:grab; touch-action:none; display:flex; align-items:center; justify-content:center; }
+  .zoom-stage.drag { cursor:grabbing; }
+  .zoom-stage svg { max-width:none !important; max-height:none !important; transform-origin:0 0; will-change:transform; }
+  .zoom-hint { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); color:var(--mut); font-size:12px; pointer-events:none; }
+  /* ---- TOC + back-to-top FABs ---- */
+  #toc-fab, #top-fab { position:fixed; right:16px; z-index:30; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:50%; width:46px; height:46px; font-size:18px; cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,.4); }
+  #toc-fab { bottom:74px; } #top-fab { bottom:16px; }
+  #toc-fab:hover, #top-fab:hover { border-color:var(--cyan); color:var(--cyan); }
+  #toc { position:fixed; right:16px; bottom:130px; z-index:31; width:min(330px,86vw); max-height:64vh; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 6px; display:none; box-shadow:0 12px 44px rgba(0,0,0,.55); }
+  #toc.on { display:block; }
+  #toc a { display:block; color:var(--mut); text-decoration:none; font-size:13px; padding:5px 10px; border-radius:6px; }
+  #toc a:hover { color:var(--ink); background:#0e1830; }
+  #toc a.l2 { color:var(--cyan); font-weight:600; margin-top:4px; }
+  #toc a.l3 { padding-left:22px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>FIVUCSAS</b> <span>&lt;/&gt;</span> — Architecture & Flow Diagrams</h1>
+  <p>33 diagrams generated and verified against the real source · rendered client-side with Mermaid · also on GitHub (Rollingcat-Software/docs)</p>
+</header>
+<nav><a href="#sec-01">Architecture &amp; Deployment</a>
+<a href="#sec-02">Auth · OAuth2 · OIDC · MFA</a>
+<a href="#sec-03">Biometric Pipelines</a>
+<a href="#sec-04">Data Model · Use-Cases · RBAC</a></nav>
+<main id="content"><div class="loading">Rendering diagrams…</div></main>
+
+<script type="text/markdown" data-key="01" data-title="Architecture &amp; Deployment"># FIVUCSAS — System Architecture & Deployment Diagrams
+
+> All diagrams below reflect the **real** deployed system (verified against the parent
+> `CLAUDE.md`, `identity-core-api/CLAUDE.md`, `infra/traefik/config/*.yml`, the prod
+> compose files, and the actual Java/Python package trees on `HEAD`, 2026-06-02).
+>
+> **Honesty notes that shaped these diagrams:**
+> - **Tenant isolation is application-layer**, not Postgres RLS — it is a Hibernate
+>   `@Filter(tenantFilter)` (`@FilterDef` on `User` + 8 tenant-scoped entities) plus a
+>   controller-level `TenantScopeResolver`. There is **no Postgres Row-Level Security**.
+> - **GPU-less.** The Hetzner CX43 is CPU-only; `ALLOW_HEAVY_ML=false` (default) hard-blocks
+>   GPU-class models (RetinaFace, YOLOv8/11/12, ArcFace, VGG-Face, GhostFaceNet) at boot.
+> - **Object storage is NOT MinIO.** The biometric-processor persists uploads via
+>   `LocalFileStorage` onto the `biometric_uploads` Docker volume. (`FileStorage` is a
+>   port, so S3/MinIO is *possible*, but the only shipped adapter is local-FS.) The
+>   diagrams show the real local-volume store.
+> - **DB image** is pinned `pgvector/pgvector:pg17` in compose; the docs text says
+>   "PostgreSQL 17 + pgvector". Diagrams label it "PostgreSQL + pgvector" to avoid asserting
+>   a version the compose file contradicts.
+> - **Flyway migrations are at V76** in `identity-core-api/CLAUDE.md` (the brief said "V79";
+>   the *parent* roadmap references V79 — the API repo's own migration ledger documents
+>   through V76, with V73–V76 applied on the 2026-05-31 rebuild). Labeled as such.
+> - The **biometric-processor has no public route** — it is reachable only on the internal
+>   Docker `backend` network, on port 8001, behind an `X-API-Key`.
+
+---
+
+## 1. System Context + Container Diagram
+
+How the clients, the edge, the two backend services, and the data/3rd-party dependencies
+fit together. The biometric processor is internal-only (Docker network + `X-API-Key`); the
+two external comms providers (Twilio SMS, Hostinger SMTP) are called only by the Spring API.
+
+```mermaid
+C4Container
+    title FIVUCSAS — Container Diagram (real deployment)
+
+    Person(enduser, "End User", "Logs in / enrolls biometrics via browser or mobile")
+    Person(tenantdev, "Tenant Developer", "Integrates via hosted OIDC + SDK")
+
+    System_Boundary(clients, "Clients") {
+        Container(web, "Web Dashboard", "React 18 + TS + Vite", "app.fivucsas.com — admin & self-service (Hostinger static)")
+        Container(verify, "Hosted Login + Auth Widget", "React build + nginx", "verify.fivucsas.com — OIDC universal login + step-up MFA iframe (Docker)")
+        Container(mobile, "Mobile App", "Kotlin Multiplatform / Compose", "Android · iOS · Desktop — AppAuth OIDC")
+        System_Ext(thirdparty, "Third-Party App", "Tenant relying party — redirective OIDC via FivucsasAuth SDK")
+    }
+
+    Container(traefik, "Traefik v3.6", "Reverse proxy", "TLS (Let's Encrypt), HTTP→HTTPS, routing, rate-limit, admin-IP allowlist")
+
+    System_Boundary(backend, "Backend (Docker, Hetzner CX43)") {
+        Container(api, "Identity Core API", "Spring Boot 3.4.7 / Java 21 :8080", "Auth, OAuth2/OIDC, MFA, RBAC, multi-tenancy (Hibernate @Filter), 29 controllers, hexagonal")
+        Container(bio, "Biometric Processor", "FastAPI / Python 3.12 :8001 — INTERNAL ONLY, X-API-Key", "Face/voice embeddings, liveness, anti-spoof, NFC eMRTD passive-auth (CPU-only, ALLOW_HEAVY_ML=false)")
+    }
+
+    System_Boundary(data, "Data Stores (Docker volumes)") {
+        ContainerDb(pg, "PostgreSQL + pgvector", "pgvector/pgvector:pg17", "Identity/tenant/audit tables + HNSW vector store for face & voice embeddings")
+        ContainerDb(redis, "Redis 7.4", "redis:7.4-alpine", "OTP, MFA sessions, QR/approve-login, rate-limit, TOTP replay markers, ShedLock")
+        ContainerDb(files, "Local File Storage", "biometric_uploads volume", "Uploaded images/audio — LocalFileStorage adapter (NOT MinIO)")
+    }
+
+    System_Ext(twilio, "Twilio", "SMS OTP + Verify")
+    System_Ext(smtp, "Hostinger SMTP", "smtp.hostinger.com:587 — email OTP, guest invites")
+
+    Rel(enduser, web, "Uses", "HTTPS")
+    Rel(enduser, verify, "Logs in", "HTTPS")
+    Rel(enduser, mobile, "Uses")
+    Rel(tenantdev, thirdparty, "Builds")
+
+    Rel(web, traefik, "REST /api/v1", "HTTPS")
+    Rel(verify, traefik, "REST + OAuth2", "HTTPS")
+    Rel(mobile, traefik, "OIDC + REST", "HTTPS")
+    Rel(thirdparty, traefik, "OIDC redirect + /oauth2/token", "HTTPS")
+
+    Rel(traefik, api, "Routes api.fivucsas.com + verify origin", "HTTP :8080")
+    Rel(api, bio, "Biometric ops", "HTTP :8001 + X-API-Key")
+
+    Rel(api, pg, "JDBC / JPA")
+    Rel(api, redis, "Lettuce")
+    Rel(bio, pg, "asyncpg — embeddings (pgvector)")
+    Rel(bio, files, "Read/write uploads")
+
+    Rel(api, twilio, "Send SMS", "HTTPS API")
+    Rel(api, smtp, "Send email", "SMTP/TLS")
+```
+
+---
+
+## 2. Deployment & Domain Map
+
+Every public domain and **how it is served**. The hard split is **Hostinger static hosting**
+(landing, dashboard, BYS demo, amispoof, links) vs **Docker-behind-Traefik** (API, hosted
+login, docs). `api.fivucsas.com` has path-specific behavior: root is `401` by design,
+Swagger/actuator/`api-docs` are admin-IP-gated (`403` for the public), OIDC discovery is
+public (`200`).
+
+```mermaid
+flowchart TB
+    subgraph clients["Clients"]
+        U["Browsers / Mobile / 3rd-party RPs"]
+    end
+
+    U -->|HTTPS| DNS{{"DNS · *.fivucsas.com"}}
+
+    subgraph hostinger["HOSTINGER — static hosting (SFTP deploy, NOT Docker)"]
+        direction TB
+        H1["fivucsas.com<br/>Landing site"]
+        H2["app.fivucsas.com<br/>React Dashboard (dist/)"]
+        H3["demo.fivucsas.com<br/>BYS Demo (static HTML)"]
+        H4["amispoof.fivucsas.com<br/>Browser anti-spoof tester (TS bundle)"]
+        H5["links.fivucsas.com<br/>Hub (single index.html)"]
+    end
+
+    subgraph hetzner["HETZNER CX43 — Docker + Traefik v3.6 (TLS / routing)"]
+        direction TB
+        TR["Traefik<br/>:80 → 301 :443 · Let's Encrypt"]
+
+        subgraph dockersites["Docker containers via Traefik"]
+            D1["verify.fivucsas.com<br/>Hosted login + Auth widget<br/>(React build → nginx, framable)"]
+            D2["docs.fivucsas.com<br/>fivucsas-docs container"]
+            D3["status.fivucsas.com<br/>Uptime-Kuma"]
+        end
+
+        subgraph apinode["api.fivucsas.com (Spring :8080)"]
+            A0["/ root → 401 (API origin, by design)"]
+            A1["/oauth2/** · /auth/** · /api/v1/** → public (docker-label router)"]
+            A2["/swagger-ui · /v3/api-docs · /actuator → 403 unless admin-IP<br/>(admin-whitelist@file)"]
+            A3["/.well-known/openid-configuration → 200 public"]
+        end
+
+        TR --> D1
+        TR --> D2
+        TR --> D3
+        TR --> apinode
+    end
+
+    DNS --> hostinger
+    DNS --> TR
+
+    subgraph redirects["301 Redirects (Traefik file-provider)"]
+        R1["fivucsas.com.tr / .online / .info / www → fivucsas.com"]
+        R2["rollingcatsoftware.com → fivucsas.com"]
+        R3["ica-fivucsas.rollingcatsoftware.com → api.fivucsas.com"]
+        R4["bys-demo.rollingcatsoftware.com → demo.fivucsas.com"]
+    end
+    TR -.->|"redirectRegex"| redirects
+
+    classDef host fill:#fde68a,stroke:#b45309,color:#1f2937;
+    classDef dock fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
+    classDef api fill:#bbf7d0,stroke:#15803d,color:#1f2937;
+    class H1,H2,H3,H4,H5 host;
+    class D1,D2,D3,TR dock;
+    class A0,A1,A2,A3 api;
+```
+
+---
+
+## 3. Hexagonal (Ports & Adapters) Architecture
+
+Both services follow ports-and-adapters. **Left = driving (inbound) adapters → application
+use-cases → domain; right = output ports realized by infrastructure adapters.** Names below
+are the *actual* classes/dirs from the source trees.
+
+### 3a. Identity Core API (Spring Boot / Java 21)
+
+```mermaid
+flowchart LR
+    subgraph driving["Driving Side — controller/ (29 REST controllers)"]
+        C1["AuthController · OAuth2Controller<br/>OpenIDConfigController · NfcController"]
+        C2["WebAuthn · ApproveLogin · Qr<br/>Tenant · User · Role · Enrollment ..."]
+    end
+
+    subgraph app["application/"]
+        UC["service/ + service/handler (10 auth-method handlers)<br/>service/mfa · service/nfc · service/verification"]
+        PIN["port/input (use-case interfaces)"]
+        POUT["port/output (output ports)"]
+    end
+
+    subgraph domain["domain/ (pure)"]
+        DM["model: user · tenant · role · permission · auth<br/>NfcSerial · AuditAction · PkceFailureReason"]
+        DR["repository (domain repo contracts)<br/>exception"]
+    end
+
+    subgraph infra["infrastructure/ (driven adapters)"]
+        direction TB
+        IA["adapter/ — *RepositoryAdapter (JPA)<br/>BiometricServiceAdapter · BiometricProcessorClient"]
+        IMT["multitenancy/ — Hibernate @Filter(tenantFilter)<br/>TenantContext · TenantFilterBypass"]
+        IO["oauth2 · webauthn · totp · otp · sms<br/>qrcode · approvelogin · stepup · email"]
+        IPERS["persistence · audit · ratelimit · messaging · health"]
+    end
+
+    subgraph ext["External / Driven Systems"]
+        PG[("PostgreSQL + pgvector")]
+        RD[("Redis 7.4")]
+        BIOX["Biometric Processor :8001 (X-API-Key)"]
+        TW["Twilio"]
+        SM["SMTP"]
+    end
+
+    C1 --> PIN
+    C2 --> PIN
+    PIN --> UC
+    UC --> DM
+    UC --> DR
+    UC --> POUT
+    POUT -. implemented by .-> IA
+    POUT -. implemented by .-> IO
+    POUT -. implemented by .-> IPERS
+    IA --> IMT
+    IA --> PG
+    IPERS --> RD
+    IA --> BIOX
+    IO --> TW
+    IO --> SM
+
+    classDef d fill:#e9d5ff,stroke:#7c3aed,color:#1f2937;
+    classDef a fill:#bbf7d0,stroke:#15803d,color:#1f2937;
+    classDef i fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
+    class C1,C2 d;
+    class UC,PIN,POUT,DM,DR a;
+    class IA,IMT,IO,IPERS i;
+```
+
+### 3b. Biometric Processor (FastAPI / Python 3.12)
+
+```mermaid
+flowchart LR
+    subgraph driving["Driving Side — api/routes/ (FastAPI, X-API-Key)"]
+        R1["verification · enrollment · search<br/>liveness · live_analysis · quality"]
+        R2["nfc · landmarks · multi_face · voice<br/>comparison · puzzle · proctor(_ws) · demographics"]
+    end
+
+    subgraph app["application/"]
+        UCASE["use_cases/ — verify_face · enroll_face<br/>check_liveness · search_face · detect_card_type<br/>compare_faces · live_camera_analysis ..."]
+        ASVC["services/ — active_liveness_manager<br/>flash_spoof_analyzer · occlusion_detector ..."]
+    end
+
+    subgraph domain["domain/ (pure)"]
+        DENT["entities/ — face_embedding · liveness_report<br/>quality_assessment · proctor_session ..."]
+        DIF["interfaces/ (PORTS) — embedding_extractor<br/>face_detector · liveness_detector · quality_assessor<br/>card_type_detector · embedding_repository · file_storage"]
+        DSVC["services/ — emrtd_passive_auth · mrz_parser<br/>document_ocr · embedding_fusion"]
+    end
+
+    subgraph infra["infrastructure/ (driven adapters)"]
+        ML["ml/ — detectors · extractors · landmarks<br/>liveness · quality · similarity · voice · card_type"]
+        PERS["persistence/ — embedding_repository (pgvector, asyncpg)<br/>client_embedding_observation_repo"]
+        STORE["storage/ — LocalFileStorage"]
+        AUX["cache · auth (X-API-Key) · rate_limit · audit · webhooks"]
+    end
+
+    subgraph models["ML Models (CPU-only · ALLOW_HEAVY_ML=false)"]
+        M1["DeepFace → Facenet512 (512-dim)"]
+        M2["MTCNN (server detect) · MediaPipe FaceLandmarker"]
+        M3["MiniFASNet v2 ONNX · UniFace passive liveness"]
+        M4["Resemblyzer GE2E (256-dim voice)"]
+    end
+
+    R1 --> UCASE
+    R2 --> UCASE
+    R2 --> ASVC
+    UCASE --> DENT
+    UCASE --> DIF
+    UCASE --> DSVC
+    ASVC --> DIF
+    DIF -. implemented by .-> ML
+    DIF -. implemented by .-> PERS
+    DIF -. implemented by .-> STORE
+    ML --> M1
+    ML --> M2
+    ML --> M3
+    ML --> M4
+    PERS --> PGV[("PostgreSQL pgvector<br/>HNSW")]
+    STORE --> VOL[("biometric_uploads volume")]
+
+    classDef d fill:#e9d5ff,stroke:#7c3aed,color:#1f2937;
+    classDef a fill:#bbf7d0,stroke:#15803d,color:#1f2937;
+    classDef i fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
+    classDef m fill:#fecaca,stroke:#b91c1c,color:#1f2937;
+    class R1,R2 d;
+    class UCASE,ASVC,DENT,DIF,DSVC a;
+    class ML,PERS,STORE,AUX i;
+    class M1,M2,M3,M4 m;
+```
+
+---
+
+## 4. Tech-Stack Layered Diagram
+
+Top-to-bottom layers, each labeled with the concrete technologies in production, plus the
+standards the platform implements. CPU-only ML is called out explicitly.
+
+```mermaid
+flowchart TB
+    subgraph L1["① Frontend / Clients"]
+        F["React 18 · TypeScript · Vite · InversifyJS DI · i18n (EN/TR)<br/>Kotlin Multiplatform / Compose (Android · iOS · Desktop) · AppAuth"]
+    end
+
+    subgraph L2["② Edge"]
+        E["Traefik v3.6 — TLS (Let's Encrypt) · HTTP→HTTPS · routing<br/>rate-limit · secure-headers · admin-IP allowlist · nginx (verify/docs static)"]
+    end
+
+    subgraph L3["③ Backend Services"]
+        B1["Identity Core API — Spring Boot 3.4.7 / Java 21 (:8080, Maven)<br/>Hexagonal · Hibernate @Filter multi-tenancy · Flyway V1–V80"]
+        B2["Biometric Processor — FastAPI / Python 3.12 (:8001, internal, X-API-Key)<br/>Clean architecture · Pydantic · async · Alembic 0001–0005"]
+    end
+
+    subgraph L4["④ ML / Biometrics (CPU-only · ALLOW_HEAVY_ML=false)"]
+        M["DeepFace → Facenet512 (512-dim) · MTCNN detect · MediaPipe FaceLandmarker (478pt)<br/>MiniFASNet v2 ONNX + UniFace passive liveness · Resemblyzer GE2E voice (256-dim)<br/>eMRTD passive-auth (EF.SOD → DS → CSCA, ICAO 9303)"]
+    end
+
+    subgraph L5["⑤ Data"]
+        D["PostgreSQL + pgvector (pgvector/pgvector:pg17) — HNSW face & voice vectors<br/>Redis 7.4 (redis:7.4-alpine) — OTP / MFA sessions / rate-limit / ShedLock<br/>LocalFileStorage volume (biometric_uploads) — uploads (NOT MinIO)"]
+    end
+
+    subgraph L6["⑥ Infrastructure / Ops"]
+        I["Docker + Compose · Hetzner CX43 (8 vCPU / 16 GB / CPU-only)<br/>GitHub Actions CI (ubuntu-latest + self-hosted hetzner-cx43 runner)<br/>Prometheus + Grafana · Uptime-Kuma · Hostinger SFTP (static sites)"]
+    end
+
+    subgraph L7["⑦ Standards & Protocols"]
+        S["OAuth 2.0 / OIDC · PKCE (S256) · JWT RS256 · JWKS + discovery<br/>FIDO2 / WebAuthn (discoverable passkeys) · RFC 8176 amr · RFC 8252 native-app<br/>ICAO 9303 eMRTD · KVKK / GDPR (export + purge)"]
+    end
+
+    L1 --> L2 --> L3
+    L3 --> L4
+    L3 --> L5
+    L3 -.runs on.-> L6
+    L3 -.implements.-> L7
+
+    classDef l1 fill:#e9d5ff,stroke:#7c3aed,color:#1f2937;
+    classDef l2 fill:#fde68a,stroke:#b45309,color:#1f2937;
+    classDef l3 fill:#bbf7d0,stroke:#15803d,color:#1f2937;
+    classDef l4 fill:#fecaca,stroke:#b91c1c,color:#1f2937;
+    classDef l5 fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
+    classDef l6 fill:#cbd5e1,stroke:#475569,color:#1f2937;
+    classDef l7 fill:#fbcfe8,stroke:#be185d,color:#1f2937;
+    class F l1;
+    class E l2;
+    class B1,B2 l3;
+    class M l4;
+    class D l5;
+    class I l6;
+    class S l7;
+```
+</script>
+<script type="text/markdown" data-key="02" data-title="Auth · OAuth2 · OIDC · MFA"># FIVUCSAS — Authentication / OAuth2 / OIDC / MFA / OTP Flows
+
+GitHub-renderable Mermaid diagrams, grounded in the real code:
+
+- `identity-core-api/.../controller/AuthController.java` — `/auth/login`, `/auth/mfa/step`, `/auth/mfa/send-otp`, `/auth/login/preflight`, `/auth/login/begin`, `/auth/login-config`
+- `application/service/AuthenticateUserService.java` — legacy password login + config-driven Layer-1 + MFA-session creation
+- `application/service/mfa/VerifyMfaStepService.java` — the N-step MFA engine
+- `application/service/OAuth2Service.java` + `controller/OAuth2Controller.java` — `/oauth2/authorize`, `/authorize/complete`, `/oauth2/token`, PKCE `validateAuthorizeRequest`
+- `security/JwtService.java` (RS256 prod, `aud`/`iss` pinned), `service/RefreshTokenService.java` (rotation + `RefreshTokenFamilyRevoker`)
+- `infrastructure/otp/OtpService.java` (NIST 5-strike), `infrastructure/totp/TotpService.java` (RFC 6238 + replay marker), `infrastructure/webauthn/WebAuthnService.java`
+- `controller/QrController.java`, `controller/ApproveLoginController.java`, `controller/DeviceController.java` (WebAuthn / passkey)
+- SDK: `verify-widget/html/fivucsas-auth.js` (`loginRedirect` → S256 → `handleRedirectCallback` → `/oauth2/token`)
+
+**Honesty invariants baked into these diagrams:**
+- PKCE **S256 is mandatory** for public clients (`OAuth2Controller.validateAuthorizeRequest`); `plain` is rejected for public clients.
+- Access + ID tokens are **RS256** in prod (`JwtService.assertProdAlgoIsRs256`), carry pinned `iss` + `aud`.
+- Refresh-token **reuse triggers whole-family revocation** in a `REQUIRES_NEW` transaction (survives the rollback-on-throw).
+- Authorization codes are **single-use**, 10-minute TTL in Redis; the MFA session is **consumed + deleted** when minting the code.
+
+---
+
+## 1. HERO — OIDC "Login with FIVUCSAS" full round-trip (redirective, hosted login)
+
+The primary integration mode. The tenant app uses the SDK (`FivucsasAuth.loginRedirect`) which generates a PKCE verifier/challenge (S256), `state` (CSRF) and `nonce` (OIDC replay), sends the browser to `/oauth2/authorize?display=page`, which 302-redirects to `verify.fivucsas.com/login` (the hosted surface). The example shows **Marmara's 2-step flow: PASSWORD then EMAIL_OTP**. After MFA completes, the hosted page trades the completed `MfaSession` for a single-use auth code at `/oauth2/authorize/complete`, the browser returns to the tenant with `?code&state`, and the SDK exchanges the code (with `code_verifier`) at `/oauth2/token`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant App as Tenant App
+    participant SDK as FIVUCSAS SDK<br/>(fivucsas-auth.js)
+    participant Verify as verify.fivucsas.com<br/>(hosted login)
+    participant API as api.fivucsas.com<br/>(/api/v1)
+
+    User->>App: Click "Login with FIVUCSAS"
+    App->>SDK: loginRedirect({redirectUri, scope})
+    Note over SDK: verifier = random(32)<br/>challenge = base64url(SHA-256(verifier))  (S256)<br/>state = random(32), nonce = random(32)<br/>sessionStorage: pkce / state / nonce / redirect_uri
+    SDK->>API: GET /oauth2/authorize?client_id&redirect_uri<br/>&response_type=code&scope=openid profile email<br/>&state&nonce&code_challenge&code_challenge_method=S256<br/>&display=page&ui_locales
+    Note over API: validateClient(client_id, redirect_uri) exact-match<br/>validateScopes() · display=page ⇒ hosted redirect
+    API-->>SDK: 302 Location: verify.fivucsas.com/login?...(all params)
+    SDK->>Verify: browser follows redirect
+
+    Verify->>API: GET /auth/login-config?clientId=...
+    Note over API: resolve tenant via oauth2_clients →<br/>Layer-1 methods + step count (engineActive)
+    API-->>Verify: { layer1:[PASSWORD], totalSteps:2, ... }
+    Verify-->>User: Render Marmara login screen (step 1/2)
+
+    rect rgb(235,245,255)
+    Note over User,API: Step 1 — PASSWORD (Layer-1)
+    User->>Verify: email + password
+    Verify->>API: POST /auth/login { email, password, clientId }
+    Note over API: AuthenticateUserService.execute()<br/>tenant ACTIVE? lockout? tenant-lock?<br/>verify password → create MfaSession(step=2,<br/>completed=[PASSWORD], clientId-bound, TTL 10m)
+    API-->>Verify: 200 { mfaSessionToken, totalSteps:2,<br/>currentStep:2, availableMethods:[EMAIL_OTP] }
+    end
+
+    rect rgb(235,255,240)
+    Note over User,API: Step 2 — EMAIL_OTP
+    Verify->>API: POST /auth/mfa/send-otp { sessionToken, method:EMAIL_OTP }
+    API->>User: 📧 6-digit code (5-min TTL)
+    User->>Verify: enter code
+    Verify->>API: POST /auth/mfa/step { sessionToken, method:EMAIL_OTP, data:{code} }
+    Note over API: VerifyMfaStepService: lock row, account-guard,<br/>method-permitted-for-step, OTP validate (5-strike)<br/>advanceStep → allStepsCompleted
+    API-->>Verify: 200 { status:AUTHENTICATED, ... }
+    end
+
+    Verify->>API: POST /oauth2/authorize/complete<br/>{ mfaSessionToken, clientId, redirectUri, scope,<br/>state, nonce, codeChallenge, codeChallengeMethod }
+    Note over API: session completed & not consumed?<br/>clientId binding matches? PKCE S256 + tenant guard<br/>consumeMfaSessionAndMintCode (consume+mint+DELETE, atomic)
+    API-->>Verify: 200 { code, redirect_uri, state }
+    Verify-->>SDK: browser → tenant redirect_uri?code=...&state=...
+
+    App->>SDK: handleRedirectCallback()
+    Note over SDK: state === stored state? (CSRF)<br/>read code_verifier from sessionStorage
+    SDK->>API: POST /oauth2/token (x-www-form-urlencoded)<br/>grant_type=authorization_code, code, redirect_uri,<br/>client_id, code_verifier
+    Note over API: code single-use (Redis del) · client_id+redirect_uri match<br/>PKCE: SHA-256(verifier)==stored challenge<br/>mint RS256 access_token + id_token (iss/aud/nonce/sub)
+    API-->>SDK: 200 { access_token, id_token, token_type, expires_in, scope }
+    Note over SDK: verify id_token.nonce === stored nonce (replay guard)<br/>decode sub/email/name/amr · optional GET /oauth2/userinfo
+    SDK-->>App: { success, userId, email, accessToken, idToken, completedMethods }
+    App-->>User: Logged in ✅
+```
+
+**Caption.** The hero round-trip: PKCE S256 throughout, `state` for CSRF, `nonce` echoed into the id_token and verified client-side, single-use authorization code, RS256 tokens. The hosted page never sees the tenant's `code_verifier` — only the SDK does, at `/oauth2/token`.
+
+---
+
+## 2. N-step MFA engine
+
+### 2a. Sequence — `POST /auth/mfa/step` orchestration (`VerifyMfaStepService`)
+
+Every step posts `{ sessionToken, method, data }`. The service pessimistically locks the session row, enforces account state + tenant method policy + per-step method binding, dispatches to the per-method `VerifyMfaStepHandler`, accumulates RFC 8176 `amr`, and **only mints the JWT on the final step**.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client (hosted/widget)
+    participant Ctrl as AuthController<br/>/auth/mfa/step
+    participant Svc as VerifyMfaStepService
+    participant H as VerifyMfaStepHandler<br/>(per method)
+    participant Guard as LoginAccountStateGuard
+    participant DB as mfa_sessions (locked row)
+
+    C->>Ctrl: POST /auth/mfa/step { sessionToken, method, data }
+    Ctrl->>Svc: execute(VerifyMfaStepRequest)
+    Svc->>DB: findBySessionTokenForUpdate (pessimistic lock)
+    alt missing / expired / completed
+        Svc-->>Ctrl: 401 invalid-or-expired / 400 already-completed
+    end
+    Svc->>Guard: enforceLoginAllowed(user) — 423 locked / 403 not-active
+    Svc->>Svc: tenantAuthMethodPolicy.isLoginMethodAllowedForTenant?
+    Svc->>Svc: method ∈ current-step permitted set? (bind to step)
+    alt method already used elsewhere & not expected here
+        Svc-->>Ctrl: 409 METHOD_ALREADY_USED
+    end
+    alt data.action == "challenge" (WebAuthn 2-phase)
+        Svc->>H: verify() → CHALLENGE
+        H-->>Svc: challengeResponse
+        Svc-->>Ctrl: 200 passthrough(challenge)
+    else verification
+        Svc->>H: verify(session, user, data)
+        alt invalid
+            Svc->>Guard: recordFailedAttempt() (REQUIRES_NEW — survives rollback)
+            Svc-->>Ctrl: 401 { status:FAILED, currentStep, completedMethods }
+        else valid
+            Svc->>Guard: recordSuccess() (reset strike counter)
+            Svc->>DB: addCompletedMethod + advanceStep + save
+            alt all steps complete
+                Note over Svc: amr = map(completedMethods) RFC 8176<br/>mint RS256 access_token + refresh token
+                Svc-->>Ctrl: 200 { status:AUTHENTICATED, accessToken, refreshToken, user }
+            else more steps
+                Svc-->>Ctrl: 200 { status:STEP_COMPLETED, currentStep, availableMethods }
+            end
+        end
+    end
+    Ctrl-->>C: HTTP (OK / 400 / 401 / 409)
+```
+
+### 2b. State — the MFA session lifecycle (`mfa_sessions`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : AuthenticateUserService creates MfaSession<br/>(currentStep, totalSteps, TTL 10m)
+    PENDING --> STEP_N : /auth/mfa/step valid → advanceStep()
+    STEP_N --> STEP_N : valid intermediate step (currentStep++)
+    STEP_N --> STEP_N : invalid factor → recordFailedAttempt (no advance)
+    PENDING --> FAILED : invalid factor
+    STEP_N --> COMPLETED : allStepsCompleted() → complete() → mint JWT
+    PENDING --> LOCKED : account 5-strike lock (423) / cancelled
+    STEP_N --> LOCKED : account 5-strike lock (423) / DELETE /mfa/session
+    PENDING --> EXPIRED : expiresAt passed (deleted on next touch)
+    STEP_N --> EXPIRED : expiresAt passed
+    COMPLETED --> CONSUMED : /oauth2/authorize/complete mints code,<br/>session consumed + deleted (single-use)
+    COMPLETED --> [*]
+    CONSUMED --> [*]
+    FAILED --> [*]
+    LOCKED --> [*]
+    EXPIRED --> [*]
+```
+
+**Caption.** The session starts `PENDING` at the first unsatisfied step (step 2 when PASSWORD is the verified Layer-1, step 1 for identifier-first). Each valid step advances `currentStep`; the final step flips to `COMPLETED` and mints the JWT (widget) or is later `CONSUMED` by `/oauth2/authorize/complete` (hosted). Lockout (5 strikes / 15 min) and expiry (10 min) are terminal.
+
+---
+
+## 3. OTP factors — Email OTP, SMS OTP (Twilio Verify), TOTP (RFC 6238)
+
+### 3a. Email OTP (`OtpService`, Redis-backed, NIST 5-strike)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as AuthController
+    participant OTP as OtpService (Redis)
+    participant Mail as EmailService (SMTP)
+
+    C->>API: POST /auth/mfa/send-otp { sessionToken, method:EMAIL_OTP }
+    API->>OTP: generate("2fa-login:<userId>")
+    Note over OTP: 6-digit, 5-min TTL · clears stale :attempts counter
+    OTP-->>API: code
+    API->>Mail: sendOtp(email, code)
+    Mail-->>C: 📧 verification code
+    C->>API: POST /auth/mfa/step { sessionToken, method:EMAIL_OTP, data:{code} }
+    API->>OTP: validateWithResult(key, code)
+    alt match
+        OTP-->>API: VALID (deletes code + counter)
+        API-->>C: 200 STEP_COMPLETED / AUTHENTICATED
+    else mismatch (< 5)
+        OTP-->>API: INVALID (remaining = 5 - attempts)
+        API-->>C: 401 Verification failed
+    else 5th wrong guess
+        OTP-->>API: EXHAUSTED (code burned)
+        API-->>C: 429 OTP_ATTEMPTS_EXHAUSTED + Retry-After (resend)
+    end
+```
+
+### 3b. SMS OTP (Twilio Verify — `VerifiableSmsService`, no local code store)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as AuthController
+    participant SMS as SmsService
+    participant Twilio as Twilio Verify API
+
+    C->>API: POST /auth/mfa/send-otp { sessionToken, method:SMS_OTP }
+    Note over API: phone on file? key = "2fa-sms:<userId>"
+    alt VerifiableSmsService (Twilio Verify)
+        API->>Twilio: start verification (Twilio owns code + retries)
+        Twilio-->>C: 📱 SMS code
+    else generic SmsService
+        API->>SMS: sendOtp(phone, OtpService.generate(...))
+        SMS-->>C: 📱 SMS code
+    end
+    C->>API: POST /auth/mfa/step { sessionToken, method:SMS_OTP, data:{code} }
+    alt VerifiableSmsService
+        API->>Twilio: verifyCode(phone, code)
+        Twilio-->>API: approved / denied
+    else generic
+        API->>SMS: otpService.validateWithResult("2fa-sms:<userId>", code)
+        Note over SMS: NIST 5-strike → OtpAttemptsExhaustedException → 429
+    end
+    API-->>C: 200 (advance/auth) or 401 / 429
+```
+
+### 3c. TOTP (RFC 6238 — `TotpService`, SHA-1 / 30s / 6-digit + S13 replay marker)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client (authenticator app)
+    participant API as AuthController / MFA step
+    participant T as TotpService
+    participant Redis as Redis (totp:used:*)
+
+    Note over C,API: Enrollment once: generateSecret() → otpauth:// QR<br/>secret stored encrypted (enc:v1) + Redis cache
+    C->>API: POST /auth/mfa/step { method:TOTP, data:{code} }
+    API->>API: resolveTotpSecret(user) — Redis cache → DB decryptIfNeeded
+    API->>T: verifyCodeForUser(userId, secret, code)
+    Note over T: findMatchingTimeStep over [-1,+1] drift (±30s)<br/>SHA1, 6 digits, period 30 (RFC 6238)
+    alt no matching step
+        T-->>API: false (invalid)
+    else matched step
+        T->>Redis: SET totp:used:<userId>:<step> 1 EX 120 NX (atomic)
+        alt first use
+            Redis-->>T: set ✔
+            T-->>API: true
+        else replay of same code in-window
+            Redis-->>T: not set
+            T-->>API: false (S13 replay rejected)
+        end
+    end
+    API-->>C: 200 (advance/auth) or 401
+```
+
+**Caption.** Email OTP and the generic SMS path enforce the NIST 800-63B 5-strike counter in Redis (5th wrong guess → 429 + Retry-After). Twilio Verify owns its own code lifecycle. TOTP is RFC 6238 (SHA-1, 30s step, ±1 drift); login/MFA verification additionally writes a short-TTL `totp:used:(userId,step)` marker so a captured code cannot be replayed inside its ~90s window.
+
+---
+
+## 4. Cross-device — QR-code login & Approve-login (number-matching, Redis-backed)
+
+### 4a. QR-code login (`QrController` + `QrSessionService`)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Desk as Desktop (browser)
+    participant API as api.fivucsas.com
+    participant Phone as Phone (authenticated app)
+
+    Desk->>API: POST /auth/qr/session { platform }
+    API-->>Desk: { sessionId, qr token, status:PENDING } (Redis, TTL)
+    Desk->>Desk: render QR · begin polling
+    loop poll
+        Desk->>API: GET /auth/qr/session/{sessionId}
+        API-->>Desk: { status:PENDING }
+    end
+    User->>Phone: scan QR (already logged in on phone)
+    Phone->>API: POST /auth/qr/session/{sessionId}/approve (Bearer)
+    Note over API: bind approver userId → session status APPROVED
+    API-->>Phone: { status:APPROVED }
+    Desk->>API: GET /auth/qr/session/{sessionId}
+    API-->>Desk: { status:APPROVED, tokens / mfaSessionToken }
+    Desk-->>User: Logged in ✅
+    Note over Desk,API: As an MFA step instead:<br/>/auth/mfa/qr-generate → /auth/mfa/step {method:QR_CODE, data:{token}}<br/>(QrCodeService.validateToken)
+```
+
+### 4b. Approve-login — number matching (`ApproveLoginController` + `ApproveLoginService`)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant New as New device (anonymous)
+    participant API as api.fivucsas.com
+    participant Approver as Trusted device (authenticated)
+
+    New->>API: POST /auth/approve-login/session { email }
+    Note over API: matchNumber = "%02d" (ZERO-PADDED STRING e.g. "07")<br/>store in Redis · unknown email → decoy session (no oracle)
+    API-->>New: { sessionId, matchNumber:"07", status:PENDING }
+    New-->>User: show "07", poll
+    Approver->>API: GET /auth/approve-login/pending (Bearer)
+    API-->>Approver: [ { sessionId, matchNumber:"07" } ]
+    User->>Approver: confirm the number shown is "07"
+    Approver->>API: POST /auth/approve-login/session/{id}/decide<br/>{ decision:"allow", matchNumber:"07" } (Bearer)
+    Note over API: session belongs to approver? matchNumber equals stored?<br/>allow → mint tokens (like QR approve) · deny → close
+    API-->>Approver: { status:APPROVED }
+    loop poll
+        New->>API: GET /auth/approve-login/session/{sessionId}
+    end
+    API-->>New: { status:APPROVED, tokens }
+    New-->>User: Logged in ✅
+```
+
+**Caption.** Both cross-device flows are Redis-backed poll loops. The new/desktop device starts an anonymous session; an already-authenticated device approves it. Approve-login adds a two-digit **`matchNumber` (a zero-padded STRING, e.g. `"07"`)** the user must match between devices, and returns a **decoy session for unknown emails** so it is not an account-existence oracle.
+
+---
+
+## 5. WebAuthn / Passkey / Fingerprint (`DeviceController` + `WebAuthnService`)
+
+### 5a. Registration (attestation) + Authentication (assertion) + usernameless passkey
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Br as Browser (navigator.credentials)
+    participant API as DeviceController (/webauthn)
+    participant WAS as WebAuthnService (Redis challenge)
+
+    rect rgb(235,245,255)
+    Note over User,WAS: Registration — create a discoverable passkey
+    Br->>API: POST /webauthn/register-options (Bearer)
+    Note over API: residentKey=required, UV=required,<br/>userHandle = encode(userId), excludeCredentials
+    API->>WAS: generateChallenge(sessionId) → Redis (5m TTL)
+    API-->>Br: { sessionId, challenge, rpId, userHandle, ... }
+    Br->>User: navigator.credentials.create() → attestation
+    Br->>API: POST /webauthn/register { sessionId, credentialId, publicKey, clientDataJSON }
+    API->>WAS: validateRegistrationChallenge(sessionId, clientDataJSON)
+    Note over WAS: type=="webauthn.create", challenge match,<br/>origin ∈ allowlist (exact-match) · consume challenge
+    API-->>Br: 201 { credentialId } (discoverable, userHandle stored)
+    end
+
+    rect rgb(235,255,240)
+    Note over User,WAS: Authentication — assertion (email-bound)
+    Br->>API: POST /webauthn/authenticate-options { email }
+    API->>WAS: generateChallenge(sessionId)
+    API-->>Br: { sessionId, challenge, allowCredentials:[creds] }
+    Br->>User: navigator.credentials.get() → assertion
+    Br->>API: POST /webauthn/authenticate { sessionId, credentialId,<br/>authenticatorData, clientDataJSON, signature }
+    API->>WAS: verifyAssertion(...)
+    Note over WAS: clientData type=="webauthn.get" + challenge + origin allowlist<br/>authData: rpIdHash==SHA-256(rpId), UP flag set<br/>ECDSA SHA256withECDSA verify · signCount > stored (clone check)
+    WAS-->>API: true
+    API-->>Br: session / tokens
+    end
+
+    rect rgb(255,245,235)
+    Note over User,WAS: Usernameless passkey — EMPTY allowCredentials
+    Br->>API: POST /webauthn/passkey/authenticate-options (no email)
+    API-->>Br: { sessionId, challenge, allowCredentials:[] }
+    Br->>User: navigator.credentials.get() (platform offers any resident passkey)
+    Br->>API: POST /webauthn/passkey/authenticate { ..., userHandle }
+    Note over API: resolve user from userHandle · verify assertion + signCount<br/>bridge passkey as Layer-1 → tokens or MFA-pending
+    API-->>Br: tokens / mfaSessionToken
+    end
+```
+
+**Caption.** FINGERPRINT is delivered as a WebAuthn platform authenticator (no separate biometric path). Registration produces a **discoverable** passkey (resident key + UV required) carrying a `userHandle = encode(userId)`. The email-bound assertion sends a populated `allowCredentials`; the **usernameless passkey** flow sends an **empty `allowCredentials`** and resolves the account from the asserted `userHandle`. Every assertion validates challenge freshness, exact-match origin allowlist, RP-ID hash, the UP flag, the ECDSA signature, and a monotonic sign-counter (clone detection).
+
+---
+
+## 6. Refresh-token rotation + reuse detection (`RefreshTokenService` + `RefreshTokenFamilyRevoker`)
+
+### 6a. Sequence — happy rotation, then a stolen-token replay kills the family
+
+Wire format is `<id>.<secret>`; only `sha256(secret)` is stored (`token_secret_hash`, V55/V60 — plaintext column dropped). Every token from one login shares a `family_id` (V50).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client
+    participant API as AuthController /auth/refresh
+    participant RTS as RefreshTokenService
+    participant Rev as RefreshTokenFamilyRevoker<br/>(REQUIRES_NEW)
+    participant DB as refresh_tokens
+
+    Note over Client,DB: Login minted R1 (family F, id.secret · only sha256 stored)
+    Client->>API: POST /auth/refresh { refreshToken: R1 }
+    API->>RTS: findByToken(R1) → verifyExpiration(R1)
+    RTS->>DB: lookup id, constant-time compare sha256(secret)
+    alt R1 valid & not revoked
+        RTS->>DB: revoke R1 · mint R2 in SAME family F
+        RTS-->>API: R2 (+ new access token)
+        API-->>Client: 200 { accessToken, refreshToken: R2 }
+    end
+
+    Note over Client,DB: Attacker replays the already-rotated R1
+    Client->>API: POST /auth/refresh { refreshToken: R1 (revoked) }
+    API->>RTS: verifyExpiration(R1)
+    RTS->>RTS: R1.isRevoked() == true → REUSE DETECTED
+    RTS->>Rev: revokeFamily(F) (separate committed tx)
+    Rev->>DB: revoke EVERY token in family F (incl. live R2)
+    RTS->>RTS: throw TokenRevokedException (rolls back outer tx ·<br/>family revoke already committed)
+    API-->>Client: 401 — whole family dead, user must re-login
+```
+
+### 6b. Flowchart — rotation + reuse decision
+
+```mermaid
+flowchart TD
+    A[POST /auth/refresh with token T] --> B{well-formed id.secret<br/>& sha256 matches row?}
+    B -- no --> X[401 TokenRevokedException<br/>not found / wrong secret]
+    B -- yes --> C{T expired?}
+    C -- yes --> D[delete T → 401 TokenExpired]
+    C -- no --> E{T revoked?}
+    E -- no --> F[revoke T<br/>mint T' in same family<br/>→ 200 access + T']
+    E -- yes --> G[REUSE DETECTED<br/>RFC 6749 §10.4]
+    G --> H[familyRevoker.revokeFamily<br/>REQUIRES_NEW — survives rollback]
+    H --> I[audit REFRESH_TOKEN_REUSE_DETECTED]
+    I --> J[401 — entire family revoked]
+```
+
+**Caption.** Normal refresh rotates `R1 → R2` (old revoked, successor inherits the family). Presenting an already-revoked `R1` is **reuse**: the entire rotation family — including the legitimate `R2` — is revoked in a **`REQUIRES_NEW`** transaction so it commits even though the request itself throws and rolls back. A wrong secret for a real id is treated as "not found" (404-shaped), **not** reuse — only an explicitly revoked-and-presented token triggers family revocation.
+
+---
+
+## 7. Account lockout + overall login activity
+
+### 7a. Account lockout — 5 strikes → 423, 15-minute window (`LoginAccountStateGuard`)
+
+```mermaid
+flowchart TD
+    A[Login factor submitted] --> B{account locked?}
+    B -- yes --> C{lockedUntil passed?}
+    C -- yes --> D[auto-clear lock<br/>reset counter] --> E
+    C -- no --> Z[423 AccountLocked<br/>+ remaining seconds]
+    B -- no --> E{account ACTIVE?}
+    E -- no --> Y[403 AccountNotActive<br/>SUSPENDED / INACTIVE]
+    E -- yes --> F{factor valid?}
+    F -- yes --> G[recordSuccess<br/>reset failed_login_attempts] --> H[proceed / mint token]
+    F -- no --> I[recordFailedAttempt<br/>REQUIRES_NEW — survives rollback]
+    I --> J{attempts >= 5?}
+    J -- no --> K[401 invalid<br/>attempt n/5]
+    J -- yes --> L[lockAccount 15 min] --> M[423 AccountLocked]
+```
+
+### 7b. Overall login activity — picking the path (legacy vs config-driven vs cross-device)
+
+```mermaid
+flowchart TD
+    Start([User wants to log in]) --> Mode{Integration mode}
+
+    Mode -- Redirective OIDC --> R1[SDK loginRedirect: PKCE S256 + state + nonce]
+    R1 --> R2[/oauth2/authorize display=page → verify.fivucsas.com/]
+    R2 --> Cfg[GET /auth/login-config → Layer-1 + steps]
+
+    Mode -- Identifier-first --> P1[POST /auth/login/preflight email+clientId]
+    P1 --> P2{tenant eligible?}
+    P2 -- no --> P3[403 TENANT_MISMATCH<br/>'not a tenant member']
+    P2 -- yes --> Cfg
+
+    Mode -- Cross-device --> XD[QR / Approve-login session<br/>approved on trusted device] --> Done
+
+    Cfg --> L1{Layer-1 method}
+    L1 -- PASSWORD --> PW[POST /auth/login → AuthenticateUserService<br/>guard: tenant ACTIVE, lockout, tenant-lock, verify password]
+    L1 -- identifier-first<br/>FACE/TOTP/EMAIL_OTP/... --> IF[POST /auth/login/begin<br/>open MfaSession at step 1]
+
+    PW --> S{more steps?}
+    IF --> S
+    S -- no (single factor) --> Tok[mint RS256 access + refresh]
+    S -- yes --> MFA[loop POST /auth/mfa/step<br/>VerifyMfaStepService until COMPLETED]
+    MFA --> Hosted{hosted OIDC?}
+    Hosted -- yes --> AC[POST /oauth2/authorize/complete → code]
+    AC --> TK[POST /oauth2/token + code_verifier → tokens]
+    Hosted -- no --> Tok
+    TK --> Done([Authenticated])
+    Tok --> Done
+```
+
+**Caption.** The strike counter and account-status gate are path-independent (`LoginAccountStateGuard`) and run on **both** the legacy `/auth/login` path and the live `/auth/mfa/step` engine; the 5th failed factor locks the account for 15 minutes (HTTP 423). The activity overview shows the three entry modes (redirective OIDC, identifier-first, cross-device) converging on the same MFA engine and, for hosted OIDC, the `authorize/complete → token` code exchange.
+</script>
+<script type="text/markdown" data-key="03" data-title="Biometric Pipelines"># FIVUCSAS Biometric Pipelines
+
+Accurate, code-grounded Mermaid diagrams of the FIVUCSAS biometric stack.
+All facts below were read directly from `biometric-processor`, `spoof-detector`,
+and `identity-core-api` source on 2026-06-02 — not invented.
+
+**Honesty notes (read these before trusting any marketing slide):**
+
+- **Auth decision is server-side.** The browser pre-filters with MediaPipe and
+  may send a 128-dim client embedding, but that is **log-only** (D2). The
+  authoritative 1:1 cosine match runs in `VerifyFaceUseCase` on the server.
+- **Server-side fingerprint was REMOVED** (it was a SHA-256 placeholder, never a
+  real biometric). `FINGERPRINT` is delivered *only* via WebAuthn / FIDO2
+  platform authenticators in `identity-core-api` (`FingerprintAuthHandler`).
+- **NFC passive authentication is fail-closed and needs CSCA roots loaded.** With
+  an empty trust store the verdict is always `is_authentic=false`
+  (`reason_code=NO_TRUST_STORE`). **Serial-only enrollment/verify works without
+  CSCA** (campus MIFARE UID cards have no ICAO chip).
+- **Anti-spoof / EAR veto on `/verify` is flag-gated** (`ANTISPOOF_*`,
+  `spoof_detector` is an optional dep). When the package is absent or all flags
+  are off, those response fields are `None` and nothing is vetoed.
+- Config defaults verified: cosine distance threshold `0.45`
+  (`VERIFICATION_THRESHOLD`, aged > 2 yr ⇒ more-permissive `_AGED`, must be ≥
+  base or boot fails), `EMBEDDING_DIMENSION=512`, `LIVENESS_MODE=passive` →
+  `uniface`, voice verify cosine `≥ 0.65` / search distance `< 0.6`, HNSW
+  `m=16, ef_construction=64`, Fernet = AES-128-CBC + HMAC-SHA256.
+
+---
+
+## 1a. Face ENROLLMENT pipeline (8 stages in 4 cards)
+
+`POST /enroll` and `/enroll/multi`. Server-authoritative passive liveness +
+anti-spoof now run **before** the embedding is persisted
+(`ENROLL_LIVENESS_ENABLED=true`, default; multi-image is **fail-CLOSED** per
+frame). Embedding is written twice: encrypted ciphertext (store-of-record) +
+plaintext pgvector column (search index).
+
+```mermaid
+flowchart TB
+    IN[/"Image(s) upload<br/>multipart/form-data"/]
+
+    subgraph C1["Card 1 — Detect + Quality"]
+        S1["Stage 1 · Detect face<br/>DeepFace · MTCNN (prod detect backend)<br/>AsyncFaceDetector → thread pool<br/>+ circuit breaker, 30s timeout"]
+        S2["Stage 2 · Quality gate<br/>blur + lighting + face-size<br/>enroll threshold = 70/100"]
+        S1 --> S2
+    end
+
+    subgraph LIVE["Liveness + anti-spoof gate (pre-persist)"]
+        L1["CheckLivenessUseCase<br/>UniFace MiniFASNet (passive)"]
+        L2["spoof-detector assembler + EAR veto<br/>(ANTISPOOF_* flags, optional dep)"]
+        L1 --> L2
+    end
+
+    subgraph C2["Card 2 — Landmark + Align"]
+        S3["Stage 3 · Landmarks / face region<br/>detection.get_face_region(image)"]
+        S4["Stage 4 · Align + crop<br/>(client pre-crops ~224x224)"]
+        S3 --> S4
+    end
+
+    subgraph C3["Card 3 — Embed + Encrypt"]
+        S5["Stage 5 · Extract embedding<br/>Facenet-512 (512-dim, L2-normalized)<br/>AsyncEmbeddingExtractor → thread pool"]
+        S6["Stage 6 · Multi-image fusion (optional)<br/>EmbeddingFusionService<br/>quality-weighted centroid + L2"]
+        S7["Stage 7 · Encrypt at rest<br/>EmbeddingCipher (Fernet / AES-128-CBC<br/>+ HMAC-SHA256), u32-len header"]
+        S5 --> S6 --> S7
+    end
+
+    subgraph C4["Card 4 — Index"]
+        S8["Stage 8 · Persist (dual-column)<br/>embedding_ciphertext = store-of-record<br/>embedding (pgvector) = ANN search copy<br/>HNSW m=16, ef_construction=64,<br/>vector_cosine_ops · key_version smallint"]
+    end
+
+    IN --> C1
+    C1 --> LIVE
+    LIVE -->|"live + not spoof"| C2
+    LIVE -.->|"non-live / spoof<br/>fail-CLOSED → HTTP 400"| REJ[["Reject enrollment"]]
+    C2 --> C3 --> C4
+    C4 --> OUT[/"BiometricResponse<br/>quality_score, dimension"/]
+```
+
+---
+
+## 1b. Face VERIFICATION (1:1) — sequence
+
+Client MediaPipe pre-filter (log-only) → server detect → embed → cosine match
+with aged-threshold adaptation → flag-gated anti-spoof veto. The `/verify` route
+runs a passive-liveness **floor** (score ≥ 0.4) before the match.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser (MediaPipe FaceLandmarker)
+    participant API as identity-core-api (FaceVerifyMfaStepHandler)
+    participant V as bio /verify (verification.py)
+    participant LU as CheckLivenessUseCase (UniFace)
+    participant UC as VerifyFaceUseCase
+    participant DB as PostgreSQL + pgvector
+
+    B->>B: detect face, quality pre-filter,<br/>passive-liveness gate (0.45)
+    B->>API: face image (+ optional 128-dim<br/>client_embedding = LOG-ONLY)
+    API->>V: POST /verify (X-API-Key, user_id, file)
+    V->>V: validate magic bytes + format
+    V->>LU: passive liveness (UniFace MiniFASNet)
+    LU-->>V: is_live, score
+    alt not is_live OR score < 0.4
+        V-->>API: 400 LIVENESS_FAILED
+    end
+    V->>UC: execute(user_id, image_path, tenant_id)
+    UC->>UC: detect → face region → quality (≥50)
+    UC->>UC: extract Facenet-512 embedding
+    UC->>DB: find_by_user_id (tenant-scoped)
+    DB-->>UC: stored embedding (decrypted from ciphertext)
+    UC->>UC: cosine distance vs threshold 0.45
+    UC->>DB: find_created_at
+    DB-->>UC: enrollment age
+    UC->>UC: if age > 2 yr → use _AGED (more permissive)
+    UC-->>V: verified, distance, confidence, threshold
+    V->>V: anti-spoof helpers (flag-gated):<br/>device-risk, assembler, EAR (single frame)
+    alt block_reason AND ANTISPOOF_BLOCK_ENFORCE
+        V-->>API: 403 ANTISPOOF_BLOCKED {reason}
+    else allowed
+        V->>DB: BackgroundTask: log client-embedding<br/>observation (offline divergence, no auth use)
+        V-->>API: 200 VerificationResponse
+    end
+    API-->>B: MFA step result (server decides)
+```
+
+---
+
+## 2a. Voice ENROLLMENT — flowchart
+
+Resemblyzer 256-dim speaker embedding, centroid storage. The `optimize=true`
+("İyileştir" / re-enroll & optimize) path folds the new sample into the existing
+centroid via a quality-weighted running mean instead of replacing it.
+
+```mermaid
+flowchart TB
+    IN[/"POST /voice/enroll<br/>base64 WebM/Opus + optimize?"/]
+    DEC["Decode → 16 kHz mono WAV<br/>(thread pool, off event loop)"]
+    EMB["Resemblyzer → 256-dim speaker embedding<br/>(L2-normalized)"]
+    Q["Voice quality score 0..100<br/>(duration + loudness + SNR)<br/>fail-soft → 50.0"]
+    DEC --> EMB
+    DEC --> Q
+
+    EMB --> OPT{optimize == true<br/>AND user has voiceprint?}
+    OPT -->|"no"| SAVE["Save NEW individual row<br/>+ recompute centroid<br/>(idempotent accumulation)"]
+    OPT -->|"yes — İyileştir"| FUSE["fuse_incremental():<br/>quality-weighted running mean<br/>w_existing = q*sample_count, w_new = q_new<br/>→ L2-normalize · never regresses"]
+    SAVE --> STORE[("voice_enrollments<br/>pgvector + HNSW m=16/ef=64")]
+    FUSE --> STORE
+    Q --> STORE
+    STORE --> OUT[/"BiometricResponse<br/>dim=256, quality_score"/]
+```
+
+## 2b. Voice VERIFICATION / SEARCH — sequence
+
+Note the **two different thresholds**: 1:1 verify uses cosine **similarity ≥
+0.65**; 1:N search uses pgvector cosine **distance < 0.6**. The replay-attack
+detector is advisory + log-only (gated `VOICE_REPLAY_DETECTION_ENABLED`,
+default off) — it never blocks today.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant API as identity-core-api (VoiceVerifyMfaStepHandler)
+    participant V as bio voice.py
+    participant E as Resemblyzer (thread pool)
+    participant D as VoiceReplayDetector
+    participant DB as pgvector_voice_repository
+
+    API->>V: POST /voice/verify {user_id, voice_data}
+    V->>D: replay check (advisory, log-only)
+    D-->>V: suspected? (does NOT block)
+    V->>E: decode → 256-dim probe embedding
+    E-->>V: probe vector (L2)
+    V->>DB: find_by_user_id → enrolled centroid
+    DB-->>V: centroid (or none → verified=false)
+    V->>V: cosine similarity = dot(probe, centroid),<br/>clamp [0,1]
+    alt similarity ≥ 0.65
+        V-->>API: verified=true, confidence
+    else
+        V-->>API: verified=false
+    end
+
+    Note over API,DB: 1:N — POST /voice/search (tenant-scoped)<br/>repo.find_similar(threshold=0.6 DISTANCE)<br/>matches reported as similarity = 1 - distance
+```
+
+---
+
+## 3a. NFC two rails — sequence
+
+Rail A = mobile native chip read (IsoDep + BouncyCastle, BAC session from MRZ,
+DG2 face → Facenet match). Rail B = browser Web NFC. Both rails converge on the
+same server endpoints: `/nfc/mrz` (parse) and `/nfc/verify-authenticity`
+(passive auth). API side is `NfcController` + `NfcDocumentVerifyMfaStepHandler`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as Rail A · Mobile (KMP)<br/>IsoDep + BouncyCastle
+    participant W as Rail B · Web NFC (browser)
+    participant API as identity-core-api · NfcController
+    participant BIO as bio nfc.py
+    participant PA as EmrtdPassiveAuthService
+
+    rect rgb(235,245,255)
+    Note over M: Rail A — full ICAO chip read
+    M->>M: read MRZ (OCR/manual) → derive BAC keys
+    M->>M: BAC secure channel over IsoDep
+    M->>M: read DG1 (MRZ), DG2 (JPEG2000 face), EF.SOD
+    M->>API: POST /nfc/verify-mrz {dg1BytesB64 | mrzText}
+    API->>BIO: /nfc/mrz (X-API-Key)
+    BIO-->>API: parsed fields + ICAO check-digit result
+    M->>API: POST /nfc/verify-authenticity {sod, dg1..dgN}
+    end
+
+    rect rgb(245,235,255)
+    Note over W: Rail B — Web NFC (serial / limited DG)
+    W->>API: serial-only /nfc/verify  (campus MIFARE UID)
+    W->>API: or /nfc/verify-authenticity {sod_b64, dg keys}<br/>when a Web-NFC reader yields SOD + DGs
+    end
+
+    API->>BIO: POST /nfc/verify-authenticity {sod_b64, data_groups}
+    BIO->>PA: verify(sod_der, data_groups)
+    PA-->>BIO: {is_authentic, reason_code, ds_subject,<br/>ds_serial, csca_matched, dg_hash_results}
+    BIO-->>API: passive-auth verdict
+    Note over API: FAIL-CLOSED — NfcChipAuthenticityVerdict<br/>not authentic / error / NO_TRUST_STORE ⇒ 422 reject
+    API-->>M: 200 authentic / 422 NFC_PA_NOT_AUTHENTIC
+    Note over M,API: Rail A also: DG2 face ↔ live selfie<br/>Facenet cosine match (face-to-document)
+```
+
+## 3b. NFC passive authentication — flowchart (fail-closed)
+
+ICAO 9303 Part 11. Three checks must ALL pass: DG hashes match the signed values
+in EF.SOD, the SOD CMS signature verifies under the embedded Document Signer
+cert, and that DS chains to a trusted CSCA root. Serial-only is the fallback when
+no SOD is supplied.
+
+```mermaid
+flowchart TB
+    IN[/"POST /nfc/verify-authenticity<br/>{sod_b64, data_groups: 1..16}"/]
+    TS{CSCA trust store<br/>loaded?<br/>NFC_CSCA_TRUST_DIR}
+    IN --> TS
+    TS -->|"empty"| NTS["is_authentic = false<br/>reason_code = NO_TRUST_STORE"]
+
+    TS -->|"≥1 root cert<br/>(mtime-cached)"| H["Check A · DG hashes<br/>each provided DG hash ==<br/>signed value in LDSSecurityObject"]
+    H -->|"mismatch"| FC1["FAIL-CLOSED reject"]
+    H -->|"match"| SIG["Check B · SOD CMS signature<br/>verifies under embedded<br/>Document Signer (DS) cert"]
+    SIG -->|"invalid"| FC2["FAIL-CLOSED reject"]
+    SIG -->|"valid"| CHAIN["Check C · DS chains to a<br/>trusted CSCA root"]
+    CHAIN -->|"no chain"| FC3["FAIL-CLOSED reject"]
+    CHAIN -->|"chains"| OK["is_authentic = true<br/>ds_subject, ds_serial, csca_matched=true"]
+
+    SO{SOD supplied at all?}
+    SOIN[/"/nfc/enroll or MFA step<br/>without SOD"/] --> SO
+    SO -->|"no SOD"| SERIAL["SERIAL-ONLY fallback<br/>MIFARE UID lookup only<br/>(works without CSCA;<br/>proves 'serial enrolled', NOT chip genuine)"]
+    SO -->|"SOD present"| IN
+
+    NTS --> REJ[["api FAIL-CLOSED → 422"]]
+    FC1 --> REJ
+    FC2 --> REJ
+    FC3 --> REJ
+```
+
+---
+
+## 4. Liveness decision — passive + active
+
+Two distinct mechanisms. **Passive** = single-frame UniFace MiniFASNet on
+`/verify` and `/liveness` (default `LIVENESS_MODE=passive`). **Active** =
+challenge/response: the server generates a sequence (face challenges scored by
+EAR/MAR/yaw, hand-gesture challenges scored from landmarks), tracks the session,
+and on success issues a short-lived **HS256 JWT verification token** (TTL 300s,
+UUID `jti`). 23 micro-challenges exist in the web registry: **14 face + 9 hand**.
+
+```mermaid
+flowchart TB
+    subgraph PASSIVE["PASSIVE — single frame"]
+        P1[/"POST /liveness or /verify<br/>one still frame"/]
+        P2["UniFace MiniFASNet (passive)<br/>texture / depth cue → score"]
+        P3{"is_live AND<br/>score ≥ floor?<br/>(verify floor 0.4)"}
+        P1 --> P2 --> P3
+        P3 -->|"no"| PR[["reject"]]
+        P3 -->|"yes"| PG[["pass to match"]]
+    end
+
+    subgraph ACTIVE["ACTIVE — challenge / response"]
+        A1[/"POST /liveness/active/start<br/>(or /active/gesture/start)"/]
+        A2["StartActiveLiveness:<br/>session_id = uuid4()<br/>pick num_challenges (cfg 1–5, def 3)<br/>session TTL = 120s · per-challenge 5s"]
+        A3["Client performs each action,<br/>POSTs frames to /active/frame"]
+        A4["FACE: MediaPipe FaceLandmarker (server)<br/>EAR (blink), MAR (mouth), yaw (head turn),<br/>eyebrow-raise vs per-session baseline"]
+        A5["HAND/gesture: client sends 21-pt hand<br/>landmarks + anti-spoof scores (landmarks-only,<br/>no server MediaPipe)"]
+        A6{"all challenges<br/>completed in order,<br/>within TTL?"}
+        A7["ActiveLivenessTokenService:<br/>HS256 JWT, scope=active_liveness_verification,<br/>jti=uuid4(), exp = now + 300s"]
+        A1 --> A2 --> A3
+        A3 --> A4
+        A3 --> A5
+        A4 --> A6
+        A5 --> A6
+        A6 -->|"expired → 410"| AEXP[["session expired"]]
+        A6 -->|"not found → 404"| ANF[["unknown session"]]
+        A6 -->|"yes"| A7 --> ATOK[["signed liveness token"]]
+    end
+
+    subgraph PUZZLE["ACTIVE (puzzle variant) — GeneratePuzzle / VerifyPuzzle"]
+        Z1["GeneratePuzzleUseCase: random steps<br/>(easy 2-3 / standard 3-4 / hard 4-5),<br/>incompatible pairs (turn_left↔turn_right) filtered,<br/>thresholds sent to client (ear 0.21, mar 0.4, yaw 0.15)"]
+        Z2["persist puzzle, expires = timeout + 60s"]
+        Z3["VerifyPuzzleUseCase: anti-replay (P0-#9) —<br/>corrupt/garbage frames counted as FAILURE;<br/>timestamp-before-puzzle rejected"]
+        Z1 --> Z2 --> Z3
+    end
+```
+
+---
+
+## 5. spoof-detector — session verdict (peak-sensitive)
+
+Standalone `spoof-detector` repo (algorithms live here; `biometric-processor`
+only wires them). Per frame: MiniFASNet ONNX classifier + a bank of analyzers
+(`src/infrastructure/analyzers/` ships **14**: MiniFASNet, texture, moiré,
+screen-replay, screen-flicker, micro-tremor, rPPG, temporal, landmark-variance,
+device-boundary, background-grid, AR-filter, blink) — 13 analyzers; flash-response is a fusion/device-risk signal, not a standalone analyzer. Frames fuse into a
+**session** verdict that is intentionally NOT a plain average — it is
+peak-sensitive (blends mean P(real) with the **worst sliding window**) so a brief
+spoof flash can't be averaged away.
+
+```mermaid
+flowchart TB
+    F[/"Webcam frame stream<br/>(amispoof / proctoring)"/]
+
+    subgraph FRAME["Per-frame analysis"]
+        MFN["MiniFASNet ONNX<br/>P(real) classifier"]
+        ANA["13 analyzers:<br/>texture · moiré · screen-replay ·<br/>screen-flicker · micro-tremor · rPPG ·<br/>temporal · landmark-variance ·<br/>device-boundary · background-grid ·<br/>AR-filter · blink"]
+        GATE["FaceUsabilityGate<br/>(usable face present?)"]
+        FUSE["HybridFusionEvaluator<br/>calibrated multi-class fusion<br/>→ SpoofClassification"]
+        MFN --> FUSE
+        ANA --> FUSE
+        GATE --> FUSE
+    end
+
+    F --> FRAME
+
+    subgraph SESSION["SessionEngine — accumulate over time"]
+        ING["ingest(): append category evidence<br/>+ LivenessProver ('guilty until proven',<br/>must reach 60/100) + incident detection"]
+        AVG["avg_real = mean P(real)"]
+        WORST["worst_window_real = min over<br/>sliding 3–5 frame windows (PEAK)"]
+        BLEND["blended_real = 0.50*avg + 0.50*worst"]
+        ADJ["adjusted_real ×= data_confidence (full@150f/5s)<br/>×= (1 - incident_penalty*0.4)<br/>+= temporal_boost*0.15"]
+        INC{"incidents ≥ 3?"}
+        PROV{"prover proven_live<br/>(≥ 60)?"}
+        DEC{"adjusted_real > 0.45<br/>AND prover_live<br/>AND not incident_override"}
+        ING --> AVG --> BLEND
+        ING --> WORST --> BLEND
+        BLEND --> ADJ --> DEC
+        INC --> DEC
+        PROV --> DEC
+    end
+
+    FRAME --> SESSION
+    DEC -->|"all agree"| LIVE[["LIVE"]]
+    DEC -->|"else"| SPOOF[["SPOOF — dominant_threat<br/>(replay / screen / deepfake)"]]
+
+    subgraph WHY["Why attacks fail"]
+        R1["Replay/screen: MiniFASNet oscillates<br/>(mean<80, std>25) + moiré/flicker/device-boundary<br/>→ incidents + worst-window drag → SPOOF"]
+        R2["Deepfake/photo: no real blink (prover<60),<br/>flat rPPG, unnatural landmark variance,<br/>peak-sensitive verdict refuses to average it away"]
+    end
+    SPOOF -.-> WHY
+```
+
+---
+
+## 6. Fingerprint → WebAuthn mapping (no server biometric)
+
+There is **no server-side fingerprint matcher**. The `FINGERPRINT` auth method is
+a WebAuthn/FIDO2 *platform* authenticator ceremony — the device's secure enclave
+does the biometric match locally and returns a signed assertion; the server only
+verifies the assertion + sign-counter against the stored public key. This is a
+possession+inherence factor, not a template stored in pgvector.
+
+```mermaid
+flowchart LR
+    subgraph CLIENT["Device (secure enclave)"]
+        TOUCH["User touches sensor /<br/>Face ID — biometric match<br/>happens ON-DEVICE only"]
+        ASSERT["WebAuthn assertion:<br/>credentialId, authenticatorData,<br/>clientDataJSON, signature"]
+        TOUCH --> ASSERT
+    end
+
+    subgraph SERVER["identity-core-api · FingerprintAuthHandler"]
+        CH["Phase 1: generateChallenge<br/>(authenticatorAttachment=platform,<br/>allowCredentials = user's credential IDs)"]
+        LK["lookup WebAuthnCredential by credentialId<br/>+ assert it belongs to session user"]
+        VER["WebAuthnService.verifyAssertion<br/>(public key)"]
+        SC{"sign-counter<br/>> stored?<br/>(spec §6.1.17)"}
+        OKR["StepResult.success(verified=true)"]
+        CLONE["reject — counter regression<br/>(possible cloned credential)"]
+        CH --> LK --> VER --> SC
+        SC -->|"yes"| OKR
+        SC -->|"no / regressed"| CLONE
+    end
+
+    ASSERT --> LK
+
+    NOTE["NO embedding · NO pgvector · NO bio-processor call.<br/>Server-side SHA-256 'fingerprint' path was REMOVED (P1.4).<br/>AuthMethodType.FINGERPRINT is retained ONLY for WebAuthn."]
+    SERVER -.-> NOTE
+```
+</script>
+<script type="text/markdown" data-key="04" data-title="Data Model · Use-Cases · RBAC"># FIVUCSAS — Data Model, Domain Class, Use-Case & RBAC Diagrams
+
+Source of truth: `identity-core-api/src/main/java/com/fivucsas/identity/entity/*.java`
+(JPA entities) + `identity-core-api/src/main/resources/db/migration/V1..V80`
+(Flyway) + `security/RbacAuthorizationService.java`. Column / FK / cardinality
+names are taken verbatim from the code — nothing is invented.
+
+Cross-cutting facts that shape these diagrams:
+
+- **Person layer (Model A, V65-V70).** `identities` is a platform-level PERSON; a
+  `users` row is a tenant MEMBERSHIP that references exactly one identity
+  (`users.identity_id` FK → `identities.id`, now `NOT NULL` per V70). One person
+  may hold memberships in several tenants. `identities`, `identity_emails`, and
+  `identity_tenant_biometric_consent` are **deliberately NOT tenant-scoped** (no
+  `@Filter(tenantFilter)`).
+- **Tenant isolation (P0-1).** A global `@FilterDef(tenantFilter)` lives on `User`;
+  the tenant-scoped entities (`AuthFlow`, `AuditLog`, `MfaSession`, `UserEnrollment`,
+  `OAuth2Client`, `UserDevice`, `Role`) re-declare `@Filter`. `Role`'s filter also
+  exposes global rows (`tenant_id IS NULL`).
+- **Soft delete.** `users` and `tenants` carry `deleted_at` + `@SQLDelete`/
+  `@SQLRestriction`; a V53 BEFORE-DELETE trigger forbids hard `DELETE`.
+- **Two biometric stores.** Face embeddings (`vector(512)`) and voice embeddings
+  (`voice_enrollments`, `vector(256)`) live in the pgvector store and key on a
+  *string* `user_id` — they are NOT hard JPA FKs (the legacy `biometric_data` table
+  was dropped in V48). `user_enrollments` is the JPA-side enrollment ledger.
+
+---
+
+## 1a. ER Diagram — Identity, Tenancy & RBAC
+
+The person/membership/tenant core plus the role→permission graph.
+
+```mermaid
+erDiagram
+    IDENTITIES ||--o{ IDENTITY_EMAILS : "owns (lower(email) global UNIQUE)"
+    IDENTITIES ||--o{ USERS : "is the person behind memberships"
+    TENANTS ||--o{ USERS : "has members"
+    USERS ||--o{ USERS : "invited_by (self-FK)"
+    TENANTS ||--o{ ROLES : "scopes (tenant_id NULL = global)"
+    USERS ||--o{ USER_ROLES : "assigned"
+    ROLES ||--o{ USER_ROLES : "granted to"
+    ROLES }o--o{ PERMISSIONS : "role_permissions (M:N)"
+    TENANTS ||--o{ TENANT_EMAIL_DOMAINS : "owns domains"
+    IDENTITIES ||--o{ IDENTITY_TENANT_BIOMETRIC_CONSENT : "grants per (tenant[,method])"
+    TENANTS ||--o{ IDENTITY_TENANT_BIOMETRIC_CONSENT : "is consented for"
+
+    IDENTITIES {
+        uuid id PK
+        string display_name
+        string status "ACTIVE"
+        instant created_at
+        instant updated_at
+    }
+    IDENTITY_EMAILS {
+        uuid id PK
+        uuid identity_id FK "NOT NULL"
+        string email "UNIQUE on lower(email)"
+        boolean verified
+        instant verified_at
+    }
+    USERS {
+        uuid id PK
+        uuid tenant_id FK "NOT NULL"
+        uuid identity_id FK "NOT NULL (V70)"
+        string email "UNIQUE"
+        string password_hash
+        string first_name
+        string last_name
+        string id_number "UNIQUE len 11"
+        string phone_number "E.164 (V54)"
+        enum status "UserStatus"
+        enum user_type "ROOT/TENANT_ADMIN/TENANT_MEMBER/GUEST"
+        uuid invited_by FK
+        instant expires_at "guest TTL"
+        boolean email_verified
+        boolean is_locked
+        int failed_login_attempts
+        string two_factor_secret "AES-GCM enc:v1:"
+        enum verification_level
+        boolean is_biometric_enrolled
+        instant deleted_at "soft-delete"
+        instant created_at
+    }
+    TENANTS {
+        uuid id PK
+        string name "UNIQUE"
+        string slug "UNIQUE"
+        string contact_email
+        enum status "TenantStatus"
+        int max_users
+        boolean biometric_enabled
+        boolean mfa_required
+        boolean enforce_domain_matching "V62"
+        string default_member_role "V64"
+        instant deleted_at "soft-delete V49"
+    }
+    TENANT_EMAIL_DOMAINS {
+        uuid tenant_id FK
+        string email_domain "UNIQUE"
+        boolean is_primary
+        boolean verified "V63"
+        string verification_token "V64 DNS-TXT"
+    }
+    ROLES {
+        uuid id PK
+        uuid tenant_id FK "NULL = global ROOT/SYSTEM"
+        string name
+        boolean is_system_role
+        boolean is_active
+        instant deleted_at "soft-delete"
+    }
+    PERMISSIONS {
+        uuid id PK
+        string name "RESOURCE:ACTION UNIQUE"
+        string resource
+        string action
+    }
+    USER_ROLES {
+        uuid user_id PK,FK
+        uuid role_id PK,FK
+        instant assigned_at
+        uuid assigned_by
+        instant expires_at "time-limited grant"
+    }
+    IDENTITY_TENANT_BIOMETRIC_CONSENT {
+        uuid id PK
+        uuid identity_id "NOT NULL"
+        uuid tenant_id "NOT NULL"
+        string method "NULL = all methods"
+        boolean granted "default-DENY semantics"
+        instant granted_at
+        instant revoked_at
+    }
+```
+
+---
+
+## 1b. ER Diagram — Auth Methods, Flows, Enrollment, Sessions & Tokens
+
+The configurable N-step auth engine, the credential/enrollment stores, and the
+session/token/audit surfaces.
+
+```mermaid
+erDiagram
+    TENANTS ||--o{ AUTH_FLOWS : "owns flows"
+    TENANTS ||--o{ TENANT_AUTH_METHODS : "enables methods"
+    AUTH_METHODS ||--o{ TENANT_AUTH_METHODS : "enabled per tenant"
+    AUTH_FLOWS ||--o{ AUTH_FLOW_STEPS : "ordered steps"
+    AUTH_METHODS ||--o{ AUTH_FLOW_STEPS : "primary method"
+    AUTH_METHODS ||--o{ AUTH_FLOW_STEPS : "fallback_method"
+    AUTH_FLOW_STEPS }o--o{ AUTH_METHODS : "auth_flow_step_methods (CHOICE alts)"
+    USERS ||--o{ USER_ENROLLMENTS : "enrolls factors"
+    TENANTS ||--o{ USER_ENROLLMENTS : "scopes"
+    USERS ||--o{ NFC_CARDS : "registers cards"
+    USERS ||--o{ USER_DEVICES : "trusts devices"
+    USERS ||--o{ WEBAUTHN_CREDENTIALS : "passkeys/keys"
+    USERS ||--o{ REFRESH_TOKENS : "holds (family_id)"
+    USERS ||--o{ MFA_SESSIONS : "in-flight login"
+    TENANTS ||--o{ OAUTH2_CLIENTS : "registers RPs"
+    TENANTS ||--o{ AUDIT_LOGS : "scopes"
+    USERS ||--o{ AUDIT_LOGS : "actor (nullable)"
+
+    AUTH_METHODS {
+        uuid id PK
+        enum type "PASSWORD..NFC_DOCUMENT,PASSKEY,APPROVE_LOGIN (UNIQUE)"
+        enum category "BASIC/STANDARD/PREMIUM"
+        text_array platforms
+        boolean requires_enrollment
+        boolean supports_usernameless "V73"
+        boolean is_active
+        jsonb config_schema
+    }
+    TENANT_AUTH_METHODS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid auth_method_id FK
+        boolean is_enabled
+        jsonb config
+    }
+    AUTH_FLOWS {
+        uuid id PK
+        uuid tenant_id FK "NOT NULL @Filter"
+        string name
+        enum flow_type "AUTHENTICATION/VERIFICATION/ENROLLMENT"
+        string industry_template
+        enum operation_type "APP_LOGIN/DOOR_ACCESS/EXAM_PROCTORING.."
+        boolean is_default "uq_auth_flow_default"
+        boolean is_active
+    }
+    AUTH_FLOW_STEPS {
+        uuid id PK
+        uuid auth_flow_id FK
+        uuid auth_method_id FK "primary"
+        int step_order
+        enum step_type "SEQUENTIAL/CHOICE"
+        boolean is_required
+        int timeout_seconds
+        int max_attempts
+        uuid fallback_method_id FK
+        jsonb config
+    }
+    USER_ENROLLMENTS {
+        uuid id PK
+        uuid user_id FK "NOT NULL"
+        uuid tenant_id FK "NOT NULL @Filter"
+        enum auth_method_type
+        enum status "NOT_ENROLLED/PENDING/ENROLLED/FAILED/REVOKED/EXPIRED"
+        jsonb enrollment_data
+        numeric quality_score "5,4 (V47)"
+        numeric liveness_score "5,4 (V47)"
+        instant enrolled_at
+        instant revoked_at
+    }
+    NFC_CARDS {
+        uuid id PK
+        uuid user_id FK
+        uuid tenant_id FK
+        string card_serial "canonical UPPERHEX; UNIQUE(serial,tenant)"
+        string card_type
+        boolean is_active
+        instant revoked_at
+    }
+    USER_DEVICES {
+        uuid id PK
+        uuid user_id FK
+        uuid tenant_id FK "@Filter"
+        enum platform "DevicePlatform"
+        string device_fingerprint
+        boolean is_trusted
+        text public_key "step-up EC_P256 (V17)"
+    }
+    WEBAUTHN_CREDENTIALS {
+        uuid id PK
+        uuid user_id FK "ON DELETE CASCADE"
+        string credential_id "UNIQUE"
+        text public_key
+        long sign_count
+        boolean discoverable "V72 passkey"
+        string user_handle "V72 usernameless"
+    }
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id FK "ON DELETE CASCADE"
+        bytea token_secret_hash "SHA-256 (V55; plaintext dropped V60)"
+        uuid family_id "rotation family (V50)"
+        instant expiry_date
+        boolean is_revoked
+        instant revoked_at
+    }
+    MFA_SESSIONS {
+        uuid id PK
+        string session_token "UNIQUE"
+        uuid user_id
+        uuid tenant_id "@Filter"
+        uuid flow_id
+        int current_step
+        int total_steps
+        jsonb steps_data "amr list"
+        string client_id "OIDC cross-client guard (V36)"
+        instant consumed_at "anti-replay (V35)"
+        instant expires_at
+    }
+    OAUTH2_CLIENTS {
+        uuid id PK
+        string client_id "UNIQUE"
+        string client_secret "bcrypt"
+        uuid tenant_id FK "@Filter"
+        text redirect_uris "JSON array"
+        string allowed_scopes "openid profile email"
+        boolean confidential "V34 PKCE for public"
+        string previous_secret "rotation grace (V58)"
+        instant revoked_at
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        uuid tenant_id "NOT NULL V61; 000..0 sentinel for anon"
+        uuid user_id "actor, nullable"
+        string action
+        string resource_type
+        uuid resource_id
+        int status_code
+        boolean success
+        jsonb metadata
+        instant created_at "pg_partman partitioned (V40/V57)"
+    }
+```
+
+> **Not hard-FK'd by design:** `voice_enrollments` (`vector(256)`, V33) and the
+> face-embedding pgvector store reference `user_id` as a `VARCHAR(255)` in the
+> biometric store — they are logically per-user but not JPA foreign keys, so they
+> are intentionally omitted from the relationship lines above.
+
+---
+
+## 2. Domain Class Diagram
+
+Key aggregates, their business methods, and the person-layer (Identity 1..* User
+memberships across tenants). Methods shown are the load-bearing ones from the
+entities; `+` = public domain behaviour.
+
+```mermaid
+classDiagram
+    class Identity {
+        +UUID id
+        +String displayName
+        +String status
+    }
+    class IdentityEmail {
+        +UUID id
+        +String email
+        +boolean verified
+    }
+    class User {
+        +UUID id
+        +String email
+        +UserStatus status
+        +UserType userType
+        +boolean isBiometricEnrolled
+        +Instant deletedAt
+        +softDelete()
+        +isSoftDeleted() boolean
+        +canManage(User) boolean
+        +enrollBiometric()
+        +lockAccount(Duration)
+        +incrementFailedLoginAttempts()
+        +getActiveRoles() Set~Role~
+        +getAllAuthorities() Set~String~
+        +isRoot() boolean
+        +isExpired() boolean
+    }
+    class Tenant {
+        +UUID id
+        +String slug
+        +TenantStatus status
+        +boolean enforceDomainMatching
+        +activate()
+        +suspend()
+        +canAcceptUsers() boolean
+        +hasBiometricFeatures() boolean
+    }
+    class Role {
+        +UUID id
+        +String name
+        +boolean isSystemRole
+        +getPermissionAuthorities() Set~String~
+        +softDelete()
+    }
+    class Permission {
+        +UUID id
+        +String name
+        +getAuthorityName() String
+    }
+    class UserRole {
+        +Instant assignedAt
+        +UUID assignedBy
+        +Instant expiresAt
+        +isValid() boolean
+    }
+    class AuthFlow {
+        +UUID id
+        +FlowType flowType
+        +OperationType operationType
+        +boolean isDefault
+        +setAsDefault()
+        +getStepCount() int
+    }
+    class AuthFlowStep {
+        +int stepOrder
+        +StepType stepType
+        +getAvailableMethods() List~AuthMethod~
+        +isChoice() boolean
+    }
+    class AuthMethod {
+        +AuthMethodType type
+        +boolean requiresEnrollment
+        +boolean supportsUsernameless
+    }
+    class TenantAuthMethod {
+        +boolean isEnabled
+        +enable()
+        +disable()
+    }
+    class UserEnrollment {
+        +AuthMethodType authMethodType
+        +EnrollmentStatus status
+        +BigDecimal qualityScore
+        +BigDecimal livenessScore
+        +completeEnrollment(data, q, l)
+        +revoke()
+        +isEnrolled() boolean
+    }
+    class MfaSession {
+        +String sessionToken
+        +int currentStep
+        +int totalSteps
+        +Instant consumedAt
+        +advanceStep()
+        +addCompletedMethod(amr)
+        +consume()
+        +allStepsCompleted() boolean
+        +isExpired() boolean
+    }
+    class RefreshToken {
+        +UUID familyId
+        +byte[] tokenSecretHash
+        +revoke()
+        +isExpired() boolean
+    }
+    class OAuth2Client {
+        +String clientId
+        +boolean confidential
+        +isRedirectUriAllowed(uri) boolean
+        +rotateSecret(hash, grace)
+        +isValid() boolean
+    }
+    class IdentityTenantBiometricConsent {
+        +UUID identityId
+        +UUID tenantId
+        +String method
+        +boolean granted
+        +apply(grant)
+    }
+    class UserType {
+        <<enumeration>>
+        ROOT
+        TENANT_ADMIN
+        TENANT_MEMBER
+        GUEST
+        +outranks(UserType) boolean
+        +canManage(UserType) boolean
+    }
+
+    Identity "1" --> "0..*" IdentityEmail : owns
+    Identity "1" --> "0..*" User : memberships (cross-tenant)
+    Tenant "1" --> "0..*" User : members
+    User "1" --> "0..*" UserRole : assigned
+    Role "1" --> "0..*" UserRole : granted
+    Role "*" --> "*" Permission : role_permissions
+    User --> UserType : userType
+    Tenant "1" --> "0..*" AuthFlow : owns
+    AuthFlow "1" --> "1..*" AuthFlowStep : ordered
+    AuthFlowStep "*" --> "1" AuthMethod : primary
+    AuthFlowStep "*" --> "*" AuthMethod : CHOICE alternatives
+    Tenant "1" --> "0..*" TenantAuthMethod : enables
+    AuthMethod "1" --> "0..*" TenantAuthMethod : per-tenant
+    User "1" --> "0..*" UserEnrollment : enrolls
+    User "1" --> "0..*" MfaSession : in-flight
+    User "1" --> "0..*" RefreshToken : holds
+    Tenant "1" --> "0..*" OAuth2Client : registers
+    Identity "1" --> "0..*" IdentityTenantBiometricConsent : grants
+```
+
+---
+
+## 3. Use-Case Diagram
+
+Actors and their use cases. ROOT/Platform Owner sits above all tenants;
+Developer/Integrator drives the OIDC surface; Guest is time-limited.
+
+```mermaid
+flowchart LR
+    EU(["End User"])
+    TA(["Tenant Admin"])
+    ROOT(["ROOT / Platform Owner"])
+    DEV(["Developer / Integrator"])
+    GUEST(["Guest"])
+
+    subgraph AUTHN["Authentication & Account"]
+        UC1["Log in with N factors<br/>(PASSWORD + any 2FA/3FA)"]
+        UC2["Identifier-first login<br/>(config-driven engine)"]
+        UC3["Passwordless / passkey<br/>(discoverable WebAuthn)"]
+        UC4["Approve-login<br/>(number matching, cross-device)"]
+        UC5["Step-up MFA (widget)"]
+        UC6["Reset password / verify email"]
+    end
+
+    subgraph ENROLL["Biometrics & Credentials"]
+        UC7["Enroll FACE / VOICE / FINGERPRINT"]
+        UC8["Register NFC card"]
+        UC9["Register passkey / hardware key"]
+        UC10["Manage trusted devices"]
+        UC11["Grant/revoke per-tenant<br/>biometric consent"]
+    end
+
+    subgraph SELF["Self-Service / Identity"]
+        UC12["View profile & enrollments"]
+        UC13["Link / unlink accounts<br/>(person across tenants)"]
+        UC14["Switch membership<br/>(in-session, same identity)"]
+        UC15["Export data / request deletion<br/>(GDPR / KVKK)"]
+    end
+
+    subgraph TENANT["Tenant Administration"]
+        UC16["Manage users & guests"]
+        UC17["Configure auth flows & steps"]
+        UC18["Enable tenant auth methods"]
+        UC19["Manage roles & permissions"]
+        UC20["Manage email domains<br/>(DNS-TXT verify)"]
+        UC21["View tenant audit logs"]
+    end
+
+    subgraph PLATFORM["Platform Administration"]
+        UC22["Manage all tenants<br/>(create/suspend/delete)"]
+        UC23["Cross-tenant access & audit"]
+        UC24["Assign global/ROOT roles"]
+        UC25["System configuration"]
+    end
+
+    subgraph INTEG["OIDC / Integration"]
+        UC26["Register OAuth2 client"]
+        UC27["Redirect login (PKCE)<br/>+ token exchange"]
+        UC28["Rotate client secret"]
+        UC29["Consume OIDC discovery / JWKS"]
+        UC30["Embed auth widget / SDK"]
+    end
+
+    EU --> UC1 & UC2 & UC3 & UC4 & UC6
+    EU --> UC7 & UC8 & UC9 & UC10 & UC11
+    EU --> UC12 & UC13 & UC14 & UC15
+    GUEST --> UC1 & UC12
+    GUEST --> UC5
+
+    TA --> UC16 & UC17 & UC18 & UC19 & UC20 & UC21
+    TA --> UC1
+
+    ROOT --> UC22 & UC23 & UC24 & UC25
+    ROOT --> UC16 & UC17 & UC19 & UC21
+
+    DEV --> UC26 & UC27 & UC28 & UC29 & UC30
+    DEV --> UC5
+```
+
+---
+
+## 4. RBAC / Authorization Model
+
+Two orthogonal axes resolve every request:
+
+1. **Platform tier** — `user_type` (`ROOT` 100 › `TENANT_ADMIN` 80 ›
+   `TENANT_MEMBER` 50 › `GUEST` 10). This is the SOLE platform-tier authority
+   (`UserType.getHierarchyLevel`). ROOT bypasses all permission checks;
+   TENANT_ADMIN has implicit access to all non-system permissions in its tenant.
+2. **Within-tenant RBAC** — `role → permission` via `user_roles` + `role_permissions`
+   (only consulted for TENANT_MEMBER / GUEST).
+
+```mermaid
+flowchart TD
+    REQ["Incoming request<br/>(@PreAuthorize SpEL → rbac.*)"] --> AUTH{Authenticated?}
+    AUTH -- no --> DENY["403 Access Denied"]
+    AUTH -- yes --> RESOLVE["getCurrentUser()<br/>(TenantFilterBypass: self-lookup<br/>ignores active X-Tenant-ID)"]
+
+    RESOLVE --> TIER{"user_type tier?"}
+
+    TIER -- ROOT --> ROOTOK["ALLOW<br/>bypass all permission checks<br/>cross-tenant access"]
+
+    TIER -- GUEST --> EXP{"expired?<br/>(expires_at past)"}
+    EXP -- yes --> DENY
+    EXP -- no --> ROLECHK
+
+    TIER -- TENANT_ADMIN --> SYS{"system permission?<br/>(system:* or tenant:create)"}
+    SYS -- yes --> ROLECHK["check role→permission grants<br/>(user.hasPermission)"]
+    SYS -- no --> TAOK["ALLOW<br/>implicit tenant-scoped access"]
+
+    TIER -- TENANT_MEMBER --> ROLECHK
+
+    ROLECHK --> HAS{"has permission<br/>via active UserRole?"}
+    HAS -- yes --> GRANT["ALLOW"]
+    HAS -- no --> DENY
+
+    ROOTOK --> TENANTSCOPE
+    TAOK --> TENANTSCOPE
+    GRANT --> TENANTSCOPE["Tenant scope enforced:<br/>Hibernate @Filter(tenantFilter)<br/>+ TenantScopeResolver.currentScope()"]
+```
+
+### Role-assignment ceiling (`canAssignRole`)
+
+The assignment ceiling prevents privilege escalation across both axes:
+
+```mermaid
+flowchart TD
+    A["canAssignRole(roleId)"] --> B{caller user_type?}
+    B -- ROOT --> ALLOW["ALLOW any role<br/>(incl. global ROOT/SYSTEM)"]
+    B -- "TENANT_ADMIN" --> C{"has 'user_role:assign'?"}
+    B -- "other" --> DENY["DENY"]
+    C -- no --> DENY
+    C -- yes --> D{"role.tenant_id == caller.tenant_id<br/>AND both non-null?"}
+    D -- "no (global role:<br/>tenant_id IS NULL)" --> DENY2["DENY<br/>global roles are ROOT-only<br/>(closes P0-3 escalation)"]
+    D -- "no (foreign tenant)" --> DENY2
+    D -- yes --> ALLOW2["ALLOW<br/>own-tenant role only"]
+```
+
+**Key guardrails (verified in `RbacAuthorizationService` + `UserType`):**
+
+- `UserType.canManage`: ROOT manages anyone; otherwise must strictly `outranks` the
+  target (and `User.canManage` additionally requires same tenant for non-ROOT).
+- A non-ROOT caller may assign **only roles belonging to their own tenant**; global
+  roles (`tenant_id IS NULL`) are ROOT-only — this is the P0-3 escalation fix
+  (2026-06-01): previously the `roleId` argument was ignored.
+- `canAccessTenant`: ROOT is cross-tenant; everyone else is pinned to their own
+  `tenant_id`.
+- ROOT holds all **48** permissions on the renamed `ROOT` role (V69 rename +
+  V71 grant), but its real power is `user_type=ROOT`, which bypasses permission
+  checks entirely. Tenant-scoped `TENANT_ADMIN` roles were stripped to
+  tenant-level grants only (V76).
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad:false, theme:'dark', securityLevel:'loose', themeVariables:{ fontSize:'14px' } });
+
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const docs = document.querySelectorAll('script[type="text/markdown"]');
+
+  // split markdown on ```mermaid fences so code fences become <pre class=mermaid>
+  function render(md) {
+    const parts = md.split(/```mermaid\n([\s\S]*?)```/g);
+    let out = '';
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 1) {
+        const code = parts[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        out += '<pre class="mermaid">' + code + '</pre>';
+      } else if (parts[i].trim()) {
+        out += marked.parse(parts[i]);
+      }
+    }
+    return out;
+  }
+
+  docs.forEach(d => {
+    const sec = document.createElement('section');
+    sec.id = 'sec-' + d.dataset.key;
+    sec.innerHTML = render(d.textContent);
+    content.appendChild(sec);
+  });
+
+  await mermaid.run({ querySelector: 'pre.mermaid' });
+
+  // ---------- enhancements: TOC jump-nav, per-diagram fullscreen zoom/pan, back-to-top ----------
+  (function enhance(){
+    const slug = s => s.toLowerCase().replace(/[^\w]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64);
+    // anchor every heading + build a jump-to TOC
+    const toc = document.createElement('div'); toc.id = 'toc';
+    document.querySelectorAll('#content h2, #content h3').forEach(h => {
+      if (!h.id) h.id = slug(h.textContent || 'd');
+      const a = document.createElement('a');
+      a.href = '#' + h.id; a.textContent = h.textContent;
+      a.className = h.tagName === 'H2' ? 'l2' : 'l3';
+      a.addEventListener('click', e => { e.preventDefault();
+        document.getElementById(h.id).scrollIntoView({ behavior:'smooth', block:'start' });
+        toc.classList.remove('on'); });
+      toc.appendChild(a);
+    });
+    document.body.appendChild(toc);
+    const tocFab = document.createElement('button'); tocFab.id='toc-fab'; tocFab.title='On this page'; tocFab.textContent='☰';
+    tocFab.addEventListener('click', e => { e.stopPropagation(); toc.classList.toggle('on'); });
+    const topFab = document.createElement('button'); topFab.id='top-fab'; topFab.title='Back to top'; topFab.textContent='↑';
+    topFab.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+    document.body.append(tocFab, topFab);
+    document.addEventListener('click', e => { if (toc.classList.contains('on') && !toc.contains(e.target) && e.target !== tocFab) toc.classList.remove('on'); });
+
+    // shared fullscreen zoom/pan overlay
+    const ov = document.createElement('div'); ov.className = 'zoom-ov';
+    ov.innerHTML = '<div class="zoom-top"><span class="zoom-title"></span><div class="zoom-ctrls"><button data-z="out" title="Zoom out">−</button><button data-z="in" title="Zoom in">+</button><button data-z="reset" title="Reset">⟲</button><button data-z="close" title="Close (Esc)">✕</button></div></div><div class="zoom-stage"></div><div class="zoom-hint">scroll = zoom · drag = pan · Esc = close</div>';
+    document.body.appendChild(ov);
+    const stage = ov.querySelector('.zoom-stage'), title = ov.querySelector('.zoom-title');
+    let scale=1, tx=0, ty=0, cur=null;
+    const apply = () => { if (cur) cur.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; };
+    const open = (svg, name) => { cur = svg.cloneNode(true); cur.removeAttribute('style');
+      stage.innerHTML=''; stage.appendChild(cur); scale=1; tx=0; ty=0; apply();
+      title.textContent = name || 'Diagram'; ov.classList.add('on'); };
+    const close = () => { ov.classList.remove('on'); stage.innerHTML=''; cur=null; };
+    ov.querySelector('[data-z=close]').addEventListener('click', close);
+    ov.querySelector('[data-z=in]').addEventListener('click', () => { scale=Math.min(scale*1.25,8); apply(); });
+    ov.querySelector('[data-z=out]').addEventListener('click', () => { scale=Math.max(scale/1.25,.2); apply(); });
+    ov.querySelector('[data-z=reset]').addEventListener('click', () => { scale=1; tx=0; ty=0; apply(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    stage.addEventListener('wheel', e => { e.preventDefault();
+      scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.12 : 0.89), .2), 8); apply(); }, { passive:false });
+    let dragging=false, sx=0, sy=0;
+    stage.addEventListener('pointerdown', e => { dragging=true; sx=e.clientX-tx; sy=e.clientY-ty; stage.classList.add('drag'); stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove', e => { if (!dragging) return; tx=e.clientX-sx; ty=e.clientY-sy; apply(); });
+    stage.addEventListener('pointerup', () => { dragging=false; stage.classList.remove('drag'); });
+
+    // per-diagram toolbar + click-to-zoom
+    document.querySelectorAll('pre.mermaid').forEach(pre => {
+      const svg = pre.querySelector('svg'); if (!svg) return;
+      pre.classList.add('dgm');
+      let h = pre.previousElementSibling; while (h && !/^H[23]$/.test(h.tagName)) h = h.previousElementSibling;
+      const name = h ? h.textContent : 'Diagram';
+      const bar = document.createElement('div'); bar.className = 'dgm-bar';
+      const fs = document.createElement('button'); fs.className='dgm-btn'; fs.textContent='⛶ Fullscreen';
+      fs.addEventListener('click', () => open(svg, name));
+      bar.appendChild(fs); pre.appendChild(bar);
+      svg.addEventListener('click', () => open(svg, name));
+    });
+  })();
+</script>
+</body>
+</html>
