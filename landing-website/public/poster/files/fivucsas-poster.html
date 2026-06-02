@@ -636,7 +636,7 @@ small{ font-size: 70%; }
         <div class="arch-node"><div class="nm">Identity Core + Bio-Processor</div><div class="sub">Spring · FastAPI · hexagonal</div></div>
       </div>
       <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; align-items: stretch; text-align: center; margin-top: 2mm;">
-        <div class="arch-node"><div class="nm">PostgreSQL 17</div><div class="sub">pgvector · RLS · 60 migrations</div></div>
+        <div class="arch-node"><div class="nm">PostgreSQL 17</div><div class="sub">pgvector · @Filter isolation · 79 migrations</div></div>
         <div></div>
         <div class="arch-node"><div class="nm">Redis 7.4</div><div class="sub">cache · OTP · puzzle nonces</div></div>
         <div></div>
@@ -744,23 +744,24 @@ small{ font-size: 70%; }
     <div class="sec-hd">
       <div class="n">06</div>
       <h2>spoof-detector — Hybrid PAD, Session Verdict, In-Browser</h2>
-      <div class="tag">Submodule · MIT · paper draft · iBeta L1 submission · amispoof.fivucsas.com</div>
+      <div class="tag">Submodule · MIT · paper draft · iBeta L1 submission pending (not yet certified) · amispoof.fivucsas.com</div>
     </div>
 
     
 
     
 
-    <h4 style="margin-top: 5mm;">Measured results (paper, bootstrap 95 % CI on 100 stratified resamples)</h4>
+    <h4 style="margin-top: 5mm;">In-house measured results — self-computed, not externally certified (paper, bootstrap 95 % CI on 100 stratified resamples)</h4>
     <table class="metric-table">
       <thead><tr><th>Dataset / regime</th><th>Pipeline</th><th>Value</th><th>95 % CI</th><th>Source</th></tr></thead>
       <tbody>
-        <tr><td><b>CASIA-FASD</b> AUC (zero-shot, N = 2 408)</td><td>minifasnet_only</td><td class="v">0.9452</td><td>[0.9366, 0.9560]</td><td class="mono small">07_results.md:15</td></tr>
+        <tr><td><b>CASIA-FASD</b> AUC (zero-shot, in-house, N = 2 408)</td><td>minifasnet_only</td><td class="v">0.9452</td><td>[0.9366, 0.9560]</td><td class="mono small">07_results.md:15</td></tr>
         <tr><td>Per-frame latency (Hetzner CX43 CPU)</td><td>hybrid</td><td class="v">63.0 ms</td><td>p99 = 117.8 ms</td><td class="mono small">:110</td></tr>
         <tr><td>Browser (desktop Chrome, WebGPU)</td><td>browser bundle</td><td class="v">25 – 30 fps</td><td>—</td><td class="mono small">BROWSER_READINESS.md:4</td></tr>
-        <tr><td>ISO/IEC 30107-3 (in-house scripted)</td><td>session</td><td class="v">Grade C</td><td>BPCER 0 % · APCER 30 % · ACER 15 %</td><td class="mono small">README.md:74-84</td></tr>
+        <tr><td>ISO/IEC 30107-3 (in-house scripted, not iBeta/ISO-certified)</td><td>session</td><td class="v">Grade C</td><td>BPCER 0 % · APCER 30 % · ACER 15 %</td><td class="mono small">README.md:74-84</td></tr>
       </tbody>
     </table>
+    <p class="lede" style="font-size: 3mm; margin-top: 2mm;"><b>Note:</b> all figures above are our own zero-shot measurements on public-dataset mirrors and an in-house scripted ISO/IEC 30107-3 harness. They are <b>not</b> iBeta- or ISO-lab certified; an iBeta PAD Level-1 submission package is prepared but no certification has been granted.</p>
 
     
 
