@@ -17,7 +17,7 @@
 
 **Integrator pitch:** Müşteri uygulamaları sadece OIDC discovery (`/.well-known/openid-configuration` — `identity-core-api/.../OpenIDConfigController.java:44-80`) + authorization endpoint (`/api/v1/oauth2/authorize` — `identity-core-api/.../OAuth2Controller.java:77-182`) + JWKS (`/.well-known/jwks.json` — `OpenIDConfigController.java:91-100`) konfigüre eder. PKCE S256 zorunlu (`OAuth2Controller.java:328-341`), RS256 JWT default 2026-04-20'den beri (`identity-core-api/.../security/JwtService.java:27-30, 56-68`). SDK snippet'i: `web-app/src/verify-app/sdk/FivucsasAuth.ts`.
 
-**Multi-tenant kontrat:** Tenant entity `identity-core-api/.../entity/Tenant.java:35-100` (id/slug/status/max_users/biometric_enabled). RLS (Row-Level Security) 9 tabloda V25 ile aktif (`identity-core-api/src/main/resources/db/migration/V25__add_row_level_security.sql`). Canlı tenant: **Marmara Üniversitesi** (`V15__seed_realistic_sample_data.sql`, id `11111111-1111-1111-1111-111111111111`, demo `https://demo.fivucsas.com`).
+**Multi-tenant kontrat:** Tenant entity `identity-core-api/.../entity/Tenant.java:35-100` (id/slug/status/max_users/biometric_enabled). Tenant izolasyonu **uygulama katmanında Hibernate `@Filter` ile zorlanır** (16 entity üzerinde, aspect-uygulanmış). Postgres Row-Level Security şeması V25 ile tanımlı (9 tablo, `identity-core-api/src/main/resources/db/migration/V25__add_row_level_security.sql`) fakat üretimde **etkin değildir** (uygulama tablo-sahibi rol ile bağlanır + `FORCE ROW LEVEL SECURITY` kapalı + policy `current_tenant_id() IS NULL`'da kendini bypass eder) — yani savunma-derinliği şeması olarak durur, yürürlükteki izolasyon @Filter'dır. Canlı tenant: **Marmara Üniversitesi** (`V15__seed_realistic_sample_data.sql`, id `11111111-1111-1111-1111-111111111111`, demo `https://demo.fivucsas.com`).
 
 ---
 
@@ -36,7 +36,7 @@ e-Devlet kamu hizmetlerinin ortak giriş kapısıdır; FIVUCSAS özel sektörün
 | NFC doküman | — | T.C. kimlik + pasaport (ICAO 9303, BAC implementlü) |
 | MFA faktörleri | 2 (şifre + SMS) | 10 birleştirilebilir faktör |
 | Proctoring | — | Sürekli (WebSocket, 15.9 fps Python ref, 25-30 fps tarayıcı) |
-| Multi-tenant | — | Postgres RLS, V25, 9 tabloda |
+| Multi-tenant | — | Hibernate `@Filter` izolasyonu (uygulama katmanı, 16 entity); RLS şeması V25 tanımlı ama prod'da inert |
 | Yasal | KVKK | KVKK + GDPR + ISO/IEC 30107-3 Level 1 (iBeta submission package v0.2.1) |
 | Açık kaynak | — | MIT (spoof-detector) |
 | Kaynak | gov | `identity-core-api`, `biometric-processor`, `spoof-detector` (submodule) |
@@ -74,7 +74,7 @@ e-Devlet kamu hizmetlerinin ortak giriş kapısıdır; FIVUCSAS özel sektörün
 
 **05. Embedding.** **Facenet-512**, default production model (`CLAUDE.md` "Facenet512 server-authoritative"). 512-D L2-normalize embedding — `biometric-processor/app/infrastructure/ml/extractors/deepface_extractor.py:72-75, 132`. **Encryption at rest:** Fernet (AES-128-CBC + HMAC-SHA256), Alembic 20260502_0005 — `biometric-processor/app/infrastructure/security/embedding_cipher.py:39` + `alembic/versions/20260502_0005_embedding_ciphertext.py:1-15`.
 
-**06. Storage / Indexing.** **biometric-processor** (Python servis): HNSW (`m=16`, `ef_construction=64`) — `biometric-processor/scripts/add_hnsw_indexes.sql:19-22` + `alembic/versions/20251212_0001_initial_schema.py:115-120`. **identity-core-api** (Spring servis): IVFFlat (`lists=100`) — `identity-core-api/.../db/migration/V4__create_biometric_tables.sql:8` + V33. Tenant izolasyonu: `tenant_id` kolonu + unique (user_id, tenant_id, biometric_type) WHERE deleted_at IS NULL — Alembic 20251212_0001:96-100. RLS 9 tabloda V25 ile etkin.
+**06. Storage / Indexing.** **biometric-processor** (Python servis): HNSW (`m=16`, `ef_construction=64`) — `biometric-processor/scripts/add_hnsw_indexes.sql:19-22` + `alembic/versions/20251212_0001_initial_schema.py:115-120`. **identity-core-api** (Spring servis): IVFFlat (`lists=100`) — `identity-core-api/.../db/migration/V4__create_biometric_tables.sql:8` + V33. Tenant izolasyonu: `tenant_id` kolonu + unique (user_id, tenant_id, biometric_type) WHERE deleted_at IS NULL — Alembic 20251212_0001:96-100. Tenant izolasyonu uygulama katmanında Hibernate `@Filter` ile zorlanır; RLS şeması V25 tanımlı ama prod'da inert (bkz. §1).
 
 **07. Matching.** Cosine distance (1 − cosine similarity) — `biometric-processor/app/infrastructure/ml/similarity/cosine_similarity.py`. **1:1 verification threshold:** 0.45 default (`config.py:156`), aged-embedding (>2yr) için 0.38 (`config.py:171-180`). 1:N top-k pgvector ANN üzerinden.
 
@@ -209,7 +209,7 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
 - **OAuth2/OIDC + PKCE (RFC 7636)** — `/api/v1/oauth2/authorize`, `/.../token`, `/.../userinfo`, `/.well-known/openid-configuration`, `/.well-known/jwks.json` — `OAuth2Controller.java`, `OpenIDConfigController.java:44-100`. PKCE S256 mandatory `OAuth2Controller.java:328-341`.
 - **JWT RS256 default** (2026-04-20 flip), HS512 legacy disabled — `JwtService.java:27-30, 56-68`, `application.yml:43`.
 - **ISO/IEC 30107-3 alignment** — Level 1 submission package commit `cc73cf08`, Grade C in-house — `spoof-detector/iBeta_PAD_Level1_Submission_Package.md:7-11`.
-- **KVKK / GDPR posture** — Fernet AES-128 embedding encryption at rest (`embedding_cipher.py:39`), soft-delete `deleted_at` (`Tenant.java:41-42`, `@SQLRestriction("deleted_at IS NULL")`), tenant RLS 9 tabloda (V25), audit_logs partition by tenant_id (V40, pg_partman V57).
+- **KVKK / GDPR posture** — Fernet AES-128 embedding encryption at rest (`embedding_cipher.py:39`; not: aranabilir pgvector embedding kolonu ANN için plaintext kalır, yalnızca `embedding_ciphertext` şifrelidir), soft-delete `deleted_at` (`Tenant.java:41-42`, `@SQLRestriction("deleted_at IS NULL")`), tenant izolasyonu uygulama katmanı Hibernate `@Filter` ile (RLS şeması V25 tanımlı ama prod'da inert), audit_logs partition by tenant_id (V40, pg_partman V57).
 - **10 Composable Auth Factors:**
   1. PASSWORD (BCrypt-12) — `SecurityConfig.java:239-240`, `PasswordAuthHandler.java`
   2. EMAIL_OTP (6-digit, Redis, 5min TTL) — `EmailOtpAuthHandler.java`, `OtpService.java:16`
@@ -221,11 +221,11 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
   8. HARDWARE_KEY (FIDO2/WebAuthn) — `HardwareKeyAuthHandler.java`
   9. QR_CODE — `QrCodeAuthHandler.java`
   10. NFC_DOCUMENT (ICAO 9303, ISO 18013-5) — `NfcDocumentAuthHandler.java`
-- **B2B drop-in identity button** — SDK `@fivucsas/auth-js`, `web-app/src/verify-app/sdk/FivucsasAuth.ts`, hosted-first redirective + iframe step-up MFA fallback, nonce + state, redirect-URI allowlist (HTTPS + loopback RFC 8252).
-- **Real-time proctoring** — WebSocket `/api/v1/proctor/ws?session_id=...&user_id=...&tenant_id=...`, ConnectionManager singleton, frame handler, ProctorMetrics — `biometric-processor/app/api/routes/proctor_ws.py:1-47`, `app/core/metrics/proctoring.py`.
+- **B2B drop-in identity button** — CDN SDK `<script src="https://verify.fivucsas.com/fivucsas-auth.js">` (`FivucsasAuth`), source `web-app/src/verify-app/sdk/FivucsasAuth.ts`, hosted-first redirective + iframe step-up MFA fallback, nonce + state, redirect-URI allowlist (HTTPS + loopback RFC 8252). (Not: `@fivucsas/auth-*` npm paketleri henüz yayınlanmadı — entegrasyon CDN script-tag ile.)
+- **Real-time proctoring (dahili yetenek)** — WebSocket `/api/v1/proctor/ws?session_id=...&user_id=...&tenant_id=...`, ConnectionManager singleton, frame handler, ProctorMetrics — `biometric-processor/app/api/routes/proctor_ws.py:1-47`, `app/core/metrics/proctoring.py`. biometric-processor yalnızca Docker ağında olduğundan dışarıdan doğrudan erişilemez (api proxy yok) — kod mevcut, harici uç-nokta değil.
 - **Hybrid liveness** — active Puzzle + passive UniFace MiniFASNet, fusion rule `accept iff min(P_A, P_B) ≥ θ`.
 - **pgvector indexing** — biometric-processor HNSW (m=16, ef_construction=64), identity-core IVFFlat (lists=100).
-- **Self-host stack on Hetzner CX43** — 8 vCPU / 16 GB / 150 GB, ~7 production services in docker-compose.prod.yml (postgres pgvector/pg16, redis 7.4, identity-core-api 2 replicas, biometric-processor 2 replicas, api-gateway Nginx, prometheus, grafana). 60 Flyway migrations (V1-V60).
+- **Self-host stack on Hetzner CX43** — 8 vCPU / 16 GB / 150 GB, production services in docker-compose.prod.yml (postgres pgvector/pg17, redis 7.4, identity-core-api, biometric-processor, Traefik reverse-proxy, Grafana + Loki/promtail log aggregation). Not: Prometheus dağıtılmadı — gözlemlenebilirlik şu an log-tabanlı (Loki). 79 Flyway migrations (V1-V79).
 - **Spoof-detector browser port** — 19 analyzer + 3 gates + LivenessProver + Web Worker + WebGPU + lazy chunks, 217 vitest yeşil, canlı `amispoof.fivucsas.com`.
 
 ---
@@ -235,7 +235,7 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
 - **Cross-modal synchronization (Puzzle ↔ PAD)** — LIVENESS_MODE `combined` default, fusion rule. Yanlış kalibre edilen hybrid /verify endpoint'inde stil frame → False yerlik dönerdi; PR #83 sonrası FaceVerifyMfaStepHandler cosine fail-open kapatıldı (Session 2026-05-07).
 - **MediaPipe Tasks API porto** — legacy `face_mesh` API'den Tasks API'ye geçiş (468-nokta canonical), branch `fix/2026-05-12-mediapipe-tasks-api-port` (biometric-processor active head).
 - **pgvector index tuning** — IVFFlat vs HNSW seçimi (<1M satır ölçeğinde IVFFlat lists=100; HNSW (m=16, ef=64) biometric-processor için). Hala recall/latency calibration bekliyor.
-- **Multi-tenant Row-Level Security** — V25 9 tablo, V40 audit_logs partition, V57 pg_partman tenant_id backfill. 140 → 0 NULL backfill 2026-05-11.
+- **Multi-tenant izolasyon** — yürürlükteki mekanizma uygulama katmanı Hibernate `@Filter` (16 entity); Postgres RLS şeması V25 ile tanımlı ama prod'da inert (owner-rol + FORCE kapalı + NULL-bypass). V40 audit_logs partition, V57 pg_partman tenant_id backfill. 140 → 0 NULL backfill 2026-05-11.
 - **NFC chip-read reliability** — Android OEM/versiyon farkı. iOS CoreNFC `[NOT FOUND IN REPO]`, KMP expect/actual gerekiyor.
 - **BAC/PACE crypto correctness** — SHA-1 anahtar türetme, MRZ check-digit doğrulama. PACE/AA/CA henüz implement edilmedi (`PASSPORT_NFC_ROADMAP.md:164-170`).
 - **ICAO 9303 spec interpretation** — Türkiye TD3 pasaport eşdeğeri, EF.SOD CSCA tam zinciri eksik (%60 doğrulanmış).
@@ -257,7 +257,7 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
    Her uygulama için ayrı kayıt yok. FIVUCSAS destekli her site/uygulamaya tek butonla, 10 farklı yöntemle giriş. Uygulama sahibiysen login/register sayfaları yazmadan, OIDC + PKCE üzerinden tek hosted-login butonu ile kullanıcıları auth edersin.
 
 2. **e-Devlet'ten farkı nedir?**
-   e-Devlet kamu sektörü SSO'su; FIVUCSAS özel sektörün karşılığı. Açık OIDC discovery, drop-in `<FIVUCSAS />` butonu, NFC ICAO 9303 + Active Puzzle + Passive PAD + multi-tenant RLS, KVKK + GDPR + ISO/IEC 30107-3 Level 1 hazırlığı.
+   e-Devlet kamu sektörü SSO'su; FIVUCSAS özel sektörün karşılığı. Açık OIDC discovery, drop-in `<FIVUCSAS />` butonu, NFC ICAO 9303 + Active Puzzle + Passive PAD + multi-tenant izolasyon (Hibernate `@Filter`), KVKK + GDPR + ISO/IEC 30107-3 Level 1 hazırlığı.
 
 3. **Neden 10 farklı auth factor?**
    NIST 800-63B'ye uygun "Know-Have-Are-Show" eksenlerinde her tenant kendi MFA akışını kompoze eder — Java kod yazmadan, sadece JSON tenant config'i ile.
@@ -269,16 +269,16 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
    ~15 satır: SDK init + `loginRedirect()` + token exchange. OIDC discovery + JWKS otomatik.
 
 6. **KVKK uyumu nasıl sağlanıyor?**
-   Embedding'ler Fernet AES-128 + HMAC-SHA256 şifreli at-rest, soft-delete `deleted_at` + `@SQLRestriction`, Postgres RLS 9 tabloda (V25), audit_logs tenant_id partition (V40 + pg_partman V57), Hetzner Almanya/Türkiye-erişimli barındırma.
+   Embedding'ler Fernet AES-128 + HMAC-SHA256 şifreli at-rest (aranabilir pgvector kolonu ANN için plaintext, yalnızca ciphertext kolonu şifreli), soft-delete `deleted_at` + `@SQLRestriction`, tenant izolasyonu uygulama katmanı Hibernate `@Filter` ile (RLS şeması V25 tanımlı ama prod'da inert), audit_logs tenant_id partition (V40 + pg_partman V57), Hetzner Almanya/Türkiye-erişimli barındırma.
 
 7. **Proctoring'e ne katıyor?**
    Session-level peak-sensitive verdict (α=0.5, mean + worst-decile) — spoof-burst dilution'a dayanıklı. 15-axis LivenessProver, 63 ms / frame CPU (Python), 25-30 fps tarayıcı (WebGPU). Background-grid analyzer proctoring-specific.
 
 8. **Veri silme talebi geldiğinde ne oluyor?**
-   `deleted_at` damga, RLS tüm sorgularda soft-delete satırı filtreler. Hard-delete YASAK (FK-cascade 13 tabloya). GDPR/KVKK purge job ile periyodik fiziksel silme.
+   `deleted_at` damga, `@SQLRestriction` tüm sorgularda soft-delete satırı filtreler. Hard-delete YASAK (FK-cascade 13 tabloya). GDPR/KVKK purge job ile periyodik fiziksel silme.
 
 9. **Neden multi-tenant mimari?**
-   Tek deploy ile N tenant. RLS Postgres-native, audit isolation pg_partman ile. Marmara Üniversitesi canlı tenant, demo.fivucsas.com aktif.
+   Tek deploy ile N tenant. İzolasyon uygulama katmanı Hibernate `@Filter` ile (RLS şeması V25 tanımlı ama prod'da inert), audit isolation pg_partman ile. Marmara Üniversitesi canlı tenant, demo.fivucsas.com aktif.
 
 10. **NFC olmasa olmaz mı?**
     Hayır — opsiyonel faktör. Ama "banka-grade KYC" use-case'inde DG2 yüz JPEG2000 ↔ canlı selfie cosine eşleştirmesi ile fiziksel doküman doğrulaması ekler. T.C. kimlik + ICAO 9303 pasaport.
@@ -359,7 +359,7 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
 | TOTP secret length | 32 bytes | `TotpService.java:15` |
 | JWT signing default | RS256 (2026-04-20 flip) | `JwtService.java:27-30` |
 | Max devices/user | 10 | `application.yml:51` |
-| Migrations (Flyway) | 60 (V1-V60) | `db/migration/` |
+| Migrations (Flyway) | 79 (V1-V79) | `db/migration/` |
 
 ### Spoof-detector measured metrics (paper)
 | Metric | Value | Source |
@@ -383,7 +383,7 @@ Server-issued nonced challenge (puzzle UUID, 5dk TTL). **7 yüz** aksiyon (blink
 | Param | Value | Source |
 |---|---|---|
 | Host | Hetzner CX43, 8 vCPU / 16 GB / 150 GB | `CLAUDE.md:44-49` |
-| Production services | 7 (postgres, redis, identity-core x2, biometric x2, gateway, prometheus, grafana) | `docker-compose.prod.yml` |
+| Production services | postgres, redis, identity-core-api, biometric-processor, Traefik, Grafana + Loki/promtail (Prometheus dağıtılmadı) | `docker-compose.prod.yml` |
 | Commits last 6 months (all repos) | ~1,847 | `git log --since='2025-12-01'` |
 | Live tenant | Marmara Üniversitesi (id `11111111-1111-1111-1111-111111111111`) | `V15__seed_realistic_sample_data.sql` |
 | Auth methods | 10/10 | `AuthMethodType.java:1-25` |
