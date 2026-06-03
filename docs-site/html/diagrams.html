@@ -74,7 +74,7 @@
 <body>
 <header>
   <h1><b>FIVUCSAS</b> <span>&lt;/&gt;</span> — Architecture & Flow Diagrams</h1>
-  <p>33 diagrams generated and verified against the real source · rendered client-side with Mermaid · also on GitHub (Rollingcat-Software/docs)</p>
+  <p>35 diagrams generated and verified against the real source · rendered client-side with Mermaid · also on GitHub (Rollingcat-Software/docs)</p>
 </header>
 <nav><a href="#sec-01">Architecture &amp; Deployment</a>
 <a href="#sec-02">Auth · OAuth2 · OIDC · MFA</a>
@@ -101,9 +101,8 @@
 > - **DB image** is pinned `pgvector/pgvector:pg17` in compose; the docs text says
 >   "PostgreSQL 17 + pgvector". Diagrams label it "PostgreSQL + pgvector" to avoid asserting
 >   a version the compose file contradicts.
-> - **Flyway migrations are at V76** in `identity-core-api/CLAUDE.md` (the brief said "V79";
->   the *parent* roadmap references V79 — the API repo's own migration ledger documents
->   through V76, with V73–V76 applied on the 2026-05-31 rebuild). Labeled as such.
+> - **Flyway migrations are at V82** in `identity-core-api` (82 migrations) — the API repo's
+>   own migration ledger is the source of truth. Labeled as such.
 > - The **biometric-processor has no public route** — it is reachable only on the internal
 >   Docker `backend` network, on port 8001, behind an `X-API-Key`.
 
@@ -132,12 +131,12 @@ C4Container
     Container(traefik, "Traefik v3.6", "Reverse proxy", "TLS (Let's Encrypt), HTTP→HTTPS, routing, rate-limit, admin-IP allowlist")
 
     System_Boundary(backend, "Backend (Docker, Hetzner CX43)") {
-        Container(api, "Identity Core API", "Spring Boot 3.4.7 / Java 21 :8080", "Auth, OAuth2/OIDC, MFA, RBAC, multi-tenancy (Hibernate @Filter), 29 controllers, hexagonal")
+        Container(api, "Identity Core API", "Spring Boot 3.4.7 / Java 21 :8080", "Auth, OAuth2/OIDC, MFA, RBAC, multi-tenancy (Hibernate @Filter), 30 controllers, hexagonal")
         Container(bio, "Biometric Processor", "FastAPI / Python 3.12 :8001 — INTERNAL ONLY, X-API-Key", "Face/voice embeddings, liveness, anti-spoof, NFC eMRTD passive-auth (CPU-only, ALLOW_HEAVY_ML=false)")
     }
 
     System_Boundary(data, "Data Stores (Docker volumes)") {
-        ContainerDb(pg, "PostgreSQL + pgvector", "pgvector/pgvector:pg17", "Identity/tenant/audit tables + HNSW vector store for face & voice embeddings")
+        ContainerDb(pg, "PostgreSQL + pgvector", "pgvector/pgvector:pg17", "Identity/tenant/audit tables + IVFFlat vector store for face & voice embeddings")
         ContainerDb(redis, "Redis 7.4", "redis:7.4-alpine", "OTP, MFA sessions, QR/approve-login, rate-limit, TOTP replay markers, ShedLock")
         ContainerDb(files, "Local File Storage", "biometric_uploads volume", "Uploaded images/audio — LocalFileStorage adapter (NOT MinIO)")
     }
@@ -383,7 +382,7 @@ flowchart TB
     end
 
     subgraph L3["③ Backend Services"]
-        B1["Identity Core API — Spring Boot 3.4.7 / Java 21 (:8080, Maven)<br/>Hexagonal · Hibernate @Filter multi-tenancy · Flyway V1–V80"]
+        B1["Identity Core API — Spring Boot 3.4.7 / Java 21 (:8080, Maven)<br/>Hexagonal · Hibernate @Filter multi-tenancy · Flyway V1–V82"]
         B2["Biometric Processor — FastAPI / Python 3.12 (:8001, internal, X-API-Key)<br/>Clean architecture · Pydantic · async · Alembic 0001–0005"]
     end
 
@@ -392,7 +391,7 @@ flowchart TB
     end
 
     subgraph L5["⑤ Data"]
-        D["PostgreSQL + pgvector (pgvector/pgvector:pg17) — HNSW face & voice vectors<br/>Redis 7.4 (redis:7.4-alpine) — OTP / MFA sessions / rate-limit / ShedLock<br/>LocalFileStorage volume (biometric_uploads) — uploads (NOT MinIO)"]
+        D["PostgreSQL + pgvector (pgvector/pgvector:pg17) — IVFFlat face & voice vectors<br/>Redis 7.4 (redis:7.4-alpine) — OTP / MFA sessions / rate-limit / ShedLock<br/>LocalFileStorage volume (biometric_uploads) — uploads (NOT MinIO)"]
     end
 
     subgraph L6["⑥ Infrastructure / Ops"]
@@ -1050,7 +1049,7 @@ flowchart TB
     EMB --> OPT{optimize == true<br/>AND user has voiceprint?}
     OPT -->|"no"| SAVE["Save NEW individual row<br/>+ recompute centroid<br/>(idempotent accumulation)"]
     OPT -->|"yes — İyileştir"| FUSE["fuse_incremental():<br/>quality-weighted running mean<br/>w_existing = q*sample_count, w_new = q_new<br/>→ L2-normalize · never regresses"]
-    SAVE --> STORE[("voice_enrollments<br/>pgvector + HNSW m=16/ef=64")]
+    SAVE --> STORE[("voice_enrollments<br/>pgvector + IVFFlat lists=100")]
     FUSE --> STORE
     Q --> STORE
     STORE --> OUT[/"BiometricResponse<br/>dim=256, quality_score"/]
@@ -1220,7 +1219,7 @@ flowchart TB
 
 Standalone `spoof-detector` repo (algorithms live here; `biometric-processor`
 only wires them). Per frame: MiniFASNet ONNX classifier + a bank of analyzers
-(`src/infrastructure/analyzers/` ships **14**: MiniFASNet, texture, moiré,
+(`src/infrastructure/analyzers/` ships **13**: MiniFASNet, texture, moiré,
 screen-replay, screen-flicker, micro-tremor, rPPG, temporal, landmark-variance,
 device-boundary, background-grid, AR-filter, blink) — 13 analyzers; flash-response is a fusion/device-risk signal, not a standalone analyzer. Frames fuse into a
 **session** verdict that is intentionally NOT a plain average — it is
@@ -1309,7 +1308,7 @@ flowchart LR
 <script type="text/markdown" data-key="04" data-title="Data Model · Use-Cases · RBAC"># FIVUCSAS — Data Model, Domain Class, Use-Case & RBAC Diagrams
 
 Source of truth: `identity-core-api/src/main/java/com/fivucsas/identity/entity/*.java`
-(JPA entities) + `identity-core-api/src/main/resources/db/migration/V1..V80`
+(JPA entities) + `identity-core-api/src/main/resources/db/migration/V1..V82`
 (Flyway) + `security/RbacAuthorizationService.java`. Column / FK / cardinality
 names are taken verbatim from the code — nothing is invented.
 
