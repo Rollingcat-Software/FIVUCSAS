@@ -109,6 +109,10 @@ scp -P 65002 /opt/projects/fivucsas/landing-website/public/poster/index.html u34
 # Source: docs-site/book/ (VitePress; chapters + inline Mermaid). The multi-stage Dockerfile
 # (node build -> nginx serve) builds it; book/public/ carries the diagram gallery + the 3
 # OpenAPI ref pages verbatim (so /diagrams.html + /identity//biometric//sdk/ still resolve).
+# GALLERY SOURCE = docs-site/html/diagrams.html; after editing it, copy it to
+#   docs-site/book/public/diagrams.html (the book SERVES the public/ copy). Likewise links to
+#   the gallery / API refs MUST use target="_blank" (raw <a> in md; target on nav/sidebar/hero
+#   items) or VitePress's SPA router 404s them. nginx try_files resolves the clean /diagrams URL.
 # The old static docs-site/html/ stays in-repo for a trivial revert.
 cd /opt/projects/fivucsas/docs-site
 docker tag docs-site-docs:latest docs-site-docs:rollback-$(date +%Y%m%d)   # capture rollback point first
@@ -208,7 +212,7 @@ CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 
 ## Database
 
-- Flyway migrations V1-V82 (identity-core-api; e.g. V37 tenant_id index, V38 SPA public client flip, V59 audit_logs tenant_id backfill, V60 refresh_tokens plaintext column drop, V73 passkey seed, V79 NFC serial backfill, V80 fivucsas-mobile OAuth client, V81 consent singleton, V82 cross_tenant clients) + Alembic 0001-0005 (biometric-processor)
+- Flyway migrations V1-V83 (identity-core-api; e.g. V37 tenant_id index, V38 SPA public client flip, V59 audit_logs tenant_id backfill, V60 refresh_tokens plaintext column drop, V73 passkey seed, V79 NFC serial backfill, V80 fivucsas-mobile OAuth client, V81 consent singleton, V82 cross_tenant clients, V83 widen chk_enrollment_method for approve_login/passkey) + Alembic 0001-0005 (biometric-processor)
 - Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
 - pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 

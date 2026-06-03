@@ -38,4 +38,4 @@ because the action set is unpredictable and timestamped per attempt.
 - [Authentication & OIDC](./authentication) — the login round-trip and MFA engine.
 - [Biometrics & Liveness](./biometrics) — the face/voice/NFC pipelines and the Puzzle.
 - [Security & Threat Model](./security) — what each attack is countered by.
-- The full [Diagram Gallery](/diagrams.html) has 40+ rendered diagrams.
+- The full <a href="/diagrams.html" target="_blank" rel="noreferrer">Diagram Gallery</a> has 40+ rendered diagrams.

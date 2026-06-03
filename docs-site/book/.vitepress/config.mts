@@ -12,7 +12,12 @@ export default withMermaid(
     lang: 'en-US',
     cleanUrls: true,
     ignoreDeadLinks: true, // the API-ref dirs + gallery live in public/, not as VitePress routes
-    head: [['link', { rel: 'icon', href: '/favicon.svg' }]],
+    head: [
+      ['link', { rel: 'icon', href: '/favicon.svg' }],
+      // Shared FIVUCSAS suite launcher (cross-site app switcher + global EN/TR toggle).
+      // Auto-injects its UI; restores docs parity with the rest of the suite.
+      ['script', { src: 'https://app.fivucsas.com/launcher.js?v=2026-06-03', defer: '' }],
+    ],
     themeConfig: {
       logo: '/favicon.svg',
       nav: [
@@ -20,12 +25,12 @@ export default withMermaid(
         {
           text: 'API Reference',
           items: [
-            { text: 'Identity Core API', link: '/identity/' },
-            { text: 'Biometric Processor API', link: '/biometric/' },
-            { text: 'Widget SDK', link: '/sdk/' },
+            { text: 'Identity Core API', link: '/identity/', target: '_blank' },
+            { text: 'Biometric Processor API', link: '/biometric/', target: '_blank' },
+            { text: 'Widget SDK', link: '/sdk/', target: '_blank' },
           ],
         },
-        { text: 'Diagram Gallery', link: '/diagrams.html' },
+        { text: 'Diagram Gallery', link: '/diagrams.html', target: '_blank' },
         {
           text: 'Live',
           items: [
@@ -78,10 +83,10 @@ export default withMermaid(
             text: 'Reference',
             items: [
               { text: 'API & Gallery', link: '/reference/' },
-              { text: 'Identity Core API ↗', link: '/identity/' },
-              { text: 'Biometric Processor API ↗', link: '/biometric/' },
-              { text: 'Widget SDK ↗', link: '/sdk/' },
-              { text: 'Diagram Gallery ↗', link: '/diagrams.html' },
+              { text: 'Identity Core API ↗', link: '/identity/', target: '_blank' },
+              { text: 'Biometric Processor API ↗', link: '/biometric/', target: '_blank' },
+              { text: 'Widget SDK ↗', link: '/sdk/', target: '_blank' },
+              { text: 'Diagram Gallery ↗', link: '/diagrams.html', target: '_blank' },
             ],
           },
         ],

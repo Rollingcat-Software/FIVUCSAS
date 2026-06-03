@@ -51,9 +51,9 @@ and request a step-up — it returns a signed assertion without a full redirect.
 
 ## API references
 
-- [Identity Core API](/identity/) — auth, OAuth2/OIDC, MFA, enrollment, RBAC (OpenAPI 3.1).
-- [Biometric Processor API](/biometric/) — face/voice/liveness/NFC (internal microservice).
-- [Widget SDK](/sdk/) — the embeddable auth widget.
+- <a href="/identity/" target="_blank" rel="noreferrer">Identity Core API</a> — auth, OAuth2/OIDC, MFA, enrollment, RBAC (OpenAPI 3.1).
+- <a href="/biometric/" target="_blank" rel="noreferrer">Biometric Processor API</a> — face/voice/liveness/NFC (internal microservice).
+- <a href="/sdk/" target="_blank" rel="noreferrer">Widget SDK</a> — the embeddable auth widget.
 
 > The Biometric Processor has **no public route** — tenants never call it directly; the
 > Identity API brokers all biometric operations over `X-API-Key`.

@@ -14,6 +14,8 @@ hero:
     - theme: alt
       text: Diagram Gallery
       link: /diagrams.html
+      target: _blank
+      rel: noreferrer
 features:
   - icon: 🔐
     title: 10 composable auth factors

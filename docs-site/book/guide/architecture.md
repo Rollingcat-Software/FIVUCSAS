@@ -55,4 +55,4 @@ flowchart TB
 > tenant-scoped entities. Postgres Row-Level Security DDL exists (`V25`) but is **inert**
 > (no session GUC is set) — `@Filter` is the live mechanism.
 
-See the [Diagram Gallery](/diagrams.html) for the hexagonal, tech-stack and domain-map diagrams.
+See the <a href="/diagrams.html" target="_blank" rel="noreferrer">Diagram Gallery</a> for the hexagonal, tech-stack and domain-map diagrams.

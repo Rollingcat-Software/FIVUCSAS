@@ -4,14 +4,14 @@ Generated API references and the full visual diagram gallery.
 
 ## API references (OpenAPI 3.1)
 
-- [**Identity Core API**](/identity/) — auth, OAuth2 / OIDC, MFA, enrollment, sessions, RBAC.
-- [**Biometric Processor API**](/biometric/) — face/voice embeddings, liveness, anti-spoof,
+- <a href="/identity/" target="_blank" rel="noreferrer">**Identity Core API**</a> — auth, OAuth2 / OIDC, MFA, enrollment, sessions, RBAC.
+- <a href="/biometric/" target="_blank" rel="noreferrer">**Biometric Processor API**</a> — face/voice embeddings, liveness, anti-spoof,
   NFC (internal microservice — brokered by the Identity API, no public route).
-- [**Widget SDK**](/sdk/) — the embeddable authentication widget.
+- <a href="/sdk/" target="_blank" rel="noreferrer">**Widget SDK**</a> — the embeddable authentication widget.
 
 ## Diagram gallery
 
-- [**Architecture & Flow Diagrams**](/diagrams.html) — 40+ rendered diagrams across five
+- <a href="/diagrams.html" target="_blank" rel="noreferrer">**Architecture & Flow Diagrams**</a> — 40+ rendered diagrams across five
   sections: Architecture & Deployment · Auth/OAuth2/OIDC/MFA · Biometric Pipelines ·
   Data Model/Use-Cases/RBAC · Security/Compliance/Tenancy. Click any diagram to zoom.
 

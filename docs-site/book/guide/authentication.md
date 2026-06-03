@@ -57,5 +57,5 @@ replay marker) · `QR_CODE` (cross-device) · `FACE` (FaceNet-512 + Puzzle) · `
   auth-code single-use with a 10-minute TTL.
 - **Lockout:** 5 strikes → `423`, 15-minute window; plus edge rate-limiting.
 
-See the [Diagram Gallery](/diagrams.html) for the full OIDC, OTP, QR/approve-login,
+See the <a href="/diagrams.html" target="_blank" rel="noreferrer">Diagram Gallery</a> for the full OIDC, OTP, QR/approve-login,
 WebAuthn and refresh-rotation sequences.

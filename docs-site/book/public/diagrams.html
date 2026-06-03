@@ -122,7 +122,7 @@
 > - **DB image** is pinned `pgvector/pgvector:pg17` in compose; the docs text says
 >   "PostgreSQL 17 + pgvector". Diagrams label it "PostgreSQL + pgvector" to avoid asserting
 >   a version the compose file contradicts.
-> - **Flyway migrations are at V82** in `identity-core-api` (82 migrations) — the API repo's
+> - **Flyway migrations are at V83** in `identity-core-api` (V1→V83, 83 files) — the API repo's
 >   own migration ledger is the source of truth. Labeled as such.
 > - The **biometric-processor has no public route** — it is reachable only on the internal
 >   Docker `backend` network, on port 8001, behind an `X-API-Key`.
@@ -353,7 +353,7 @@ flowchart TB
     end
 
     subgraph L3["③ Backend Services"]
-        B1["Identity Core API — Spring Boot 3.4.7 / Java 21 (:8080, Maven)<br/>Hexagonal · Hibernate @Filter multi-tenancy · Flyway V1–V82"]
+        B1["Identity Core API — Spring Boot 3.4.7 / Java 21 (:8080, Maven)<br/>Hexagonal · Hibernate @Filter multi-tenancy · Flyway V1–V83"]
         B2["Biometric Processor — FastAPI / Python 3.12 (:8001, internal, X-API-Key)<br/>Clean architecture · Pydantic · async · Alembic 0001–0005"]
     end
 
@@ -446,7 +446,7 @@ sequenceDiagram
     Note over User,API: Step 1 — PASSWORD (Layer-1)
     User->>Verify: email + password
     Verify->>API: POST /auth/login { email, password, clientId }
-    Note over API: AuthenticateUserService.execute()<br/>tenant ACTIVE? lockout? tenant-lock?<br/>verify password → create MfaSession(step=2,<br/>completed=[PASSWORD], clientId-bound, TTL 10m)
+    Note over API: AuthenticateUserService.execute()<br/>tenant ACTIVE? lockout? tenant-lock?<br/>verify password → create MfaSession(step=2,<br/>completed=[PASSWORD], clientId-bound, TTL 15m)
     API-->>Verify: 200 { mfaSessionToken, totalSteps:2,<br/>currentStep:2, availableMethods:[EMAIL_OTP] }
     end
 
@@ -534,7 +534,7 @@ sequenceDiagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDING : AuthenticateUserService creates MfaSession<br/>(currentStep, totalSteps, TTL 10m)
+    [*] --> PENDING : AuthenticateUserService creates MfaSession<br/>(currentStep, totalSteps, TTL 15m)
     PENDING --> STEP_N : /auth/mfa/step valid → advanceStep()
     STEP_N --> STEP_N : valid intermediate step (currentStep++)
     STEP_N --> STEP_N : invalid factor → recordFailedAttempt (no advance)
@@ -552,7 +552,7 @@ stateDiagram-v2
     EXPIRED --> [*]
 ```
 
-**Caption.** The session starts `PENDING` at the first unsatisfied step (step 2 when PASSWORD is the verified Layer-1, step 1 for identifier-first). Each valid step advances `currentStep`; the final step flips to `COMPLETED` and mints the JWT (widget) or is later `CONSUMED` by `/oauth2/authorize/complete` (hosted). Lockout (5 strikes / 15 min) and expiry (10 min) are terminal.
+**Caption.** The session starts `PENDING` at the first unsatisfied step (step 2 when PASSWORD is the verified Layer-1, step 1 for identifier-first). Each valid step advances `currentStep`; the final step flips to `COMPLETED` and mints the JWT (widget) or is later `CONSUMED` by `/oauth2/authorize/complete` (hosted). Lockout (5 strikes / 15 min) and expiry (15 min) are terminal.
 
 ---
 
@@ -1323,7 +1323,7 @@ sequenceDiagram
 <script type="text/markdown" data-key="04" data-title="Data Model · Use-Cases · RBAC"># FIVUCSAS — Data Model, Domain Class, Use-Case & RBAC Diagrams
 
 Source of truth: `identity-core-api/src/main/java/com/fivucsas/identity/entity/*.java`
-(JPA entities) + `identity-core-api/src/main/resources/db/migration/V1..V82`
+(JPA entities) + `identity-core-api/src/main/resources/db/migration/V1..V83`
 (Flyway) + `security/RbacAuthorizationService.java`. Column / FK / cardinality
 names are taken verbatim from the code — nothing is invented.
 
