@@ -74,4 +74,4 @@ micro-tremor, rPPG, temporal, landmark-variance, and more) fuses per-frame score
 **peak-sensitive** session verdict (blends mean P(real) with the worst sliding window), so a
 brief spoof flash can't be averaged away. Live demo: **amispoof.fivucsas.com**.
 
-See the [Diagram Gallery](/diagrams.html) for enrollment, voice, NFC and spoof-verdict diagrams.
+See the <a href="/diagrams.html" target="_blank" rel="noreferrer">Diagram Gallery</a> for enrollment, voice, NFC and spoof-verdict diagrams.

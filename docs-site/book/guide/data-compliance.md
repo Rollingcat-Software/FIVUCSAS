@@ -13,7 +13,7 @@ Core tables: `users`, `tenants`, `identities` (person layer), `memberships`, `ro
 (rotation families), `mfa_sessions`, `oauth2_clients`, and a **pg_partman-partitioned**
 `audit_logs`.
 
-The [Diagram Gallery](/diagrams.html) has the full ER set, now split for readability into
+The <a href="/diagrams.html" target="_blank" rel="noreferrer">Diagram Gallery</a> has the full ER set, now split for readability into
 **identity/tenancy/RBAC**, **auth methods & flows**, **enrollments/devices/credentials**,
 and **sessions/tokens/clients/audit**.
 

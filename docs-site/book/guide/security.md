@@ -76,4 +76,4 @@ flowchart TB
 Swagger / `/v3/api-docs` / `/actuator` are admin-IP gated (`403` for the public); OIDC
 discovery is public (`200`). Tokens are RS256 with a pinned audience.
 
-See the full [threat model and trust-boundary diagrams](/diagrams.html) in the gallery.
+See the full <a href="/diagrams.html" target="_blank" rel="noreferrer">threat model and trust-boundary diagrams</a> in the gallery.

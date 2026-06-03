@@ -40,5 +40,5 @@ identities stay siloed. Per-tenant **biometric consent** (Model A) gates capture
 Five industry flows ship seeded as starting points: **Fintech KYC**, **Healthcare Basic**,
 **Education Age**, **Telecom Onboarding**, **Simple Document**.
 
-See [Multi-tenancy & flows in the gallery](/diagrams.html) and the
+See <a href="/diagrams.html" target="_blank" rel="noreferrer">Multi-tenancy & flows in the gallery</a> and the
 [Data Model](./data-compliance) for the tenancy/RBAC ER diagrams.
