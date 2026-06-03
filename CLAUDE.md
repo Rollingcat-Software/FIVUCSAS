@@ -88,12 +88,22 @@ cd /opt/projects/fivucsas/verify-widget
 docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d
 # Verify: curl -s https://verify.fivucsas.com/ | grep assets/index-  (new hash) — /login must mount React
 
-# Regenerate + deploy the poster PDF/PNG from the canonical HTML (A0 841×1189mm).
-# Canonical poster = landing-website/public/poster/files/fivucsas-poster.html (served at fivucsas.com/poster/files/; the viewer poster/index.html links only to files/*).
+# Poster = v6 (A0 portrait, 841×1189mm). The PDF is the authoritative print master
+# (supplied pre-rendered in RemoteUploads/"FIVUCSAS Poster v6.pdf"). The source design
+# is a self-unpacking JS bundle ("FIVUCSAS Poster v6.html"); we ship a DECODED static,
+# no-JS HTML as the canonical fivucsas-poster.html. Do NOT headless-render the bundle.
+# Canonical served file = landing-website/public/poster/files/fivucsas-poster.html
+#   (served at fivucsas.com/poster/files/; the viewer poster/index.html links only to files/*).
 cd /opt/projects/fivucsas/landing-website/public/poster/files
-google-chrome-stable --headless=new --no-sandbox --virtual-time-budget=20000 --no-pdf-header-footer --print-to-pdf=fivucsas-poster.pdf "file://$PWD/fivucsas-poster.html"
-google-chrome-stable --headless=new --no-sandbox --virtual-time-budget=20000 --window-size=3179,4494 --screenshot=fivucsas-poster-preview.png "file://$PWD/fivucsas-poster.html"
-scp -P 65002 fivucsas-poster.pdf fivucsas-poster-preview.png u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/files/
+# 1) Decode the design-tool bundle → static no-JS HTML (uuids→inline data: URIs):
+node /opt/projects/fivucsas/scripts/decode-poster-bundle.js "<path to FIVUCSAS Poster vN.html>" fivucsas-poster.html
+# 2) PDF = copy the supplied A0 master (already print-ready):
+cp "<path to FIVUCSAS Poster vN.pdf>" fivucsas-poster.pdf
+# 3) Preview PNG = first page of the PDF (A0 @ 36dpi ≈ 1192×1686 px):
+pdftoppm -png -r 36 -f 1 -l 1 fivucsas-poster.pdf /tmp/v6prev && mv /tmp/v6prev-1.png fivucsas-poster-preview.png
+# 4) Deploy (Hostinger static; the bundle embeds its own fonts/crests — no files/assets/ dir):
+scp -P 65002 fivucsas-poster.html fivucsas-poster.pdf fivucsas-poster-preview.png u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/files/
+scp -P 65002 /opt/projects/fivucsas/landing-website/public/poster/index.html u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/index.html
 
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
