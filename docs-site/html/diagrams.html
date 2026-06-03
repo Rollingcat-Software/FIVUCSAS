@@ -47,6 +47,11 @@
   .dgm-btn:hover { color:var(--ink); border-color:var(--cyan); }
   @media (max-width:760px){ .dgm-bar { opacity:1; } }
   pre.mermaid.dgm svg { cursor:zoom-in; }
+  /* ---- hero inline-SVG figure (polished C4 container diagram, shared with the A0 poster) ---- */
+  figure.hero-dgm { position:relative; background:#f7f3e8; border:1px solid var(--line); border-radius:10px; padding:18px 18px 12px; margin:14px 0; }
+  figure.hero-dgm svg { cursor:zoom-in; display:block; width:100%; height:auto; }
+  figure.hero-dgm figcaption { color:#4a4d54; font-size:12.5px; margin-top:10px; text-align:center; }
+  figure.hero-dgm:hover .dgm-bar, figure.hero-dgm:focus-within .dgm-bar { opacity:1; }
   /* ---- fullscreen zoom/pan overlay ---- */
   .zoom-ov { position:fixed; inset:0; background:rgba(7,12,22,.97); z-index:50; display:none; flex-direction:column; }
   .zoom-ov.on { display:flex; }
@@ -91,7 +96,7 @@
 > **Honesty notes that shaped these diagrams:**
 > - **Tenant isolation is application-layer**, not Postgres RLS — it is a Hibernate
 >   `@Filter(tenantFilter)` (`@FilterDef` on `User` + 8 tenant-scoped entities) plus a
->   controller-level `TenantScopeResolver`. There is **no Postgres Row-Level Security**.
+>   controller-level `TenantScopeResolver`. Postgres Row-Level Security DDL *does* exist (`V25` enables RLS + policies on 9 tables) but is **inert** — the app never sets the `app.current_tenant_id` session GUC, so `@Filter` is the live isolation mechanism.
 > - **GPU-less.** The Hetzner CX43 is CPU-only; `ALLOW_HEAVY_ML=false` (default) hard-blocks
 >   GPU-class models (RetinaFace, YOLOv8/11/12, ArcFace, VGG-Face, GhostFaceNet) at boot.
 > - **Object storage is NOT MinIO.** The biometric-processor persists uploads via
@@ -114,57 +119,7 @@ How the clients, the edge, the two backend services, and the data/3rd-party depe
 fit together. The biometric processor is internal-only (Docker network + `X-API-Key`); the
 two external comms providers (Twilio SMS, Hostinger SMTP) are called only by the Spring API.
 
-```mermaid
-C4Container
-    title FIVUCSAS — Container Diagram (real deployment)
-
-    Person(enduser, "End User", "Logs in / enrolls biometrics via browser or mobile")
-    Person(tenantdev, "Tenant Developer", "Integrates via hosted OIDC + SDK")
-
-    System_Boundary(clients, "Clients") {
-        Container(web, "Web Dashboard", "React 18 + TS + Vite", "app.fivucsas.com — admin & self-service (Hostinger static)")
-        Container(verify, "Hosted Login + Auth Widget", "React build + nginx", "verify.fivucsas.com — OIDC universal login + step-up MFA iframe (Docker)")
-        Container(mobile, "Mobile App", "Kotlin Multiplatform / Compose", "Android · iOS · Desktop — AppAuth OIDC")
-        System_Ext(thirdparty, "Third-Party App", "Tenant relying party — redirective OIDC via FivucsasAuth SDK")
-    }
-
-    Container(traefik, "Traefik v3.6", "Reverse proxy", "TLS (Let's Encrypt), HTTP→HTTPS, routing, rate-limit, admin-IP allowlist")
-
-    System_Boundary(backend, "Backend (Docker, Hetzner CX43)") {
-        Container(api, "Identity Core API", "Spring Boot 3.4.7 / Java 21 :8080", "Auth, OAuth2/OIDC, MFA, RBAC, multi-tenancy (Hibernate @Filter), 30 controllers, hexagonal")
-        Container(bio, "Biometric Processor", "FastAPI / Python 3.12 :8001 — INTERNAL ONLY, X-API-Key", "Face/voice embeddings, liveness, anti-spoof, NFC eMRTD passive-auth (CPU-only, ALLOW_HEAVY_ML=false)")
-    }
-
-    System_Boundary(data, "Data Stores (Docker volumes)") {
-        ContainerDb(pg, "PostgreSQL + pgvector", "pgvector/pgvector:pg17", "Identity/tenant/audit tables + IVFFlat vector store for face & voice embeddings")
-        ContainerDb(redis, "Redis 7.4", "redis:7.4-alpine", "OTP, MFA sessions, QR/approve-login, rate-limit, TOTP replay markers, ShedLock")
-        ContainerDb(files, "Local File Storage", "biometric_uploads volume", "Uploaded images/audio — LocalFileStorage adapter (NOT MinIO)")
-    }
-
-    System_Ext(twilio, "Twilio", "SMS OTP + Verify")
-    System_Ext(smtp, "Hostinger SMTP", "smtp.hostinger.com:587 — email OTP, guest invites")
-
-    Rel(enduser, web, "Uses", "HTTPS")
-    Rel(enduser, verify, "Logs in", "HTTPS")
-    Rel(enduser, mobile, "Uses")
-    Rel(tenantdev, thirdparty, "Builds")
-
-    Rel(web, traefik, "REST /api/v1", "HTTPS")
-    Rel(verify, traefik, "REST + OAuth2", "HTTPS")
-    Rel(mobile, traefik, "OIDC + REST", "HTTPS")
-    Rel(thirdparty, traefik, "OIDC redirect + /oauth2/token", "HTTPS")
-
-    Rel(traefik, api, "Routes api.fivucsas.com + verify origin", "HTTP :8080")
-    Rel(api, bio, "Biometric ops", "HTTP :8001 + X-API-Key")
-
-    Rel(api, pg, "JDBC / JPA")
-    Rel(api, redis, "Lettuce")
-    Rel(bio, pg, "asyncpg — embeddings (pgvector)")
-    Rel(bio, files, "Read/write uploads")
-
-    Rel(api, twilio, "Send SMS", "HTTPS API")
-    Rel(api, smtp, "Send email", "SMTP/TLS")
-```
+<figure class="hero-dgm"><svg viewBox="0 0 1300 1090" role="img" preserveAspectRatio="xMidYMid meet" aria-label="FIVUCSAS C4 container diagram" style="display:block;width:100%;height:auto;font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;"> <title>FIVUCSAS · C4 Container Diagram (real deployment)</title> <style> /* prefixed + scoped to avoid colliding with host-page CSS when embedded */ .c4 *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } .c4-bound{ stroke-dasharray:7 6; stroke-width:1.5; } .c4-card{ fill:#ffffff; stroke:#cbd5e1; stroke-width:1.5; } .c4-ext { fill:#f1f5f9; stroke:#94a3b8; stroke-width:1.5; stroke-dasharray:6 5; } .c4-heroi{ fill:#ffffff; stroke:#4f46e5; stroke-width:2.6; } .c4-heroc{ fill:#ffffff; stroke:#0891b2; stroke-width:2.6; } .c4-db { fill:#f8fafc; stroke:#475569; stroke-width:1.5; } .c4-dblid{ fill:none; stroke:#475569; stroke-width:1.5; } .c4-person{ fill:#eef2ff; stroke:#4f46e5; stroke-width:1.8; } .c4-edge{ fill:#0891b2; } .c4-rel { fill:none; stroke:#64748b; stroke-width:1.7; } .c4-reld{ fill:none; stroke:#64748b; stroke-width:1.7; stroke-dasharray:5 4; } .c4-ttitle { font-size:18px; font-weight:700; fill:#0f172a; } .c4-ttitle2{ font-size:16px; font-weight:700; fill:#0f172a; } .c4-ttech { font-size:16.1px; font-weight:600; fill:#0e7490; } .c4-tdesc { font-size:15.4px; fill:#475569; } .c4-twarn { font-size:15.4px; font-weight:700; fill:#b45309; } .c4-tbound { font-size:17.5px; font-weight:700; fill:#475569; letter-spacing:.05em; } .c4-tedget { font-size:25.2px; font-weight:800; fill:#ffffff; } .c4-tedges { font-size:16.1px; font-weight:500; fill:#e0f7fa; } .c4-tperson{ font-size:17.5px; font-weight:700; fill:#3730a3; } .c4-tpers2 { font-size:13.3px; font-weight:500; fill:#6366f1; } .c4-trel { font-size:14.7px; font-weight:500; fill:#475569; paint-order:stroke; stroke:#ffffff; stroke-width:3.2px; stroke-linejoin:round; } .c4-leg { font-size:16.1px; fill:#475569; } </style> <defs> <marker id="c4ah" viewBox="0 0 8 8" markerWidth="8" markerHeight="8" refX="6.4" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"> <path d="M1,1 L7,4 L1,7 Z" fill="#64748b"/> </marker> </defs> <g class="c4"> <rect class="c4-bound" x="40" y="150" width="1220" height="210" rx="16" fill="#f0f9ff" stroke="#38bdf8"/> <text class="c4-tbound" x="60" y="178">CLIENTS</text> <rect class="c4-bound" x="40" y="520" width="860" height="250" rx="16" fill="#f5f3ff" stroke="#a78bfa"/> <text class="c4-tbound" x="60" y="548">BACKEND · DOCKER ON HETZNER CX43</text> <rect class="c4-bound" x="940" y="520" width="320" height="250" rx="16" fill="#fafafa" stroke="#94a3b8"/> <text class="c4-tbound" x="958" y="548">EXTERNAL SERVICES</text> <rect class="c4-bound" x="40" y="820" width="860" height="232" rx="16" fill="#ecfeff" stroke="#22d3ee"/> <text class="c4-tbound" x="60" y="848">DATA STORES · DOCKER VOLUMES</text> <path class="c4-rel" d="M500,126 L210,196" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M500,126 L500,196" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M500,126 L792,196" marker-end="url(#c4ah)"/> <path class="c4-reld" d="M1098,126 L1098,196" marker-end="url(#c4ah)"/> <text class="c4-trel" x="500" y="146" text-anchor="middle">uses · logs in</text> <text class="c4-trel" x="1098" y="146" text-anchor="middle">integrates (OIDC SDK)</text> <path class="c4-rel" d="M201,344 L372,401" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M500,344 L520,401" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M799,344 L820,401" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M1098,344 L928,401" marker-end="url(#c4ah)"/> <text class="c4-trel" x="650" y="390" text-anchor="middle">HTTPS · REST / OAuth2 / OIDC</text> <path class="c4-rel" d="M662,473 L692,562" marker-end="url(#c4ah)"/> <text class="c4-trel" x="712" y="520" text-anchor="start">routes :8080</text> <path class="c4-rel" d="M512,657 L428,657" marker-end="url(#c4ah)" marker-start="url(#c4ah)"/> <text class="c4-trel" x="470" y="645" text-anchor="middle">REST · X-API-Key</text> <path class="c4-rel" d="M876,612 L958,612" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M876,709 L958,709" marker-end="url(#c4ah)"/> <text class="c4-trel" x="917" y="603" text-anchor="middle">SMS</text> <text class="c4-trel" x="917" y="700" text-anchor="middle">email</text> <path class="c4-rel" d="M170,748 L188,868" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M360,748 L452,868" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M560,748 L486,868" marker-end="url(#c4ah)"/> <path class="c4-rel" d="M760,748 L748,868" marker-end="url(#c4ah)"/> <text class="c4-trel" x="150" y="812" text-anchor="middle">uploads</text> <text class="c4-trel" x="372" y="812" text-anchor="middle">asyncpg</text> <text class="c4-trel" x="567" y="812" text-anchor="middle">JDBC</text> <text class="c4-trel" x="772" y="812" text-anchor="middle">Lettuce</text> <circle class="c4-person" cx="500" cy="56" r="15"/> <rect class="c4-person" x="410" y="62" width="180" height="64" rx="11"/> <text class="c4-tperson" x="500" y="99" text-anchor="middle">End User</text> <text class="c4-tpers2" x="500" y="115" text-anchor="middle">PERSON</text> <circle class="c4-person" cx="1098" cy="56" r="15"/> <rect class="c4-person" x="1008" y="62" width="180" height="64" rx="11"/> <text class="c4-tperson" x="1098" y="99" text-anchor="middle">Tenant Developer</text> <text class="c4-tpers2" x="1098" y="115" text-anchor="middle">PERSON · INTEGRATOR</text> <rect class="c4-card" x="64" y="200" width="275" height="142" rx="12"/> <text class="c4-ttitle" x="98" y="222">Web Dashboard</text> <text class="c4-ttech" x="82" y="248">React 18 · TypeScript · Vite</text> <text class="c4-tdesc" x="82" y="270">app.fivucsas.com · admin &amp;</text> <text class="c4-tdesc" x="82" y="286">self-service · Hostinger static</text> <rect class="c4-card" x="363" y="200" width="275" height="142" rx="12"/> <text class="c4-ttitle" x="397" y="222">Hosted Login + Widget</text> <text class="c4-ttech" x="381" y="248">React build + nginx</text> <text class="c4-tdesc" x="381" y="270">verify.fivucsas.com · OIDC</text> <text class="c4-tdesc" x="381" y="286">universal login + step-up MFA</text> <rect class="c4-card" x="662" y="200" width="275" height="142" rx="12"/> <text class="c4-ttitle" x="696" y="222">Mobile App</text> <text class="c4-ttech" x="680" y="248">Kotlin Multiplatform · Compose</text> <text class="c4-tdesc" x="680" y="270">Android · iOS · Desktop</text> <text class="c4-tdesc" x="680" y="286">AppAuth OIDC</text> <rect class="c4-ext" x="961" y="200" width="275" height="142" rx="12"/> <text class="c4-ttitle" x="995" y="222">Third-Party App</text> <text class="c4-ttech" x="979" y="248" fill="#64748b">External · relying party</text> <text class="c4-tdesc" x="979" y="270">Tenant app · redirective</text> <text class="c4-tdesc" x="979" y="286">OIDC via FivucsasAuth SDK</text> <rect class="c4-edge" x="350" y="405" width="600" height="68" rx="12"/> <text class="c4-tedget" x="650" y="436" text-anchor="middle">Traefik v3.6 · Reverse Proxy</text> <text class="c4-tedges" x="650" y="457" text-anchor="middle">TLS (Let's Encrypt) · routing · rate-limit · admin-IP allowlist</text> <rect class="c4-heroc" x="64" y="566" width="360" height="182" rx="13"/> <text class="c4-ttitle" x="84" y="595">Biometric Processor</text> <text class="c4-ttech" x="84" y="616">FastAPI · Python 3.12 · :8001</text> <text class="c4-twarn" x="84" y="637">⚠ INTERNAL ONLY · X-API-Key</text> <text class="c4-tdesc" x="84" y="657">Face/voice embeddings · liveness ·</text> <text class="c4-tdesc" x="84" y="673">anti-spoof · NFC eMRTD passive-auth</text> <text class="c4-tdesc" x="84" y="689">CPU-only (ALLOW_HEAVY_ML=false)</text> <rect class="c4-heroi" x="516" y="566" width="360" height="182" rx="13"/> <text class="c4-ttitle" x="536" y="595">Identity Core API</text> <text class="c4-ttech" x="536" y="616" fill="#4f46e5">Spring Boot 3.4.7 · Java 21 · :8080</text> <text class="c4-tdesc" x="536" y="637">Auth · OAuth2 / OIDC · MFA · RBAC</text> <text class="c4-tdesc" x="536" y="653">Multi-tenancy · Hibernate @Filter</text> <text class="c4-tdesc" x="536" y="669">30 controllers · hexagonal</text> <rect class="c4-ext" x="962" y="572" width="276" height="80" rx="12"/> <text class="c4-ttitle2" x="980" y="603">Twilio</text> <text class="c4-tdesc" x="980" y="624" fill="#64748b">SMS OTP + Verify</text> <rect class="c4-ext" x="962" y="668" width="276" height="82" rx="12"/> <text class="c4-ttitle2" x="980" y="697">Hostinger SMTP</text> <text class="c4-tdesc" x="980" y="717" fill="#64748b">smtp.hostinger.com:587</text> <text class="c4-tdesc" x="980" y="733" fill="#64748b">email OTP · guest invites</text> <path class="c4-db" d="M64,885 A127,13 0 0 1 318,885 L318,1005 A127,13 0 0 1 64,1005 Z"/> <path class="c4-dblid" d="M64,885 A127,13 0 0 0 318,885"/> <text class="c4-ttitle2" x="191" y="918" text-anchor="middle">Local File Storage</text> <text class="c4-ttech" x="191" y="938" text-anchor="middle">biometric_uploads vol.</text> <text class="c4-tdesc" x="191" y="957" text-anchor="middle">LocalFileStorage adapter</text> <text class="c4-tdesc" x="191" y="973" text-anchor="middle"></text> <path class="c4-db" d="M342,885 A127,13 0 0 1 596,885 L596,1005 A127,13 0 0 1 342,1005 Z"/> <path class="c4-dblid" d="M342,885 A127,13 0 0 0 596,885"/> <text class="c4-ttitle2" x="469" y="918" text-anchor="middle">PostgreSQL + pgvector</text> <text class="c4-ttech" x="469" y="938" text-anchor="middle">pgvector/pgvector:pg17</text> <text class="c4-tdesc" x="469" y="957" text-anchor="middle">Identity · tenant · audit</text> <text class="c4-tdesc" x="469" y="973" text-anchor="middle">+ IVFFlat vector store</text> <path class="c4-db" d="M620,885 A127,13 0 0 1 874,885 L874,1005 A127,13 0 0 1 620,1005 Z"/> <path class="c4-dblid" d="M620,885 A127,13 0 0 0 874,885"/> <text class="c4-ttitle2" x="747" y="918" text-anchor="middle">Redis 7.4</text> <text class="c4-ttech" x="747" y="938" text-anchor="middle">redis:7.4-alpine</text> <text class="c4-tdesc" x="747" y="957" text-anchor="middle">OTP · MFA · rate-limit</text> <text class="c4-tdesc" x="747" y="973" text-anchor="middle">TOTP replay · ShedLock</text> <rect x="940" y="820" width="320" height="232" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/> <text class="c4-tbound" x="958" y="850">LEGEND</text> <rect class="c4-card" x="958" y="866" width="24" height="16" rx="4"/> <text class="c4-leg" x="992" y="879">Internal container (our code)</text> <rect class="c4-ext" x="958" y="898" width="24" height="16" rx="4"/> <text class="c4-leg" x="992" y="911">External system / SaaS</text> <path class="c4-db" d="M958,932 A12,4 0 0 1 982,932 L982,948 A12,4 0 0 1 958,948 Z"/> <path class="c4-dblid" d="M958,932 A12,4 0 0 0 982,932"/> <text class="c4-leg" x="992" y="945">Database / Docker volume</text> <circle class="c4-person" cx="966" cy="966" r="5"/> <rect class="c4-person" x="958" y="972" width="24" height="11" rx="3"/> <text class="c4-leg" x="992" y="980">Person (actor)</text> <path class="c4-rel" d="M958,1006 L980,1006" marker-end="url(#c4ah)"/> <text class="c4-leg" x="992" y="1010">Relationship (protocol)</text> <text x="958" y="1040" class="c4-twarn">⚠</text> <text class="c4-leg" x="992" y="1040" fill="#b45309">Security-critical note</text> </g> </svg><figcaption>Hand-built C4 <strong>Container</strong> diagram — the real production deployment (the same master rendered on the A0 poster). Click / ⛶ to zoom.</figcaption></figure>
 
 ---
 
@@ -1176,41 +1131,47 @@ EAR/MAR/yaw, hand-gesture challenges scored from landmarks), tracks the session,
 and on success issues a short-lived **HS256 JWT verification token** (TTL 300s,
 UUID `jti`). 23 micro-challenges exist in the web registry: **14 face + 9 hand**.
 
+### 4a. Passive — single still frame (`/verify`, `/liveness`)
+
+```mermaid
+flowchart LR
+    P1[/"POST /liveness or /verify<br/>one still frame"/]
+    P2["UniFace MiniFASNet (passive)<br/>texture / depth cue → score"]
+    P3{"is_live AND<br/>score ≥ floor?<br/>(verify floor 0.4)"}
+    P1 --> P2 --> P3
+    P3 -->|"no"| PR[["reject"]]
+    P3 -->|"yes"| PG[["pass to match"]]
+```
+
+### 4b. Active — challenge / response (face + hand)
+
 ```mermaid
 flowchart TB
-    subgraph PASSIVE["PASSIVE — single frame"]
-        P1[/"POST /liveness or /verify<br/>one still frame"/]
-        P2["UniFace MiniFASNet (passive)<br/>texture / depth cue → score"]
-        P3{"is_live AND<br/>score ≥ floor?<br/>(verify floor 0.4)"}
-        P1 --> P2 --> P3
-        P3 -->|"no"| PR[["reject"]]
-        P3 -->|"yes"| PG[["pass to match"]]
-    end
+    A1[/"POST /liveness/active/start<br/>(or /active/gesture/start)"/]
+    A2["StartActiveLiveness:<br/>session_id = uuid4()<br/>pick num_challenges (cfg 1–5, def 3)<br/>session TTL = 120s · per-challenge 5s"]
+    A3["Client performs each action,<br/>POSTs frames to /active/frame"]
+    A4["FACE: MediaPipe FaceLandmarker (server)<br/>EAR (blink), MAR (mouth), yaw (head turn),<br/>eyebrow-raise vs per-session baseline"]
+    A5["HAND/gesture: client sends 21-pt hand<br/>landmarks + anti-spoof scores (landmarks-only,<br/>no server MediaPipe)"]
+    A6{"all challenges<br/>completed in order,<br/>within TTL?"}
+    A7["ActiveLivenessTokenService:<br/>HS256 JWT, scope=active_liveness_verification,<br/>jti=uuid4(), exp = now + 300s"]
+    A1 --> A2 --> A3
+    A3 --> A4
+    A3 --> A5
+    A4 --> A6
+    A5 --> A6
+    A6 -->|"expired → 410"| AEXP[["session expired"]]
+    A6 -->|"not found → 404"| ANF[["unknown session"]]
+    A6 -->|"yes"| A7 --> ATOK[["signed liveness token"]]
+```
 
-    subgraph ACTIVE["ACTIVE — challenge / response"]
-        A1[/"POST /liveness/active/start<br/>(or /active/gesture/start)"/]
-        A2["StartActiveLiveness:<br/>session_id = uuid4()<br/>pick num_challenges (cfg 1–5, def 3)<br/>session TTL = 120s · per-challenge 5s"]
-        A3["Client performs each action,<br/>POSTs frames to /active/frame"]
-        A4["FACE: MediaPipe FaceLandmarker (server)<br/>EAR (blink), MAR (mouth), yaw (head turn),<br/>eyebrow-raise vs per-session baseline"]
-        A5["HAND/gesture: client sends 21-pt hand<br/>landmarks + anti-spoof scores (landmarks-only,<br/>no server MediaPipe)"]
-        A6{"all challenges<br/>completed in order,<br/>within TTL?"}
-        A7["ActiveLivenessTokenService:<br/>HS256 JWT, scope=active_liveness_verification,<br/>jti=uuid4(), exp = now + 300s"]
-        A1 --> A2 --> A3
-        A3 --> A4
-        A3 --> A5
-        A4 --> A6
-        A5 --> A6
-        A6 -->|"expired → 410"| AEXP[["session expired"]]
-        A6 -->|"not found → 404"| ANF[["unknown session"]]
-        A6 -->|"yes"| A7 --> ATOK[["signed liveness token"]]
-    end
+### 4c. Active — puzzle variant (`GeneratePuzzle` / `VerifyPuzzle`)
 
-    subgraph PUZZLE["ACTIVE (puzzle variant) — GeneratePuzzle / VerifyPuzzle"]
-        Z1["GeneratePuzzleUseCase: random steps<br/>(easy 2-3 / standard 3-4 / hard 4-5),<br/>incompatible pairs (turn_left↔turn_right) filtered,<br/>thresholds sent to client (ear 0.21, mar 0.4, yaw 0.15)"]
-        Z2["persist puzzle, expires = timeout + 60s"]
-        Z3["VerifyPuzzleUseCase: anti-replay (P0-#9) —<br/>corrupt/garbage frames counted as FAILURE;<br/>timestamp-before-puzzle rejected"]
-        Z1 --> Z2 --> Z3
-    end
+```mermaid
+flowchart LR
+    Z1["GeneratePuzzleUseCase: random steps<br/>(easy 2-3 / standard 3-4 / hard 4-5),<br/>incompatible pairs (turn_left↔turn_right) filtered,<br/>thresholds sent to client (ear 0.21, mar 0.4, yaw 0.15)"]
+    Z2["persist puzzle,<br/>expires = timeout + 60s"]
+    Z3["VerifyPuzzleUseCase: anti-replay (P0-#9) —<br/>corrupt/garbage frames counted as FAILURE;<br/>timestamp-before-puzzle rejected"]
+    Z1 --> Z2 --> Z3
 ```
 
 ---
@@ -1941,7 +1902,9 @@ flowchart TD
     content.appendChild(sec);
   });
 
-  await mermaid.run({ querySelector: 'pre.mermaid' });
+  // suppressErrors keeps one bad diagram from aborting the rest + the TOC/zoom enhancers
+  try { await mermaid.run({ querySelector: 'pre.mermaid', suppressErrors: true }); }
+  catch (err) { console.error('[mermaid] render error (page still enhanced):', err); }
 
   // ---------- enhancements: TOC jump-nav, per-diagram fullscreen zoom/pan, back-to-top ----------
   (function enhance(){
@@ -1990,15 +1953,15 @@ flowchart TD
     stage.addEventListener('pointerup', () => { dragging=false; stage.classList.remove('drag'); });
 
     // per-diagram toolbar + click-to-zoom
-    document.querySelectorAll('pre.mermaid').forEach(pre => {
-      const svg = pre.querySelector('svg'); if (!svg) return;
-      pre.classList.add('dgm');
-      let h = pre.previousElementSibling; while (h && !/^H[23]$/.test(h.tagName)) h = h.previousElementSibling;
+    document.querySelectorAll('pre.mermaid, figure.hero-dgm').forEach(el => {
+      const svg = el.querySelector('svg'); if (!svg) return;
+      el.classList.add('dgm');
+      let h = el.previousElementSibling; while (h && !/^H[23]$/.test(h.tagName)) h = h.previousElementSibling;
       const name = h ? h.textContent : 'Diagram';
       const bar = document.createElement('div'); bar.className = 'dgm-bar';
       const fs = document.createElement('button'); fs.className='dgm-btn'; fs.textContent='⛶ Fullscreen';
       fs.addEventListener('click', () => open(svg, name));
-      bar.appendChild(fs); pre.appendChild(bar);
+      bar.appendChild(fs); el.appendChild(bar);
       svg.addEventListener('click', () => open(svg, name));
     });
   })();
