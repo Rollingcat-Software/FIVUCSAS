@@ -36,3 +36,30 @@ Branch: `feat/qr-completion-2026-06-03`. Prod api `37ea212` (healthy); app.fivuc
 ## Demo readiness (honest)
 **Presentation-ready:** password+FACE login, dashboard, users (create/edit/status/ROOT), tenants, guest invitations, NFC chip read, biometric enrollment, identity/account-linking.
 **NOT ready:** cross-device QR factor + approve-login factor (#1/#2 failing), QR-login multi-step bridge on app.fivucsas (#3). Recommend demoing the working flows and presenting QR/approve as "shipping" unless #1/#2 are fixed first (needs the log diagnosis).
+
+## 📄 LANDING-PAGE (fivucsas.com) CLAIM CORRECTIONS
+Verified against the codebase 2026-06-04 (5-agent sweep). Edit `landing-website/src/App.tsx`.
+
+**🔴 INACCURATE — must fix (a jury can trivially catch these):**
+- **"rPPG pulse cues"** (anti-spoof) — **TOP PRIORITY, REMOVE.** `rppg_analyzer.py` exists but is **DISABLED** (`config.yaml` rPPG weight = **0.0**); internal notes mark it ANTI-CORRELATED ("detects screen flicker as pulse"). Advertising a switched-off liveness defense is the worst credibility hit. Delete the rPPG claim.
+- **"Redux Toolkit"** → **InversifyJS** (web-app has no redux; DI is InversifyJS v7.10.4).
+- **"3 Microservices"** → **2 backend microservices** (Identity Core API + Biometric Processor); the Admin Dashboard is a React 18 SPA, not a microservice.
+- **"and CLI"** (SDKs) → **REMOVE** — no CLI client exists anywhere.
+- **"10 Auth methods"** → **12** (PASSKEY + APPROVE_LOGIN added V73–74) — or keep "10" and don't list the 2 new ones; pick one and be consistent.
+- **"DeepFace"** (implied primary detector) → **MTCNN detection + Facenet512 embeddings + DeepFace anti-spoof veto + pgvector**.
+- **iOS via KMP** (implies a shipped iOS app) → "Android via KMP; **iOS host app on roadmap**" (shared lib targets iOS, but no iOS app ships).
+- **"250+ API endpoints"** → fine as a floor (actual **~308** = 230 api + 78 bio), but the breakdown shouldn't imply they're all in Identity Core.
+- **"1,800+ tests"** → an **undercount** (~7,032 test methods: 1,600 Java + 896 Kotlin + 1,780 JS/TS + 2,756 Python). Either bump the number OR keep "1,800+" as a safe floor — but **don't say "passing"** unless you've run them green (currently unverified).
+
+**🟡 OVERSTATED — soften:**
+- **"JWT signing: RS256 default"** → "RS256 in prod (enforced at boot; RS256-only JWKS)". The coded *default* is HS512; prod fail-fasts to RS256. HS512 verify path exists but is disabled by default.
+- **"MFA rate-limiting: Retry-After + lockout"** → there's **no explicit account lockout**; it's per-client/IP rate buckets (429 + Retry-After) + refresh-token-family revocation on replay (RFC 6749 §10.4).
+
+**🟢 CONFIRMED accurate (keep):** OAuth2/OIDC/PKCE S256 + discovery + JWKS + refresh rotation; at-rest AES-GCM-256 (TOTP) / Fernet (embeddings); RFC 8176 amr; monthly pg_partman audit partitioning; Spring Boot 3.4.7 / Java 21 / FastAPI / Python 3.12 / React 18 / Traefik v3.6.12; bio "70+ endpoints" (78); Web CDN SDK + iframe widget; Android KMP; **desktop loopback RFC 8252** (OAuthLoopbackClient.kt — real); on-device passive liveness; screen-replay analyzer; NFC ICAO-9303 passive-auth cross-reference.
+
+## ☀️ MORNING PUNCH-LIST (for the fresh session — start here)
+1. **Diagnose #1/#2 (QR + approve factors "başlatılamadı"):** WARP on → `ssh hetzner` → `docker logs identity-core-api | grep -iE "mfa.?step|QR_CODE|APPROVE_LOGIN|logMfaStepFailed|Exception"` at a failure timestamp → read the audit reason → fix (likely `method_not_permitted_for_step` on the dashboard's CHOICE step, or a challenge-handler issue) → redeploy api (branch `feat/qr-completion-2026-06-03`).
+2. **Fix #3 (QR-login dead-end on app.fivucsas):** wire `LoginPage.tsx` `QrLoginPanel` `onMfaPending` → set the returned `mfaSessionToken` into the dashboard MFA state (so it continues like verify.fivucsas's `LoginMfaFlow.resumeSession`). Batch the web redeploy with #1/#2.
+3. **Landing-page corrections** (above) — edit `landing-website/src/App.tsx`, rebuild, deploy to Hostinger. Lead with removing **rPPG**.
+4. Optional: eID-dedup + session-clearing mobile fixes → new APK (v5.3.1).
+5. After demo: `scripts/demo-day-relief.sh --revert`; flag-flips post staging smoke-test.
