@@ -52,6 +52,21 @@
   figure.hero-dgm svg { cursor:zoom-in; display:block; width:100%; height:auto; }
   figure.hero-dgm figcaption { color:#4a4d54; font-size:12.5px; margin-top:10px; text-align:center; }
   figure.hero-dgm:hover .dgm-bar, figure.hero-dgm:focus-within .dgm-bar { opacity:1; }
+  /* ---- use-case grid (replaces the old tall flowchart) ---- */
+  .uc-figure { margin:14px 0; }
+  .uc-legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .uc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+  .uc-card { background:#0e1830; border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .uc-card h4 { margin:0 0 8px; color:var(--cyan); font-size:14px; }
+  .uc-card ul { margin:0; padding-left:18px; }
+  .uc-card li { font-size:13px; margin:3px 0; color:var(--ink); }
+  .uc-actors { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .uc-chip { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:#dbe; white-space:nowrap; }
+  .uc-chip.eu { background:#10243f; border-color:#2ba8b3; }
+  .uc-chip.guest { background:#241a30; border-color:#8a7bd8; }
+  .uc-chip.ta { background:#102a1c; border-color:#3a9a73; }
+  .uc-chip.root { background:#3a1414; border-color:#b9534f; }
+  .uc-chip.dev { background:#2a2410; border-color:#b9963f; }
   /* ---- fullscreen zoom/pan overlay ---- */
   .zoom-ov { position:fixed; inset:0; background:rgba(7,12,22,.97); z-index:50; display:none; flex-direction:column; }
   .zoom-ov.on { display:flex; }
@@ -84,7 +99,8 @@
 <nav><a href="#sec-01">Architecture &amp; Deployment</a>
 <a href="#sec-02">Auth · OAuth2 · OIDC · MFA</a>
 <a href="#sec-03">Biometric Pipelines</a>
-<a href="#sec-04">Data Model · Use-Cases · RBAC</a></nav>
+<a href="#sec-04">Data Model · Use-Cases · RBAC</a>
+<a href="#sec-05">Security &middot; Compliance &middot; Tenancy</a></nav>
 <main id="content"><div class="loading">Rendering diagrams…</div></main>
 
 <script type="text/markdown" data-key="01" data-title="Architecture &amp; Deployment"># FIVUCSAS — System Architecture & Deployment Diagrams
@@ -1265,6 +1281,44 @@ flowchart LR
     NOTE["NO embedding · NO pgvector · NO bio-processor call.<br/>Server-side SHA-256 'fingerprint' path was REMOVED (P1.4).<br/>AuthMethodType.FINGERPRINT is retained ONLY for WebAuthn."]
     SERVER -.-> NOTE
 ```
+
+## 7. The Biometric Puzzle &mdash; active-liveness challenge (end-to-end)
+
+The headline anti-spoof novelty: at each verification the server draws **3-5 random actions
+from a 23-action library** (14 face + 9 hand) with a per-attempt nonce; the client performs
+them while landmarks are scored frame-by-frame under a strict temporal contract. Pre-recorded
+video, deepfake injection and replay all fail because the action set is unpredictable and
+timestamped per attempt.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant C as Client (MediaPipe)
+    participant A as Identity API
+    participant P as Puzzle engine
+    C->>A: begin puzzle challenge
+    A->>P: GeneratePuzzleUseCase
+    P-->>A: 3-5 random actions (of 23) + nonce<br/>thresholds (ear 0.21, mar 0.4, yaw 0.15)<br/>expires = timeout + 60s
+    A-->>C: puzzle (actions, nonce, thresholds)
+    loop each action, in order, within per-step TTL
+        U->>C: perform action (blink / smile / turn / gesture)
+        C->>C: FaceLandmarker 468 + Hands 21<br/>score EAR / MAR / yaw / gesture per frame
+        C->>A: frames + timestamps
+    end
+    A->>P: VerifyPuzzleUseCase (anti-replay P0-#9)
+    Note over P: reject if frames corrupt/garbage,<br/>timestamp-before-puzzle, or out-of-order
+    alt all actions satisfied, in order, in time
+        P-->>A: PASS
+        A-->>C: signed liveness token (HS256, jti, exp +300s)
+    else any check fails
+        P-->>A: FAIL
+        A-->>C: rejected
+    end
+```
+
+---
+
 </script>
 <script type="text/markdown" data-key="04" data-title="Data Model · Use-Cases · RBAC"># FIVUCSAS — Data Model, Domain Class, Use-Case & RBAC Diagrams
 
@@ -1403,10 +1457,9 @@ erDiagram
 
 ---
 
-## 1b. ER Diagram — Auth Methods, Flows, Enrollment, Sessions & Tokens
+## 1b. ER &mdash; Auth Methods & Flows
 
-The configurable N-step auth engine, the credential/enrollment stores, and the
-session/token/audit surfaces.
+The configurable N-step auth engine: methods, per-tenant enablement, flows and ordered steps.
 
 ```mermaid
 erDiagram
@@ -1417,17 +1470,6 @@ erDiagram
     AUTH_METHODS ||--o{ AUTH_FLOW_STEPS : "primary method"
     AUTH_METHODS ||--o{ AUTH_FLOW_STEPS : "fallback_method"
     AUTH_FLOW_STEPS }o--o{ AUTH_METHODS : "auth_flow_step_methods (CHOICE alts)"
-    USERS ||--o{ USER_ENROLLMENTS : "enrolls factors"
-    TENANTS ||--o{ USER_ENROLLMENTS : "scopes"
-    USERS ||--o{ NFC_CARDS : "registers cards"
-    USERS ||--o{ USER_DEVICES : "trusts devices"
-    USERS ||--o{ WEBAUTHN_CREDENTIALS : "passkeys/keys"
-    USERS ||--o{ REFRESH_TOKENS : "holds (family_id)"
-    USERS ||--o{ MFA_SESSIONS : "in-flight login"
-    TENANTS ||--o{ OAUTH2_CLIENTS : "registers RPs"
-    TENANTS ||--o{ AUDIT_LOGS : "scopes"
-    USERS ||--o{ AUDIT_LOGS : "actor (nullable)"
-
     AUTH_METHODS {
         uuid id PK
         enum type "PASSWORD..NFC_DOCUMENT,PASSKEY,APPROVE_LOGIN (UNIQUE)"
@@ -1467,6 +1509,21 @@ erDiagram
         uuid fallback_method_id FK
         jsonb config
     }
+```
+
+---
+
+## 1c. ER &mdash; Enrollments, Devices & Credentials
+
+Per-user credential and enrollment stores (face/voice/fingerprint, NFC, trusted devices, passkeys).
+
+```mermaid
+erDiagram
+    USERS ||--o{ USER_ENROLLMENTS : "enrolls factors"
+    TENANTS ||--o{ USER_ENROLLMENTS : "scopes"
+    USERS ||--o{ NFC_CARDS : "registers cards"
+    USERS ||--o{ USER_DEVICES : "trusts devices"
+    USERS ||--o{ WEBAUTHN_CREDENTIALS : "passkeys/keys"
     USER_ENROLLMENTS {
         uuid id PK
         uuid user_id FK "NOT NULL"
@@ -1506,6 +1563,21 @@ erDiagram
         boolean discoverable "V72 passkey"
         string user_handle "V72 usernameless"
     }
+```
+
+---
+
+## 1d. ER &mdash; Sessions, Tokens, Clients & Audit
+
+In-flight login sessions, rotating refresh-token families, OAuth2 clients, and the partitioned audit log.
+
+```mermaid
+erDiagram
+    USERS ||--o{ REFRESH_TOKENS : "holds (family_id)"
+    USERS ||--o{ MFA_SESSIONS : "in-flight login"
+    TENANTS ||--o{ OAUTH2_CLIENTS : "registers RPs"
+    TENANTS ||--o{ AUDIT_LOGS : "scopes"
+    USERS ||--o{ AUDIT_LOGS : "actor (nullable)"
     REFRESH_TOKENS {
         uuid id PK
         uuid user_id FK "ON DELETE CASCADE"
@@ -1725,77 +1797,7 @@ classDiagram
 Actors and their use cases. ROOT/Platform Owner sits above all tenants;
 Developer/Integrator drives the OIDC surface; Guest is time-limited.
 
-```mermaid
-flowchart LR
-    EU(["End User"])
-    TA(["Tenant Admin"])
-    ROOT(["ROOT / Platform Owner"])
-    DEV(["Developer / Integrator"])
-    GUEST(["Guest"])
-
-    subgraph AUTHN["Authentication & Account"]
-        UC1["Log in with N factors<br/>(PASSWORD + any 2FA/3FA)"]
-        UC2["Identifier-first login<br/>(config-driven engine)"]
-        UC3["Passwordless / passkey<br/>(discoverable WebAuthn)"]
-        UC4["Approve-login<br/>(number matching, cross-device)"]
-        UC5["Step-up MFA (widget)"]
-        UC6["Reset password / verify email"]
-    end
-
-    subgraph ENROLL["Biometrics & Credentials"]
-        UC7["Enroll FACE / VOICE / FINGERPRINT"]
-        UC8["Register NFC card"]
-        UC9["Register passkey / hardware key"]
-        UC10["Manage trusted devices"]
-        UC11["Grant/revoke per-tenant<br/>biometric consent"]
-    end
-
-    subgraph SELF["Self-Service / Identity"]
-        UC12["View profile & enrollments"]
-        UC13["Link / unlink accounts<br/>(person across tenants)"]
-        UC14["Switch membership<br/>(in-session, same identity)"]
-        UC15["Export data / request deletion<br/>(GDPR / KVKK)"]
-    end
-
-    subgraph TENANT["Tenant Administration"]
-        UC16["Manage users & guests"]
-        UC17["Configure auth flows & steps"]
-        UC18["Enable tenant auth methods"]
-        UC19["Manage roles & permissions"]
-        UC20["Manage email domains<br/>(DNS-TXT verify)"]
-        UC21["View tenant audit logs"]
-    end
-
-    subgraph PLATFORM["Platform Administration"]
-        UC22["Manage all tenants<br/>(create/suspend/delete)"]
-        UC23["Cross-tenant access & audit"]
-        UC24["Assign global/ROOT roles"]
-        UC25["System configuration"]
-    end
-
-    subgraph INTEG["OIDC / Integration"]
-        UC26["Register OAuth2 client"]
-        UC27["Redirect login (PKCE)<br/>+ token exchange"]
-        UC28["Rotate client secret"]
-        UC29["Consume OIDC discovery / JWKS"]
-        UC30["Embed auth widget / SDK"]
-    end
-
-    EU --> UC1 & UC2 & UC3 & UC4 & UC6
-    EU --> UC7 & UC8 & UC9 & UC10 & UC11
-    EU --> UC12 & UC13 & UC14 & UC15
-    GUEST --> UC1 & UC12
-    GUEST --> UC5
-
-    TA --> UC16 & UC17 & UC18 & UC19 & UC20 & UC21
-    TA --> UC1
-
-    ROOT --> UC22 & UC23 & UC24 & UC25
-    ROOT --> UC16 & UC17 & UC19 & UC21
-
-    DEV --> UC26 & UC27 & UC28 & UC29 & UC30
-    DEV --> UC5
-```
+<figure class="uc-figure"><div class="uc-legend"><span class="uc-chip eu">End User</span><span class="uc-chip guest">Guest</span><span class="uc-chip ta">Tenant Admin</span><span class="uc-chip root">ROOT / Platform Owner</span><span class="uc-chip dev">Developer</span></div><div class="uc-grid"><div class="uc-card"><h4>Authentication &amp; Account</h4><ul><li>Log in with N factors (PASSWORD + any 2FA/3FA)</li><li>Identifier-first login (config-driven)</li><li>Passwordless / passkey (discoverable WebAuthn)</li><li>Approve-login (number matching, cross-device)</li><li>Step-up MFA (widget)</li><li>Reset password / verify email</li></ul><div class="uc-actors"><span class="uc-chip eu">End User</span><span class="uc-chip guest">Guest</span><span class="uc-chip ta">Tenant Admin</span></div></div><div class="uc-card"><h4>Biometrics &amp; Credentials</h4><ul><li>Enroll FACE / VOICE / FINGERPRINT</li><li>Register NFC card</li><li>Register passkey / hardware key</li><li>Manage trusted devices</li><li>Grant / revoke per-tenant biometric consent</li></ul><div class="uc-actors"><span class="uc-chip eu">End User</span></div></div><div class="uc-card"><h4>Self-Service / Identity</h4><ul><li>View profile &amp; enrollments</li><li>Link / unlink accounts (person across tenants)</li><li>Switch membership (in-session, same identity)</li><li>Export data / request deletion (GDPR / KVKK)</li></ul><div class="uc-actors"><span class="uc-chip eu">End User</span></div></div><div class="uc-card"><h4>Tenant Administration</h4><ul><li>Manage users &amp; guests</li><li>Configure auth flows &amp; steps</li><li>Enable tenant auth methods</li><li>Manage roles &amp; permissions</li><li>Manage email domains (DNS-TXT verify)</li><li>View tenant audit logs</li></ul><div class="uc-actors"><span class="uc-chip ta">Tenant Admin</span><span class="uc-chip root">ROOT</span></div></div><div class="uc-card"><h4>Platform Administration</h4><ul><li>Manage all tenants (create / suspend / delete)</li><li>Cross-tenant access &amp; audit</li><li>Assign global / ROOT roles</li><li>System configuration</li></ul><div class="uc-actors"><span class="uc-chip root">ROOT / Platform Owner</span></div></div><div class="uc-card"><h4>OIDC / Integration</h4><ul><li>Register OAuth2 client</li><li>Redirect login (PKCE) + token exchange</li><li>Rotate client secret</li><li>Consume OIDC discovery / JWKS</li><li>Embed auth widget / SDK</li></ul><div class="uc-actors"><span class="uc-chip dev">Developer</span></div></div></div></figure>
 
 ---
 
@@ -1869,6 +1871,157 @@ flowchart TD
   V71 grant), but its real power is `user_type=ROOT`, which bypasses permission
   checks entirely. Tenant-scoped `TENANT_ADMIN` roles were stripped to
   tenant-level grants only (V76).
+</script>
+<script type="text/markdown" data-key="05" data-title="Security &middot; Compliance &middot; Tenancy"># FIVUCSAS — Security, Compliance & Multi-Tenancy
+
+> Added 2026-06-03: the threat model, the tenant-configurable flow engine, the KVKK/GDPR
+> data lifecycle, and the deployment trust boundary — grounded in the same code/config
+> (`SecurityConfig`, `auth_flows`/`auth_flow_steps`, `@Filter`, ICAO 9303, V25/V35/V50/V72)
+> as the rest of this gallery.
+
+## 1. Threat model — attack &rarr; mitigation
+
+How each common identity attack is countered. Phishing-resistant factors, hybrid liveness
+(passive PAD + the active Biometric Puzzle), single-use / rotating secrets, and fail-closed
+document authentication are the load-bearing controls.
+
+```mermaid
+flowchart LR
+    classDef atk fill:#3a1414,stroke:#b9534f,color:#f3d4d4;
+    classDef ctl fill:#0e2a1a,stroke:#3a9a73,color:#c9f0dd;
+
+    subgraph A["Attacks"]
+        direction TB
+        T1["Phishing / credential stuffing"]:::atk
+        T2["SIM-swap"]:::atk
+        T3["Password-DB leak"]:::atk
+        T4["OTP / token replay"]:::atk
+        T5["Brute force"]:::atk
+        T6["Printed photo / screen replay"]:::atk
+        T7["Deepfake / video injection"]:::atk
+        T8["Mask / 3D presentation"]:::atk
+        T9["Forged ID document"]:::atk
+        T10["Cross-tenant data access"]:::atk
+        T11["Stolen refresh token (XSS)"]:::atk
+    end
+
+    subgraph C["Controls in FIVUCSAS"]
+        direction TB
+        M1["Passkey / WebAuthn (phishing-resistant)<br/>+ composable MFA (10 factors)"]:::ctl
+        M2["Multi-factor: SMS never the sole factor;<br/>TOTP / passkey / face available"]:::ctl
+        M3["BCrypt cost 12 + MFA required"]:::ctl
+        M4["OTP single-use (NIST 5-strike) &middot; TOTP replay marker &middot;<br/>refresh rotation + reuse&rarr;family-revoke &middot; auth-code 10min single-use"]:::ctl
+        M5["Account lockout 5 / 15min (423) + rate-limit"]:::ctl
+        M6["Passive PAD (MiniFASNet) + screen-replay / Moir&eacute; / temporal analyzers"]:::ctl
+        M7["Active Biometric Puzzle: per-attempt nonce,<br/>random 3-5 of 23 actions, timestamp contract"]:::ctl
+        M8["Texture / depth cues + challenge-response"]:::ctl
+        M9["ICAO 9303 passive auth: signed DG hash, fail-closed"]:::ctl
+        M10["Hibernate @Filter tenant isolation + pairwise OIDC sub"]:::ctl
+        M11["Short-lived RS256 access JWT + rotating refresh + family revoke"]:::ctl
+    end
+
+    T1 --> M1
+    T2 --> M2
+    T3 --> M3
+    T4 --> M4
+    T5 --> M5
+    T6 --> M6
+    T6 --> M7
+    T7 --> M7
+    T8 --> M8
+    T8 --> M7
+    T9 --> M9
+    T10 --> M10
+    T11 --> M11
+```
+
+---
+
+## 2. Tenant-configurable verification flows &mdash; "one platform, infinite flows"
+
+Each tenant assembles its own flow from the methods it enables &mdash; which steps, in what
+order, with which thresholds &mdash; persisted as `auth_flows` + ordered `auth_flow_steps`
+and assembled at runtime via `GET /auth/login-config`. **No code change, no redeploy.**
+Five industry templates ship seeded.
+
+```mermaid
+flowchart TB
+    classDef cfg fill:#10243f,stroke:#2ba8b3,color:#dbeafe;
+    classDef ex fill:#1a1530,stroke:#8a7bd8,color:#e6e0ff;
+
+    ADMIN(["Tenant Admin"]) --> BUILDER["Flow builder<br/>(dashboard / API)"]:::cfg
+    BUILDER --> METHODS["Enable tenant auth methods<br/>(any subset of the 10)"]:::cfg
+    BUILDER --> FLOW["auth_flows + auth_flow_steps<br/>ordered &middot; per-step method &middot; threshold"]:::cfg
+    METHODS --> FLOW
+    FLOW --> ENGINE{{"Runtime engine<br/>GET /auth/login-config &rarr; assemble"}}:::cfg
+    ENGINE --> EX1["BANK &middot; KYC<br/>NFC &rarr; Face &rarr; OTP"]:::ex
+    ENGINE --> EX2["EDUCATION<br/>Liveness &rarr; Face"]:::ex
+    ENGINE --> EX3["ACCESS<br/>Face &rarr; Hardware Key"]:::ex
+    TPL["Seeded templates: Fintech KYC &middot; Healthcare Basic &middot;<br/>Education Age &middot; Telecom Onboarding &middot; Simple Document"]:::cfg
+    TPL -. "starting point" .-> FLOW
+```
+
+---
+
+## 3. KVKK / GDPR &mdash; biometric data lifecycle
+
+Consent-gated capture, scoped use, and full data-subject rights (export / revoke / delete).
+Per-tenant biometric consent (Model A) and pairwise OIDC `sub` keep one person's identity
+siloed per tenant.
+
+```mermaid
+flowchart LR
+    classDef st fill:#10243f,stroke:#2ba8b3,color:#dbeafe;
+    classDef right fill:#0e2a1a,stroke:#3a9a73,color:#c9f0dd;
+    classDef del fill:#3a1414,stroke:#b9534f,color:#f3d4d4;
+
+    CONSENT["Per-tenant consent<br/>(Model A &middot; granular)"]:::st --> ENROLL["Enroll FACE / VOICE"]:::st
+    ENROLL --> STORE["Embeddings at rest<br/>(pgvector + Docker volume)"]:::st
+    STORE --> USE["Use: 1:1 verify / 1:N search<br/>(tenant-scoped via @Filter)"]:::st
+    USE --> R1["Export data<br/>(My Profile / GDPR)"]:::right
+    USE --> R2["Revoke consent<br/>(stops further use)"]:::right
+    USE --> R3["Request deletion"]:::right
+    R2 --> PURGE["Purge biometric rows;<br/>users soft-deleted (deletedAt)"]:::del
+    R3 --> PURGE
+```
+
+---
+
+## 4. Deployment trust boundary
+
+The same containers as the C4 hero through a security lens: one public edge, exactly one
+public app, an internal-only ML service, and a private data zone.
+
+```mermaid
+flowchart TB
+    classDef edge fill:#10243f,stroke:#2ba8b3,color:#dbeafe;
+    classDef pub fill:#1a2f1a,stroke:#5aa45a,color:#dfeede;
+    classDef int fill:#2a2410,stroke:#b9963f,color:#fde9c2;
+    classDef data fill:#1a1530,stroke:#8a7bd8,color:#e6e0ff;
+
+    subgraph UNTRUSTED["Internet (untrusted)"]
+        CL["Browser &middot; Mobile &middot; 3rd-party OIDC client"]
+    end
+    subgraph EDGE["Edge"]
+        TR["Traefik v3.6<br/>TLS &middot; rate-limit &middot; admin-IP allowlist<br/>(Swagger / actuator gated)"]:::edge
+    end
+    subgraph BACKEND["Docker 'backend' network (private)"]
+        API["Identity Core API :8080<br/>ONLY public-routed service"]:::pub
+        BIO["Biometric Processor :8001<br/>INTERNAL ONLY &middot; X-API-Key"]:::int
+    end
+    subgraph DATA["Data zone (Docker volumes)"]
+        PG["PostgreSQL + pgvector"]:::data
+        RD["Redis 7.4"]:::data
+        FS["biometric_uploads volume"]:::data
+    end
+    CL -->|HTTPS| TR
+    TR -->|"only :8080"| API
+    API -->|"X-API-Key"| BIO
+    API --> PG
+    API --> RD
+    BIO --> PG
+    BIO --> FS
+```
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
