@@ -105,6 +105,17 @@ pdftoppm -png -r 36 -f 1 -l 1 fivucsas-poster.pdf /tmp/v6prev && mv /tmp/v6prev-
 scp -P 65002 fivucsas-poster.html fivucsas-poster.pdf fivucsas-poster-preview.png u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/files/
 scp -P 65002 /opt/projects/fivucsas/landing-website/public/poster/index.html u349700627@46.202.158.52:~/domains/fivucsas.com/public_html/poster/index.html
 
+# Deploy docs.fivucsas.com — the VitePress "book" (Docker/nginx via Traefik, NOT Hostinger)
+# Source: docs-site/book/ (VitePress; chapters + inline Mermaid). The multi-stage Dockerfile
+# (node build -> nginx serve) builds it; book/public/ carries the diagram gallery + the 3
+# OpenAPI ref pages verbatim (so /diagrams.html + /identity//biometric//sdk/ still resolve).
+# The old static docs-site/html/ stays in-repo for a trivial revert.
+cd /opt/projects/fivucsas/docs-site
+docker tag docs-site-docs:latest docs-site-docs:rollback-$(date +%Y%m%d)   # capture rollback point first
+docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d
+# REVERT (instant, no rebuild): docker tag docs-site-docs:rollback-YYYYMMDD docs-site-docs:latest \
+#   && docker compose -f docker-compose.prod.yml up -d --no-build    (or: git revert the PR + rebuild)
+
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
