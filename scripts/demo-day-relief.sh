@@ -15,12 +15,20 @@
 #   4. Raise access-token TTL       15 min → 2 h   (.env.prod JWT_EXPIRATION, no rebuild)
 #   5. Recreate identity-core-api   (applies #4 + resets in-memory Bucket4j login buckets)
 #
-# It does NOT rebuild any image. Step 4 only adds an env var the app already reads
-# (`expiration: ${JWT_EXPIRATION:900000}` in application-prod.yml:140), so `up -d`
-# recreates the container with the new value — no code change.
+# It does NOT rebuild any image. Step 4 sets JWT_EXPIRATION in .env.prod; this only
+# reaches the container because docker-compose.prod.yml passes it through in the api
+# `environment:` block (`JWT_EXPIRATION: ${JWT_EXPIRATION:-900000}`, added 2026-06-03).
+# A var that lives ONLY in .env.prod is NOT injected — the service uses an explicit
+# `environment:` block, not `env_file:`. The app reads it as
+# `expiration: ${JWT_EXPIRATION:900000}` (application-prod.yml:140), so `up -d` recreates
+# the container with the new value. (Earlier the compose set a DEAD `JWT_ACCESS_TOKEN_EXPIRATION`
+# the app never reads, so step 4 silently no-op'd — fixed.)
 #
-# Secrets are NEVER read into this script: the psql/redis credentials are expanded
-# INSIDE the respective containers from their own env; docker reads .env.prod natively.
+# Secrets are NEVER hardcoded in this script. Step 2 (psql lockout clear) execs inside
+# shared-postgres. Step 3 (Redis flush) is BEST-EFFORT — shared-redis has no REDIS_PASSWORD
+# env (password is on --requirepass), so the AUTH may fail; that is OK because step 5's api
+# recreate is what actually resets the high-value in-memory login/MFA buckets, and the Redis
+# counters self-expire in 1-5 min anyway.
 #
 # USAGE:
 #   ./demo-day-relief.sh            # DRY RUN — prints what it would do, changes nothing
