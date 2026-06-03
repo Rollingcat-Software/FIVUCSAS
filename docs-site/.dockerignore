@@ -1,0 +1,4 @@
+book/node_modules
+book/.vitepress/dist
+book/.vitepress/cache
+html
