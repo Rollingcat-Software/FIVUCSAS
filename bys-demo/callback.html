@@ -7,7 +7,7 @@ html[data-lang="tr"] [data-en]{ display:none !important; }
 html[data-lang="en"] [data-tr]{ display:none !important; }
 </style>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://verify.fivucsas.com https://app.fivucsas.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.fivucsas.com https://verify.fivucsas.com; frame-src https://verify.fivucsas.com; base-uri 'self'; form-action 'self' https://verify.fivucsas.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marmara BYS - Authentication | FIVUCSAS Demo</title>
     <meta name="description" content="FIVUCSAS biyometrik kimlik doğrulama işlemi sonucu. OAuth callback sayfası.">
@@ -48,30 +48,30 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
             <!-- Loading State -->
             <div id="loading-state">
                 <div class="spinner"></div>
-                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulanıyor</h2>
-                <p style="color: var(--text-light);">FIVUCSAS ile kimliğiniz doğrulanıyor...</p>
+                <h2 style="margin-bottom: 0.5rem;"><span data-tr>Kimlik Doğrulanıyor</span><span data-en>Verifying Identity</span></h2>
+                <p style="color: var(--text-light);"><span data-tr>FIVUCSAS ile kimliğiniz doğrulanıyor...</span><span data-en>Verifying your identity with FIVUCSAS...</span></p>
             </div>
 
             <!-- Success State (hidden initially) -->
             <div id="success-state" style="display: none;">
                 <div class="success-icon" style="color: var(--success);">&#x2705;</div>
-                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarılı</h2>
-                <p style="color: var(--text-light); margin-bottom: 1rem;">Kimliğiniz FIVUCSAS üzerinden doğrulandı</p>
+                <h2 style="margin-bottom: 0.5rem;"><span data-tr>Kimlik Doğrulama Başarılı</span><span data-en>Identity Verified</span></h2>
+                <p style="color: var(--text-light); margin-bottom: 1rem;"><span data-tr>Kimliğiniz FIVUCSAS üzerinden doğrulandı</span><span data-en>Your identity was verified via FIVUCSAS</span></p>
 
                 <dl class="token-info" id="token-info"></dl>
 
                 <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1.5rem;">
-                    <span id="countdown">5</span> saniye içinde panele yönlendiriliyorsunuz...
+                    <span data-tr><span id="countdown">5</span> saniye içinde panele yönlendiriliyorsunuz...</span><span data-en>Redirecting to the dashboard in <span id="countdown-en">5</span> seconds...</span>
                 </p>
-                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;">Hemen Devam Et</button>
+                <button id="continue-now" class="btn btn-primary" style="margin-top: 0.75rem;"><span data-tr>Hemen Devam Et</span><span data-en>Continue Now</span></button>
             </div>
 
             <!-- Error State (hidden initially) -->
             <div id="error-state" style="display: none;">
                 <div class="success-icon" style="color: var(--danger);">&#x274C;</div>
-                <h2 style="margin-bottom: 0.5rem;">Kimlik Doğrulama Başarısız</h2>
+                <h2 style="margin-bottom: 0.5rem;"><span data-tr>Kimlik Doğrulama Başarısız</span><span data-en>Identity Verification Failed</span></h2>
                 <p id="error-message" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
-                <a href="index.html" class="btn btn-primary">Tekrar Dene</a>
+                <a href="index.html" class="btn btn-primary"><span data-tr>Tekrar Dene</span><span data-en>Try Again</span></a>
             </div>
         </div>
     </div>
@@ -186,10 +186,13 @@ html[data-lang="en"] [data-tr]{ display:none !important; }
         // Countdown redirect
         var count = 5;
         var countEl = document.getElementById('countdown');
+        var countElEn = document.getElementById('countdown-en');
         countEl.textContent = count;
+        if (countElEn) countElEn.textContent = count;
         var timer = setInterval(function() {
             count--;
             countEl.textContent = count;
+            if (countElEn) countElEn.textContent = count;
             if (count <= 0) {
                 clearInterval(timer);
                 window.location.href = 'dashboard.html';
