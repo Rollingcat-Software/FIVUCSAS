@@ -702,7 +702,10 @@ a { color: inherit; text-decoration: none; }
    real portal at a glance while staying honestly labeled as a demonstration. */
 .demo-chip {
     position: fixed;
-    right: 16px;
+    /* Left corner: the shared <fivucsas-launcher> FAB owns bottom-right (right:16/
+       bottom:16 at a near-max z-index) and was covering this chip. */
+    left: 16px;
+    right: auto;
     bottom: 16px;
     z-index: 200;
     display: inline-flex;
