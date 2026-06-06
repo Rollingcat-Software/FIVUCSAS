@@ -159,6 +159,10 @@ body[data-published="false"] .row a.live{ display:none; }
 @media (max-width: 480px){
   .shell{ padding-left:16px; padding-right:16px; }
   .status-pill{ font-size:11px; letter-spacing:.05em; padding:8px 13px; gap:8px; max-width:100%; }
+  /* URL takes a full row so the "Copy link" button wraps below, left-aligned —
+     keeps it out of the shared launcher FAB's bottom-right column */
+  .copy-link{ display:flex; width:100%; }
+  .copy-link #shareUrl{ flex-basis:100%; }
 }
 </style>
 </head>
