@@ -122,6 +122,13 @@ docker compose -f docker-compose.prod.yml build && docker compose -f docker-comp
 
 # Check all services
 docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# Drift check — production vs origin/master (run before demos/deploys; read-only)
+# Catches fixes shipped straight to prod but never merged back. Exit 1 = live
+# static content out of sync with master; submodule/docker findings are advisory.
+scripts/drift-check.sh                 # full sweep (static + submodules + docker)
+scripts/drift-check.sh --static        # only Hostinger static files
+scripts/drift-check.sh --no-fetch -q   # fast, summary only
 ```
 
 **ALWAYS use `--env-file .env.prod`** for Docker compose on prod.
