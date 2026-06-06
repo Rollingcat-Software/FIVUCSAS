@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr" data-lang="tr">
+<head>
+<meta charset="utf-8">
+<title>FIVUCSAS — Graduation Thesis · Coming Soon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- noindex until the thesis is submitted & format-checked (avoids self-match in similarity checkers) -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="FIVUCSAS graduation thesis — Face & Identity Verification using Cloud-based SaaS Models. Marmara University, Computer Engineering. The full thesis will be published here after submission.">
+<meta property="og:title" content="FIVUCSAS — Graduation Thesis (Coming Soon)">
+<meta property="og:description" content="Face & Identity Verification using Cloud-based SaaS Models. Marmara University CSE4298 graduation thesis — coming soon.">
+<meta property="og:url" content="https://fivucsas.com/thesis/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap">
+<style>
+/* Language gating — applied immediately to prevent flash */
+html[data-lang="tr"] [data-en]{ display:none !important; }
+html[data-lang="en"] [data-tr]{ display:none !important; }
+:root{
+  --bg:#0B2545; --bg-2:#112F5A; --paper:#F5EFE0; --card:#FFFCEF;
+  --ink:#161616; --ink-2:#2A2A2A; --muted:#5C5F66;
+  --cyan:#2BA8B3; --cyan-2:#1d8a93; --gold:#FBE9A3; --crimson:#9A2D2D;
+  --rule:rgba(255,255,255,.14);
+  --serif:"IBM Plex Serif", "Times New Roman", Georgia, serif;
+  --sans:"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:var(--sans); color:#F6F1E4;
+  background:radial-gradient(1200px 800px at 20% -10%, rgba(43,168,179,.18), transparent 60%), linear-gradient(180deg,#0B2545 0%,#0B2545 80%,#091C36 100%);
+  min-height:100vh; line-height:1.5;
+}
+a{ color:var(--cyan); text-decoration:none; }
+a:hover{ color:#FBF7EC; }
+.shell{ max-width:1180px; margin:0 auto; padding:32px 24px 80px 24px; }
+
+/* Nav */
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:10px 0 30px 0;
+  font-family:var(--mono); font-size:14px; letter-spacing:.14em; text-transform:uppercase; }
+.nav .brand{ display:flex; align-items:center; gap:10px; }
+.nav .brand .mark{ font-weight:700; color:var(--cyan); font-size:18px; letter-spacing:-.01em; text-transform:none; }
+.nav .brand .mark .angle{ color:var(--gold); font-weight:500; }
+
+/* Hero */
+.hero{ display:grid; grid-template-columns: minmax(280px, 440px) 1fr; gap:48px; align-items:center; padding:24px 0 50px 0; }
+
+/* Cover mockup (no thesis content — public cover info only) */
+.cover-wrap{ position:relative; aspect-ratio: 1/1.414; transform: rotate(-1.2deg); transition: transform .3s ease; }
+.cover-wrap:hover{ transform: rotate(0deg) scale(1.01); }
+.cover{
+  position:absolute; inset:0; background:#FCFBF7; color:#1a1a1a; border-radius:10px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.35);
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding:9% 8%; font-family:var(--serif); overflow:hidden;
+}
+.cover .logos{ display:flex; gap:14px; align-items:center; justify-content:center; margin-bottom:6%; }
+.cover .logos img{ height:46px; width:auto; object-fit:contain; }
+.cover .uni{ font-size:13px; font-weight:600; letter-spacing:.02em; color:#222; line-height:1.35; }
+.cover .dept{ font-size:11px; color:#555; margin-top:3px; }
+.cover .rule{ width:46%; height:2px; background:#0B2545; margin:7% auto; opacity:.8; }
+.cover .ttl{ font-size:17px; font-weight:600; line-height:1.3; color:#0B2545; }
+.cover .sub{ font-size:11.5px; color:#444; margin-top:5%; font-family:var(--sans); }
+.cover .authors{ margin-top:auto; font-size:11.5px; color:#222; font-family:var(--sans); line-height:1.55; }
+.cover .authors b{ font-weight:600; }
+.cover .year{ font-size:12px; color:#0B2545; font-weight:600; margin-top:6%; font-family:var(--mono); }
+.cover .watermark{
+  position:absolute; top:14px; right:-34px; transform:rotate(45deg);
+  background:var(--crimson); color:#fff; font-family:var(--mono); font-size:10px; font-weight:700;
+  letter-spacing:.18em; padding:5px 44px; text-transform:uppercase; box-shadow:0 4px 10px rgba(0,0,0,.3);
+}
+
+.hero-info .eyebrow{ font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:.22em; text-transform:uppercase; }
+.hero-info .acronym{ font-family:var(--mono); font-size:62px; font-weight:700; line-height:1; color:var(--cyan); letter-spacing:-.02em; margin:14px 0 14px 0; }
+.hero-info .acronym .angle{ color:var(--gold); font-weight:500; font-size:46px; }
+.hero-info h1{ font-family:var(--serif); font-size:40px; line-height:1.1; font-weight:500; margin:0 0 18px 0; color:#FBF7EC; letter-spacing:-.01em; }
+.hero-info h1 em{ font-style:italic; color:var(--cyan); font-weight:600; }
+.hero-info .lede{ font-size:17px; color:#DDE6F2; line-height:1.6; margin-bottom:22px; max-width:580px; }
+.status-pill{ display:inline-flex; align-items:center; gap:10px; background:rgba(251,233,163,.12);
+  border:1px solid rgba(251,233,163,.35); color:var(--gold); border-radius:999px; padding:9px 18px;
+  font-family:var(--mono); font-size:13px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; margin-bottom:22px; }
+.status-pill .dot{ width:9px; height:9px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 0 rgba(251,233,163,.6); animation:pulse 2s infinite; }
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(251,233,163,.5);} 70%{ box-shadow:0 0 0 9px rgba(251,233,163,0);} 100%{ box-shadow:0 0 0 0 rgba(251,233,163,0);} }
+.hero-info .meta{ font-family:var(--mono); font-size:13px; color:#9CB2D1; letter-spacing:.06em;
+  padding:14px 0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
+  display:flex; flex-wrap:wrap; gap:10px 24px; }
+.hero-info .meta b{ color:#FBF7EC; font-weight:500; }
+
+/* Sections */
+.section{ margin-top:60px; }
+.section-h{ display:flex; align-items:baseline; gap:16px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--rule); }
+.section-h .num{ font-family:var(--mono); font-size:24px; color:var(--cyan); font-weight:700; letter-spacing:-.02em; }
+.section-h h2{ font-family:var(--serif); font-size:30px; color:#FBF7EC; margin:0; font-weight:500; }
+.section-h .tag{ font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.18em; text-transform:uppercase; margin-left:auto; }
+
+/* Facts grid */
+.facts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; }
+.fact{ background:rgba(255,255,255,.04); border:1px solid var(--rule); border-radius:12px; padding:18px 20px; }
+.fact .v{ font-family:var(--serif); font-size:32px; line-height:1; color:#FBF7EC; font-weight:600; letter-spacing:-.02em; }
+.fact .v small{ font-size:14px; color:var(--cyan); margin-left:2px; }
+.fact .l{ font-family:var(--mono); font-size:11px; color:#9CB2D1; letter-spacing:.14em; text-transform:uppercase; margin-top:8px; }
+
+/* Chapter list */
+.toc{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px; }
+.toc-item{ display:flex; gap:14px; align-items:flex-start; background:rgba(255,255,255,.04);
+  border:1px solid var(--rule); border-radius:12px; padding:16px 18px; }
+.toc-item .n{ font-family:var(--mono); font-size:18px; color:var(--cyan); font-weight:700; min-width:22px; }
+.toc-item .t{ font-family:var(--serif); font-size:17px; color:#FBF7EC; font-weight:500; }
+.toc-item .d{ font-size:13px; color:#9CB2D1; margin-top:3px; line-height:1.45; }
+
+/* Download cards (locked until publish) */
+.formats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+.format-card{ position:relative; background:rgba(255,255,255,.04); border:1px solid var(--rule);
+  border-radius:14px; padding:24px; transition: border-color .2s ease, background .2s ease; }
+.format-card .icon{ width:48px; height:48px; border-radius:10px; background:rgba(43,168,179,.12); color:var(--cyan);
+  display:grid; place-items:center; margin-bottom:16px; }
+.format-card .icon svg{ width:24px; height:24px; }
+.format-card h3{ font-family:var(--serif); font-size:22px; margin:0 0 6px 0; color:#FBF7EC; font-weight:600; }
+.format-card .size{ font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.08em; margin-bottom:14px; }
+.format-card p{ font-size:14px; color:#DDE6F2; line-height:1.5; margin:0 0 18px 0; opacity:.85; }
+.format-card .row{ display:flex; gap:8px; flex-wrap:wrap; }
+.format-card .row a, .format-card .row span.locked{
+  display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px;
+  font-family:var(--mono); font-size:13px; font-weight:500; background:rgba(255,255,255,.08); color:#FBF7EC; border:1px solid var(--rule); }
+.format-card .row a:hover{ background:var(--cyan); color:#0B2545; border-color:var(--cyan); }
+.format-card .row span.locked{ opacity:.5; cursor:not-allowed; }
+/* When unpublished: dim cards + show a lock chip */
+body[data-published="false"] .format-card{ opacity:.72; }
+.lock-chip{ position:absolute; top:14px; right:14px; font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--gold); background:rgba(251,233,163,.12); border:1px solid rgba(251,233,163,.3);
+  border-radius:6px; padding:4px 9px; }
+body[data-published="true"] .lock-chip{ display:none; }
+body[data-published="true"] .row span.locked{ display:none; }
+body[data-published="false"] .row a.live{ display:none; }
+
+/* Cite box */
+.cite{ margin-top:22px; padding:18px 22px; background:rgba(255,255,255,.04); border:1px solid var(--rule);
+  border-radius:10px; font-family:var(--mono); font-size:13px; color:#DDE6F2; line-height:1.6; }
+.cite b{ color:var(--cyan); letter-spacing:.16em; text-transform:uppercase; font-size:11px; }
+.copy-link{ display:inline-flex; align-items:center; gap:10px; margin-top:8px;
+  background:rgba(0,0,0,.3); border:1px dashed var(--rule); border-radius:10px; padding:12px 16px; font-family:var(--mono); font-size:13px; color:#DDE6F2; }
+.copy-link button{ background:var(--cyan); color:#0B2545; border:none; padding:8px 14px; border-radius:6px; font-family:var(--mono); font-size:12px; font-weight:600; cursor:pointer; }
+.copy-link button.copied{ background: var(--gold); }
+
+/* Footer */
+.footer{ margin-top:80px; padding:32px 0; border-top:1px solid var(--rule); font-family:var(--mono); font-size:12px; color:#9CB2D1; letter-spacing:.08em; display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; }
+.footer a{ color:#FBF7EC; }
+
+@media (max-width: 860px){
+  .hero{ grid-template-columns: 1fr; gap:32px; }
+  .cover-wrap{ max-width:340px; margin:0 auto; transform: rotate(0deg); }
+  .hero-info h1{ font-size:32px; }
+  .hero-info .acronym{ font-size:50px; }
+}
+</style>
+</head>
+<body data-published="false">
+<div class="shell">
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="/" class="brand">
+      <span class="mark"><span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span></span>
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="cover-wrap">
+      <div class="cover">
+        <div class="watermark">Coming soon</div>
+        <div class="logos">
+          <img src="/poster/files/assets/marmara-university.png" alt="Marmara University">
+          <img src="/poster/files/assets/muhendislik-fakultesi.jpg" alt="Faculty of Engineering">
+        </div>
+        <div class="uni" data-tr>Marmara Üniversitesi</div>
+        <div class="uni" data-en>Marmara University</div>
+        <div class="dept" data-tr>Mühendislik Fakültesi · Bilgisayar Mühendisliği</div>
+        <div class="dept" data-en>Faculty of Engineering · Computer Engineering</div>
+        <div class="rule"></div>
+        <div class="ttl">Face &amp; Identity Verification Using Cloud-based SaaS Models</div>
+        <div class="sub" data-tr>Bitirme Tezi</div>
+        <div class="sub" data-en>Graduation Thesis</div>
+        <div class="authors">
+          <b>Ahmet Abdullah Gültekin</b><br>
+          <b>Ayşe Gülsüm Eren</b><br>
+          <b>Ayşenur Arıcı</b>
+          <div style="margin-top:8px; color:#555;" data-tr>Danışman: Doç. Dr. Mustafa Ağaoğlu</div>
+          <div style="margin-top:8px; color:#555;" data-en>Supervisor: Assoc. Prof. Dr. Mustafa Ağaoğlu</div>
+        </div>
+        <div class="year">2026</div>
+      </div>
+    </div>
+
+    <div class="hero-info">
+      <div class="eyebrow" data-tr>Bitirme tezi · Marmara Üniversitesi CSE4298</div>
+      <div class="eyebrow" data-en>Graduation thesis · Marmara University CSE4298</div>
+      <div class="acronym"><span class="angle">&lt;</span>FIVUCSAS<span class="angle">/&gt;</span></div>
+      <h1>Face &amp; Identity Verification using <em>Cloud-based SaaS</em> Models</h1>
+
+      <div class="status-pill"><span class="dot"></span><span data-tr>Yakında · gönderimden sonra</span><span data-en>Coming soon · after submission</span></div>
+
+      <p class="lede" data-tr>
+        Üretime alınmış, çok kiracılı biyometrik kimlik doğrulama SaaS platformunun tam bitirme tezi —
+        tasarım, mimari, uygulama ve test. Tez, danışman teslimi ve format kontrolünden sonra burada
+        yayımlanacak; o zamana kadar bu sayfa bir önizlemedir.
+      </p>
+      <p class="lede" data-en>
+        The complete graduation thesis behind a production-deployed, multi-tenant biometric
+        identity-verification SaaS platform — its design, architecture, implementation, and testing.
+        The thesis will be published here after advisor submission and format review; until then this
+        page is a preview.
+      </p>
+
+      <div class="meta">
+        <span><b><span data-tr>Yazarlar</span><span data-en>Authors</span></b> Ahmet Abdullah Gültekin · Ayşe Gülsüm Eren · Ayşenur Arıcı</span>
+        <span><b><span data-tr>Danışman</span><span data-en>Supervisor</span></b> Doç. Dr. Mustafa Ağaoğlu</span>
+        <span><b><span data-tr>Beklenen</span><span data-en>Expected</span></b> <span data-tr>Haziran 2026</span><span data-en>June 2026</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section 01 — At a glance -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">01</div>
+      <h2><span data-tr>Bir bakışta</span><span data-en>At a glance</span></h2>
+      <div class="tag">scope · scale</div>
+    </div>
+    <div class="facts" lang="en">
+      <div class="fact"><div class="v">7</div><div class="l" data-tr>bölüm + ekler</div><div class="l" data-en>chapters + appendices</div></div>
+      <div class="fact"><div class="v">~32<small>k</small></div><div class="l" data-tr>kelime</div><div class="l" data-en>words</div></div>
+      <div class="fact"><div class="v">52</div><div class="l" data-tr>kaynak</div><div class="l" data-en>references</div></div>
+      <div class="fact"><div class="v">45</div><div class="l" data-tr>şekil + tablo</div><div class="l" data-en>figures + tables</div></div>
+      <div class="fact"><div class="v">~4 400</div><div class="l" data-tr>otomatik test</div><div class="l" data-en>automated tests</div></div>
+      <div class="fact"><div class="v">83</div><div class="l" data-tr>veritabanı migrasyonu</div><div class="l" data-en>database migrations</div></div>
+      <div class="fact"><div class="v">12</div><div class="l" data-tr>kimlik doğrulama yöntemi</div><div class="l" data-en>authentication methods</div></div>
+      <div class="fact"><div class="v">0</div><div class="l" data-tr>GPU gerektirir</div><div class="l" data-en>GPUs required</div></div>
+    </div>
+  </section>
+
+  <!-- Section 02 — Inside the thesis (titles only) -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">02</div>
+      <h2><span data-tr>Tezin içeriği</span><span data-en>Inside the thesis</span></h2>
+      <div class="tag">7 chapters · 3 appendices</div>
+    </div>
+    <div class="toc">
+      <div class="toc-item"><div class="n">1</div><div><div class="t">Introduction</div><div class="d" data-tr>Problem, motivasyon ve hedefler</div><div class="d" data-en>Problem, motivation, and objectives</div></div></div>
+      <div class="toc-item"><div class="n">2</div><div><div class="t">Definition of the Project</div><div class="d" data-tr>Kapsam, gereksinimler ve konumlandırma</div><div class="d" data-en>Scope, requirements, and positioning</div></div></div>
+      <div class="toc-item"><div class="n">3</div><div><div class="t">System Design &amp; Architecture</div><div class="d" data-tr>Hexagonal mimari, veri modeli, dağıtım</div><div class="d" data-en>Hexagonal architecture, data model, deployment</div></div></div>
+      <div class="toc-item"><div class="n">4</div><div><div class="t">Technical Approach &amp; Implementation</div><div class="d" data-tr>Biyometrik boru hattı, canlılık, anti-spoofing</div><div class="d" data-en>Biometric pipeline, liveness, anti-spoofing</div></div></div>
+      <div class="toc-item"><div class="n">5</div><div><div class="t">Software Testing</div><div class="d" data-tr>Birim, entegrasyon, E2E, yük testleri</div><div class="d" data-en>Unit, integration, E2E, load testing</div></div></div>
+      <div class="toc-item"><div class="n">6</div><div><div class="t">Benefits &amp; Impact</div><div class="d" data-tr>Güvenlik, gizlilik ve toplumsal etki</div><div class="d" data-en>Security, privacy, and societal impact</div></div></div>
+      <div class="toc-item"><div class="n">7</div><div><div class="t">Conclusion &amp; Future Work</div><div class="d" data-tr>Sonuçlar ve gelecek çalışma</div><div class="d" data-en>Results and future work</div></div></div>
+      <div class="toc-item"><div class="n">A–C</div><div><div class="t" data-tr>Ekler</div><div class="t" data-en>Appendices</div><div class="d" data-tr>Migrasyon kataloğu · REST API · dağıtım referansı</div><div class="d" data-en>Migration catalog · REST API · deployment reference</div></div></div>
+    </div>
+  </section>
+
+  <!-- Section 03 — Download (locked until publish) -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">03</div>
+      <h2><span data-tr>İndir &amp; oku</span><span data-en>Read &amp; download</span></h2>
+      <div class="tag" data-tr>gönderimden sonra</div>
+      <div class="tag" data-en>after submission</div>
+    </div>
+    <div class="formats">
+      <!-- PDF -->
+      <div class="format-card">
+        <span class="lock-chip" data-tr>yakında</span><span class="lock-chip" data-en>soon</span>
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></div>
+        <h3>PDF</h3>
+        <div class="size" data-tr>baskıya hazır · final teslim</div><div class="size" data-en>print-ready · final submission</div>
+        <p data-tr>Tam tezin baskıya hazır PDF'i — kapak, içindekiler, 7 bölüm, kaynaklar ve ekler.</p>
+        <p data-en>The print-ready PDF of the full thesis — cover, table of contents, seven chapters, references, and appendices.</p>
+        <div class="row">
+          <a class="live primary" href="files/FIVUCSAS_Thesis.pdf" target="_blank" rel="noopener">View</a>
+          <a class="live" href="files/FIVUCSAS_Thesis.pdf" download>Download</a>
+          <span class="locked">🔒 <span data-tr>yakında</span><span data-en>coming soon</span></span>
+        </div>
+      </div>
+      <!-- DOCX -->
+      <div class="format-card">
+        <span class="lock-chip" data-tr>yakında</span><span class="lock-chip" data-en>soon</span>
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <h3>Word (.docx)</h3>
+        <div class="size" data-tr>düzenlenebilir · şablon biçimli</div><div class="size" data-en>editable · template-formatted</div>
+        <p data-tr>Resmi tez şablonuna göre biçimlendirilmiş düzenlenebilir Word belgesi.</p>
+        <p data-en>The editable Word document, formatted to the official thesis template.</p>
+        <div class="row">
+          <a class="live primary" href="files/FIVUCSAS_Thesis.docx" download>Download</a>
+          <span class="locked">🔒 <span data-tr>yakında</span><span data-en>coming soon</span></span>
+        </div>
+      </div>
+      <!-- Markdown / read online -->
+      <div class="format-card">
+        <span class="lock-chip" data-tr>yakında</span><span class="lock-chip" data-en>soon</span>
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
+        <h3 data-tr>Çevrimiçi oku</h3><h3 data-en>Read online</h3>
+        <div class="size" data-tr>web · alıntılanabilir</div><div class="size" data-en>web · citeable</div>
+        <p data-tr>Tezi tarayıcıda okuyun — şekiller gömülü, kaynaklar numaralı.</p>
+        <p data-en>Read the thesis in your browser — figures embedded, references numbered.</p>
+        <div class="row">
+          <a class="live primary" href="read/" target="_blank" rel="noopener">Read</a>
+          <span class="locked">🔒 <span data-tr>yakında</span><span data-en>coming soon</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 04 — Cite -->
+  <section class="section">
+    <div class="section-h">
+      <div class="num">04</div>
+      <h2><span data-tr>Paylaş &amp; alıntıla</span><span data-en>Share &amp; cite</span></h2>
+      <div class="tag">copy · cite</div>
+    </div>
+    <div class="copy-link">
+      <span id="shareUrl">https://fivucsas.com/thesis/</span>
+      <button id="copyBtn" type="button">Copy link</button>
+    </div>
+    <div class="cite">
+      <b data-tr>Önerilen alıntı (yayımlandığında)</b><b data-en>Suggested citation (once published)</b><br>
+      Gültekin, A. A., Eren, A. G., &amp; Arıcı, A. (2026). <i>FIVUCSAS — Face &amp; Identity Verification Using Cloud-based SaaS Models.</i> <span data-tr>Bitirme Tezi</span><span data-en>Graduation Thesis</span>, Marmara University, Department of Computer Engineering. <span data-tr>Danışman</span><span data-en>Supervisor</span>: Mustafa Ağaoğlu. https://fivucsas.com/thesis/
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>FIVUCSAS · Marmara Üniversitesi · CSE4297 / CSE4298 Engineering Project · Spring 2025 – 2026</div>
+    <div><a href="/poster/">Poster</a> · <a href="/links/">All links</a> · <a href="/">Home</a></div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  // Language is driven globally by the FIVUCSAS suite launcher (sets html[data-lang]).
+  var url = location.href;
+  document.getElementById('shareUrl').textContent = url;
+  var copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', function(){
+    navigator.clipboard.writeText(url).then(function(){
+      copyBtn.textContent = 'Copied ✓'; copyBtn.classList.add('copied');
+      setTimeout(function(){ copyBtn.textContent = 'Copy link'; copyBtn.classList.remove('copied'); }, 2000);
+    });
+  });
+  // TO GO LIVE after submission: set body[data-published="true"] (below) and drop the files into
+  //   /thesis/files/FIVUCSAS_Thesis.pdf, FIVUCSAS_Thesis.docx, and /thesis/read/index.html
+  // The locked chips/buttons hide automatically and the real download links appear.
+})();
+</script>
+<!-- FIVUCSAS suite launcher (shared cross-site nav + global EN/TR toggle; drives html[data-lang]) -->
+<script src="https://app.fivucsas.com/launcher.js?v=2026-05-29" defer></script>
+</body>
+</html>
