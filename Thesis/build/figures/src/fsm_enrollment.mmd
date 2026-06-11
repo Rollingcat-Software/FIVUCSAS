@@ -1,0 +1,46 @@
+stateDiagram-v2
+    classDef okState fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef offState fill:#e8eaed,stroke:#6b7480,color:#1f2933
+    classDef declState fill:#f2f4f7,stroke:#52606d,stroke-dasharray:4 3,color:#1f2933
+
+    state "NOT_ENROLLED" as NE
+    state "PENDING" as PEN
+    state "ENROLLED" as ENR
+    state "FAILED" as FAIL
+    state "REVOKED" as REV
+    state "EXPIRED" as EXP
+
+    [*] --> NE : enrollment row created<br/>(builder default)
+
+    NE --> PEN : startEnrollment()<br/>async methods — FACE, VOICE, TOTP, ...
+    NE --> ENR : startEnrollment(), auto-complete types<br/>(PASSWORD, NFC after card verify)
+
+    PEN --> ENR : completeEnrollment(data,<br/>quality_score, liveness_score)
+    PEN --> FAIL : failEnrollment()
+
+    ENR --> PEN : re-enroll / optimize<br/>(startEnrollment on existing row)
+    ENR --> REV : revokeEnrollment()<br/>user/admin removal or health reconcile<br/>(sets revoked_at)
+    ENR --> EXP : expire()
+
+    FAIL --> PEN : retry (startEnrollment)
+    REV --> PEN : re-enroll (startEnrollment)
+    EXP --> PEN : re-enroll (startEnrollment)
+
+    note right of ENR
+        Only ENROLLED satisfies isEnrolled() —
+        the state the login engine and the
+        default-flow lockout guardrail read.
+        WebAuthn/passkey first use auto-binds
+        a row directly to ENROLLED.
+    end note
+
+    note right of EXP
+        expires_at column + transition exist;
+        no scheduled sweep calls expire()
+        on current main (declared path).
+    end note
+
+    class ENR okState
+    class FAIL offState
+    class REV offState
+    class EXP declState

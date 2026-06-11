@@ -1,0 +1,33 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant W as Browser<br/>(web-app)
+    participant API as Identity Core API<br/>(api.fivucsas.com)
+    participant BIO as Biometric Service<br/>(internal-only)
+
+    U->>W: start face enrollment
+    W->>W: getUserMedia capture --<br/>MediaPipe FaceLandmarker (478 pts)
+    note right of W: client pre-gate (advisory):<br/>face present, passive-liveness 0.45,<br/>quality hint, crop to 224 x 224 JPEG
+
+    W->>API: POST /api/v1/biometric/enroll/userId<br/>multipart image, Bearer JWT,<br/>X-Request-Nonce header
+    API->>API: edge + filter gates: Traefik TLS,<br/>rate limit, anti-replay nonce<br/>(Redis, 5-min TTL), JWT auth,<br/>RBAC biometric:enroll or self,<br/>tenant scope
+
+    API->>BIO: POST /api/v1/enroll<br/>X-API-Key, Docker network only<br/>(optional Idempotency-Key)
+    BIO->>BIO: image validation:<br/>content type + magic bytes
+
+    BIO->>BIO: passive liveness -- MiniFASNet<br/>(UniFace backend, shared ONNX session)
+
+    alt frame not live
+        BIO-->>API: 400 LIVENESS_FAILED {score}
+        API-->>W: enrollment rejected
+        W-->>U: retry with a live capture
+    else frame is live
+        BIO->>BIO: anti-spoof assembler (13 analyzers)<br/>+ single-frame EAR veto<br/>(avg EAR below 0.18 = closed eyes)
+        alt spoof verdict
+            BIO-->>API: 403 ANTISPOOF_BLOCKED {reason}
+            API-->>W: enrollment rejected
+            W-->>U: blocked: spoof suspected
+        else clean frame
+            note over BIO: continues in part (b):<br/>detect, quality gate, embed, store
+        end
+    end

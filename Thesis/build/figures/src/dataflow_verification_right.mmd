@@ -1,0 +1,31 @@
+flowchart TB
+    classDef store fill:#e8eaed,stroke:#52606d,color:#1f2933
+    classDef gate fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef rej fill:#f2f4f7,stroke:#6b7480,stroke-dasharray:4 3,color:#1f2933
+    classDef step fill:#f2f4f7,stroke:#52606d,color:#1f2933
+
+    subgraph BIOS["Biometric Service (internal)"]
+        direction TB
+        B1["Passive liveness — MiniFASNet<br/>floor 0.4, else 400 LIVENESS_FAILED"]:::gate
+        B2["MTCNN detection +<br/>quality gate, verify floor 50"]:::gate
+        B3["Facenet512 embedding —<br/>512-dim probe"]:::step
+        B4["cosine distance below 0.4 (prod),<br/>0.55 if enrollment older than 2 y"]:::gate
+        B5["anti-spoof: 13 analyzers +<br/>EAR veto 0.18 — 403 blocks<br/>even a matching face"]:::gate
+        B1 -->|"live frame"| B2
+        B2 -->|"face chip"| B3
+        B3 --> B4
+        B4 --> B5
+    end
+
+    PV[("face_embeddings —<br/>pgvector, Fernet store-<br/>of-record, HNSW index")]:::store
+    PV -->|"enrolled template"| B4
+
+    B5 -->|"verified, distance,<br/>threshold, confidence"| D1
+
+    D1{"Identity Core:<br/>trusts server<br/>'verified' flag ONLY"}:::gate
+    D1 -->|"true"| D2["step COMPLETED — last step mints<br/>JWT (RS256) + rotating refresh token"]:::step
+    D1 -->|"false / 400 / 403"| REJ["step FAILED — retry allowed,<br/>counts toward lockout"]:::rej
+
+    AUD[("audit_logs —<br/>every attempt")]:::store
+    D2 --> AUD
+    REJ --> AUD

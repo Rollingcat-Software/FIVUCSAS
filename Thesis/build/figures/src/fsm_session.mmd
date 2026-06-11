@@ -1,0 +1,52 @@
+stateDiagram-v2
+    classDef okState fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef offState fill:#e8eaed,stroke:#6b7480,color:#1f2933
+
+    state "CREATED" as CRE
+    state "IN_PROGRESS" as PROG
+    state "COMPLETED" as DONE
+    state "FAILED" as FAIL
+    state "EXPIRED" as EXP
+    state "CANCELLED" as CAN
+
+    [*] --> CRE : POST /auth/sessions —<br/>session for one auth-flow run<br/>(expires_at = now + 10 min)
+
+    CRE --> PROG : first step submitted<br/>(POST .../steps/1)
+
+    PROG --> DONE : last required step passed —<br/>JWT access token + rotating<br/>refresh token minted
+    PROG --> FAIL : step max_attempts exceeded
+
+    CRE --> EXP : step submitted<br/>after expires_at
+    PROG --> EXP : step submitted<br/>after expires_at
+
+    CRE --> CAN : user cancels (DELETE<br/>/auth/sessions/id)
+    PROG --> CAN : user cancels
+
+    DONE --> [*]
+    FAIL --> [*]
+    EXP --> [*]
+    CAN --> [*]
+
+    note left of PROG
+        Retries of a failed attempt (below
+        max_attempts) and advance to the next
+        step both stay within IN_PROGRESS.
+        Each step has its own status:
+        PENDING, IN_PROGRESS, COMPLETED,
+        FAILED, SKIPPED, DELEGATED —
+        optional steps may be skipped.
+    end note
+
+    note right of CAN
+        Terminal states are one-way:
+        any further submission answers
+        HTTP 409 (state conflict).
+        Tokens are minted only on
+        COMPLETED — never before
+        the last step.
+    end note
+
+    class DONE okState
+    class FAIL offState
+    class EXP offState
+    class CAN offState

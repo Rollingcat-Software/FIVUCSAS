@@ -1,0 +1,52 @@
+stateDiagram-v2
+    classDef okState fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef offState fill:#e8eaed,stroke:#6b7480,color:#1f2933
+    classDef delState fill:#f2f4f7,stroke:#52606d,stroke-dasharray:4 3,color:#1f2933
+
+    state "ACTIVE" as ACTIVE
+    state "PENDING_ENROLLMENT" as PEND
+    state "INACTIVE" as INACTIVE
+    state "SUSPENDED" as SUSP
+    state "Soft-deleted<br/><i>deleted_at set, status = INACTIVE</i>" as SOFTDEL
+
+    [*] --> ACTIVE : self-registration or admin create
+    [*] --> PEND : self-service tenant onboarding<br/>(first admin, e-mail unverified)
+
+    PEND --> ACTIVE : e-mail ownership verified
+
+    ACTIVE --> SUSP : admin suspends<br/>(policy / security)
+    SUSP --> ACTIVE : admin reinstates
+
+    ACTIVE --> INACTIVE : admin deactivates
+    INACTIVE --> ACTIVE : admin reactivates
+
+    ACTIVE --> SOFTDEL : DELETE user (GDPR/KVKK erasure)
+    INACTIVE --> SOFTDEL : DELETE user
+    SUSP --> SOFTDEL : DELETE user
+
+    SOFTDEL --> [*] : purge job, daily 03:30<br/>after 30-day retention<br/>(ShedLock-guarded, flag-gated)
+
+    note right of ACTIVE
+        Temporary lockout is ORTHOGONAL to status:
+        5 failed logins set is_locked + locked_until
+        (+15 min) and logins answer HTTP 423;
+        the lock auto-clears after the window.
+    end note
+
+    note left of SOFTDEL
+        Soft delete = UPDATE, never DELETE FROM users
+        (DB trigger forbids hard deletes).
+        Reads exclude deleted rows via SQL restriction
+        "deleted_at IS NULL".
+    end note
+
+    note right of INACTIVE
+        Enum also declares LOCKED and DELETED;
+        neither is ever assigned: lockout uses the
+        flag pair, deletion uses deleted_at.
+    end note
+
+    class ACTIVE okState
+    class INACTIVE offState
+    class SUSP offState
+    class SOFTDEL delState
