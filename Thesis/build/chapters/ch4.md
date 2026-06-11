@@ -557,29 +557,21 @@ never enrolled" or "consumed token reused." Four FSMs anchor the design.
 The **session finite-state machine** governs an authentication session from creation through the
 MFA steps to completion, expiry, or revocation. It is the FSM that the consume-then-mint idempotency
 of Section 4.5 enforces: a session in the `COMPLETED`/`CONSUMED` state can never transition back to a
-usable one.
-
-[[FIG:fsm_session | Session finite-state machine: creation, MFA progression, completion, expiry, and revocation]]
+usable one. The full lifecycle appears in [[FIG:fsm_session | Session finite-state machine: creation, MFA progression, completion, expiry, and revocation]].
 
 The **verification finite-state machine** drives the identity-verification (KYC) pipeline through its
 ordered steps — document scan, data extraction, face match, liveness check, and so on — with
 transitions for a passed step, a failed step, a step requiring manual review, and overall
-completion or rejection.
-
-[[FIG:fsm_verification | Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states]]
+completion or rejection, as illustrated in [[FIG:fsm_verification | Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states]].
 
 The **biometric-enrollment finite-state machine** models a face or voice enrollment from initial
 capture through quality assessment and liveness gating to a persisted, active template — or to a
 rejection that re-prompts capture. The fail-closed multi-image enrollment of Section 4.3.2 is one of
-this machine's transition rules.
-
-[[FIG:fsm_enrollment | Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment]]
+this machine's transition rules; [[FIG:fsm_enrollment | Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment]] depicts the complete machine.
 
 The **user-account finite-state machine** tracks the account lifecycle — pending, active, locked,
 suspended, and soft-deleted — including the lockout transition after repeated failed logins and the
-GDPR soft-delete state that the nightly purge job eventually finalizes.
-
-[[FIG:fsm_user | User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states]]
+GDPR soft-delete state that the nightly purge job eventually finalizes, shown in [[FIG:fsm_user | User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states]].
 
 Modeling these as explicit state machines made each transition a single, testable method and
 put the illegal states beyond the reach of the code: a session in `COMPLETED`, an enrollment
