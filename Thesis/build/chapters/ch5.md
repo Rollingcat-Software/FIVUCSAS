@@ -495,7 +495,7 @@ liveness and quality gates, and we label them accordingly.
 ## 5.9 Multi-Tenant Isolation Testing
 
 Multi-tenant isolation is the single most consequential security property of a SaaS identity
-platform: a leak across the tenant boundary would expose one customer's users, biometric
+platform: a leak across the tenant boundary would expose one tenant's users, biometric
 enrollments, and audit trail to another. We therefore tested it more aggressively than any
 other property, at three independent levels of the test suite.
 
