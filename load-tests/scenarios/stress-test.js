@@ -12,9 +12,10 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config from '../config.js';
+import config, { profileStages } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
+import { requireMutationsOptIn } from '../utils/guard.js';
 
 // Custom metrics
 const systemOverloaded = new Rate('system_overloaded');
@@ -22,29 +23,11 @@ const responseTime = new Trend('response_time');
 const errorRate = new Rate('error_rate');
 const throughput = new Counter('throughput');
 
-// Test configuration
+// Test configuration. Run with -e PROFILE=stress to get the ramp-to-the-knee
+// stages; any other profile (default smoke) uses a small ramp so a casual run
+// can't accidentally fire a full stress test. See config.js for the numbers.
 export const options = {
-  stages: [
-    // Phase 1: Baseline
-    { duration: '2m', target: 50 },     // Baseline: 50 VUs
-
-    // Phase 2: Gradual increase
-    { duration: '2m', target: 100 },    // 100 VUs
-    { duration: '2m', target: 200 },    // 200 VUs
-    { duration: '2m', target: 300 },    // 300 VUs
-    { duration: '2m', target: 400 },    // 400 VUs
-    { duration: '2m', target: 500 },    // 500 VUs
-
-    // Phase 3: Extreme stress
-    { duration: '2m', target: 750 },    // 750 VUs
-    { duration: '2m', target: 1000 },   // 1000 VUs
-    { duration: '2m', target: 1500 },   // 1500 VUs (likely to fail)
-
-    // Phase 4: Recovery
-    { duration: '2m', target: 100 },    // Drop back to 100 VUs
-    { duration: '2m', target: 50 },     // Drop to baseline
-    { duration: '1m', target: 0 },      // Ramp down
-  ],
+  stages: profileStages(),
 
   thresholds: {
     // We expect some failures in stress test
@@ -57,20 +40,22 @@ export const options = {
     'system_overloaded': ['rate<0.10'],
   },
 
-  // Increase timeout for stress conditions
-  httpDebug: 'full',
+  // NB: httpDebug was intentionally REMOVED — at high VU it dumps every request
+  // to stdout, drowning the summary and skewing the client. Use --http-debug on
+  // the CLI for a one-off debug run instead.
 };
 
 /**
  * Setup function
  */
 export function setup() {
+  requireMutationsOptIn('stress-test');
   console.log('=================================================');
-  console.log('Starting STRESS TEST');
-  console.log('WARNING: This test will push the system to failure');
+  console.log('Starting STRESS TEST (MUTATING — mixed enroll/verify/refresh)');
+  console.log('WARNING: This test pushes the system hard. Run with -e PROFILE=stress.');
   console.log('=================================================');
 
-  const testLogin = auth.login(config.testUserEmail, config.testUserPassword);
+  const testLogin = auth.login(config.testUserEmail, config.testUserPassword, config.clientId);
   if (!testLogin) {
     throw new Error('Setup failed: Unable to authenticate');
   }

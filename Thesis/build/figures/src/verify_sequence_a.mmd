@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant W as Browser<br/>(verify.fivucsas.com)
+    participant API as Identity Core API<br/>(api.fivucsas.com)
+    participant BIO as Biometric Service<br/>(internal-only)
+
+    note over U,W: FACE step inside a multi-step login<br/>(hosted login / embedded widget)
+
+    U->>W: look at the camera
+    W->>W: getUserMedia capture --<br/>MediaPipe FaceLandmarker (478 pts)
+    note right of W: client pre-gate (advisory only --<br/>server re-decides): face present,<br/>passive-liveness 0.45,<br/>crop to 224 x 224 JPEG
+
+    W->>API: POST /api/v1/auth/mfa/step<br/>{sessionToken, method: FACE,<br/>image (base64)}
+    API->>API: gates: MFA session valid + not consumed,<br/>account lockout guard (HTTP 423<br/>after 5 failures), rate limit
+
+    API->>BIO: POST /api/v1/verify<br/>multipart image, X-API-Key,<br/>Docker network only
+    BIO->>BIO: image validation:<br/>content type + magic bytes
+
+    BIO->>BIO: passive liveness -- MiniFASNet<br/>(LIVENESS_MODE=passive,<br/>BACKEND=uniface)
+
+    alt not live, or score below 0.4 floor
+        BIO-->>API: 400 LIVENESS_FAILED {score}
+        API->>API: MFA step FAILED (audited,<br/>counts toward lockout)
+        API-->>W: step failed
+        W-->>U: try again -- live camera required
+    else liveness passed
+        note over BIO: continues in part (b):<br/>detect, quality, embed, match, veto
+    end

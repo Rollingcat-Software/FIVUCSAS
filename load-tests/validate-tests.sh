@@ -40,6 +40,7 @@ echo ""
 # Check test files
 echo -e "${BOLD}Checking test scenario files...${NC}"
 SCENARIOS=(
+    "scenarios/public-read-load-test.js"
     "scenarios/auth-load-test.js"
     "scenarios/enrollment-load-test.js"
     "scenarios/verification-load-test.js"
@@ -69,6 +70,7 @@ echo -e "${BOLD}Checking utility files...${NC}"
 UTILS=(
     "utils/auth.js"
     "utils/biometric.js"
+    "utils/guard.js"
 )
 
 for util in "${UTILS[@]}"; do
@@ -102,8 +104,21 @@ else
 fi
 echo ""
 
-# Check services (optional)
-echo -e "${BOLD}Checking services availability...${NC}"
+# Check services (optional). For the EXTERNAL run you only need to reach the
+# public endpoint — verify that first; the localhost checks below are for an
+# optional LOCAL full-stack run only.
+echo -e "${BOLD}Checking PUBLIC endpoint reachability (external run)...${NC}"
+PUBLIC_BASE="${BASE_URL:-https://api.fivucsas.com}"
+if curl -s -m 15 "$PUBLIC_BASE/api/v1/auth/health" > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Public API reachable ($PUBLIC_BASE/api/v1/auth/health)${NC}"
+else
+    echo -e "${YELLOW}⚠ Could not reach $PUBLIC_BASE/api/v1/auth/health from here${NC}"
+    echo "  (network/ISP routing to the datacenter — see RUN_GUIDE.md §8)"
+fi
+echo ""
+
+# Check services (optional — LOCAL full-stack run only)
+echo -e "${BOLD}Checking LOCAL services availability (optional)...${NC}"
 
 # Check Identity API
 if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
@@ -160,29 +175,27 @@ else
 fi
 
 echo ""
-echo -e "${BOLD}Test Scenarios Available:${NC}"
-echo "  1. Authentication Load Test    (20 min, 50-200 VUs)"
-echo "  2. Enrollment Load Test         (15 min, 10-100 VUs)"
-echo "  3. Verification Load Test       (17 min, 50-500 VUs)"
-echo "  4. Multi-Tenant Load Test       (16 min, 100-200 VUs)"
-echo "  5. Stress Test                  (25 min, 50-1500 VUs)"
-echo "  6. Spike Test                   (15 min, spikes to 1000 VUs)"
+echo -e "${BOLD}Test Scenarios Available (select ramp with -e PROFILE=smoke|load|stress|spike):${NC}"
+echo "  0. Public Read Load Test  (SAFE default — read-only, no creds)"
+echo "  1. Authentication Load Test    (opt-in: ALLOW_MUTATIONS=true)"
+echo "  2. Enrollment Load Test         (opt-in; biometric host is internal-only)"
+echo "  3. Verification Load Test       (opt-in; biometric host is internal-only)"
+echo "  4. Multi-Tenant Load Test       (opt-in; needs seeded tenants)"
+echo "  5. Stress Test                  (opt-in; -e PROFILE=stress)"
+echo "  6. Spike Test                   (opt-in; -e PROFILE=spike)"
 echo ""
 
-echo -e "${BOLD}Quick Start:${NC}"
+echo -e "${BOLD}Quick Start (from your own PC, against https://api.fivucsas.com):${NC}"
 echo ""
-echo "  # Run a single test"
-echo "  k6 run scenarios/auth-load-test.js"
+echo "  # Safe default — read-only smoke"
+echo "  k6 run -e PROFILE=smoke scenarios/public-read-load-test.js"
 echo ""
-echo "  # Run with JSON output"
-echo "  k6 run --out json=results/auth-test.json scenarios/auth-load-test.js"
-echo ""
-echo "  # Run demo (simulated results)"
-echo "  ./demo-baseline-results.sh"
+echo "  # Read-only load with summary export"
+echo "  k6 run -e PROFILE=load --summary-export=results/public-read-load.json scenarios/public-read-load-test.js"
 echo ""
 
 echo -e "${BOLD}For detailed guide, see:${NC}"
-echo "  • README.md - Quick start and usage"
-echo "  • BASELINE_TESTING_GUIDE.md - Complete testing guide"
-echo "  • LOAD_TESTING_SUMMARY.md - Test scenarios and metrics"
+echo "  • RUN_GUIDE.md - external-run walkthrough (START HERE)"
+echo "  • README.md - reference + scenario table"
+echo "  • BASELINE_TESTING_GUIDE.md - local full-stack baseline guide"
 echo ""

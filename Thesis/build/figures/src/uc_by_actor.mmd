@@ -1,0 +1,93 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "17px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#777777",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 18, "rankSpacing": 70, "htmlLabels": true, "padding": 8, "wrappingWidth": 240 }
+}}%%
+flowchart LR
+    EU(["End User"])
+    GU(["Guest<br/>(time-limited)"])
+
+    subgraph G1["Authentication and Account"]
+        A1("Log in with configured flow<br/>(1–N factors, 12 methods)")
+        A2("Passwordless / passkey<br/>login (WebAuthn)")
+        A3("Approve login from<br/>a second device")
+        A4("Reset password ·<br/>verify e-mail")
+    end
+
+    subgraph G2["Biometrics and Credentials"]
+        B1("Enroll face / voice /<br/>fingerprint")
+        B2("Complete liveness challenge<br/>(Biometric Puzzle)")
+        B3("Register NFC card ·<br/>passkey · hardware key")
+        B4("Grant / revoke<br/>biometric consent")
+    end
+
+    subgraph G3["Self-Service (KVKK / GDPR)"]
+        S1("View profile, enrollments,<br/>devices and sessions")
+        S2("Export data ·<br/>request deletion")
+    end
+
+    subgraph G4["Tenant Administration"]
+        T1("Manage users and<br/>guest invitations")
+        T2("Configure authentication<br/>flows (N-step)")
+        T3("Enable authentication<br/>methods per tenant")
+        T4("Manage roles and<br/>permissions (RBAC)")
+        T5("Verify e-mail domains<br/>(DNS TXT)")
+        T6("Review tenant audit logs")
+    end
+
+    subgraph G5["Platform Administration"]
+        P1("Manage tenants<br/>(create / suspend)")
+        P2("Cross-tenant access ·<br/>global roles")
+        P3("Monitor platform status")
+    end
+
+    subgraph G6["Integration (OAuth2 / OIDC)"]
+        I1("Register OAuth2 client ·<br/>rotate secret")
+        I2("Redirective login (OIDC +<br/>PKCE, token exchange)")
+        I3("Embed widget / JS SDK ·<br/>OIDC discovery, JWKS")
+        I4("Run identity-verification flows<br/>(10 step-handler types)")
+    end
+
+    TA(["Tenant Admin"])
+    RT(["Platform ROOT"])
+    DV(["Developer /<br/>Integrator"])
+
+    EU --- A1 & A2 & A3 & A4
+    EU --- B1 & B2 & B3 & B4
+    EU --- S1 & S2
+    GU --- A1
+    GU --- S1
+
+    T1 & T2 & T3 & T4 & T5 & T6 --- TA
+    P1 & P2 & P3 --- RT
+    I1 & I2 & I3 & I4 --- DV
+
+    A1 ~~~ T1
+    A3 ~~~ T3
+    B1 ~~~ P1
+    B3 ~~~ I1
+    S1 ~~~ I3
+
+    classDef actor fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef uc fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+
+    class EU,GU,TA,RT,DV actor;
+    class A1,A2,A3,A4,B1,B2,B3,B4,S1,S2,T1,T2,T3,T4,T5,T6,P1,P2,P3,I1,I2,I3,I4 uc;
+
+    style G1 fill:#fbfbfb,stroke:#999999
+    style G2 fill:#fbfbfb,stroke:#999999
+    style G3 fill:#fbfbfb,stroke:#999999
+    style G4 fill:#fbfbfb,stroke:#999999
+    style G5 fill:#fbfbfb,stroke:#999999
+    style G6 fill:#fbfbfb,stroke:#999999

@@ -12,9 +12,10 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config from '../config.js';
+import config, { profileStages } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
+import { requireMutationsOptIn } from '../utils/guard.js';
 
 // Custom metrics
 const verificationSuccessRate = new Rate('verification_success');
@@ -24,26 +25,16 @@ const verificationFalsePositive = new Counter('verification_false_positive');
 const verificationSimilarityScore = new Trend('verification_similarity_score');
 const verificationsCompleted = new Counter('verifications_completed');
 
-// Test configuration
+// Test configuration. Ramps come from the selected PROFILE (smoke/load/stress/
+// spike) — see config.js.
 export const options = {
-  stages: [
-    { duration: '1m', target: 50 },    // Ramp up to 50 verifications/sec
-    { duration: '3m', target: 50 },    // Stay at 50
-    { duration: '1m', target: 100 },   // Ramp to 100
-    { duration: '3m', target: 100 },   // Stay at 100
-    { duration: '1m', target: 200 },   // Ramp to 200
-    { duration: '3m', target: 200 },   // Stay at 200
-    { duration: '1m', target: 500 },   // Spike to 500
-    { duration: '2m', target: 500 },   // Maintain spike
-    { duration: '2m', target: 0 },     // Ramp down
-  ],
+  stages: profileStages(),
 
   thresholds: {
-    // 95% of verifications should complete in < 500ms
-    'verification_duration': ['p(95)<500'],
-
-    // 99% should complete in < 1000ms
-    'verification_duration': ['p(99)<1000'],
+    // 95% of verifications < 500ms, 99% < 1000ms (single key, array of both —
+    // the old config defined 'verification_duration' twice so p95 was silently
+    // dropped; k6 needs both expressions under ONE key).
+    'verification_duration': ['p(95)<500', 'p(99)<1000'],
 
     // Verification success rate should be > 95%
     'verification_success': ['rate>0.95'],
@@ -60,12 +51,13 @@ export const options = {
  * Setup function
  */
 export function setup() {
-  console.log('Starting verification load test...');
+  requireMutationsOptIn('verification-load-test');
+  console.log('Starting verification load test (MUTATING — pre-enrolls + verifies biometrics)...');
   console.log(`Identity API: ${config.identityApiUrl}`);
   console.log(`Biometric API: ${config.biometricApiUrl}`);
 
   // Authenticate
-  const testLogin = auth.login(config.testUserEmail, config.testUserPassword);
+  const testLogin = auth.login(config.testUserEmail, config.testUserPassword, config.clientId);
   if (!testLogin) {
     throw new Error('Setup failed: Unable to authenticate');
   }

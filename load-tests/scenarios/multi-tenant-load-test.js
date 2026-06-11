@@ -12,9 +12,10 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config from '../config.js';
+import config, { profileStages } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
+import { requireMutationsOptIn } from '../utils/guard.js';
 
 // Custom metrics per tenant (use tags)
 const operationsPerTenant = new Counter('operations_per_tenant');
@@ -22,15 +23,9 @@ const enrollmentsPerTenant = new Counter('enrollments_per_tenant');
 const verificationsPerTenant = new Counter('verifications_per_tenant');
 const tenantIsolationViolations = new Counter('tenant_isolation_violations');
 
-// Test configuration
+// Test configuration. Ramps come from the selected PROFILE — see config.js.
 export const options = {
-  stages: [
-    { duration: '2m', target: 100 },   // Ramp up to 100 users across tenants
-    { duration: '5m', target: 100 },   // Stay at 100
-    { duration: '2m', target: 200 },   // Ramp to 200
-    { duration: '5m', target: 200 },   // Stay at 200
-    { duration: '2m', target: 0 },     // Ramp down
-  ],
+  stages: profileStages(),
 
   thresholds: {
     // Performance should not degrade with multiple tenants
@@ -53,8 +48,11 @@ const NUM_TENANTS = 20;
  * Setup function
  */
 export function setup() {
-  console.log('Starting multi-tenant load test...');
+  requireMutationsOptIn('multi-tenant-load-test');
+  console.log('Starting multi-tenant load test (MUTATING — needs many seeded tenant admin accounts)...');
   console.log(`Number of tenants: ${NUM_TENANTS}`);
+  console.log('NOTE: this scenario assumes pre-seeded tenant-admin + per-tenant user');
+  console.log('accounts (admin@tenant-N.example.com etc). It will NOT create them.');
 
   // Create test data for each tenant
   const tenants = [];

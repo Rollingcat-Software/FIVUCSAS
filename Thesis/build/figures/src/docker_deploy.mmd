@@ -1,0 +1,78 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#555555",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 26, "rankSpacing": 50, "htmlLabels": true, "padding": 8, "wrappingWidth": 250 }
+}}%%
+flowchart TB
+    NET["Internet<br/>(DNS: *.fivucsas.com)"]
+
+    HOSTINGER["Hostinger static hosting (no Docker)<br/>app · landing · demo · amispoof · links<br/><i>(deployed via rsync)</i>"]
+
+    subgraph HOST["Hetzner CX43 — Docker host (Ubuntu 24.04)"]
+        subgraph PROXY["'proxy' network — edge-reachable containers"]
+            TRAEFIK["<b>traefik</b> v3.6.12<br/>:80 / :443 — TLS (Let's Encrypt)<br/>security headers · rate limiting<br/>admin IP-allowlist"]
+            VW["<b>fivucsas-verify-widget</b><br/>nginx — hosted login UI<br/>verify.fivucsas.com"]
+            DOCS["<b>fivucsas-docs</b><br/>nginx — VitePress book<br/>docs.fivucsas.com"]
+            OBSB["<b>observability</b><br/>grafana 11.3 · loki 3.2<br/>promtail · uptime-kuma"]
+            OTHERF["<b>other projects + fallback</b><br/>mizan · muhabbet · sarnic<br/>share-agent · gelecegin<br/>error-pages (default)"]
+        end
+
+        subgraph BACKEND["'backend' network — internal only, no published ports"]
+            API["<b>identity-core-api</b> :8080<br/>Spring Boot<br/><i>(attached to both networks)</i>"]
+            BIO["<b>biometric-api</b> :8001<br/>FastAPI — X-API-Key<br/><i>(backend network only —<br/>no Traefik labels)</i>"]
+            SPG[("<b>shared-postgres</b><br/>pgvector/pgvector:pg17<br/>identity_core · biometric_db<br/>+ other projects' DBs")]
+            SRD[("<b>shared-redis</b><br/>redis:7.4-alpine<br/>AOF · allkeys-lru")]
+            VOLUP[("biometric_uploads<br/>Docker volume")]
+        end
+
+        SOCK["<b>docker-socket-proxy</b><br/>read-only Docker API<br/><i>('socket-proxy' network)</i>"]
+    end
+
+    NET -->|"HTTPS"| HOSTINGER
+    NET -->|":443 — TLS"| TRAEFIK
+
+    TRAEFIK --> VW
+    TRAEFIK --> DOCS
+    TRAEFIK --> OBSB
+    TRAEFIK --> OTHERF
+    TRAEFIK -->|"api.fivucsas.com"| API
+    TRAEFIK -.->|"service discovery<br/>(no docker.sock mount)"| SOCK
+
+    API -->|"X-API-Key · :8001"| BIO
+    API --> SPG
+    API --> SRD
+    BIO --> SPG
+    BIO --> VOLUP
+
+    VW ~~~ API
+    DOCS ~~~ API
+    OBSB ~~~ SOCK
+    OTHERF ~~~ SOCK
+
+    LEGEND["Blue = FIVUCSAS containers — gray = shared infrastructure — 23 containers total on the host"]
+    VOLUP ~~~ LEGEND
+
+    classDef fivucsas fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef shared fill:#ebebeb,stroke:#555555,stroke-width:1px;
+    classDef ext fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef legend fill:#ffffff,stroke:#999999,stroke-width:1px,stroke-dasharray:4 3;
+
+    class VW,DOCS,API,BIO fivucsas;
+    class TRAEFIK,OBSB,SPG,SRD,SOCK,OTHERF shared;
+    class NET,HOSTINGER,VOLUP ext;
+    class LEGEND legend;
+
+    style HOST fill:#fbfbfb,stroke:#888888
+    style PROXY fill:#ffffff,stroke:#999999
+    style BACKEND fill:#ffffff,stroke:#999999

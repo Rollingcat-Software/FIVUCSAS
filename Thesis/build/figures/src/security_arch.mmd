@@ -1,0 +1,49 @@
+flowchart TB
+    classDef cell fill:#f2f4f7,stroke:#52606d,color:#1f2933
+    classDef hi fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+
+    subgraph L1["Layer 1 — Edge (Traefik v3.6.12)"]
+        E1["TLS + HSTS preload,<br/>Let's Encrypt"]:::cell
+        E2["X-Forwarded-For overwrite<br/>(trustedIPs empty) —<br/>no spoofed client IPs"]:::cell
+        E3["security headers,<br/>Permissions-Policy: camera/mic<br/>only on verify.fivucsas.com"]:::cell
+        E4["IP-allowlisted admin surfaces<br/>(Swagger, actuator, Grafana)<br/>+ edge rate limit"]:::cell
+    end
+
+    subgraph L2["Layer 2 — Request filters (Spring Security chain, stateless)"]
+        F1["JWT auth — RS256 pinned in prod<br/>(boot fail-fast), kid routing +<br/>revocation list, iss/aud required"]:::hi
+        F2["rate limiting — Bucket4j<br/>IN-PROCESS buckets +<br/>Redis sliding-window filter,<br/>6000/min tenant mint budget"]:::cell
+        F3["anti-replay X-Request-Nonce<br/>(Redis SETNX, 5-min TTL)<br/>on biometric + NFC POSTs"]:::cell
+        F4["CORS allowlist +<br/>tenant context bind<br/>from verified JWT"]:::cell
+    end
+
+    subgraph L3["Layer 3 — Authentication"]
+        A1["BCrypt cost 12 +<br/>5-strike lockout: HTTP 423,<br/>15 min, auto-clearing"]:::hi
+        A2["12 login methods, N-step MFA —<br/>tokens minted only after the<br/>LAST step (amr claim, RFC 8176)"]:::cell
+        A3["TOTP secrets AES-GCM-256 +<br/>~120 s replay marker — OTP wiped<br/>on the 5th wrong guess"]:::cell
+        A4["WebAuthn / passkeys (UV required),<br/>PKCE S256 mandatory for public<br/>clients, refresh rotation + family<br/>revocation on reuse"]:::cell
+    end
+
+    subgraph L4["Layer 4 — Authorization and tenant isolation"]
+        Z1["two-tier authority:<br/>platform user_type (ROOT, ...)<br/>over within-tenant RBAC roles"]:::cell
+        Z2["48 fine-grained permissions,<br/>@PreAuthorize checks"]:::cell
+        Z3["Hibernate tenantFilter on the<br/>9 tenant-scoped entities —<br/>scoped bypass only for<br/>self ('/my') lookups"]:::hi
+    end
+
+    subgraph L5["Layer 5 — Data protection and evidence"]
+        D1A["biometric embeddings:<br/>Fernet ciphertext is the<br/>store-of-record (+ key_version)"]:::hi
+        D2A["refresh tokens stored hashed,<br/>TOTP secrets encrypted,<br/>secrets only in env files"]:::cell
+        D3A["soft delete + 30-day purge job<br/>(ShedLock, DB-backed) —<br/>hard DELETE forbidden by trigger"]:::cell
+        D4A["audit_logs on every auth,<br/>admin and biometric event"]:::cell
+    end
+
+    subgraph L6["Layer 6 — Service and container isolation"]
+        S1["biometric service: NO public<br/>route — internal Docker network<br/>+ X-API-Key only"]:::hi
+        S2["containers: read-only rootfs,<br/>cap_drop ALL,<br/>no-new-privileges, CPU/RAM caps"]:::cell
+        S3["Traefik reads Docker through<br/>docker-socket-proxy —<br/>never the raw socket"]:::cell
+    end
+
+    E1 ~~~ F1
+    F1 ~~~ A1
+    A1 ~~~ Z1
+    Z1 ~~~ D1A
+    D1A ~~~ S1

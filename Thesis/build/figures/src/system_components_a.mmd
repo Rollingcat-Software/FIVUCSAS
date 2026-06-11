@@ -1,0 +1,77 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#555555",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 28, "rankSpacing": 48, "htmlLabels": true, "padding": 8, "wrappingWidth": 330 }
+}}%%
+flowchart TB
+    CTRL["<b>Driving adapters — 29 REST controllers</b><br/>Auth · OAuth2 · OpenIDConfig · WebAuthn · Nfc · ApproveLogin · Qr<br/>Tenant · User · Role · Enrollment · AuthFlow · Audit · ..."]
+
+    subgraph APPL["application/"]
+        PIN["Input ports<br/>(use-case interfaces)"]
+        UC["Use-case services<br/>10 auth-method step handlers<br/>mfa · nfc · verification"]
+        POUT["Output ports<br/>(repository / gateway contracts)"]
+    end
+
+    subgraph DOM["domain/ (framework-free core)"]
+        DM["Model<br/>user · tenant · role ·<br/>permission · auth"]
+        DR["Repository contracts ·<br/>domain exceptions"]
+    end
+
+    subgraph INF["infrastructure/ (driven adapters)"]
+        IA["JPA repository adapters ·<br/>BiometricServiceAdapter"]
+        IMT["Multi-tenancy<br/>Hibernate @Filter(tenantFilter)<br/>TenantContext · bypass"]
+        IO["oauth2 · webauthn · totp · otp<br/>sms · qrcode · approve-login<br/>step-up · email"]
+        IP["persistence · audit ·<br/>rate-limit · messaging · health"]
+    end
+
+    PG[("PostgreSQL 17<br/>identity_core")]
+    RD[("Redis 7.4")]
+    BIOX["Biometric Processor<br/>:8001 · X-API-Key"]
+    EXT2["Twilio (SMS) ·<br/>SMTP (e-mail)"]
+
+    NOTE["Pragmatic hybrid: legacy packages (controller/ · entity/ · repository/ · service/ · security/)<br/>coexist with the hexagonal tree; ArchUnit freezes the entity.User usage boundary."]
+
+    CTRL --> PIN
+    PIN --> UC
+    UC --> DM
+    UC --> DR
+    UC --> POUT
+    POUT -. "implemented by" .-> IA
+    POUT -. "implemented by" .-> IO
+    POUT -. "implemented by" .-> IP
+    POUT ~~~ IMT
+    IA --> PG
+    IA --> BIOX
+    IP --> RD
+    IO --> EXT2
+
+    RD ~~~ NOTE
+
+    classDef drv fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef app fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef dom fill:#ebebeb,stroke:#333333,stroke-width:1.5px;
+    classDef inf fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef ext fill:#fafafa,stroke:#888888,stroke-width:1px;
+    classDef legend fill:#ffffff,stroke:#999999,stroke-width:1px,stroke-dasharray:4 3;
+
+    class CTRL drv;
+    class PIN,UC,POUT app;
+    class DM,DR dom;
+    class IA,IMT,IO,IP inf;
+    class PG,RD,BIOX,EXT2 ext;
+    class NOTE legend;
+
+    style APPL fill:#fbfbfb,stroke:#999999
+    style DOM fill:#fbfbfb,stroke:#999999
+    style INF fill:#fbfbfb,stroke:#999999

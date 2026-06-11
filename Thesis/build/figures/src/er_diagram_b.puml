@@ -1,0 +1,123 @@
+@startuml er_b_auth_engine
+!include er_style.iuml
+left to right direction
+
+entity "tenants" as tenants {
+  * id : uuid <<PK>>
+  (see sub-figure a)
+}
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  (see sub-figure a)
+}
+
+entity "auth_flows" as flows {
+  * id : uuid <<PK>>
+  --
+  * tenant_id : uuid <<FK>>
+  * name : varchar
+  flow_type : AUTHENTICATION |\n  VERIFICATION | ENROLLMENT
+  operation_type : APP_LOGIN, ...
+  industry_template : varchar (5 templates)
+  is_default : boolean
+}
+
+entity "auth_methods" as methods {
+  * id : uuid <<PK>>
+  --
+  * type : enum <<UQ>> (12 login methods)
+  category : BASIC | STANDARD | PREMIUM
+  requires_enrollment : boolean
+  is_active : boolean
+}
+
+entity "oauth2_clients" as clients {
+  * id : uuid <<PK>>
+  --
+  * client_id : varchar <<UQ>>
+  client_secret : varchar (BCrypt)
+  * tenant_id : uuid <<FK>>
+  redirect_uris : text (allowlist)
+  confidential : boolean (PKCE if public)
+}
+
+entity "user_enrollments" as enrollments {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * tenant_id : uuid <<FK>>
+  auth_method_type : enum
+  status : PENDING | ENROLLED | REVOKED, ...
+  quality_score : numeric(5,4)
+  liveness_score : numeric(5,4)
+}
+
+entity "audit_logs" as audit {
+  * id : uuid <<PK>>
+  --
+  * tenant_id : uuid (sentinel for anonymous)
+  user_id : uuid (actor, nullable)
+  action : varchar
+  resource_type : varchar
+  status_code : int
+  success : boolean
+  created_at : timestamptz (indexed)
+}
+
+entity "mfa_sessions" as mfa {
+  * id : uuid <<PK>>
+  --
+  * session_token : varchar <<UQ>>
+  user_id : uuid
+  current_step / total_steps : int
+  steps_data : jsonb (amr list)
+  consumed_at : timestamptz (anti-replay)
+  expires_at : timestamptz
+}
+
+entity "refresh_tokens" as tokens {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  token_secret_hash : bytea (SHA-256)
+  family_id : uuid (rotation family)
+  is_revoked : boolean
+  expiry_date : timestamptz
+}
+
+entity "auth_flow_steps" as steps {
+  * id : uuid <<PK>>
+  --
+  * auth_flow_id : uuid <<FK>>
+  * auth_method_id : uuid <<FK>> (primary)
+  fallback_method_id : uuid <<FK>>
+  step_order : int
+  step_type : SEQUENTIAL | CHOICE
+  max_attempts : int
+}
+
+entity "tenant_auth_methods" as tmethods {
+  * id : uuid <<PK>>
+  --
+  * tenant_id : uuid <<FK>>
+  * auth_method_id : uuid <<FK>>
+  is_enabled : boolean
+  config : jsonb
+}
+
+tenants ||--o{ flows
+tenants ||--o{ clients
+tenants ||--o{ enrollments
+tenants ||--o{ audit
+tenants ||--o{ tmethods
+users ||--o{ enrollments
+users ||--o{ audit : actor
+users ||--o{ mfa
+users ||--o{ tokens
+flows ||--o{ steps
+methods ||--o{ steps : primary /\nfallback
+methods }o--o{ steps : auth_flow_step_methods\n(CHOICE alternatives)
+methods ||--o{ tmethods
+
+@enduml

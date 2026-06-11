@@ -3,10 +3,16 @@
  */
 
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 import config from '../config.js';
 import { authHeaders } from './auth.js';
+
+// WARNING: the biometric processor (enroll/verify) has NO public route — it is
+// reachable only on the internal Docker network with an X-API-Key. These helpers
+// therefore CANNOT run from an external client against production; they exist for
+// an internal/VPN run only and are guarded behind ALLOW_MUTATIONS in every
+// scenario that imports them. See RUN_GUIDE.md.
 
 // Custom metrics for biometric operations
 export const enrollmentDuration = new Trend('enrollment_duration', true);
@@ -178,13 +184,20 @@ export function deleteBiometricData(accessToken, userId) {
 }
 
 /**
- * Generate test image URL
- * In production, this would return URLs to actual face images in S3
+ * Generate a test face-image URL for the (opt-in) biometric scenarios.
+ *
+ * IMPORTANT: there is no canonical public test-image bucket. Provide your own
+ * set of reachable face images via the TEST_IMAGE_BASE env var, e.g.
+ *   -e TEST_IMAGE_BASE=https://my-bucket.example.com/faces
+ * which yields  {TEST_IMAGE_BASE}/face-{n}.jpg. If unset, this falls back to a
+ * clearly-fake placeholder host so a misconfigured run fails loudly instead of
+ * silently hitting a stranger's bucket. (The old hard-coded
+ * storage.googleapis.com/fivucsas-test bucket does NOT exist.)
  */
 export function getTestImageUrl(index = 0) {
-  // For load testing, we'll use a placeholder service or mock URLs
-  // Replace with actual S3 URLs in production
-  return `https://storage.googleapis.com/fivucsas-test/faces/face-${index % 100}.jpg`;
+  const base = (config.testImageBase && config.testImageBase.replace(/\/$/, ''))
+    || 'https://example.invalid/fivucsas-loadtest-faces';
+  return `${base}/face-${index % 100}.jpg`;
 }
 
 /**

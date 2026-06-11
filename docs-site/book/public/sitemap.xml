@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://docs.fivucsas.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/overview</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/architecture</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/authentication</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/biometrics</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/multi-tenancy</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/security</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/data-compliance</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/integrate</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/guide/operations</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://docs.fivucsas.com/reference/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://docs.fivucsas.com/identity/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/biometric/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://docs.fivucsas.com/sdk/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://docs.fivucsas.com/diagrams.html</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+</urlset>

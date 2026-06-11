@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant W as Browser<br/>(web-app)
+    participant API as Identity Core API<br/>(api.fivucsas.com)
+    participant PG as PostgreSQL<br/>(identity_core)
+    participant RD as Redis
+    participant SMTP as SMTP relay
+
+    U->>W: fill registration form
+    W->>API: POST /api/v1/auth/register<br/>{email, password, firstName, lastName}
+    note over W,API: TLS terminated at the Traefik edge.<br/>Bean Validation: e-mail format, password length 8-128
+
+    API->>PG: existsByEmail(email)?
+
+    alt e-mail already registered
+        API-->>W: 409 Conflict (duplicate e-mail)
+        W-->>U: error message
+    else e-mail is new
+        API->>API: resolve tenant:<br/>explicit context ><br/>VERIFIED e-mail domain ><br/>legacy domain > default tenant<br/>- else REJECT (fail-closed)
+        API->>API: gates: enforce_domain_<br/>matching (V62), tenant<br/>max_users quota
+        API->>API: BCrypt hash, cost 12<br/>(deferred until after the gates)
+        API->>PG: INSERT user (status = ACTIVE)<br/>DB trigger assigns identity (V70)
+        API->>PG: audit log USER_REGISTERED<br/>(+ default member role<br/>if domain-bound)
+        API->>RD: store e-mail verification OTP (TTL 5 min)
+        API-->>SMTP: send verification code (best-effort)
+        API->>PG: INSERT refresh token (rotation family)
+        API-->>W: 201 Created<br/>{access JWT RS256, refresh token, user}
+        W-->>U: signed in --<br/>e-mail verification pending
+    end
