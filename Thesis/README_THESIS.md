@@ -1,7 +1,7 @@
 # FIVUCSAS Graduation Thesis — Deliverables & Finalization Guide
 
 Generated 2026-06-05. Software-Oriented track. ~32,000 words, 7 chapters + 3 appendices,
-20 figures, 24 tables, 5 equations, 52 references.
+24 figures, 24 tables, 5 equations, 52 references.
 
 ## Files
 
@@ -123,7 +123,7 @@ Two audit agents (full reports: `build/reviews/accuracy_2026-06-11.md` + `build/
   - Tests (authored, clean counts): JUnit **1,591** · pytest **888** · vitest **1,029** · Kotlin **568** · Playwright **336** → the thesis's "≈4,386 / ~4,400 authored tests" is accurate. (`CLAUDE.md`'s "~1,800 / 633 Java" is **stale**.)
   - Flyway: **83** migration files spanning **V0–V83** (V13 unused) — fixed the thesis's earlier "84 migration files".
   - Anti-spoofing analyzers: **13** Python + **25** TypeScript — matches the thesis exactly.
-- Build is clean: 7 chapters, 35 H2, 37 H3, 25 tables, 20 figures, 5 equations, 52 references, **0 leftover markers**.
+- Build is clean: 7 chapters, 35 H2, 37 H3, 24 tables, 24 figures, 5 equations, 52 references, **0 leftover markers**.
 
 ## Website: `fivucsas.com/thesis/` — Coming-Soon page
 

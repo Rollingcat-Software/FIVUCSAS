@@ -54,9 +54,12 @@ def load_bibliography():
             m = re.match(r"- \*\*([A-Za-z0-9_\-]+)\*\* :: (.+)", s)
             if m: refs[m.group(1)] = m.group(2).strip()
         elif section == "fig":
-            m = re.match(r"\|\s*([A-Za-z0-9_\-]+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|", line)
+            # | key | file | suggested caption | [optional display-width cap, e.g. 4.3in] |
+            m = re.match(r"\|\s*([A-Za-z0-9_\-]+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|"
+                         r"(?:\s*([0-9.]+)\s*in\s*\|)?", line)
             if m and m.group(1) not in ("key", "---", ":---"):
-                figs[m.group(1)] = (m.group(2).strip(), m.group(3).strip())
+                width = Inches(float(m.group(4))) if m.group(4) else None
+                figs[m.group(1)] = (m.group(2).strip(), m.group(3).strip(), width)
     return refs, figs
 
 REFS, FIGS = load_bibliography()
@@ -314,13 +317,14 @@ def add_caption(doc, label, chapter, is_first_in_chapter, text):
     run_text("  " + text, bold=False)
     return p
 
-def fit_figure_width(img, key):
-    """Displayed width capped to the text column AND to one page of height (aspect kept),
-    so tall diagrams shrink to fit instead of running off the page edge. Warns when the
-    source raster falls below MIN_FIG_DPI at the resulting print size."""
+def fit_figure_width(img, key, max_w=None):
+    """Displayed width capped to the text column (or the catalog's per-figure cap) AND to
+    one page of height (aspect kept), so tall diagrams shrink to fit instead of running
+    off the page edge. Warns when the source raster falls below MIN_FIG_DPI at the
+    resulting print size."""
     im = DocxImage.from_file(img)
     aspect = im.px_height / float(im.px_width)
-    w = MAX_FIG_W
+    w = max_w if max_w and max_w < MAX_FIG_W else MAX_FIG_W
     if w * aspect > MAX_FIG_H:
         w = Emu(int(MAX_FIG_H / aspect))
     eff_dpi = im.px_width / w.inches
@@ -336,7 +340,7 @@ def add_figure(doc, key, caption, chapter, is_first):
     if not path_cap:
         # unknown figure key -> placeholder
         add_caption(doc, "Figure", chapter, is_first, caption or ("[missing figure: %s]" % key)); return False
-    rel, default_cap = path_cap
+    rel, default_cap, fig_w = path_cap
     # vendored copy under build/figures first (self-contained build), then ROOT-relative,
     # then sibling checkouts (e.g. docs cloned next to the parent repo)
     candidates = [os.path.join(T, "figures", os.path.basename(rel)),
@@ -348,7 +352,7 @@ def add_figure(doc, key, caption, chapter, is_first):
     p.paragraph_format.keep_with_next = True   # never page-break between figure and caption
     run = p.add_run()
     try:
-        run.add_picture(img, width=fit_figure_width(img, key))
+        run.add_picture(img, width=fit_figure_width(img, key, fig_w))
     except Exception as e:
         run.add_text("[image error: %s]" % e)
     add_caption(doc, "Figure", chapter, is_first, caption or default_cap)

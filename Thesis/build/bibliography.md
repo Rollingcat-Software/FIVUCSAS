@@ -65,8 +65,10 @@ just use stable keys. If you need a source not listed, ADD it here in the same G
 
 ## Figure catalog (key → repo image + suggested caption)
 Paths are relative to the repo root. Every figure the thesis embeds is vendored under
-`Thesis/build/figures/` so the build is self-contained (unused catalog entries still
-point at their `docs/` originals). Reference in text with `[[FIG:key | your caption]]`.
+`Thesis/build/figures/` (diagram sources in `figures/src/`, vector sidecars in
+`figures/svg/`) so the build is self-contained; unused catalog entries still point at
+their `docs/` originals. Reference in text with `[[FIG:key | your caption]]`. An optional
+fourth cell (e.g. `4.3in`) caps a figure's display width below the 5.9 in column default.
 
 | key | file | suggested caption |
 |---|---|---|
@@ -76,11 +78,14 @@ point at their `docs/` originals). Reference in text with `[[FIG:key | your capt
 | uc_enduser | docs/02-architecture/diagrams/end_user_use_cases.png | End-User use cases |
 | uc_external | docs/02-architecture/diagrams/external_system_use_cases.png | External-system (API/OIDC client) use cases |
 | domain_model | Thesis/build/figures/diagram_02_domain_model___core_entities.png | Core domain model for multi-tenant identity and biometric verification |
-| er_diagram | Thesis/build/figures/diagram_03_entity_relationship_diagram.png | Entity-Relationship diagram of the FIVUCSAS schema |
+| er_diagram_a | Thesis/build/figures/er_a_identity_rbac.png | Identity, tenancy and RBAC core of the identity_core schema |
+| er_diagram_b | Thesis/build/figures/er_b_auth_engine.png | Authentication engine, session and token tables |
+| er_diagram_c | Thesis/build/figures/er_c_biometric_store.png | Biometric vector store (separate biometric_db database) | 4.3in |
 | er_full | docs/02-architecture/diagrams/fivucsas_er_diagram.png | Full FIVUCSAS database ER diagram |
 | er_core | docs/02-architecture/diagrams/core_entities_er.png | Core IAM entities ER diagram |
 | arch_overview | Thesis/build/figures/diagram_04_system_architecture_overview.png | High-level system architecture overview |
-| sys_components | Thesis/build/figures/system_components.png | System component diagram |
+| system_components_a | Thesis/build/figures/system_components_a.png | Component structure of the Identity Core API |
+| system_components_b | Thesis/build/figures/system_components_b.png | Component structure of the Biometric Processor |
 | identity_internal | docs/02-architecture/diagrams/identity_core_internal.png | Identity Core API internal (hexagonal) structure |
 | biometric_internal | docs/02-architecture/diagrams/biometric_processor_internal.png | Biometric Processor internal structure |
 | biometric_classes | docs/02-architecture/diagrams/biometric_processor_classes.png | Biometric Processor class diagram |
@@ -95,8 +100,10 @@ point at their `docs/` originals). Reference in text with `[[FIG:key | your capt
 | seq_registration | Thesis/build/figures/user_registration.png | User registration sequence |
 | dataflow_verification | Thesis/build/figures/data_flow_verification.png | Data-flow of the verification pipeline |
 | verify_decision | docs/02-architecture/diagrams/verification_decision_activity.png | Verification decision activity diagram |
-| face_verify_liveness | Thesis/build/figures/face_verification_liveness.png | Face verification with liveness activity diagram |
-| face_enroll_quality | Thesis/build/figures/face_enrollment_quality.png | Face enrollment with quality assessment activity diagram |
+| verify_sequence_a | Thesis/build/figures/verify_sequence_a.png | Face verification sequence, capture and server-side gates |
+| verify_sequence_b | Thesis/build/figures/verify_sequence_b.png | Face verification sequence, matching and decision pipeline |
+| enroll_sequence_a | Thesis/build/figures/enroll_sequence_a.png | Face enrollment sequence, capture and liveness gates |
+| enroll_sequence_b | Thesis/build/figures/enroll_sequence_b.png | Face enrollment sequence, quality, embedding and storage |
 | fsm_session | Thesis/build/figures/session_state_machine.png | Session finite-state machine |
 | fsm_verification | Thesis/build/figures/verification_state_machine.png | Verification finite-state machine |
 | fsm_user | Thesis/build/figures/user_state_machine.png | User-account finite-state machine |

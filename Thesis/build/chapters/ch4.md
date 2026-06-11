@@ -361,7 +361,7 @@ frustrated genuine users far more than it stopped attackers.
 If liveness is the project's research heart, the identity service is its engineering heart.
 This section documents the cryptographic and protocol-level algorithms that make FIVUCSAS an
 authentication platform rather than a face-matching demo. The corresponding security
-architecture is shown in [[FIG:security_arch | Security architecture: JWT signing/verification, RBAC, TLS termination, and layered rate limiting]].
+architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis sliding-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
 
 ### 4.4.1 JWT, RBAC and Password Security
 
@@ -517,8 +517,7 @@ reminder that least-privilege OS configuration and native ML libraries interact 
 ## 4.6 Networking and Protocols
 
 FIVUCSAS is a distributed system, and its correctness depends on the contracts between its parts as
-much as on the code inside them. The network architecture and request routing are shown in
-[[FIG:network_arch | Network architecture: TLS termination at Traefik, public vs. internal routing, and the API-key-protected biometric service]].
+much as on the code inside them. The network architecture and request routing are shown in [[FIG:network_arch | Deployed network topology. A single Traefik v3.6 edge terminates TLS on the Hetzner host and routes by hostname to containers on the proxy Docker network; service discovery goes through a filtered docker-socket-proxy. The identity service is attached to both the proxy and backend networks, while the biometric service, PostgreSQL, and Redis live only on the backend network with no public route. Static surfaces are served from Hostinger and reach the API as browser requests; administrative surfaces are IP-allowlisted at the edge.]].
 
 **TLS everywhere at the edge.** All public traffic terminates at Traefik v3, which redirects port 80
 to 443 and obtains certificates automatically from Let's Encrypt. Traefik discovers services from
@@ -538,8 +537,7 @@ the Python service), making the contract machine-readable and testable.
 
 **The OIDC redirect protocol.** As detailed in Section 4.4.2, third-party login is a browser-mediated
 redirect protocol: authorize request → hosted login → MFA → authorization-code redirect → back-channel
-token exchange. The data-flow of the verification pipeline that this protocol guards is shown in
-[[FIG:dataflow_verification | Data flow of the verification pipeline, from client capture through liveness, embedding, and decision]].
+token exchange. The data-flow of the verification pipeline that this protocol guards is shown in [[FIG:dataflow_verification | Verification data path (read the left column top to bottom, then the right). In the browser, MediaPipe landmarks drive an advisory active-liveness challenge before a 224×224 crop is uploaded over TLS with an anti-replay nonce. The identity service applies session, lockout, and rate-limit gates, then calls the internal biometric service, which enforces the passive-liveness floor (0.4) and the quality floor (50), computes the Facenet512 embedding, compares it against the Fernet-protected template from pgvector (cosine distance below 0.4, or 0.55 for templates older than two years), and can still veto a match through the anti-spoof assembler. Both outcomes are written to the audit log.]].
 
 **WebSocket proctoring.** Real-time session monitoring is not request/response but a persistent
 bidirectional stream: the biometric service exposes a WebSocket endpoint (`/ws/live-analysis`) and the
@@ -573,21 +571,21 @@ never enrolled" or "consumed token reused." Four FSMs anchor the design.
 The **session finite-state machine** governs an authentication session from creation through the
 MFA steps to completion, expiry, or revocation. It is the FSM that the consume-then-mint idempotency
 of Section 4.5 enforces: a session in the `COMPLETED`/`CONSUMED` state can never transition back to a
-usable one. The full lifecycle appears in [[FIG:fsm_session | Session finite-state machine: creation, MFA progression, completion, expiry, and revocation]].
+usable one. The full lifecycle appears in [[FIG:fsm_session | Authentication-session state machine. A session is created for one auth-flow run with a 10-minute lifetime and moves to IN_PROGRESS on the first step submission; exceeding a step's attempt limit fails the session. Tokens are minted only on the transition to COMPLETED after the last required step, and terminal states answer any further submission with HTTP 409. The hosted login's MfaSession engine shares the same lifecycle semantics.]].
 
 The **verification finite-state machine** drives the identity-verification (KYC) pipeline through its
 ordered steps (document scan, data extraction, face match, liveness check, and so on), with
 transitions for a passed step, a failed step, a step requiring manual review, and overall
-completion or rejection, as illustrated in [[FIG:fsm_verification | Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states]].
+completion or rejection, as illustrated in [[FIG:fsm_verification | Verification-session state machine. A session is created PENDING on a VERIFICATION-type flow with a 30-minute lifetime and enters IN_PROGRESS on the first submitted step result. Handlers may defer a step to PENDING_REVIEW, which an administrator resolves; when every step is completed or skipped the session auto-completes and the user is marked identity-verified, while any failed step fails the session. Terminal states answer further submissions with HTTP 409; CANCELLED is declared on the entity but currently has no caller.]].
 
 The **biometric-enrollment finite-state machine** models a face or voice enrollment from initial
 capture through quality assessment and liveness gating to a persisted, active template, or to a
 rejection that re-prompts capture. The fail-closed multi-image enrollment of Section 4.3.2 is one of
-this machine's transition rules; [[FIG:fsm_enrollment | Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment]] depicts the complete machine.
+this machine's transition rules; [[FIG:fsm_enrollment | Enrollment state machine (one row per user and authentication method). Asynchronous methods such as face and voice pass through PENDING until the backing enrollment completes with quality and liveness scores; methods whose data is verified at start and passkey registrations complete immediately. Only ENROLLED satisfies the login engine's enrollment check, and re-enrollment restarts any non-pending row. EXPIRED is defined on the entity but currently has no scheduled trigger.]] depicts the complete machine.
 
 The **user-account finite-state machine** tracks the account lifecycle (pending, active, locked,
 suspended, and soft-deleted), including the lockout transition after repeated failed logins and the
-GDPR soft-delete state that the nightly purge job eventually finalizes, shown in [[FIG:fsm_user | User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states]].
+GDPR soft-delete state that the nightly purge job eventually finalizes, shown in [[FIG:fsm_user | User-account lifecycle. Accounts are created ACTIVE; only the self-service tenant-onboarding flow starts its first administrator in PENDING_ENROLLMENT until e-mail ownership is proven. Suspension and deactivation are administrative status changes, and temporary lockout is deliberately orthogonal to the status enum: five failed login factors set a 15-minute lock flag (HTTP 423) that clears itself. Deletion is a soft delete hidden from all reads; a flag-gated nightly job purges rows after a 30-day retention window.]].
 
 Modeling these as explicit state machines made each transition a single, testable method and
 put the illegal states beyond the reach of the code: a session in `COMPLETED`, an enrollment
