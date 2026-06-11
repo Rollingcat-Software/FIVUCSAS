@@ -189,7 +189,7 @@ surfaces in CI rather than in production.
 
 The biometric processor's integration suite (167 authored tests) verifies the FastAPI route
 handlers against a real pgvector database and Redis, including the enroll → store → verify
-round-trip on the `face_embeddings` table with its IVFFlat cosine index, the
+round-trip on the `face_embeddings` table with the migration-created IVFFlat cosine index, the
 embedding-cipher store-of-record path (Fernet-encrypted `embedding_ciphertext` alongside the
 plaintext search vector), and the voice enrollment centroid computation. The heaviest
 machine-learning integration tests, those that actually load TensorFlow, DeepFace, and the

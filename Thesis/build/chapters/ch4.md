@@ -634,8 +634,9 @@ outright.
 
 **Proof by test.** Isolation is a CI gate, not an assertion. A set of Testcontainers
 integration tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
-and others) run against a real PostgreSQL+pgvector and Redis on every pull request, and the pipeline
+and others) run against a real PostgreSQL+pgvector and Redis as a required pull-request gate, and the pipeline
 parses the test report to **assert that these named isolation tests actually executed**, a guard against
-a security test being silently skipped. Isolation is therefore mechanically re-verified on every
-merge rather than merely claimed, which is the strongest guarantee the platform can make about the
+a security test being silently skipped (the gate's repair history, including documented administrator
+overrides, is recorded in §5.2). Isolation is therefore mechanically re-verified rather than
+merely claimed, which is the strongest guarantee the platform can make about the
 boundary that matters most in a SaaS.

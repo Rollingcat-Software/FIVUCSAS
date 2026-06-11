@@ -1243,10 +1243,11 @@ outright.
 
 **Proof by test.** Isolation is a CI gate, not an assertion. A set of Testcontainers
 integration tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
-and others) run against a real PostgreSQL+pgvector and Redis on every pull request, and the pipeline
+and others) run against a real PostgreSQL+pgvector and Redis as a required pull-request gate, and the pipeline
 parses the test report to **assert that these named isolation tests actually executed**, a guard against
-a security test being silently skipped. Isolation is therefore mechanically re-verified on every
-merge rather than merely claimed, which is the strongest guarantee the platform can make about the
+a security test being silently skipped (the gate's repair history, including documented administrator
+overrides, is recorded in §5.2). Isolation is therefore mechanically re-verified rather than
+merely claimed, which is the strongest guarantee the platform can make about the
 boundary that matters most in a SaaS.
 
 
@@ -1452,7 +1453,7 @@ surfaces in CI rather than in production.
 
 The biometric processor's integration suite (167 authored tests) verifies the FastAPI route
 handlers against a real pgvector database and Redis, including the enroll → store → verify
-round-trip on the `face_embeddings` table with its IVFFlat cosine index, the
+round-trip on the `face_embeddings` table with the migration-created IVFFlat cosine index, the
 embedding-cipher store-of-record path (Fernet-encrypted `embedding_ciphertext` alongside the
 plaintext search vector), and the voice enrollment centroid computation. The heaviest
 machine-learning integration tests, those that actually load TensorFlow, DeepFace, and the
@@ -2198,9 +2199,9 @@ used the Yubico server library with an explicit origin allowlist [29]; two compl
 rate-limiting layers (a Redis sliding window and Bucket4j token buckets [23]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
 isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
-Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified on every pull
-request** by Testcontainers integration tests that the CI pipeline asserted had actually executed
-[51].
+Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified by a required
+pull-request gate** of Testcontainers integration tests that the CI pipeline asserted had actually executed
+[51] (§5.2 records the gate's repair history).
 
 The engineering process itself is part of the result. The platform was backed by roughly
 **4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the

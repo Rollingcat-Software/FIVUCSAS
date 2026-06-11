@@ -78,9 +78,9 @@ used the Yubico server library with an explicit origin allowlist [CITE:webauthn]
 rate-limiting layers (a Redis sliding window and Bucket4j token buckets [CITE:bucket4j]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
 isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
-Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified on every pull
-request** by Testcontainers integration tests that the CI pipeline asserted had actually executed
-[CITE:testcontainers].
+Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified by a required
+pull-request gate** of Testcontainers integration tests that the CI pipeline asserted had actually executed
+[CITE:testcontainers] (§5.2 records the gate's repair history).
 
 The engineering process itself is part of the result. The platform was backed by roughly
 **4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
