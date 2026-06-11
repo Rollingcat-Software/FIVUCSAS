@@ -30,7 +30,7 @@ sensitivity of the resource rather than defaulting to a single weak factor. The 
 person manages their own data through a self-service profile: they can list their
 biometric enrollments, review recent activity, see and revoke sessions on other
 devices, and export or request deletion of their personal data. The benefit to the
-user is therefore not merely "fewer passwords"; it is a verifiable, controllable
+user goes beyond "fewer passwords": a verifiable, controllable
 identity that the user, not just the provider, can inspect and act on. This matters
 because biometric data is uniquely sensitive — it cannot be reset like a password — and a
 platform that asks for a face owes its users transparency in return.
@@ -75,8 +75,8 @@ their head, a fixed routine that a sufficiently prepared attacker can pre-record
 The Biometric Puzzle instead issues a *randomized* sequence of facial and gestural
 challenges from a defined challenge set, then scores the response server-side against the
 specific challenge that was issued. Because the challenge is unpredictable and bound to a
-short-lived session, a replayed video of the user performing yesterday's blink does not
-satisfy today's puzzle. The implementation grounds this idea in concrete, measurable
+short-lived session, a pre-recorded video cannot anticipate the challenge it will be asked
+to answer. The implementation grounds this idea in concrete, measurable
 signals: eye-aspect-ratio for blink detection following the landmark-based formulation of
 Soukupová and Čech, mouth-aspect-ratio for smile and mouth-open challenges, and head-pose
 estimation for turn challenges, with the eye-aspect-ratio blink threshold fixed at 0.21
@@ -98,8 +98,7 @@ results in the vocabulary of the international standard — APCER and BPCER in t
 ISO/IEC 30107-3 sense — and labels every figure as measured on a specific test set or as a
 target, never as a universal accuracy claim [CITE:iso30107-3]. The project also declined to
 publish the unverified "100% accuracy" fuser figure pending a reproducibility review (see
-Section 5.8); that restraint is itself a small methodological contribution, modeling the
-discipline the field asks for.
+Section 5.8).
 
 Beyond liveness, the project is a worked, public demonstration of how to assemble mature
 research components — MTCNN face detection, a FaceNet-style 512-dimensional embedding with
@@ -137,14 +136,14 @@ cross-device additions — and a hosted OIDC integration, packaged so that an or
 without a security team can adopt it. The platform was deployed to production across a
 public landing site, a tenant dashboard, a hosted login origin, an embeddable widget, a
 demonstration tenant, and a live anti-spoofing tester, demonstrating that the offering is
-operable, not merely buildable. We are careful not to overstate market traction: the system
+operable, not just buildable. To be clear about market traction: the system
 is a deployed prototype with demonstration tenants, and broad commercial adoption, formal
 certification, and a priced go-to-market remain future work. The commercial *foundation*,
 however — a running, multi-tenant, standards-based platform — exists.
 
 Socially, the impact runs along three lines the specification identified and the build
 made real. First, **safer everyday authentication**: by making strong, anti-spoofing,
-multi-factor identity verification cheap to adopt, the platform pushes against the password
+multi-factor identity verification cheap to adopt, the platform pushed against the password
 reuse and card cloning that underlie a large share of account-takeover and identity-theft
 harm, contributing in a modest way to reducing cybercrime [CITE:verizon2024-dbir,itrc2023].
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
@@ -154,7 +153,7 @@ interface and accessibility-minded design lower the barrier for the populations 
 services must reach. Third, and inseparable from the first two, **data dignity**: because
 the platform treats biometric data as the uniquely sensitive category it is — encrypting
 stored templates, requiring explicit per-tenant biometric consent, isolating tenants, and
-giving every user export and deletion controls — it advances the social norm that strong
+giving every user export and deletion controls — it advanced the social norm that strong
 authentication and strong privacy are not opposites but requirements of the same system,
 in line with KVKK Law No. 6698 and the GDPR [CITE:kvkk6698,gdpr]. A platform that
 collected faces without those guarantees would have a *negative* social impact; the

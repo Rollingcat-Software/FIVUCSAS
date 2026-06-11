@@ -30,7 +30,7 @@ commodity cores is a far more reproducible and defensible artifact than one that
 assumes an accelerator.
 
 The platform is a polyglot microservice system, and each language and framework earns its
-place. The summary of the principal tools is given in the table below.
+place. Table 4.1 summarizes the principal tools.
 
 [[TABLE: Principal tools and frameworks, with the rationale for each choice]]
 
@@ -44,7 +44,7 @@ place. The summary of the principal tools is given in the table below.
 | Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, distributed locks, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [CITE:traefik] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`), digest-pinned deployments across all backend services |
-| DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V83) checked into source control |
+| DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V84) checked into source control |
 
 Three details need clarifying, because earlier planning documents pointed
 elsewhere and we followed the shipped reality. First, the production **edge is Traefik v3,
@@ -67,7 +67,7 @@ merge on roughly **4,400 automated tests** across five test technologies.
 
 ## 4.2 Data Structures
 
-A multi-tenant biometric platform lives or dies by the data structures it chooses, because
+A multi-tenant biometric platform depends heavily on its choice of data structures, because
 the same byte of data (a face embedding, a one-time code, a refresh token) must be cheap to
 write, fast to search, and impossible to leak across a tenant boundary. We describe the
 ones that carry the most weight.
@@ -112,7 +112,7 @@ leaving stale security tokens behind.
 so an invalid email address or a malformed BCrypt hash can never enter the domain. These
 are mapped to and from request/response **DTOs** (`application/dto/{command,query,response}`)
 at the application boundary, keeping the wire format decoupled from the persistence model.
-The persistence model itself is 32 JPA `@Entity` classes; several use a deliberate state
+The persistence model itself is 31 JPA `@Entity` classes; several use a deliberate state
 pattern (`revokedAt`/`expiresAt` timestamps on `NfcCard` and `OAuth2Client`) and one
 (`RefreshToken`) implements Spring Data's `Persistable<UUID>` with an explicit `isNew()`
 flag so that manually assigned UUID primary keys insert correctly rather than being mistaken
@@ -242,7 +242,7 @@ live when the combined score clears the threshold.
 
 The full research stack lives in the standalone **spoof-detector** library (deployed for
 in-browser experimentation at amispoof.fivucsas.com), where thirteen Python analyzers — and
-twenty-five in the TypeScript browser port — feed a `HybridFusionEvaluator` that weights
+twenty-six in the TypeScript browser port — feed a `HybridFusionEvaluator` that weights
 MiniFASNet against flash-reflection, moiré, and device-replay signals with a decision
 threshold of 0.45, and a multi-class fuser that classifies an attack into a taxonomy
 (`STATIC_IMAGE`, `VIDEO_REPLAY`, `MASK_3D`, `HEAVY_MAKEUP`, `AR_FILTER`, `DEEPFAKE_INJECT`).
@@ -312,8 +312,8 @@ The production index is an **IVFFlat** index built with `vector_cosine_ops` and 
 partitions the vector space into clusters at build time and probes only the nearest clusters
 at query time, trading a controllable amount of recall for a large speed-up — the same
 inverted-file idea that underlies GPU ANN systems such as FAISS [CITE:faiss], here available
-inside the relational store we already operate. (An HNSW variant exists in the migrations only
-as a commented-out alternative; the operative production index is IVFFlat.) Every search is
+inside the relational store we already operate. (An HNSW index exists on a legacy table and as a commented-out
+alternative in the operative migration; the production index on `face_embeddings` is IVFFlat.) Every search is
 **tenant-scoped**: the query is constrained to the caller's tenant and a server-side cap bounds
 the maximum acceptable distance, so identification can never reach across a tenant boundary.
 This is where databases and machine learning meet in the platform — classical index theory
@@ -337,7 +337,7 @@ the face occupies. A best-effort head-pose penalty multiplies the score by 0.7 w
 estimated yaw exceeds 30° or pitch exceeds 25°, and a frame with Laplacian variance below 5
 (essentially unusable) is hard-rejected outright. The operational thresholds are tuned to
 admit real-world webcam frames without admitting junk: enrollment uses a floor of 40 and
-verification an even more lenient 50, values arrived at empirically because over-strict gating
+verification a slightly stricter 50, values arrived at empirically because over-strict gating
 frustrated genuine users far more than it stopped attackers.
 
 ## 4.4 Authentication, Authorization and Security
@@ -444,7 +444,7 @@ Each factor carries its own anti-replay algorithm. **TOTP** (time-based one-time
 marks a verified `(userId, timeStep)` pair as consumed in Redis with an atomic
 `SET key 1 EX 120 NX`, so the same code cannot be replayed within its validity window, and the
 secret is encrypted at rest with AES-GCM-256. **OTP** codes store an attempt counter alongside the
-code and delete the code on a wrong guess, capping the brute-force budget. **WebAuthn/passkeys**
+code and delete the code once the counter reaches five wrong guesses, capping the brute-force budget. **WebAuthn/passkeys**
 [CITE:webauthn] are validated with the Yubico library against an explicit origin allowlist, with
 manual `rpIdHash` (SHA-256) comparison and `signCount` monotonicity to detect cloned authenticators.
 **Approve-login** uses Redis-backed number matching where the match number is a zero-padded string
@@ -592,9 +592,9 @@ caller into another tenant; only a `ROOT` platform-tier user keeps the legitimat
 override.
 
 **Persistence-layer filtering.** The operative isolation is a Hibernate `@Filter`. A global
-`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the eight tenant-scoped entities
+`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the nine tenant-scoped entities
 (`AuditLog`, `AuthSession`, `MfaSession`, `UserEnrollment`, `VerificationSession`, `OAuth2Client`,
-`UserDevice`, `AuthFlow`), automatically constraining every derived query. Role definitions widen the
+`UserDevice`, `AuthFlow`, `UserSettings`), automatically constraining every derived query. Role definitions widen the
 filter to `(tenant_id = :tenantId OR tenant_id IS NULL)` so global roles stay visible, and the
 cross-tenant identity entities (`Identity`, `IdentityEmail`, `IdentityTenantBiometricConsent`)
 deliberately carry **no** filter because they are platform-level by design. A `TenantFilterBypass`
@@ -608,7 +608,7 @@ Hibernate `@Filter` plus the tenant-scope resolver, not Postgres RLS.
 Section 4.3.4 always constrains to the caller's tenant, and cross-tenant biometric search is forbidden
 outright.
 
-**Proof by test.** Isolation is not merely asserted; it is a CI gate. A set of Testcontainers
+**Proof by test.** Isolation is a CI gate, not an assertion. A set of Testcontainers
 integration tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
 and others) run against a real PostgreSQL+pgvector and Redis on every pull request, and the pipeline
 parses the test report to **assert that these named isolation tests actually executed** — a guard against

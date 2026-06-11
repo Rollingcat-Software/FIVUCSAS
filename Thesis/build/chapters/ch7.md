@@ -37,7 +37,7 @@ at the edge and routed by Docker labels, with an admin-IP-gated surface for Swag
 and hardened forwarded-header handling. The whole deployment ran on a single Hetzner CX43 VPS
 under Docker Compose [CITE:docker,dockercompose], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
-evolved through 83 Flyway migrations [CITE:flyway] (the V0–V83 range, with V13 unused) — an auditable record of the
+evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused) — an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
 partitioned audit logs, and discoverable passkeys.
 
@@ -49,8 +49,8 @@ the Biometric Puzzle**. The puzzle asks the user to complete a randomly generate
 actions (blink, smile, turn, open mouth, raise eyebrows, and more), each scored against MediaPipe
 FaceLandmarker geometry [CITE:mediapipe] using Eye- and Mouth-Aspect-Ratio and landmark-derived
 head-pose thresholds, with incompatible action pairs blocked and a per-step confidence and duration
-floor enforced server-side. Because the sequence is unpredictable and verified on the server, a
-printed photo or a replayed video cannot satisfy it. This rests on an explicit, documented
+floor enforced server-side; the unpredictability of the server-verified sequence is what
+defeats static and replayed media. This rests on an explicit, documented
 architectural decision: **the browser is untrusted, and the authoritative auth decision is made on
 the server**. Under that decision (D2) the client-side geometry embedding is recorded for offline
 analysis but never decides the verdict.
@@ -96,7 +96,7 @@ infrastructure.
 
 ## 7.2 Advantages and Limitations
 
-No engineering decision is free, and a candid thesis names the cost of each choice as plainly as
+No engineering decision is free; this section names the cost of each choice alongside
 its benefit. This section weighs the principal methods we adopted.
 
 ### 7.2.1 Advantages of the Chosen Methods
@@ -139,7 +139,7 @@ a familiar, low-effort integration via a small SDK and standard OAuth 2.0 / OIDC
 Hibernate `@Filter`, fail-closed rate limiting, single-use replay-proof tokens, refresh-token family
 revocation) mean no single failure breaches the tenant boundary, and the isolation guarantee is
 re-checked on every merge rather than asserted once [CITE:testcontainers]. The hardened container
-runtime and the 83-step auditable migration history extend the same discipline to operations.
+runtime and the 84-step auditable migration history extend the same discipline to operations.
 
 ### 7.2.2 Limitations of the Chosen Methods
 
@@ -183,8 +183,8 @@ plainly:
 - **Iris recognition** is declared in the enum but **not implemented**.
 - Some verification-pipeline handlers (for example, the **watchlist check**) are production fail-fast
   stubs awaiting a real data source.
-- The deployed in-browser **card-detection model** is an oversized YOLOv8m standing in for the
-  intended lightweight nano model.
+- The in-browser **card-detection model** (a 12.3 MB YOLOv8n) was trained on a limited corpus and
+  generalizes weakly beyond the Turkish ID and Marmara card types it was tuned for.
 
 **iOS was not delivered, and there is no billing.** The platform is multi-tenant in its data model and
 isolation, but it has no metering, subscription, or billing subsystem, so it is not yet a commercially
@@ -194,8 +194,7 @@ hard to keep green on constrained runners means it should not yet be treated as 
 without the closing work described in §5.2.
 
 Taken together, these limitations describe a system that is **architecturally complete and operationally
-deployed, but pre-certification and pre-commercial**. That is a candid and, we think, respectable place
-for an undergraduate platform of this ambition to stand.
+deployed, but pre-certification and pre-commercial**.
 
 ## 7.3 Future Work
 
@@ -218,8 +217,8 @@ an additive-angular-margin model such as **ArcFace** [CITE:deng2019-arcface], wh
 stronger discrimination on hard pairs, with AdaFace [CITE:kim2022-adaface] as a quality-adaptive
 alternative worth benchmarking. Because changing the embedding model invalidates every stored
 vector, this must be paired with a planned re-enrollment campaign and a dual-write migration window. The
-oversized in-browser card-detection model should likewise be replaced with the intended retrained
-YOLOv8n nano, and the document-detection pipeline retrained on Turkish ID and passport imagery.
+in-browser YOLOv8n card-detection model should likewise be retrained on a broader corpus of
+Turkish ID and passport imagery to improve generalization across document types.
 
 **Kubernetes orchestration and horizontal scaling.** To lift the single-VPS ceiling, the deployment
 should migrate from single-host Docker Compose to a container-orchestration platform such as Kubernetes,

@@ -29,7 +29,7 @@ exercises the seams — service-to-database, service-to-cache, service-to-servic
 backing stores rather than mocks, and a still narrower layer of **end-to-end (E2E) tests**
 drives the real browser through complete user journeys. Specialized **performance** and
 **security** suites sit on top, validating the non-functional requirements: latency,
-throughput, isolation, and vulnerability posture. The table below summarizes each level — its
+throughput, isolation, and vulnerability posture. Table 5.1 summarizes each level — its
 scope, its tooling, and its coverage intent.
 
 [[TABLE: Test strategy, scope, tooling, and coverage intent by level]]
@@ -66,7 +66,7 @@ in production.
 
 The test toolchain mirrors the production stack so that tests exercise the same runtime
 behavior the platform actually relies on. The principal tools and their roles are listed
-below.
+in Table 5.2.
 
 [[TABLE: Test tooling per module, with role and execution environment]]
 
@@ -104,7 +104,7 @@ Testcontainers integration tests, because its sandboxed deploy shell has no Dock
 those tests are verified through GitHub-hosted CI instead. Second, the Identity API
 integration gate had a documented history of test-infrastructure rot, and during the project's
 most intense authentication-hardening sprint a small number of pull requests were merged with
-an administrator override while that gate was being repaired. We record this rather than
+an administrator override while that gate was being repaired. We record this instead of
 conceal it: the gate has since had its `continue-on-error` escape hatch removed, so a failing
 isolation test now blocks a merge. The gate's trustworthiness was being *restored*, not taken
 for granted.
@@ -117,16 +117,20 @@ annotations, `def test_` functions, and `it()`/`test()` blocks — with throwawa
 build directories, and duplicated scratch copies excluded. They are *authored* method counts,
 not *passing* counts, because some tests are environment-gated or marked skip/xfail at runtime.
 
-In the **Identity Core API**, we authored **1,569 `@Test` methods across 176 test files**, all
+In the **Identity Core API**, we authored **1,595 `@Test` methods across 179 test files**, all
 under `src/test/java`, with no stray tests in the main source set. A further **22
 `@ParameterizedTest` methods** each expand into several executed cases at runtime, so the true
-executed count exceeds 1,569. These tests mix pure unit tests over domain and application
+executed count exceeds 1,595. These tests mix pure unit tests over domain and application
 logic, Spring-context tests, Testcontainers integration tests, and ArchUnit boundary tests.
 The unit-level work concentrates on the security-sensitive logic that is hardest to get right
 and most dangerous to get wrong: password hashing with bcrypt
 [CITE:bcrypt], JWT issuance and validation including issuer/audience checks [CITE:jwt-rfc7519],
 the multi-method MFA dispatcher, TOTP used-code replay prevention, the OAuth 2.0 / PKCE
 authorization-code machinery [CITE:oauth2-rfc6749,pkce-rfc7636], and the Bucket4j rate-limiter.
+A full execution of this suite shortly before submission (JDK 21, `mvn -o test`, 2026-06-07)
+finished green: **1,670 tests run, 0 failures, 0 errors, 67 skipped** — the skipped cases being
+the Docker-gated Testcontainers integration tests, and the executed count exceeding the authored
+method count because parameterized tests expand at runtime.
 
 In the **biometric processor**, we authored **888 `def test_` functions across 68 test
 files**. By directory these break down as 683 unit tests, 167 integration tests, 22 e2e tests,
@@ -145,8 +149,9 @@ files** using Vitest with React Testing Library. These verify React hooks (face 
 quality scoring, challenge state), API-client error handling, i18n string coverage in both
 English and Turkish, and the authentication-flow builder UI logic.
 
-In the **Kotlin Multiplatform clients**, we authored **568 `@Test` methods across 64 test
-files**, split by source set into 486 commonTest, 34 androidTest, and 25 desktopTest. The
+In the **Kotlin Multiplatform clients**, we authored **561 `@Test` methods across 64 test
+files** — 489 in the shared `commonTest` set, 30 Android instrumented tests, 25 in
+`desktopTest`, and 17 Android JVM unit tests. Table 5.3 consolidates the inventory. The
 shared `commonTest` set exercises the cross-platform domain layer once and reuses it across
 Android and desktop targets.
 
@@ -154,12 +159,12 @@ Android and desktop targets.
 
 | Module | Tool | Files | Authored test cases |
 |---|---|---|---|
-| Identity Core API | JUnit 5 | 176 | 1,569 (+22 parameterized) |
+| Identity Core API | JUnit 5 | 179 | 1,595 (+22 parameterized) |
 | Web dashboard (unit/component) | Vitest | 105 | 1,025 |
 | Web dashboard (E2E) | Playwright | 28 | 336 |
-| Mobile / desktop clients | Kotlin / JUnit | 64 | 568 |
+| Mobile / desktop clients | Kotlin / JUnit | 64 | 561 |
 | Biometric processor | pytest | 68 | 888 |
-| **Total** | | **441** | **≈ 4,386 authored** |
+| **Total** | | **444** | **≈ 4,405 authored** |
 
 The headline figure for the thesis is therefore **approximately 4,400 authored automated test
 cases across five test technologies**, materially higher than the "~1,800+" figure that appears
@@ -189,6 +194,7 @@ machine-learning integration tests — those that actually load TensorFlow, Deep
 UniFace MiniFASNet ONNX model — are gated behind `RUN_FULL_STACK_INTEGRATION=true` and run
 only inside the pinned Docker ML stack, because a floating-dependency rebuild was found to
 segfault the ONNX preload under the hardened `read_only` + `cap_drop` runtime.
+Table 5.4 lists representative integration and isolation test cases.
 
 [[TABLE: Representative integration and isolation test cases]]
 
@@ -225,7 +231,7 @@ users, tenants, and roles, biometric enrollment and per-user enrollment, NFC enr
 and voice search, the verification flows together with session and dashboard state, the
 authentication-flow builder, multi-step authentication, device and session management, audit-log
 browsing, analytics, settings, navigation, card detection, and dedicated visual-audit and smoke
-suites. The named test cases below are representative of the authentication and verification
+suites. The test cases named in Table 5.5 are representative of the authentication and verification
 journeys that the committee will recognize as the product's spine.
 
 [[TABLE: Representative end-to-end (Playwright) test cases]]
@@ -265,7 +271,7 @@ the stress scenario, and use a 20×-baseline burst in the spike scenario.
 
 The status of the numbers attached to these scenarios must be stated plainly. The per-scenario
 thresholds encoded in the k6 configuration are **targets derived from the non-functional
-requirements, not measured production benchmarks**.
+requirements, not measured production benchmarks**; Table 5.6 records them with that caveat.
 
 [^locust]: An early `locustfile.py` survives only in a scratch worktree, and `locust` lingers
 in a legacy requirements file; Locust was an early experiment rather than the maintained tool,
@@ -328,7 +334,7 @@ is **no automated OWASP ZAP, Snyk, or Trivy job** wired into GitHub Actions; the
 automated security testing is the Bandit + pip-audit + gitleaks + Dependabot + isolation-IT
 combination above, while ZAP/Snyk/Trivy and annual penetration testing remain documented
 aspirations and manual practices rather than CI-enforced gates. We label them accordingly so
-that no reader mistakes intent for implementation.
+that no reader mistakes intent for implementation; Table 5.7 records the split.
 
 [[TABLE: Security testing — implemented (CI-enforced) versus documented-intent]]
 
@@ -376,7 +382,7 @@ Detection (PAD)**, and the correct way to report it is with the metrics defined 
 [[EQ: ACER]]
 $ \mathrm{ACER} = \dfrac{\mathrm{APCER} + \mathrm{BPCER}}{2} $
 
-These metrics are not merely cited; they are **implemented in code** in the `spoof-detector`
+These metrics are **implemented in code** in the `spoof-detector`
 library (`src/metrics/iso30107.py`), which computes `apcer`, `bpcer`, `acer`, `eer`,
 `far_at_frr`, and `frr_at_far`, complete with bootstrap confidence intervals. This means the
 evaluation harness exists and produces standard-conformant numbers when fed a labeled dataset.
@@ -390,7 +396,7 @@ and Web Worker pool). The pipeline is a layered, multi-signal design. The Python
 **13 analyzers** (among them `MiniFASNetAnalyzer`, `TextureAnalyzer`, `MoireAnalyzer`,
 `ScreenReplayAnalyzer`, `ScreenFlickerAnalyzer`, `TemporalAnalyzer`, `RPPGAnalyzer`,
 `BlinkAnalyzer`, `MicroTremorAnalyzer`, and a `DeviceBoundaryAnalyzer`); the browser port
-extends this to **25 analyzers** with browser-only signals such as flash-reflection, gaze,
+extends this to **26 analyzers** with browser-only signals such as flash-reflection, gaze,
 expression-dynamics, and 3-D pose-consistency detectors. A `HybridFusionEvaluator`
 fuses the strongest signals — a weighted combination of the pretrained MiniFASNet model
 [CITE:minifasnet], a flash-response cue, a moiré-pattern cue, and a device-replay cue — and
@@ -407,7 +413,7 @@ always-on path is the UniFace MiniFASNet passive-liveness gate plus a single-fra
 layers opt-in behind feature flags. Critically, the entire anti-spoofing pipeline is
 **fail-soft**: every layer is wrapped in exception handling so that an anti-spoofing bug can
 never hard-block a legitimate user by raising, a deliberate availability-over-strictness
-trade-off.
+trade-off. Table 5.8 lists representative biometric and liveness test cases.
 
 [[TABLE: Representative biometric and liveness test cases]]
 
@@ -432,7 +438,7 @@ directly: that the EAR computation registers a blink as a closed-then-open trans
 baseline ratio above 1.3, that the texture/moiré/frequency/color detector down-scores a flat,
 screen-like presentation, and that a both-eyes-closed still frame triggers the EAR veto. These
 behavioral assertions are real, automated, and passing. The browser port additionally carries
-**256 Vitest cases** covering each analyzer, the pipeline assembler, the quality gates, and a
+**276 Vitest cases** covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
 What we do **not** report is a headline accuracy number for the fused system. A "100% accuracy
@@ -485,7 +491,7 @@ pass, but in fact never ran. The biometric processor's `/search` (1:N face searc
 `/voice/search` endpoints enforce the same tenant scoping at the data layer, and the k6
 multi-tenant load scenario independently asserts zero isolation violations under concurrent
 load. The property is thus verified statically, in isolation, in integration, and under load —
-defense-in-depth applied to the test strategy itself.
+defense-in-depth applied to the test strategy itself, as Table 5.9 traces.
 
 [[TABLE: Multi-tenant isolation verification across test levels]]
 
@@ -500,9 +506,9 @@ defense-in-depth applied to the test strategy itself.
 ## 5.10 Results Summary and Discussion
 
 The testing program produced a large, multi-technology, CI-integrated body of evidence. The
-verified inventory is **approximately 4,386 authored automated test cases across 441 test
-files in five technologies** — 1,569 JUnit 5 methods (plus 22 parameterized) in the Identity
-Core API, 1,025 Vitest cases in the web dashboard, 336 Playwright E2E cases, 568 Kotlin
+verified inventory is **approximately 4,405 authored automated test cases across 444 test
+files in five technologies** — 1,595 JUnit 5 methods (plus 22 parameterized) in the Identity
+Core API, 1,025 Vitest cases in the web dashboard, 336 Playwright E2E cases, 561 Kotlin
 methods in the clients, and 888 pytest functions in the biometric processor. A large subset of
 these runs on every continuous-integration pipeline; the heaviest machine-learning and
 Testcontainers-dependent integration tests run inside the Docker ML and integration stacks
@@ -514,7 +520,7 @@ isolation as a non-negotiable, execution-asserted gate.
 Two findings deserve emphasis. First, the project demonstrated empirically that **green unit
 tests are necessary but not sufficient**: as §5.5 showed, real defects survived large green
 unit suites and were caught only by end-to-end browser testing or by exercising the live
-product. The E2E and integration layers, then, are not optional polish but essential — the
+product. The E2E and integration layers proved essential — the
 strongest practical lesson of the chapter. Second, the value of the
 **execution-asserting CI gate** for security tests was borne out: parsing surefire output to
 prove that isolation tests ran, rather than trusting a green checkmark, is a small piece of

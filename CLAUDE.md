@@ -227,14 +227,14 @@ CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 
 | Module | Tests |
 |--------|-------|
-| Identity Core API (JUnit) | ~1,591 |
+| Identity Core API (JUnit) | 1,595 (+22 parameterized) |
 | Biometric Processor (pytest) | 888 |
-| Web-app (Vitest) | ~1,029 |
-| Client-apps (Kotlin) | 568 |
+| Web-app (Vitest) | ~1,025 |
+| Client-apps (Kotlin) | 561 |
 | Playwright E2E | 336 |
-| **Total** | **~4,400 authored** |
+| **Total** | **≈4,405 authored** |
 
-> Authored test cases, re-verified 2026-06-06 against the source tree (Kotlin exact; `~` = counting-method tolerance for parameterized/e2e). Same numbers cited in the graduation thesis — see `Thesis/README_THESIS.md`. (Earlier "633 Java / ~1,800" was stale.)
+> Authored test cases, re-verified 2026-06-11 against the source tree (Kotlin exact: 489 commonTest + 30 androidApp instrumented + 25 desktopTest + 17 androidApp JVM unit; `~` = counting-method tolerance for parameterized/e2e). Same numbers cited in the graduation thesis — see `Thesis/README_THESIS.md`. (Earlier "633 Java / ~1,800" and "568 Kotlin / 1,591 Java" were stale.)
 
 ## CI/CD
 
