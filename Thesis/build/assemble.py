@@ -15,7 +15,8 @@ from docx.shared import Pt, Inches, RGBColor, Twips
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-ROOT = "/opt/projects/fivucsas"
+ROOT = os.environ.get("THESIS_ROOT") or os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 T = ROOT + "/Thesis/build"
 TEMPLATE = ROOT + "/Thesis/CSE4198_Thesis_Template_Software_Oriented_v2[1].docx"
 OUT = os.environ.get("THESIS_OUT", ROOT + "/Thesis/FIVUCSAS_Thesis.docx")
@@ -78,10 +79,13 @@ def tokenize(md):
             while i < n and lines[i].strip().startswith("|"):
                 rows.append(lines[i].strip()); i += 1
             toks.append(("table", pending_cap or "", rows)); pending_cap = None; continue
-        # equation marker
+        # equation marker (the LaTeX line may be separated by blank lines)
         m = re.match(r"^\[\[EQ:\s*(.*?)\]\]$", st)
         if m:
-            i += 1; eq = ""
+            i += 1
+            while i < n and not lines[i].strip():
+                i += 1
+            eq = ""
             if i < n and lines[i].strip() and not lines[i].strip().startswith("["):
                 eq = lines[i].strip(); i += 1
             toks.append(("eq", m.group(1).strip(), eq)); continue
@@ -211,16 +215,25 @@ def add_body(doc, text, citation_numbering, first_indent=True):
     return p
 
 def add_inline_runs(p, text):
-    # handle **bold**, *italic*, `code`
+    # handle **bold**, *italic*, `code` — incl. `code` nested inside **bold**/*italic*
+    def emit_with_code(seg_text, **fmt):
+        for seg in re.split(r"(`[^`]+?`)", seg_text):
+            if not seg: continue
+            if seg.startswith("`") and seg.endswith("`"):
+                r = p.add_run(seg[1:-1])
+                style_run_font(r, font="Consolas", size_pt=10.5,
+                               bold=fmt.get("bold", False), italic=fmt.get("italic", False))
+            else:
+                r = p.add_run(seg); style_run_font(r, **fmt)
     parts = re.split(r"(\*\*.+?\*\*|\*[^*]+?\*|`[^`]+?`)", text)
     for part in parts:
         if not part: continue
         if part.startswith("**") and part.endswith("**"):
-            r = p.add_run(part[2:-2]); style_run_font(r, bold=True)
+            emit_with_code(part[2:-2], bold=True)
         elif part.startswith("`") and part.endswith("`"):
             r = p.add_run(part[1:-1]); style_run_font(r, font="Consolas", size_pt=10.5)
         elif part.startswith("*") and part.endswith("*") and len(part) > 2:
-            r = p.add_run(part[1:-1]); style_run_font(r, italic=True)
+            emit_with_code(part[1:-1], italic=True)
         else:
             r = p.add_run(part); style_run_font(r)
 
@@ -265,7 +278,9 @@ def add_figure(doc, key, caption, chapter, is_first):
         # unknown figure key -> placeholder
         add_caption(doc, "Figure", chapter, is_first, caption or ("[missing figure: %s]" % key)); return False
     rel, default_cap = path_cap
-    img = os.path.join(ROOT, rel)
+    # ROOT-relative first; fall back to sibling checkouts (e.g. docs cloned next to the parent repo)
+    candidates = [os.path.join(ROOT, rel), os.path.join(os.path.dirname(ROOT), rel)]
+    img = next((c for c in candidates if os.path.exists(c)), candidates[0])
     p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:jc", **{"w:val": "center"})
     _set(pPr, "w:spacing", **{"w:before": "120", "w:after": "0"})
@@ -306,13 +321,85 @@ def add_code(doc, text):
         r = p.add_run(line); style_run_font(r, font="Consolas", size_pt=9)
     return p
 
+# ---- OMML (Word native math) builders -------------------------------------
+def _m(tag, parent=None):
+    e = OxmlElement("m:" + tag)
+    if parent is not None: parent.append(e)
+    return e
+
+def m_run(parent, text):
+    r = _m("r", parent)
+    rPr = OxmlElement("w:rPr")
+    rf = OxmlElement("w:rFonts")
+    rf.set(qn("w:ascii"), "Cambria Math"); rf.set(qn("w:hAnsi"), "Cambria Math")
+    rPr.append(rf); r.append(rPr)
+    t = _m("t", r); t.set(qn("xml:space"), "preserve"); t.text = text
+    return r
+
+def m_frac(parent, num_fn, den_fn):
+    f = _m("f", parent)
+    num_fn(_m("num", f)); den_fn(_m("den", f))
+    return f
+
+def m_ssub(parent, base, sub):
+    s = _m("sSub", parent)
+    m_run(_m("e", s), base); m_run(_m("sub", s), sub)
+    return s
+
+def _eq_ear(om):
+    m_run(om, "EAR = ")
+    m_frac(om, lambda n: m_run(n, "‖p₂ − p₆‖ + ‖p₃ − p₅‖"),
+               lambda d: m_run(d, "2 ‖p₁ − p₄‖"))
+
+def _eq_mar(om):
+    m_run(om, "MAR = ")
+    m_frac(om, lambda n: m_run(n, "‖lower_lip − upper_lip‖"),
+               lambda d: m_run(d, "‖right_corner − left_corner‖"))
+
+def _eq_cosine(om):
+    m_ssub(om, "d", "cos")
+    m_run(om, "(A, B) = 1 − ")
+    m_frac(om, lambda n: m_run(n, "A · B"),
+               lambda d: m_run(d, "‖A‖ ‖B‖"))
+
+def _eq_quality(om):
+    m_run(om, "Q = 0.4 · blur + 0.3 · lighting + 0.3 · face_size")
+
+def _eq_acer(om):
+    m_run(om, "ACER = ")
+    m_frac(om, lambda n: m_run(n, "APCER + BPCER"),
+               lambda d: m_run(d, "2"))
+
+EQUATION_BUILDERS = {
+    "Eye Aspect Ratio (EAR)": _eq_ear,
+    "Mouth Aspect Ratio (MAR)": _eq_mar,
+    "Cosine distance for face matching": _eq_cosine,
+    "Composite image-quality score": _eq_quality,
+    "ACER": _eq_acer,
+}
+
+def _latex_to_plain(eq):
+    """Fallback: readable Unicode rendering of simple LaTeX when no OMML builder exists."""
+    s = eq.strip().strip("$").strip()
+    s = re.sub(r"\\(?:text|mathrm)\{([^}]*)\}", r"\1", s)
+    s = re.sub(r"\\[dt]?frac\{([^}]*)\}\{([^}]*)\}", r"(\1) / (\2)", s)
+    s = (s.replace(r"\lVert", "‖").replace(r"\rVert", "‖")
+          .replace(r"\cdot", "·").replace(r"\,", " ").replace("\\_", "_")
+          .replace("  ", " "))
+    return s
+
 def add_equation(doc, name, eq, chapter, counter):
     counter[0] += 1
     p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:jc", **{"w:val": "center"})
     _set(pPr, "w:spacing", **{"w:before": "60", "w:after": "60"})
     tabs = OxmlElement("w:tabs"); _set(tabs, "w:tab", **{"w:val": "right", "w:pos": "9000"}); pPr.append(tabs)
-    r = p.add_run(eq if eq else name); style_run_font(r, italic=True)
+    builder = EQUATION_BUILDERS.get(name)
+    if builder:
+        om = _m("oMath"); builder(om); p._p.append(om)
+    else:
+        sys.stderr.write("WARN: no OMML builder for equation '%s' — plain-text fallback\n" % name)
+        r = p.add_run(_latex_to_plain(eq) if eq else name); style_run_font(r, italic=True)
     r2 = p.add_run("\t(Equation %d.%d)" % (chapter, counter[0])); style_run_font(r2)
     return p
 
