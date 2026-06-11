@@ -32,7 +32,7 @@ just use stable keys. If you need a source not listed, ADD it here in the same G
 - **linddun** :: LINDDUN, *LINDDUN Privacy Threat Modeling Framework*, 2025, https://linddun.org/, Date accessed: June 2026.
 - **kvkk6698** :: Republic of Türkiye, *Personal Data Protection Law No. 6698 (KVKK)*, Official Gazette No. 29677, 2016.
 - **gdpr** :: European Parliament and Council of the European Union, *Regulation (EU) 2016/679 (General Data Protection Regulation)*, Official Journal of the European Union, L 119, 2016.
-- **owasp-top10** :: OWASP Foundation, *OWASP Top 10:2021 — The Ten Most Critical Web Application Security Risks*, 2021, https://owasp.org/Top10/, Date accessed: June 2026.
+- **owasp-top10** :: OWASP Foundation, *OWASP Top 10:2021, The Ten Most Critical Web Application Security Risks*, 2021, https://owasp.org/Top10/, Date accessed: June 2026.
 - **cockburn-hexagonal** :: Cockburn, A., *Hexagonal Architecture (Ports and Adapters)*, 2005, https://alistair.cockburn.us/hexagonal-architecture/, Date accessed: June 2026.
 - **richardson2018-microservices** :: Richardson, C., *Microservices Patterns: With Examples in Java*, Manning Publications, Shelter Island, NY, USA, 2018.
 - **newman2021-microservices** :: Newman, S., *Building Microservices: Designing Fine-Grained Systems*, 2nd ed., O'Reilly Media, Sebastopol, CA, USA, 2021.
@@ -61,7 +61,7 @@ just use stable keys. If you need a source not listed, ADD it here in the same G
 - **playwright** :: Microsoft, *Playwright: Reliable End-to-End Testing for Modern Web Apps*, 2025, https://playwright.dev/, Date accessed: June 2026.
 - **k6** :: Grafana Labs, *k6: Load Testing for Engineering Teams*, 2025, https://k6.io/docs/, Date accessed: June 2026.
 - **testcontainers** :: AtomicJar, *Testcontainers: Throwaway Containers for Integration Tests*, 2025, https://testcontainers.com/, Date accessed: June 2026.
-- **jjwt** :: Hazlewood, L. and JJWT Contributors, *JJWT — Java JWT: JSON Web Token for Java and Android*, 2025, https://github.com/jwtk/jjwt, Date accessed: June 2026.
+- **jjwt** :: Hazlewood, L. and JJWT Contributors, *JJWT, Java JWT: JSON Web Token for Java and Android*, 2025, https://github.com/jwtk/jjwt, Date accessed: June 2026.
 
 ## Figure catalog (key → repo image + suggested caption)
 Paths are relative to `/opt/projects/fivucsas/`. Reference in text with `[[FIG:key | your caption]]`.
@@ -73,7 +73,7 @@ Paths are relative to `/opt/projects/fivucsas/`. Reference in text with `[[FIG:k
 | uc_tenantadmin | docs/02-architecture/diagrams/tenant_admin_use_cases.png | Tenant Administrator use cases |
 | uc_enduser | docs/02-architecture/diagrams/end_user_use_cases.png | End-User use cases |
 | uc_external | docs/02-architecture/diagrams/external_system_use_cases.png | External-system (API/OIDC client) use cases |
-| domain_model | docs/ADD_diagrams/diagram_02_domain_model___core_entities.png | Core domain model — multi-tenant identity and biometric verification |
+| domain_model | docs/ADD_diagrams/diagram_02_domain_model___core_entities.png | Core domain model for multi-tenant identity and biometric verification |
 | er_diagram | docs/ADD_diagrams/diagram_03_entity_relationship_diagram.png | Entity-Relationship diagram of the FIVUCSAS schema |
 | er_full | docs/02-architecture/diagrams/fivucsas_er_diagram.png | Full FIVUCSAS database ER diagram |
 | er_core | docs/02-architecture/diagrams/core_entities_er.png | Core IAM entities ER diagram |

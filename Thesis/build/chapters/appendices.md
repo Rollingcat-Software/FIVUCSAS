@@ -1,4 +1,4 @@
-# Appendix A — Database Schema Migration Catalog
+# Appendix A: Database Schema Migration Catalog
 
 The Identity Core API database schema was built and evolved exclusively through versioned Flyway migrations [CITE:flyway], applied automatically and in order at service start-up. Every schema change over the project's lifetime is therefore captured as an auditable, replayable script. The complete catalog of applied migrations follows; the biometric processor maintains its own separate schema through Alembic.
 
@@ -93,11 +93,11 @@ The Identity Core API database schema was built and evolved exclusively through 
 
 The biometric processor's vector store (face and voice embeddings, liveness logs) was migrated independently with Alembic across 5 revisions, keeping the compute-intensive biometric schema fully decoupled from the identity schema, in line with the microservices boundary.
 
-# Appendix B — REST API Surface Reference
+# Appendix B: REST API Surface Reference
 
 This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and roughly 70 endpoints.
 
-## B.1 Identity Core API — principal controllers
+## B.1 Identity Core API: principal controllers
 
 [[TABLE: Identity Core API controllers and representative endpoints]]
 
@@ -121,7 +121,7 @@ This appendix summarizes the public REST surface of the platform as implemented.
 
 A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent JSON error envelopes across every controller.
 
-## B.2 Biometric Processor — route categories
+## B.2 Biometric Processor: route categories
 
 [[TABLE: Biometric Processor route categories]]
 
@@ -137,7 +137,7 @@ A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent J
 | Embedding | embedding generation and comparison |
 | Analytics / Admin | usage statistics, model and cache management |
 
-# Appendix C — Production Deployment and Configuration Reference
+# Appendix C: Production Deployment and Configuration Reference
 
 This appendix records the production deployment topology of the platform as operated during the project.
 

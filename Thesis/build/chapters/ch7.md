@@ -4,7 +4,7 @@
 
 This thesis set out to answer a deceptively simple question: can high-accuracy face
 verification, robust anti-spoofing, and strict multi-tenant isolation be engineered into a
-single, deployable Software-as-a-Service platform — rather than remaining scattered across
+single, deployable Software-as-a-Service platform, rather than remaining scattered across
 proprietary cloud APIs, device-bound vendor silos, and research-grade models that never leave a
 benchmark? Over two semesters we designed, built, deployed, and tested **FIVUCSAS** (Face and
 Identity Verification Using Cloud-based SaaS). The working system answers in the affirmative,
@@ -37,7 +37,7 @@ at the edge and routed by Docker labels, with an admin-IP-gated surface for Swag
 and hardened forwarded-header handling. The whole deployment ran on a single Hetzner CX43 VPS
 under Docker Compose [CITE:docker,dockercompose], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
-evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused) — an auditable record of the
+evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused), an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
 partitioned audit logs, and discoverable passkeys.
 
@@ -75,14 +75,14 @@ issuer and audience binding, key-id routing that closed algorithm-confusion forg
 used the Yubico server library with an explicit origin allowlist [CITE:webauthn]; two complementary
 rate-limiting layers (a Redis sliding window and Bucket4j token buckets [CITE:bucket4j]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
-isolation — the hardest SaaS guarantee — was enforced in depth (JWT-rebound tenant context plus a
-Hibernate `@Filter` on the tenant-scoped entities) and, crucially, **re-verified on every pull
+isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
+Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified on every pull
 request** by Testcontainers integration tests that the CI pipeline asserted had actually executed
 [CITE:testcontainers].
 
 The engineering process itself is part of the result. The platform was backed by roughly
-**4,400 authored automated test cases across five technologies** — JUnit 5, Vitest, Playwright, the
-Kotlin/JUnit suite, and pytest [CITE:playwright] — exercised by per-repository CI pipelines, with
+**4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
+Kotlin/JUnit suite, and pytest [CITE:playwright]), exercised by per-repository CI pipelines, with
 load scenarios in k6 [CITE:k6] and static security scanning via Bandit, pip-audit, gitleaks, and
 Dependabot. We are equally clear about what those numbers do *not* mean: a large green test suite is
 not the same as a measured accuracy benchmark. The performance figures in our load configuration are
@@ -90,8 +90,8 @@ not the same as a measured accuracy benchmark. The performance figures in our lo
 appeared on an early project poster was never independently reproduced and is therefore not claimed
 here (see §5.8). The conclusion we stand behind is narrower and more defensible, and it is the
 thesis statement of this entire document: a complete, secure, multi-tenant biometric verification
-platform — with active liveness, vector face search, strict tenant isolation, and a developer-grade
-OIDC integration story — can be built and operated end-to-end by a small team on commodity, CPU-only
+platform with active liveness, vector face search, strict tenant isolation, and a developer-grade
+OIDC integration story can be built and operated end-to-end by a small team on commodity, CPU-only
 infrastructure.
 
 ## 7.2 Advantages and Limitations
@@ -103,8 +103,8 @@ its benefit. This section weighs the principal methods we adopted.
 
 **A microservices split along the right seam.** Separating identity logic (Spring Boot) from the
 machine-learning workload (FastAPI) [CITE:richardson2018-microservices,newman2021-microservices] let
-each side use the language and runtime best suited to it — a mature JVM security ecosystem on one
-side, the Python ML stack on the other — and let the heavy biometric service be resource-capped,
+each side use the language and runtime best suited to it (a mature JVM security ecosystem on one
+side, the Python ML stack on the other) and let the heavy biometric service be resource-capped,
 hardened, and kept entirely off the public internet. The clean boundary made the codebase easier to
 reason about and test, and it leaves a clear path to scaling the two services independently.
 
@@ -124,14 +124,14 @@ spoofed browser cannot manufacture a positive verdict. The anti-spoofing pipelin
 gate and EAR veto remain always-on.
 
 **pgvector instead of a separate vector database.** Storing embeddings in PostgreSQL with pgvector
-[CITE:pgvector] kept the entire data model — relational identity data and biometric vectors — in one
+[CITE:pgvector] kept the entire data model, relational identity data and biometric vectors alike, in one
 ACID-compliant, backup-and-restore-as-one system, avoiding the operational burden of a second
 specialized datastore [CITE:faiss]. For a platform of this scale on a single VPS, that simplicity was
 the right trade.
 
 **Hosted-first OIDC integration.** Adopting the redirective hosted-login pattern that the entire
-identity industry has converged on solved a cluster of real browser problems at once — Web NFC and
-WebAuthn cross-origin restrictions, Safari ITP, and third-party-cookie deprecation — and gave tenants
+identity industry has converged on solved a cluster of real browser problems at once (Web NFC and
+WebAuthn cross-origin restrictions, Safari ITP, and third-party-cookie deprecation) and gave tenants
 a familiar, low-effort integration via a small SDK and standard OAuth 2.0 / OIDC endpoints
 [CITE:oauth2-rfc6749,oidc-core,pkce-rfc7636].
 
@@ -146,8 +146,8 @@ runtime and the 84-step auditable migration history extend the same discipline t
 **The deployment is a single point of failure.** The live system runs on one Hetzner CX43 with
 single shared PostgreSQL and Redis instances and a single Traefik edge. The parent compose file
 describes a two-replica, read-replica, multi-region layout, but that is a plan, not the running
-deployment. There is no horizontal auto-scaling and no automated failover — adequate for a graduation
-prototype and a controlled demo, but not for a production SLA.
+deployment. There is no horizontal auto-scaling and no automated failover; this is adequate for a
+graduation prototype and a controlled demo, but not for a production SLA.
 
 **CPU-only hardware constrained the model choices.** Because the CX43 has no GPU, the platform
 deliberately blocks GPU-hungry backends (RetinaFace, ArcFace [CITE:deng2019-arcface], heavier YOLO
@@ -188,7 +188,7 @@ plainly:
 
 **iOS was not delivered, and there is no billing.** The platform is multi-tenant in its data model and
 isolation, but it has no metering, subscription, or billing subsystem, so it is not yet a commercially
-operable SaaS in the revenue sense — only in the architectural one. The iOS client remains stubbed
+operable SaaS in the revenue sense, only in the architectural one. The iOS client remains stubbed
 scaffolding. And while the integration-test gate has been brought toward green, its history of being
 hard to keep green on constrained runners means it should not yet be treated as fully trustworthy
 without the closing work described in §5.2.
@@ -211,8 +211,8 @@ produce honest FAR/FRR numbers for face verification at chosen operating points.
 pursuing formal third-party PAD certification (the iBeta / ISO 30107-3 testing path) would let the
 platform make assurance claims that a graduation thesis, by itself, cannot.
 
-**Model retraining and an upgrade to ArcFace.** Once GPU capacity is available — whether a GPU node or
-a managed inference endpoint — the recognition model should be retrained and upgraded from Facenet512 to
+**Model retraining and an upgrade to ArcFace.** Once GPU capacity is available, whether a GPU node or
+a managed inference endpoint, the recognition model should be retrained and upgraded from Facenet512 to
 an additive-angular-margin model such as **ArcFace** [CITE:deng2019-arcface], which offers materially
 stronger discrimination on hard pairs, with AdaFace [CITE:kim2022-adaface] as a quality-adaptive
 alternative worth benchmarking. Because changing the embedding model invalidates every stored
@@ -223,14 +223,14 @@ Turkish ID and passport imagery to improve generalization across document types.
 **Kubernetes orchestration and horizontal scaling.** To lift the single-VPS ceiling, the deployment
 should migrate from single-host Docker Compose to a container-orchestration platform such as Kubernetes,
 introducing horizontal pod autoscaling for the stateless services, rolling deployments, automated
-failover, and managed or replicated PostgreSQL and Redis — realizing the two-replica, read-replica, and
+failover, and managed or replicated PostgreSQL and Redis, realizing the two-replica, read-replica, and
 multi-region topologies that today exist only as aspirational compose blocks
 [CITE:richardson2018-microservices]. This would also let the CPU-bound biometric service scale out
 horizontally under load instead of being capped on one machine.
 
 **Additional biometric modalities.** The hexagonal handler architecture was built precisely so new
 factors slot in as adapters. The voice modality (Resemblyzer speaker embeddings) is wired and can be
-matured into a first-class factor; **iris recognition** — declared in the enum but not implemented — is
+matured into a first-class factor; **iris recognition**, declared in the enum but not implemented, is
 the most obvious next modality; and gait or behavioral signals could extend continuous-verification
 (proctoring) scenarios. Each new modality benefits from the same server-authoritative, log-only-client
 discipline established for face.
@@ -243,9 +243,9 @@ fail-fast stub handlers with real watchlist and address-proof data sources, maki
 anti-spoofing fusion layers default-on after recalibration), would convert several "demonstrated"
 capabilities into "enforced" ones.
 
-**Commercialization: metering and billing.** To become a SaaS in the commercial sense and not only the
-architectural one, the platform needs a usage-metering and billing subsystem — per-tenant rate plans,
-verification and enrollment quotas, invoicing, and a payment integration — layered on top of the existing
+**Commercialization: metering and billing.** To become a SaaS in the commercial sense as well as the
+architectural one, the platform needs a usage-metering and billing subsystem (per-tenant rate plans,
+verification and enrollment quotas, invoicing, and a payment integration) layered on top of the existing
 tenant model. The audit-log and rate-limit infrastructure already captures most of the events such a
 meter would need, so this is an extension rather than a re-architecture.
 
@@ -257,4 +257,4 @@ and the disaster-recovery runbooks exercised in regular drills rather than kept 
 
 Pursued in this order, these steps would carry FIVUCSAS from a deployed, architecturally complete
 graduation prototype to a certified, horizontally scalable, commercially operable biometric
-identity-verification service — the production-grade destination this thesis set out toward.
+identity-verification service, the production-grade destination this thesis set out toward.
