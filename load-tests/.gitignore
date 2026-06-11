@@ -1,6 +1,13 @@
-# Test results
-results/
-*.json
+# Test results — keep the results/ dir + committed templates/notes, but ignore
+# the large raw run dumps (k6 --out json / --summary-export land here).
+results/*.json
+results/*.csv
+# stray json dumps at the load-tests root (not config/source — those are tracked
+# explicitly by name)
+/auth-*.json
+/enrollment-*.json
+/verification-*.json
+/public-read-*.json
 
 # Logs
 *.log

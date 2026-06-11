@@ -12,46 +12,20 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config from '../config.js';
+import config, { profileStages } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
+import { requireMutationsOptIn } from '../utils/guard.js';
 
 // Custom metrics
 const spikePerformance = new Trend('spike_performance');
 const spikeErrors = new Rate('spike_errors');
 const recoveryTime = new Trend('recovery_time');
 
-// Test configuration
+// Test configuration. Run with -e PROFILE=spike for the sudden-surge stages;
+// any other profile (default smoke) uses a small ramp. See config.js.
 export const options = {
-  stages: [
-    // Baseline
-    { duration: '2m', target: 50 },     // Normal load: 50 VUs
-
-    // Spike 1: Moderate spike
-    { duration: '30s', target: 300 },   // Spike to 300 VUs (6x increase)
-    { duration: '1m', target: 300 },    // Hold spike
-    { duration: '30s', target: 50 },    // Recover to baseline
-
-    // Recovery period
-    { duration: '2m', target: 50 },     // Baseline recovery
-
-    // Spike 2: Severe spike
-    { duration: '30s', target: 500 },   // Spike to 500 VUs (10x increase)
-    { duration: '1m', target: 500 },    // Hold spike
-    { duration: '30s', target: 50 },    // Recover to baseline
-
-    // Recovery period
-    { duration: '2m', target: 50 },     // Baseline recovery
-
-    // Spike 3: Extreme spike
-    { duration: '20s', target: 1000 },  // Spike to 1000 VUs (20x increase)
-    { duration: '1m', target: 1000 },   // Hold spike
-    { duration: '30s', target: 50 },    // Recover to baseline
-
-    // Final recovery
-    { duration: '2m', target: 50 },
-    { duration: '1m', target: 0 },
-  ],
+  stages: profileStages(),
 
   thresholds: {
     // Allow higher failure rate during spikes
@@ -69,12 +43,13 @@ export const options = {
  * Setup function
  */
 export function setup() {
+  requireMutationsOptIn('spike-test');
   console.log('=================================================');
-  console.log('Starting SPIKE TEST');
-  console.log('Simulating sudden traffic surges');
+  console.log('Starting SPIKE TEST (MUTATING — mixed verify/refresh/enroll)');
+  console.log('Simulating sudden traffic surges. Run with -e PROFILE=spike.');
   console.log('=================================================');
 
-  const testLogin = auth.login(config.testUserEmail, config.testUserPassword);
+  const testLogin = auth.login(config.testUserEmail, config.testUserPassword, config.clientId);
   if (!testLogin) {
     throw new Error('Setup failed: Unable to authenticate');
   }

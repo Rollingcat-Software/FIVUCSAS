@@ -7,15 +7,20 @@ import { check, sleep } from 'k6';
 import config from '../config.js';
 
 /**
- * Login and get access token + refresh token
+ * Login and get access token + refresh token.
+ * @param clientId optional OIDC client_id, stamped for audit attribution.
+ *
+ * NOTE: a successful login may instead return an MFA-pending body
+ * (mfaRequired / mfaSessionToken, no accessToken) if the account has 2FA
+ * configured. For load testing use a single-factor (password-only) test
+ * account so login completes in one round-trip.
  */
-export function login(email, password) {
+export function login(email, password, clientId) {
   const loginUrl = `${config.identityApiUrl}/api/v1/auth/login`;
 
-  const payload = JSON.stringify({
-    email: email,
-    password: password,
-  });
+  const body = { email: email, password: password };
+  if (clientId) body.clientId = clientId;
+  const payload = JSON.stringify(body);
 
   const params = {
     headers: {
@@ -33,7 +38,8 @@ export function login(email, password) {
   });
 
   if (!success) {
-    console.error(`Login failed: ${response.status} ${response.body}`);
+    // 429 = login rate-limit (10/5min per IP); 200 + mfaRequired = needs 2FA.
+    console.error(`Login failed: ${response.status} ${String(response.body).slice(0, 200)}`);
     return null;
   }
 

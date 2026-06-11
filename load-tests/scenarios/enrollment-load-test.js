@@ -12,9 +12,10 @@
 
 import { sleep, check } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config from '../config.js';
+import config, { profileStages } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
+import { requireMutationsOptIn } from '../utils/guard.js';
 
 // Custom metrics
 const enrollmentSuccessRate = new Rate('enrollment_success');
@@ -23,19 +24,10 @@ const enrollmentQualityScore = new Trend('enrollment_quality_score');
 const enrollmentLivenessScore = new Trend('enrollment_liveness_score');
 const enrollmentsCompleted = new Counter('enrollments_completed');
 
-// Test configuration
+// Test configuration. Ramps come from the selected PROFILE (smoke/load/stress/
+// spike) — see config.js. Enrollment is ML-bound; keep VUs modest.
 export const options = {
-  stages: [
-    { duration: '1m', target: 10 },   // Ramp up to 10 concurrent enrollments
-    { duration: '3m', target: 10 },   // Stay at 10
-    { duration: '1m', target: 25 },   // Ramp to 25
-    { duration: '3m', target: 25 },   // Stay at 25
-    { duration: '1m', target: 50 },   // Ramp to 50
-    { duration: '3m', target: 50 },   // Stay at 50
-    { duration: '1m', target: 100 },  // Spike to 100
-    { duration: '2m', target: 100 },  // Maintain spike
-    { duration: '2m', target: 0 },    // Ramp down
-  ],
+  stages: profileStages(),
 
   thresholds: {
     // 95% of enrollments should complete in < 2 seconds
@@ -56,12 +48,13 @@ export const options = {
  * Setup function
  */
 export function setup() {
-  console.log('Starting enrollment load test...');
+  requireMutationsOptIn('enrollment-load-test');
+  console.log('Starting enrollment load test (MUTATING — writes biometric enrollments)...');
   console.log(`Identity API: ${config.identityApiUrl}`);
   console.log(`Biometric API: ${config.biometricApiUrl}`);
 
   // Test authentication
-  const testLogin = auth.login(config.testUserEmail, config.testUserPassword);
+  const testLogin = auth.login(config.testUserEmail, config.testUserPassword, config.clientId);
   if (!testLogin) {
     throw new Error('Setup failed: Unable to authenticate');
   }
