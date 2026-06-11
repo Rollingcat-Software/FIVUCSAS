@@ -64,44 +64,46 @@ just use stable keys. If you need a source not listed, ADD it here in the same G
 - **jjwt** :: Hazlewood, L. and JJWT Contributors, *JJWT, Java JWT: JSON Web Token for Java and Android*, 2025, https://github.com/jwtk/jjwt, Date accessed: June 2026.
 
 ## Figure catalog (key → repo image + suggested caption)
-Paths are relative to `/opt/projects/fivucsas/`. Reference in text with `[[FIG:key | your caption]]`.
+Paths are relative to the repo root. Every figure the thesis embeds is vendored under
+`Thesis/build/figures/` so the build is self-contained (unused catalog entries still
+point at their `docs/` originals). Reference in text with `[[FIG:key | your caption]]`.
 
 | key | file | suggested caption |
 |---|---|---|
-| uc_by_actor | docs/ADD_diagrams/diagram_01_use_cases_by_actor.png | System use cases organized by actor (System Admin, Tenant Admin, End User) |
+| uc_by_actor | Thesis/build/figures/diagram_01_use_cases_by_actor.png | System use cases organized by actor (System Admin, Tenant Admin, End User) |
 | uc_sysadmin | docs/02-architecture/diagrams/system_admin_use_cases.png | System Administrator use cases |
 | uc_tenantadmin | docs/02-architecture/diagrams/tenant_admin_use_cases.png | Tenant Administrator use cases |
 | uc_enduser | docs/02-architecture/diagrams/end_user_use_cases.png | End-User use cases |
 | uc_external | docs/02-architecture/diagrams/external_system_use_cases.png | External-system (API/OIDC client) use cases |
-| domain_model | docs/ADD_diagrams/diagram_02_domain_model___core_entities.png | Core domain model for multi-tenant identity and biometric verification |
-| er_diagram | docs/ADD_diagrams/diagram_03_entity_relationship_diagram.png | Entity-Relationship diagram of the FIVUCSAS schema |
+| domain_model | Thesis/build/figures/diagram_02_domain_model___core_entities.png | Core domain model for multi-tenant identity and biometric verification |
+| er_diagram | Thesis/build/figures/diagram_03_entity_relationship_diagram.png | Entity-Relationship diagram of the FIVUCSAS schema |
 | er_full | docs/02-architecture/diagrams/fivucsas_er_diagram.png | Full FIVUCSAS database ER diagram |
 | er_core | docs/02-architecture/diagrams/core_entities_er.png | Core IAM entities ER diagram |
-| arch_overview | docs/ADD_diagrams/diagram_04_system_architecture_overview.png | High-level system architecture overview |
-| sys_components | docs/02-architecture/diagrams/system_components.png | System component diagram |
+| arch_overview | Thesis/build/figures/diagram_04_system_architecture_overview.png | High-level system architecture overview |
+| sys_components | Thesis/build/figures/system_components.png | System component diagram |
 | identity_internal | docs/02-architecture/diagrams/identity_core_internal.png | Identity Core API internal (hexagonal) structure |
 | biometric_internal | docs/02-architecture/diagrams/biometric_processor_internal.png | Biometric Processor internal structure |
 | biometric_classes | docs/02-architecture/diagrams/biometric_processor_classes.png | Biometric Processor class diagram |
 | service_layer | docs/02-architecture/diagrams/service_layer.png | Service-layer interaction diagram |
-| security_arch | docs/02-architecture/diagrams/security_architecture.png | Security architecture (JWT, RBAC, TLS, rate limiting) |
-| network_arch | docs/02-architecture/diagrams/network_architecture.png | Network architecture and request routing |
-| docker_deploy | docs/ADD_diagrams/diagram_05_docker_deployment.png | Docker Compose deployment topology |
-| dev_deploy | docs/02-architecture/diagrams/development_deployment.png | Development deployment environment |
+| security_arch | Thesis/build/figures/security_architecture.png | Security architecture (JWT, RBAC, TLS, rate limiting) |
+| network_arch | Thesis/build/figures/network_architecture.png | Network architecture and request routing |
+| docker_deploy | Thesis/build/figures/diagram_05_docker_deployment.png | Docker Compose deployment topology |
+| dev_deploy | Thesis/build/figures/development_deployment.png | Development deployment environment |
 | k8s_deploy | docs/02-architecture/diagrams/kubernetes_deployment.png | Kubernetes deployment (future scaling) |
 | ha_deploy | docs/02-architecture/diagrams/ha_deployment.png | High-availability deployment topology |
 | multiregion_deploy | docs/02-architecture/diagrams/multi_region_deployment.png | Multi-region deployment topology |
-| seq_registration | docs/02-architecture/diagrams/user_registration.png | User registration sequence |
-| dataflow_verification | docs/02-architecture/diagrams/data_flow_verification.png | Data-flow of the verification pipeline |
+| seq_registration | Thesis/build/figures/user_registration.png | User registration sequence |
+| dataflow_verification | Thesis/build/figures/data_flow_verification.png | Data-flow of the verification pipeline |
 | verify_decision | docs/02-architecture/diagrams/verification_decision_activity.png | Verification decision activity diagram |
-| face_verify_liveness | docs/02-architecture/diagrams/face_verification_liveness.png | Face verification with liveness activity diagram |
-| face_enroll_quality | docs/02-architecture/diagrams/face_enrollment_quality.png | Face enrollment with quality assessment activity diagram |
-| fsm_session | docs/02-architecture/diagrams/session_state_machine.png | Session finite-state machine |
-| fsm_verification | docs/02-architecture/diagrams/verification_state_machine.png | Verification finite-state machine |
-| fsm_user | docs/02-architecture/diagrams/user_state_machine.png | User-account finite-state machine |
-| fsm_enrollment | docs/02-architecture/diagrams/biometric_enrollment_state.png | Biometric-enrollment finite-state machine |
+| face_verify_liveness | Thesis/build/figures/face_verification_liveness.png | Face verification with liveness activity diagram |
+| face_enroll_quality | Thesis/build/figures/face_enrollment_quality.png | Face enrollment with quality assessment activity diagram |
+| fsm_session | Thesis/build/figures/session_state_machine.png | Session finite-state machine |
+| fsm_verification | Thesis/build/figures/verification_state_machine.png | Verification finite-state machine |
+| fsm_user | Thesis/build/figures/user_state_machine.png | User-account finite-state machine |
+| fsm_enrollment | Thesis/build/figures/biometric_enrollment_state.png | Biometric-enrollment finite-state machine |
 | act_tenant_create | docs/02-architecture/diagrams/multi_tenant_creation.png | Multi-tenant creation activity |
 | act_tenant_mgmt | docs/02-architecture/diagrams/tenant_management_activity.png | Tenant-management activity |
 | act_user_onboarding | docs/02-architecture/diagrams/user_onboarding_activity.png | User-onboarding activity |
 | act_reenrollment | docs/02-architecture/diagrams/biometric_reenrollment_activity.png | Biometric re-enrollment activity |
-| gantt_fall | docs/gantt_fall.png | Fall-semester project Gantt chart |
-| gantt_spring | docs/gantt_spring.png | Spring-semester project Gantt chart |
+| gantt_fall | Thesis/build/figures/gantt_fall.png | Fall-semester project Gantt chart |
+| gantt_spring | Thesis/build/figures/gantt_spring.png | Spring-semester project Gantt chart |

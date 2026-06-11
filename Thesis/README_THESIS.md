@@ -48,6 +48,9 @@ python3 make_md.py     # rebuild FIVUCSAS_Thesis.md
 python3 verify.py      # structural sanity check
 ```
 
+Embedded figures are vendored under `build/figures/` (mapped by the figure catalog in
+`build/bibliography.md`), so the rebuild is self-contained — no other checkouts needed.
+
 ## Poster cross-check + measured results (2026-06-11, round 2)
 
 Compared the v6 poster (PDF text layer + HTML) against the thesis and the code:
