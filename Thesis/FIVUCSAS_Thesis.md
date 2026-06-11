@@ -88,7 +88,7 @@ The realized scope of the platform covered the following areas.
 
 The high-level shape of this delivered system is summarized in Figure 2.1.
 
-![High-level system architecture overview of the delivered FIVUCSAS platform](../docs/ADD_diagrams/diagram_04_system_architecture_overview.png)
+![High-level system architecture overview of the delivered FIVUCSAS platform](../Thesis/build/figures/diagram_04_system_architecture_overview.png)
 
 **Figure 2.1.** High-level system architecture overview of the delivered FIVUCSAS platform
 
@@ -165,12 +165,12 @@ We engineered FIVUCSAS to professional standards rather than as throwaway course
 
 **Architecture and design standards.** Each microservice followed Hexagonal Architecture (Ports and Adapters) [31], cleanly separating domain logic from infrastructure adapters, in line with microservices and Domain-Driven Design practice [32,33,34]. The boundary was not merely aspirational: ArchUnit tests *froze* the hexagonal layering of the Java service so that any accidental dependency from domain to infrastructure failed the build. The design was documented with UML (use-case, class, ER, sequence, activity, and finite-state-machine diagrams), and progress was tracked with Gantt charts across the fall and spring semesters, shown in Figure 2.2 and Figure 2.3.
 
-![Fall-semester project Gantt chart](../docs/gantt_fall.png)
+![Fall-semester project Gantt chart](../Thesis/build/figures/gantt_fall.png)
 
 **Figure 2.2.** Fall-semester project Gantt chart
 
 
-![Spring-semester project Gantt chart](../docs/gantt_spring.png)
+![Spring-semester project Gantt chart](../Thesis/build/figures/gantt_spring.png)
 
 **Figure 2.3.** Spring-semester project Gantt chart
 
@@ -179,7 +179,7 @@ We engineered FIVUCSAS to professional standards rather than as throwaway course
 
 **Code quality and automation.** Language-specific linting and formatting were enforced: Ruff (lint and format) and mypy for Python, ESLint and TypeScript `tsc --noEmit` for the web app. Continuous-integration pipelines ran on every push and pull request. Identity Core API CI ran unit tests (`mvn -T 2C test`) on GitHub-hosted runners and the heavier Testcontainers integration tests on a self-hosted runner; the Biometric Processor ran Ruff, mypy, pytest with coverage, and dependency/security scans; the web app ran lint, type-check, Vitest, and a production build; Kotlin clients ran their JVM and Android test sets. Dependabot kept dependencies current (weekly, grouped). The development environment and its CI/CD context are shown in Figure 2.4.
 
-![Development deployment environment and CI/CD context](../docs/02-architecture/diagrams/development_deployment.png)
+![Development deployment environment and CI/CD context](../Thesis/build/figures/development_deployment.png)
 
 **Figure 2.4.** Development deployment environment and CI/CD context
 
@@ -362,7 +362,7 @@ This section presents the principal design artifacts: the use cases that defined
 
 The platform serves three primary human actors and one machine actor. The **System Administrator** (the platform-tier `ROOT`) provisions and oversees tenants, manages platform-wide configuration, and inspects cross-tenant health. The **Tenant Administrator** manages their own organization: users, roles, login flows, OAuth2 clients, verification templates, and audit review. The **End User** registers, enrolls biometrics, completes multi-factor login, manages their devices and linked accounts, exercises their data-export rights, and undergoes identity verification. The machine actor is an **external API / OIDC client**, a third-party application that integrates via redirective OpenID Connect. The overall organization of responsibilities is shown in Figure 3.1.
 
-![System use cases organized by actor: System Administrator, Tenant Administrator, and End User](../docs/ADD_diagrams/diagram_01_use_cases_by_actor.png)
+![System use cases organized by actor: System Administrator, Tenant Administrator, and End User](../Thesis/build/figures/diagram_01_use_cases_by_actor.png)
 
 **Figure 3.1.** System use cases organized by actor: System Administrator, Tenant Administrator, and End User
 
@@ -373,14 +373,14 @@ Two use cases are central enough to model in detail. *Face enrollment* threads a
 
 The domain model places the tenant at the root of nearly every relationship, expressing the multi-tenant design directly in the type system. A `Tenant` owns `User`s; each `User` carries value objects (`Email`, `FullName`, `HashedPassword`, `PhoneNumber`, `IdNumber`, `Address`) rather than bare strings, following domain-driven design [34]. RBAC is modeled as `Role` and `Permission` joined to users through `UserRole`, and biometric and verification activity hangs off the user with full audit-trail support. The core domain model is shown in Figure 3.2.
 
-![Core domain model for multi-tenant identity and biometric verification](../docs/ADD_diagrams/diagram_02_domain_model___core_entities.png)
+![Core domain model for multi-tenant identity and biometric verification](../Thesis/build/figures/diagram_02_domain_model___core_entities.png)
 
 **Figure 3.2.** Core domain model for multi-tenant identity and biometric verification
 
 
 At the persistence layer, the schema comprises 31 JPA entities materialized through 84 Flyway migrations spanning V0–V84 (the V13 number was never used; the highest applied in production at the time of writing was V83). The entity-relationship structure spans `users`, `tenants`, `roles`/`permissions`/`user_roles`, the auth-flow tables (`auth_flows`, `auth_flow_steps`, `auth_methods`, `tenant_auth_methods`), `refresh_tokens` (hashed at rest with a rotation `family_id` for reuse detection per RFC 6749 §10.4), `webauthn_credentials`, `nfc_cards`, `oauth2_clients`, the verification pipeline tables, `user_enrollments`, `voice_enrollments`, the partitioned `audit_logs`, and the identity-linking tables (`identities`, `identity_emails`, `identity_tenant_biometric_consent`); it is shown in Figure 3.3. Two design choices in this schema are worth highlighting. First, the soft-delete pattern: `User` carries an `@SQLDelete` plus `@SQLRestriction("deleted_at IS NULL")`, so every derived finder automatically respects the GDPR retention window. Second, the dual face/voice embedding store lives not in the identity database but in the biometric processor's own pgvector schema (table `face_embeddings`), where the searchable plaintext vector and the Fernet-encrypted store-of-record sit side by side; the identity service reaches it only through a thin REST client.
 
-![Entity-relationship diagram of the FIVUCSAS schema](../docs/ADD_diagrams/diagram_03_entity_relationship_diagram.png)
+![Entity-relationship diagram of the FIVUCSAS schema](../Thesis/build/figures/diagram_03_entity_relationship_diagram.png)
 
 **Figure 3.3.** Entity-relationship diagram of the FIVUCSAS schema
 
@@ -432,17 +432,17 @@ Two qualifications keep the delivery picture accurate. The iOS target is *not de
 
 The enrollment and verification surfaces are supported by the activity flows captured in Figure 3.4 and Figure 3.5, and the end-user registration flow in Figure 3.6.
 
-![Face enrollment with quality assessment](../docs/02-architecture/diagrams/face_enrollment_quality.png)
+![Face enrollment with quality assessment](../Thesis/build/figures/face_enrollment_quality.png)
 
 **Figure 3.4.** Face enrollment with quality assessment
 
 
-![Face verification with liveness](../docs/02-architecture/diagrams/face_verification_liveness.png)
+![Face verification with liveness](../Thesis/build/figures/face_verification_liveness.png)
 
 **Figure 3.5.** Face verification with liveness
 
 
-![User registration sequence](../docs/02-architecture/diagrams/user_registration.png)
+![User registration sequence](../Thesis/build/figures/user_registration.png)
 
 **Figure 3.6.** User registration sequence
 
@@ -477,7 +477,7 @@ The system combines two complementary styles. At the macro level it is a **micro
 
 At the micro level, each service is built with **Hexagonal Architecture (Ports and Adapters)** [31]. The domain layer holds pure business logic and value objects; the application layer defines several dozen inbound use-case ports and outbound infrastructure ports, implemented by the service classes that carry the business logic; and the infrastructure layer supplies the adapters that fulfill the outbound ports: Spring Data repositories, the Redis cache, the biometric REST client, SMTP, and SMS gateways among them. The 29 REST controllers are themselves inbound web adapters. The dependency direction always points inward, so the database, the ML models, and the message bus are all swappable details rather than load-bearing assumptions, and the Strategy/Registry pattern for login methods, MFA steps, and verification steps reduces adding a new factor to registering one more handler. The high-level architecture is shown in Figure 3.7.
 
-![High-level system architecture overview](../docs/ADD_diagrams/diagram_04_system_architecture_overview.png)
+![High-level system architecture overview](../Thesis/build/figures/diagram_04_system_architecture_overview.png)
 
 **Figure 3.7.** High-level system architecture overview
 
@@ -486,7 +486,7 @@ At the micro level, each service is built with **Hexagonal Architecture (Ports a
 
 The platform's components are layered from client to data. **Clients** (the React dashboard, the hosted-login SPA, the Kotlin Multiplatform mobile and desktop apps, and third-party OIDC integrations) speak to the backend over HTTPS. The **Traefik v3 edge** terminates TLS and routes by host. The **Identity Core API** is the system's spine, exposing 29 controllers covering authentication, MFA, OAuth2/OIDC, WebAuthn/passkeys, NFC/eMRTD, biometrics (as a proxy), the KYC verification pipeline, identity linking, tenant and RBAC administration, and compliance. The **Biometric Processor** exposes 26 route modules and roughly 70 endpoints covering enrollment, 1:1 verification, 1:N search, passive and active (Biometric Puzzle) liveness, quality assessment, voice, NFC/eMRTD passive authentication, and proctoring. The component decomposition is shown in Figure 3.8.
 
-![System component diagram](../docs/02-architecture/diagrams/system_components.png)
+![System component diagram](../Thesis/build/figures/system_components.png)
 
 **Figure 3.8.** System component diagram
 
@@ -520,7 +520,7 @@ Redis is far more than a read cache; it is the platform's distributed-coordinati
 
 The production system runs on a single **Hetzner CX43 VPS** (8 vCPU, 16 GB RAM, 150 GB disk, Ubuntu 24.04, Docker 29.3 / Compose v5.1), a deliberately CPU-only host. That constraint drove the choice of CPU-safe models (MTCNN, Facenet512, UniFace MiniFASNet) and a boot-time `ALLOW_HEAVY_ML=false` gate that refuses GPU-only backends. The deployment topology is shown in Figure 3.9.
 
-![Docker Compose deployment topology](../docs/ADD_diagrams/diagram_05_docker_deployment.png)
+![Docker Compose deployment topology](../Thesis/build/figures/diagram_05_docker_deployment.png)
 
 **Figure 3.9.** Docker Compose deployment topology
 
@@ -910,7 +910,7 @@ This section documents the cryptographic and protocol-level algorithms that make
 authentication platform rather than a face-matching demo. The corresponding security
 architecture is shown in Figure 4.1.
 
-![Security architecture: JWT signing/verification, RBAC, TLS termination, and layered rate limiting](../docs/02-architecture/diagrams/security_architecture.png)
+![Security architecture: JWT signing/verification, RBAC, TLS termination, and layered rate limiting](../Thesis/build/figures/security_architecture.png)
 
 **Figure 4.1.** Security architecture: JWT signing/verification, RBAC, TLS termination, and layered rate limiting
 
@@ -1072,7 +1072,7 @@ FIVUCSAS is a distributed system, and its correctness depends on the contracts b
 much as on the code inside them. The network architecture and request routing are shown in
 Figure 4.2.
 
-![Network architecture: TLS termination at Traefik, public vs. internal routing, and the API-key-protected biometric service](../docs/02-architecture/diagrams/network_architecture.png)
+![Network architecture: TLS termination at Traefik, public vs. internal routing, and the API-key-protected biometric service](../Thesis/build/figures/network_architecture.png)
 
 **Figure 4.2.** Network architecture: TLS termination at Traefik, public vs. internal routing, and the API-key-protected biometric service
 
@@ -1098,7 +1098,7 @@ redirect protocol: authorize request → hosted login → MFA → authorization-
 token exchange. The data-flow of the verification pipeline that this protocol guards is shown in
 Figure 4.3.
 
-![Data flow of the verification pipeline, from client capture through liveness, embedding, and decision](../docs/02-architecture/diagrams/data_flow_verification.png)
+![Data flow of the verification pipeline, from client capture through liveness, embedding, and decision](../Thesis/build/figures/data_flow_verification.png)
 
 **Figure 4.3.** Data flow of the verification pipeline, from client capture through liveness, embedding, and decision
 
@@ -1137,7 +1137,7 @@ MFA steps to completion, expiry, or revocation. It is the FSM that the consume-t
 of Section 4.5 enforces: a session in the `COMPLETED`/`CONSUMED` state can never transition back to a
 usable one. The full lifecycle appears in Figure 4.4.
 
-![Session finite-state machine: creation, MFA progression, completion, expiry, and revocation](../docs/02-architecture/diagrams/session_state_machine.png)
+![Session finite-state machine: creation, MFA progression, completion, expiry, and revocation](../Thesis/build/figures/session_state_machine.png)
 
 **Figure 4.4.** Session finite-state machine: creation, MFA progression, completion, expiry, and revocation
 
@@ -1147,7 +1147,7 @@ ordered steps (document scan, data extraction, face match, liveness check, and s
 transitions for a passed step, a failed step, a step requiring manual review, and overall
 completion or rejection, as illustrated in Figure 4.5.
 
-![Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states](../docs/02-architecture/diagrams/verification_state_machine.png)
+![Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states](../Thesis/build/figures/verification_state_machine.png)
 
 **Figure 4.5.** Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states
 
@@ -1157,7 +1157,7 @@ capture through quality assessment and liveness gating to a persisted, active te
 rejection that re-prompts capture. The fail-closed multi-image enrollment of Section 4.3.2 is one of
 this machine's transition rules; Figure 4.6 depicts the complete machine.
 
-![Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment](../docs/02-architecture/diagrams/biometric_enrollment_state.png)
+![Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment](../Thesis/build/figures/biometric_enrollment_state.png)
 
 **Figure 4.6.** Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment
 
@@ -1166,7 +1166,7 @@ The **user-account finite-state machine** tracks the account lifecycle (pending,
 suspended, and soft-deleted), including the lockout transition after repeated failed logins and the
 GDPR soft-delete state that the nightly purge job eventually finalizes, shown in Figure 4.7.
 
-![User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states](../docs/02-architecture/diagrams/user_state_machine.png)
+![User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states](../Thesis/build/figures/user_state_machine.png)
 
 **Figure 4.7.** User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states
 
