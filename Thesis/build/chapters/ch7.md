@@ -63,8 +63,9 @@ PKCE (S256) [CITE:pkce-rfc7636]; an embeddable authentication widget and a zero-
 SDK for inline step-up; and a **Kotlin Multiplatform / Compose** [CITE:kmp] client. We are precise
 about platform delivery. **Android shipped as a full native client** (signed public releases with
 native MFA, on-device NFC document reading, and a standalone TOTP authenticator). The **JVM desktop
-client shipped** as a hosted-first OAuth loopback application with OS-native secure token storage and
-`.deb`/`.msi` installers. **iOS was not delivered**: the shared module compiles for iOS targets, but
+client was built and CI-packaged** as a hosted-first OAuth loopback application with OS-native secure
+token storage; its `.deb`/`.msi` installers were produced on Linux and Windows runners but had not
+yet been published for end-user download, pending release signing. **iOS was not delivered**: the shared module compiles for iOS targets, but
 the platform implementations are stubs, and the app remains future work blocked on Apple Developer
 enrollment. The PSD-era plan to build the clients in Flutter was abandoned in favor of Kotlin
 Multiplatform, and we report that as the reality.
@@ -189,6 +190,10 @@ plainly:
   stubs awaiting a real data source.
 - The in-browser **card-detection model** (a 12.3 MB YOLOv8n) was trained on a limited corpus and
   generalizes weakly beyond the Turkish ID and Marmara card types it was tuned for.
+- The **embeddable iframe widget**, although delivered and exercised by the demonstration tenant,
+  is restricted in production by a `frame-ancestors` allowlist to FIVUCSAS-owned origins;
+  third-party sites integrate through the hosted redirect flow, and opening the iframe surface to
+  external tenants would require a per-tenant framing allowlist that we deliberately did not ship.
 
 **iOS was not delivered, and there is no billing.** The platform is multi-tenant in its data model and
 isolation, but it has no metering, subscription, or billing subsystem, so it is not yet a commercially

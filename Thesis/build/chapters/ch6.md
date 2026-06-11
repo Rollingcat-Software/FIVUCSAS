@@ -49,7 +49,7 @@ platform's fixed cost is amortized across every tenant rather than rebuilt by ea
 
 There is a third, quieter beneficiary that the original specification did not name but the
 project served all the same: the **integrating developer**. Because the platform exposes
-its capabilities as a clean, documented OIDC contract with a published SDK rather than a
+its capabilities as a clean, documented OIDC contract with a publicly served JavaScript SDK rather than a
 bespoke API per feature, a developer can wire identity verification into an existing
 application without becoming a biometrics expert. The hosted-first integration model (the
 same pattern used by Auth0 Universal Login, Okta, Microsoft Entra, and Türkiye's own
@@ -79,7 +79,11 @@ to answer. The implementation grounds this idea in concrete, measurable
 signals: eye-aspect-ratio for blink detection following the landmark-based formulation of
 Soukupová and Čech, mouth-aspect-ratio for smile and mouth-open challenges, and head-pose
 estimation for turn challenges, with the eye-aspect-ratio blink threshold fixed at 0.21
-in production [CITE:soukupova2016-ear,mediapipe]. A rigorous analysis of such a scheme's
+in production [CITE:soukupova2016-ear,mediapipe]. The hand-gesture channel of the Puzzle was
+likewise not invented in place: it was prototyped as a standalone gesture-analysis study in the
+project's research repository and then ported, algorithm by algorithm (finger-extension ratios,
+dynamic-time-warping shape tracing, and motion-based anti-spoof telemetry), into the biometric
+service's server-side re-scorer. A rigorous analysis of such a scheme's
 accuracy and spoofing resistance, which the evaluation roadmap in Section 7.3 scopes, is
 the kind of contribution that could anchor a future publication.
 
@@ -122,16 +126,16 @@ usage-based revenue model: tenants are onboarded through self-service, isolated 
 another, and metered on a shared infrastructure whose marginal cost per tenant is low.
 This is the cost structure that makes Software-as-a-Service commercially viable, and the
 platform is built to it: self-service tenant creation, DNS-based email-domain verification,
-guest invitation and revocation, and an embeddable SDK that a paying customer can integrate
-in an afternoon.
+guest invitation and revocation, and a drop-in JavaScript SDK that an integrating organization
+could adopt with modest engineering effort.
 The cost story for the customer is equally concrete: identity verification, anti-spoofing,
 and standards-compliant token issuance are consumed as a service instead of being rebuilt,
 which converts a large, risky capital project into a predictable operating expense.
 
 On the commercial side, the differentiator is a combination the market rarely offers small
 buyers at once: liveness-protected biometric verification, document and chip reading, twelve
-selectable authentication methods (the ten canonical login factors plus the two
-cross-device additions), and a hosted OIDC integration, packaged so that an organization
+selectable authentication methods (the ten canonical login factors plus passkey and
+cross-device approve-login), and a hosted OIDC integration, packaged so that an organization
 without a security team can adopt it. The platform was deployed to production across a
 public landing site, a tenant dashboard, a hosted login origin, an embeddable widget, a
 demonstration tenant, and a live anti-spoofing tester, demonstrating that the offering runs
@@ -204,10 +208,14 @@ case is worth making plainly because it rests on shipped code rather than ambiti
 The most direct connection is **border and travel-document security**. The platform's
 mobile client reads electronic Machine-Readable Travel Documents (electronic passports and
 Türkiye's electronic national identity card) over NFC, using the chip-access protocols
-defined by ICAO Doc 9303: it performs PACE (using the EF.CardAccess parameters), reads the
+defined by ICAO Doc 9303: it authenticates to the chip with Basic Access Control derived
+from the machine-readable zone, reads the
 document data groups and the security object, and the *server* verifies the document's
 authenticity through passive authentication rather than trusting the phone
-[CITE:icao9303]. The biometric service exposes the matching endpoints,
+[CITE:icao9303]. (A Password Authenticated Connection Establishment (PACE) implementation
+was scaffolded, with the EF.CardAccess parser and key derivation written and unit-tested,
+but its cryptographic core was deliberately left unimplemented until a PACE-capable test
+document was available, so the readers fall back to Basic Access Control.) The biometric service exposes the matching endpoints,
 `POST /nfc/mrz` and a server-authoritative `POST /nfc/verify-authenticity` that fails
 closed, and the asn1crypto library parses the eMRTD ASN.1 and CMS structures that passive
 authentication depends on. The security significance is precise: this combination lets a
