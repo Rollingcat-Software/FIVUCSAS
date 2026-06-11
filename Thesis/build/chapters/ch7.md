@@ -28,7 +28,8 @@ which keeps the most sensitive surface off the open internet entirely.
 
 Around this backend we built the parts that make a capability into a product. Faces are stored as
 Facenet512 embeddings in **PostgreSQL with the pgvector extension** [CITE:postgresql,pgvector],
-indexed with IVFFlat using the cosine operator class and matched by cosine distance, with an
+indexed with a pgvector ANN index in the cosine operator class (IVFFlat in the migration
+baseline, upgraded operationally to HNSW on the deployed instance) and matched by cosine distance, with an
 encrypted ciphertext column kept as the canonical store of record alongside the searchable vector.
 **Redis** [CITE:redis] did far more than caching: OAuth authorization codes, one-time
 passwords, replay markers, step-up challenges, distributed rate-limit counters, and job
@@ -39,7 +40,7 @@ under Docker Compose [CITE:docker,dockercompose], every application container ha
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
 evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused), an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
-partitioned audit logs, and discoverable passkeys.
+partition-ready audit logs, and discoverable passkeys.
 
 The project's signature contribution is its approach to **liveness**. Rather than trust a single
 still frame, FIVUCSAS combined a server-authoritative passive check (UniFace MiniFASNet, backed by
@@ -156,9 +157,12 @@ are all CPU-safe and were chosen partly for that reason. This keeps the system r
 platform is not using the current state-of-the-art recognition model, and the enrollment path is
 ML-bound and comparatively slow.
 
-**Accuracy is not formally measured.** This is the most important caveat. The thesis does not
-report measured False Accept / False Reject rates for face verification, nor certified APCER / BPCER /
-ACER figures for the anti-spoofing pipeline. The ISO/IEC 30107-3 metric harness exists in code
+**End-to-end accuracy is not formally measured.** This is the most important caveat. The thesis
+does not report False Accept / False Reject rates measured on the deployed production service,
+nor certified APCER / BPCER /
+ACER figures for the anti-spoofing pipeline; the controlled benchmark of Section 5.8.3
+characterized the embedding model in isolation, not the end-to-end system with its liveness and
+quality gates. The ISO/IEC 30107-3 metric harness exists in code
 [CITE:iso30107-3], and a CASIA-FASD micro-benchmark exists in the test suite, but a rigorous,
 independently reproduced evaluation on standard datasets was not completed. The performance targets in
 the k6 configuration (login p95 < 300 ms, verification p95 < 500 ms) are **design targets**, not

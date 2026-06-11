@@ -92,7 +92,7 @@ The biometric processor runs five jobs: Ruff lint plus format check (with mypy i
 unit-test job with coverage to Codecov, an integration-test job backed by real Redis and
 pgvector services, a security job (Bandit static analysis plus a pip-audit CVE scan), and a
 frontend build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
-production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the 50 MB ONNX model),
+production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the ~12 MB card-detection model),
 a separate code-quality job, and the Playwright E2E suite in its own workflow.
 
 Two caveats about the test environment need stating. First, the heaviest integration
@@ -106,8 +106,9 @@ those tests are verified through GitHub-hosted CI instead. Second, the Identity 
 integration gate had a documented history of test-infrastructure rot, and during the project's
 most intense authentication-hardening sprint a small number of pull requests were merged with
 an administrator override while that gate was being repaired. We record this instead of
-conceal it: the gate has since had its `continue-on-error` escape hatch removed, so a failing
-isolation test now blocks a merge. The gate's trustworthiness was being *restored*, not taken
+concealing it: the gate has since had its `continue-on-error` escape hatch removed, so a failing
+isolation test now blocks an ordinary merge, with any administrator override leaving a documented
+trail. The gate's trustworthiness was being *restored*, not taken
 for granted.
 
 ## 5.3 Unit Testing
@@ -176,9 +177,9 @@ accurate one: the older summary counted only a subset and predates later test gr
 
 Integration tests verify the seams between components against real infrastructure rather than
 test doubles, on the principle that the subtlest and most expensive bugs live where two
-technologies meet. The Identity Core API's integration layer runs against a real PostgreSQL
-17-class database (provisioned by Testcontainers [CITE:testcontainers] from the
-`pgvector/pgvector` image) and a real Redis instance. This matters because several of the
+technologies meet. The Identity Core API's integration layer runs against a real PostgreSQL 16
+database with pgvector (provisioned by Testcontainers [CITE:testcontainers] from the
+`pgvector/pgvector` image; production runs PostgreSQL 17) and a real Redis instance. This matters because several of the
 platform's behaviors cannot be faithfully mocked: a Flyway migration that installs and depends
 on the pgvector extension; the Hibernate `@Filter(tenantFilter)` SQL rewrite that enforces
 tenant isolation; the Redis-backed token bucket whose correctness depends on atomic
@@ -214,8 +215,9 @@ The cross-tenant isolation integration tests are both the most important and the
 guarded in the suite. The CI pipeline runs them, then parses the surefire XML and asserts that
 `CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
 `IdentityBackfillIT`, and `RoleUnificationBackfillIT` each actually executed. A failing
-isolation test now blocks the pull request, and the `continue-on-error` escape hatch that once
-allowed them to be skipped quietly was removed.
+isolation test now blocks an ordinary pull-request merge, and the `continue-on-error` escape
+hatch that once allowed them to be skipped quietly was removed (§5.2 records the
+administrator-override history).
 
 ## 5.5 End-to-End Testing
 
@@ -279,8 +281,9 @@ service from a client: end-to-end 1:1 face verification completed in roughly 410
 percentile (median about 380 ms, P99 about 450 ms), an authentication round-trip in roughly
 66 ms, and the JWKS document fetch in roughly 62 ms, all against the production CX43 host
 (8 vCPU, no GPU). These are spot measurements under light load rather than a sustained k6
-campaign, but they sit inside the 200 ms authentication and 500 ms verification targets of
-Section 2.2 at the percentiles that matter.
+campaign, but they sit inside the latency targets of Section 2.2 (login p95 under 300 ms, token
+refresh under 200 ms, verification under 500 ms) at the percentiles that matter; the measured
+66 ms authentication round-trip sits well inside both the login and refresh budgets.
 
 [^locust]: An early `locustfile.py` survives only in a scratch worktree, and `locust` lingers
 in a legacy requirements file; Locust was an early experiment rather than the maintained tool,
@@ -330,8 +333,10 @@ isolation integration tests:
   produce false positives on cryptographic pseudocode.
 - **Dependabot** runs weekly, grouped, to keep dependencies patched.
 - The **cross-tenant isolation Testcontainers ITs** function as security-invariant gates:
-  they are required, executed, and asserted-to-have-executed on every Identity API pull
-  request, making multi-tenant data isolation a tested-every-PR guarantee backed by a
+  they are required by branch protection on Identity API pull requests and
+  asserted-to-have-executed whenever the integration lane runs (documented administrator
+  overrides occurred while the lane was being repaired, §5.2), making multi-tenant data
+  isolation a continuously re-verified guarantee backed by a
   defense-in-depth Hibernate `@Filter(tenantFilter)` on the tenant-scoped entities.
 
 The reference framework for the threat model is the **OWASP Top 10** and the OWASP API
@@ -471,8 +476,9 @@ distance falls below the configured threshold: production `VERIFICATION_THRESHOL
 relaxed to `0.55` for embeddings older than two years via an adaptive-threshold rule whose
 validator enforces that the aged threshold is never stricter than the standard one (a guard
 added after an earlier inversion bug). The 1:N search path uses the same cosine operator over a
-pgvector IVFFlat index (`vector_cosine_ops`, `lists = 100`) [CITE:pgvector], with cross-tenant
-search forbidden. These are the operating parameters of the deployed verifier.
+pgvector ANN index (the migration-defined IVFFlat baseline, `vector_cosine_ops` with
+`lists = 100`, upgraded operationally to HNSW on the deployed instance) [CITE:pgvector], with
+cross-tenant search forbidden. These are the operating parameters of the deployed verifier.
 
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
 controlled benchmark whose headline figures also appear on the project poster. The evaluation
