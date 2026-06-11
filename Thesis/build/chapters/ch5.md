@@ -451,7 +451,8 @@ directly: that the EAR computation registers a blink as a closed-then-open trans
 baseline ratio above 1.3, that the texture/moiré/frequency/color detector down-scores a flat,
 screen-like presentation, and that a both-eyes-closed still frame triggers the EAR veto. These
 behavioral assertions are real, automated, and passing. The browser port additionally carries
-**276 Vitest cases** covering each analyzer, the pipeline assembler, the quality gates, and a
+**276 Vitest cases** (in the separate `spoof-detector` repository, not counted in Table 5.3's
+4,405-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
 What we do **not** report is a headline accuracy number for the fused system. An internal
@@ -483,7 +484,8 @@ The recognition model itself, as opposed to the fused anti-spoofing system, was 
 controlled benchmark whose headline figures also appear on the project poster. The evaluation
 enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
 three public benchmarks. On LFW (5,600 pairs) the FaceNet-512 pipeline reached an AUC of
-0.9943 with an equal-error rate of 1.93%; at a 0.45 distance threshold the false-accept rate
+0.9943 with an equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the
+benchmark operating point, distinct from the production threshold of 0.4) the false-accept rate
 was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
 AUC was 0.9845, and on AgeDB-30, which pairs faces across a 30-year age gap, 0.9475. These are
 controlled measurements on public datasets under our own preprocessing: they characterize the

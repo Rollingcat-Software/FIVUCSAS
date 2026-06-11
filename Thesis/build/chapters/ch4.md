@@ -559,7 +559,7 @@ client submits the EF.SOD security object and the data groups, and the biometric
 
 1. each data-group hash must match the value signed in the SOD;
 2. the SOD's CMS SignedData signature must verify under the embedded Document Signer certificate; and
-3. that Document Signer certificate must chain to a trusted CSCA root in the operator's trust store.
+3. that Document Signer certificate must chain to a trusted Country Signing Certificate Authority (CSCA) root in the operator's trust store.
 
 The whole check is **fail-closed**: an empty trust store, an expired certificate, or any mismatch
 rejects the document. This is pure-Python cryptography with no ML, and it is the cleanest example in
