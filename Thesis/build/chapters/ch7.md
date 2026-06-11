@@ -10,8 +10,8 @@ benchmark? Over two semesters we designed, built, deployed, and tested **FIVUCSA
 Identity Verification Using Cloud-based SaaS). The working system answers in the affirmative,
 qualified by the limitations enumerated in the next section.
 
-What we delivered is a running, multi-tenant, cloud-native identity platform, not a prototype on
-a laptop. At its core sit two backend microservices that divide the problem cleanly along the
+What we delivered is a running, multi-tenant, cloud-native identity platform, deployed and
+publicly reachable rather than confined to a development machine. At its core sit two backend microservices that divide the problem cleanly along the
 seam that matters most. The **Identity Core API** (Spring Boot on Java 21, organized as a
 hexagonal, ports-and-adapters codebase [CITE:cockburn-hexagonal]) owns authentication,
 authorization, tenant administration, OAuth 2.0 / OpenID Connect, and every security-policy
@@ -28,7 +28,8 @@ which keeps the most sensitive surface off the open internet entirely.
 
 Around this backend we built the parts that make a capability into a product. Faces are stored as
 Facenet512 embeddings in **PostgreSQL with the pgvector extension** [CITE:postgresql,pgvector],
-indexed with IVFFlat using the cosine operator class and matched by cosine distance, with an
+indexed with a pgvector ANN index in the cosine operator class (IVFFlat in the migration
+baseline, upgraded operationally to HNSW on the deployed instance) and matched by cosine distance, with an
 encrypted ciphertext column kept as the canonical store of record alongside the searchable vector.
 **Redis** [CITE:redis] did far more than caching: OAuth authorization codes, one-time
 passwords, replay markers, step-up challenges, distributed rate-limit counters, and job
@@ -39,7 +40,7 @@ under Docker Compose [CITE:docker,dockercompose], every application container ha
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
 evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused), an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
-partitioned audit logs, and discoverable passkeys.
+partition-ready audit logs, and discoverable passkeys.
 
 The project's signature contribution is its approach to **liveness**. Rather than trust a single
 still frame, FIVUCSAS combined a server-authoritative passive check (UniFace MiniFASNet, backed by
@@ -62,8 +63,9 @@ PKCE (S256) [CITE:pkce-rfc7636]; an embeddable authentication widget and a zero-
 SDK for inline step-up; and a **Kotlin Multiplatform / Compose** [CITE:kmp] client. We are precise
 about platform delivery. **Android shipped as a full native client** (signed public releases with
 native MFA, on-device NFC document reading, and a standalone TOTP authenticator). The **JVM desktop
-client shipped** as a hosted-first OAuth loopback application with OS-native secure token storage and
-`.deb`/`.msi` installers. **iOS was not delivered**: the shared module compiles for iOS targets, but
+client was built and CI-packaged** as a hosted-first OAuth loopback application with OS-native secure
+token storage; its `.deb`/`.msi` installers were produced on Linux and Windows runners but had not
+yet been published for end-user download, pending release signing. **iOS was not delivered**: the shared module compiles for iOS targets, but
 the platform implementations are stubs, and the app remains future work blocked on Apple Developer
 enrollment. The PSD-era plan to build the clients in Flutter was abandoned in favor of Kotlin
 Multiplatform, and we report that as the reality.
@@ -76,9 +78,9 @@ used the Yubico server library with an explicit origin allowlist [CITE:webauthn]
 rate-limiting layers (a Redis sliding window and Bucket4j token buckets [CITE:bucket4j]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
 isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
-Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified on every pull
-request** by Testcontainers integration tests that the CI pipeline asserted had actually executed
-[CITE:testcontainers].
+Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified by a required
+pull-request gate** of Testcontainers integration tests that the CI pipeline asserted had actually executed
+[CITE:testcontainers] (§5.2 records the gate's repair history).
 
 The engineering process itself is part of the result. The platform was backed by roughly
 **4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
@@ -156,9 +158,12 @@ are all CPU-safe and were chosen partly for that reason. This keeps the system r
 platform is not using the current state-of-the-art recognition model, and the enrollment path is
 ML-bound and comparatively slow.
 
-**Accuracy is not formally measured.** This is the most important caveat. The thesis does not
-report measured False Accept / False Reject rates for face verification, nor certified APCER / BPCER /
-ACER figures for the anti-spoofing pipeline. The ISO/IEC 30107-3 metric harness exists in code
+**End-to-end accuracy is not formally measured.** This is the most important caveat. The thesis
+does not report False Accept / False Reject rates measured on the deployed production service,
+nor certified APCER / BPCER /
+ACER figures for the anti-spoofing pipeline; the controlled benchmark of Section 5.8.3
+characterized the embedding model in isolation, not the end-to-end system with its liveness and
+quality gates. The ISO/IEC 30107-3 metric harness exists in code
 [CITE:iso30107-3], and a CASIA-FASD micro-benchmark exists in the test suite, but a rigorous,
 independently reproduced evaluation on standard datasets was not completed. The performance targets in
 the k6 configuration (login p95 < 300 ms, verification p95 < 500 ms) are **design targets**, not
@@ -185,6 +190,10 @@ plainly:
   stubs awaiting a real data source.
 - The in-browser **card-detection model** (a 12.3 MB YOLOv8n) was trained on a limited corpus and
   generalizes weakly beyond the Turkish ID and Marmara card types it was tuned for.
+- The **embeddable iframe widget**, although delivered and exercised by the demonstration tenant,
+  is restricted in production by a `frame-ancestors` allowlist to FIVUCSAS-owned origins;
+  third-party sites integrate through the hosted redirect flow, and opening the iframe surface to
+  external tenants would require a per-tenant framing allowlist that we deliberately did not ship.
 
 **iOS was not delivered, and there is no billing.** The platform is multi-tenant in its data model and
 isolation, but it has no metering, subscription, or billing subsystem, so it is not yet a commercially
@@ -208,7 +217,7 @@ evaluation: run the anti-spoofing pipeline against standard datasets (CASIA-FASD
 and SiW), report APCER, BPCER, ACER, and EER with bootstrap confidence intervals, and recalibrate
 thresholds from the measured operating curve rather than hand-tuned defaults. The same effort should
 produce honest FAR/FRR numbers for face verification at chosen operating points. Beyond self-evaluation,
-pursuing formal third-party PAD certification (the iBeta / ISO 30107-3 testing path) would let the
+pursuing formal third-party PAD certification (the iBeta / ISO/IEC 30107-3 testing path) would let the
 platform make assurance claims that a graduation thesis, by itself, cannot.
 
 **Model retraining and an upgrade to ArcFace.** Once GPU capacity is available, whether a GPU node or

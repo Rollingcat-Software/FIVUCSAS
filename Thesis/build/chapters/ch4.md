@@ -11,10 +11,9 @@ protocols that bind the services together, and finally the finite-state machines
 multi-tenant isolation guarantees that keep one customer's data invisible to another.
 Every detail here was read from the production source tree at the time of writing; where
 an older planning document disagreed with the shipped code, we followed the code. The
-chapter is, in effect, a working synthesis of the undergraduate Computer Engineering
-curriculum: operating systems, computer networks, databases, distributed systems, and
-machine learning all appear in it not as topics but as load-bearing parts of a deployed
-service.
+chapter draws on operating systems, computer networks, databases, distributed systems, and
+machine learning; each appears as a load-bearing part of the deployed service rather than
+as an isolated topic.
 
 ## 4.1 Hardware and Software Requirements and Tools
 
@@ -41,9 +40,9 @@ place. Table 4.1 summarizes the principal tools.
 | Web dashboard & hosted login | **React 18.3 + TypeScript 5.5** [CITE:react] | Component model, strong typing, large ecosystem (MUI, React Router, react-hook-form, i18next) for an admin SPA and a hosted OIDC login page |
 | Mobile & desktop clients | **Kotlin Multiplatform + Compose** [CITE:kmp] | One shared business-logic module compiled to Android, JVM desktop, and (planned) iOS; native NFC and biometric APIs where they matter |
 | Relational + vector store | **PostgreSQL 17 + pgvector** [CITE:postgresql,pgvector] | One engine for both ACID identity data and high-dimensional embedding similarity search; no separate vector database to operate |
-| Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, distributed locks, and a pub/sub event bus |
+| Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [CITE:traefik] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
-| Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`), digest-pinned deployments across all backend services |
+| Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
 | DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V84) checked into source control |
 
 Three details need clarifying, because earlier planning documents pointed
@@ -55,7 +54,7 @@ Flutter as the specification originally proposed; Compose Multiplatform let us s
 single domain layer across Android and desktop and reuse native security primitives such as
 Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
 modeling side, the face recognizer in production is **Facenet512** producing
-512-dimensional embeddings, not the 2622-dimensional VGG-Face embedding sketched in the
+512-dimensional embeddings, not the 2,622-dimensional VGG-Face embedding sketched in the
 specification. We found Facenet512 to be both lighter on CPU and more than adequate at the
 verification thresholds we operate at.
 
@@ -78,7 +77,7 @@ embedding is a 256-dimensional Resemblyzer speaker vector; the client-side geome
 "embedding" is a 128-dimensional landmark-distance vector that is recorded for offline
 analysis but, by the D2 design decision, never used to make an authentication decision. All
 of these are stored in PostgreSQL columns of pgvector's native `vector` type, which is what
-makes approximate-nearest-neighbour search possible inside the relational database itself.
+makes approximate-nearest-neighbor search possible inside the relational database itself.
 A small but important refinement is that the face store is **dual-column**: the plaintext
 `embedding` column is the searchable index surface, while an `embedding_ciphertext` column
 holds the same vector encrypted with Fernet (AES-128-CBC + HMAC-SHA-256) under a versioned
@@ -133,7 +132,7 @@ Liveness and anti-spoofing are treated first because they are the project's rese
 face matching, vector search, and quality assessment follow; and the security algorithms
 (JWT, RBAC, OAuth/OIDC, MFA) are gathered in Section 4.4.
 
-### 4.3.1 Active Liveness Detection: the Biometric Puzzle
+### 4.3.1 Active Liveness Detection: The Biometric Puzzle
 
 The signature contribution of FIVUCSAS is an **active, challenge–response liveness test**
 we call the *Biometric Puzzle*. Rather than passively guessing whether a face is real, the
@@ -214,7 +213,7 @@ only the left or only the right eye, smile, open mouth, turn left, turn right, l
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
 Nine are hand gestures: finger counting, shape tracing with the index finger, tracing an
 on-screen template, waving, a palm flip, a finger tap, a pinch, a hand-covers-face
-"peek-a-boo", and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
+"peek-a-boo," and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
 MediaPipe `HandLandmarker` runs in the client (its ~5 MB WASM cost is paid only on the puzzle
 surface) and streams 21-point hand-landmark sequences to the server, where
 `active_gesture_liveness_manager.py` re-scores each gesture from the raw geometry
@@ -272,7 +271,7 @@ The way this wires into authentication is precise. On `/verify` (and, since the 
 hardening, on `/enroll`) the server runs a **mandatory passive-liveness gate** first: if the
 frame is judged not-live, or its liveness score is below `0.4`, the request is
 rejected with HTTP 400 `LIVENESS_FAILED` before any matching happens. A single-frame EAR veto
-(both eyes closed at threshold 0.18 is a photo signal) and the optional anti-spoof pipeline
+(both eyes closed at threshold 0.18 is a photo signal) and the optional anti-spoofing pipeline
 layers can additionally escalate to HTTP 403 `ANTISPOOF_BLOCKED` when block enforcement is on.
 Multi-image enrollment is **fail-closed**: a single non-live frame rejects the whole batch.
 
@@ -319,17 +318,19 @@ Verification answers "is this the person they claim to be?" (1:1). Identificatio
 is this, out of everyone enrolled?" (1:N), and naively that means comparing the probe against
 every stored embedding, linear in the size of the gallery. We avoid that cost by pushing the
 search into the database with **pgvector** [CITE:pgvector], which adds a native `vector` type
-and approximate-nearest-neighbour (ANN) index to PostgreSQL. The 1:N face search endpoint
+and approximate-nearest-neighbor (ANN) index to PostgreSQL. The 1:N face search endpoint
 (`/search`) issues a query using pgvector's cosine-distance operator `<=>`, and the database
 returns the closest matches without a full scan.
 
-The production index is an **IVFFlat** index built with `vector_cosine_ops` and `lists = 100`
+The migration-defined index is an **IVFFlat** index built with `vector_cosine_ops` and `lists = 100`
 (`CREATE INDEX … USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`). IVFFlat
 partitions the vector space into clusters at build time and probes only the nearest clusters
 at query time, trading a controllable amount of recall for a large speed-up. This is the same
 inverted-file idea that underlies GPU ANN systems such as FAISS [CITE:faiss], here available
-inside the relational store we already operate. (An HNSW index exists on a legacy table and as a commented-out
-alternative in the operative migration; the production index on `face_embeddings` is IVFFlat.) Every search is
+inside the relational store we already operate. (On the deployed instance, the operators later
+replaced this baseline with an HNSW index of the same cosine-operator family, m = 16 and
+ef_construction = 64, a graph-based alternative that trades index build time for better query
+recall; a fresh install still creates the IVFFlat baseline.) Every search is
 **tenant-scoped**: the query is constrained to the caller's tenant and a server-side cap bounds
 the maximum acceptable distance, so identification can never reach across a tenant boundary.
 This is where databases and machine learning meet in the platform (classical index theory
@@ -353,15 +354,16 @@ the face occupies. A best-effort head-pose penalty multiplies the score by 0.7 w
 estimated yaw exceeds 30° or pitch exceeds 25°, and a frame with Laplacian variance below 5
 (essentially unusable) is hard-rejected outright. The operational thresholds are tuned to
 admit real-world webcam frames without admitting junk: enrollment uses a floor of 40 and
-verification a slightly stricter 50, values arrived at empirically because over-strict gating
-frustrated genuine users far more than it stopped attackers.
+verification a slightly stricter 50, values arrived at empirically, since over-strict gating
+demonstrably frustrated genuine users during testing while offering no observable security
+benefit at those margins.
 
 ## 4.4 Authentication, Authorization and Security
 
 If liveness is the project's research heart, the identity service is its engineering heart.
 This section documents the cryptographic and protocol-level algorithms that make FIVUCSAS an
 authentication platform rather than a face-matching demo. The corresponding security
-architecture is shown in [[FIG:security_arch | Security architecture: JWT signing/verification, RBAC, TLS termination, and layered rate limiting]].
+architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis sliding-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
 
 ### 4.4.1 JWT, RBAC and Password Security
 
@@ -380,8 +382,9 @@ HS512-tagged token is rejected unless an operator explicitly opens a rollback wi
 `kid` (key-id) revocation list provides defense in depth. A `Locator<Key>` reads the JWS `kid`
 header and routes verification to the matching key, rejecting unsigned tokens and unknown or
 algorithm-mismatched key ids, which closes the classic algorithm-confusion forgery class.
-Access tokens live 15 minutes in production and carry `iss` and `aud` claims that the parser
-requires; refresh tokens live 24 hours. Crucially, the token records *how* the user
+Access tokens were issued with a 15-minute lifetime in the production configuration default
+(refresh tokens with 24 hours) and carry `iss` and `aud` claims that the parser
+requires. Crucially, the token records *how* the user
 authenticated: following RFC 8176, `VerifyMfaStepService` accumulates an **`amr`** (authentication
 methods reference) array (`pwd`, `otp`, `sms`, `face`, `voice`, `hwk`, and so on) so a relying
 party can see that genuine multi-factor authentication occurred rather than merely that a token exists.
@@ -448,7 +451,7 @@ schemes outright.
 
 Authentication in FIVUCSAS is not a single password check but an **adaptive, multi-step engine**.
 A tenant administrator composes a login flow as an ordered list of layers, where each layer is a
-set of acceptable methods plus a "required" flag (the `SEQUENTIAL` vs `CHOICE` step types; CHOICE
+set of acceptable methods plus a "required" flag (the `SEQUENTIAL` vs. `CHOICE` step types; CHOICE
 means "satisfy any one of these"). The N-step flow is driven by `POST /auth/mfa/step`, and the
 JWT is withheld until every required layer is satisfied, at which point the accumulated `amr`
 claim records the full set of factors used. Ten-plus factors plug into this engine through the
@@ -483,11 +486,12 @@ synchronous `RestClient` for its calls to the biometric service. The latter is d
 verification decision must be made before the response is returned.
 
 **Mutual exclusion and single-replica jobs.** Scheduled jobs must not double-run if the service is
-ever scaled to multiple replicas, so every `@Scheduled` method is guarded by **ShedLock**
-(`@SchedulerLock`), a distributed lock backed by the database. The nightly GDPR purge
-(`SoftDeletePurgeJob`, daily 03:30), the 15-minute guest-invitation expiry, and the 5-minute
-rate-limit bucket eviction all acquire the lock first; a rolling deploy that briefly runs two
-instances cannot run the purge twice. In-memory fallbacks (used when Redis is briefly unavailable)
+ever scaled to multiple replicas. The job where this matters most, the nightly GDPR purge
+(`SoftDeletePurgeJob`, daily 03:30), is guarded by **ShedLock** (`@SchedulerLock`), a distributed
+lock backed by the database, so a rolling deploy that briefly runs two instances cannot run the
+purge twice. The remaining schedules need no such lock: the 15-minute guest-invitation expiry is
+idempotent, and the 5-minute rate-limit bucket eviction operates on instance-local in-memory
+state, where a distributed lock would be meaningless. In-memory fallbacks (used when Redis is briefly unavailable)
 are built from `ConcurrentHashMap`, `AtomicInteger`, and `AtomicLong` with CAS guards and bounded
 size, the classic lock-free concurrency primitives.
 
@@ -517,8 +521,7 @@ reminder that least-privilege OS configuration and native ML libraries interact 
 ## 4.6 Networking and Protocols
 
 FIVUCSAS is a distributed system, and its correctness depends on the contracts between its parts as
-much as on the code inside them. The network architecture and request routing are shown in
-[[FIG:network_arch | Network architecture: TLS termination at Traefik, public vs. internal routing, and the API-key-protected biometric service]].
+much as on the code inside them. The network architecture and request routing are shown in [[FIG:network_arch | Deployed network topology. A single Traefik v3.6 edge terminates TLS on the Hetzner host and routes by hostname to containers on the proxy Docker network; service discovery goes through a filtered docker-socket-proxy. The identity service is attached to both the proxy and backend networks, while the biometric service, PostgreSQL, and Redis live only on the backend network with no public route. Static surfaces are served from Hostinger and reach the API as browser requests; administrative surfaces are IP-allowlisted at the edge.]].
 
 **TLS everywhere at the edge.** All public traffic terminates at Traefik v3, which redirects port 80
 to 443 and obtains certificates automatically from Let's Encrypt. Traefik discovers services from
@@ -538,13 +541,13 @@ the Python service), making the contract machine-readable and testable.
 
 **The OIDC redirect protocol.** As detailed in Section 4.4.2, third-party login is a browser-mediated
 redirect protocol: authorize request → hosted login → MFA → authorization-code redirect → back-channel
-token exchange. The data-flow of the verification pipeline that this protocol guards is shown in
-[[FIG:dataflow_verification | Data flow of the verification pipeline, from client capture through liveness, embedding, and decision]].
+token exchange. The data-flow of the verification pipeline that this protocol guards is shown in [[FIG:dataflow_verification | Verification data path (read the left column top to bottom, then the right). In the browser, MediaPipe landmarks drive an advisory active-liveness challenge before a 224×224 crop is uploaded over TLS with an anti-replay nonce. The identity service applies session, lockout, and rate-limit gates, then calls the internal biometric service, which enforces the passive-liveness floor (0.4) and the quality floor (50), computes the Facenet512 embedding, compares it against the Fernet-protected template from pgvector (cosine distance below 0.4, or 0.55 for templates older than two years), and can still veto a match through the anti-spoof assembler. Both outcomes are written to the audit log.]].
 
 **WebSocket proctoring.** Real-time session monitoring is not request/response but a persistent
-bidirectional stream: the biometric service exposes a WebSocket endpoint (`/ws/live-analysis`) and the
-web client connects with `socket.io-client`, streaming frames for continuous verification and
-receiving incident events. This is the project's use of a stateful application-layer protocol where
+bidirectional stream: the biometric service exposes a WebSocket endpoint (`/ws/live-analysis`) for
+continuous-verification streaming, over which a browser client connects with the standard WebSocket
+API to stream frames and receive incident events (a demonstration client accompanies the route's
+documentation). This is the project's use of a stateful application-layer protocol where
 HTTP's request/response model would be a poor fit.
 
 **NFC and the eMRTD protocol.** Document-based identity verification reads the contactless chip of an
@@ -556,7 +559,7 @@ client submits the EF.SOD security object and the data groups, and the biometric
 
 1. each data-group hash must match the value signed in the SOD;
 2. the SOD's CMS SignedData signature must verify under the embedded Document Signer certificate; and
-3. that Document Signer certificate must chain to a trusted CSCA root in the operator's trust store.
+3. that Document Signer certificate must chain to a trusted Country Signing Certificate Authority (CSCA) root in the operator's trust store.
 
 The whole check is **fail-closed**: an empty trust store, an expired certificate, or any mismatch
 rejects the document. This is pure-Python cryptography with no ML, and it is the cleanest example in
@@ -571,23 +574,28 @@ boolean flags, is what makes the system auditable and prevents illegal states su
 never enrolled" or "consumed token reused." Four FSMs anchor the design.
 
 The **session finite-state machine** governs an authentication session from creation through the
-MFA steps to completion, expiry, or revocation. It is the FSM that the consume-then-mint idempotency
-of Section 4.5 enforces: a session in the `COMPLETED`/`CONSUMED` state can never transition back to a
-usable one. The full lifecycle appears in [[FIG:fsm_session | Session finite-state machine: creation, MFA progression, completion, expiry, and revocation]].
+MFA steps to completion, failure, expiry, or cancellation; revocation, by contrast, belongs to the
+refresh-token families of Section 4.4. It is the FSM that the consume-then-mint idempotency
+of Section 4.5 enforces: a session in the `COMPLETED` state, once consumed, can never transition back to a
+usable one. The full lifecycle appears in [[FIG:fsm_session | Authentication-session state machine. A session is created for one auth-flow run with a 10-minute lifetime and moves to IN_PROGRESS on the first step submission; exceeding a step's attempt limit fails the session. Tokens are minted only on the transition to COMPLETED after the last required step, and terminal states answer any further submission with HTTP 409. The hosted login's MfaSession engine shares the same lifecycle semantics.]].
 
 The **verification finite-state machine** drives the identity-verification (KYC) pipeline through its
 ordered steps (document scan, data extraction, face match, liveness check, and so on), with
 transitions for a passed step, a failed step, a step requiring manual review, and overall
-completion or rejection, as illustrated in [[FIG:fsm_verification | Verification finite-state machine: per-step progression with pass, fail, manual-review, and terminal states]].
+completion or failure, as illustrated in [[FIG:fsm_verification | Verification-session state machine. A session is created PENDING on a VERIFICATION-type flow with a 30-minute lifetime and enters IN_PROGRESS on the first submitted step result. Handlers may defer a step to PENDING_REVIEW, which an administrator resolves; when every step is completed or skipped the session auto-completes and the user is marked identity-verified, while any failed step fails the session. Terminal states answer further submissions with HTTP 409; CANCELLED is declared on the entity but currently has no caller.]].
 
-The **biometric-enrollment finite-state machine** models a face or voice enrollment from initial
-capture through quality assessment and liveness gating to a persisted, active template, or to a
-rejection that re-prompts capture. The fail-closed multi-image enrollment of Section 4.3.2 is one of
-this machine's transition rules; [[FIG:fsm_enrollment | Biometric-enrollment finite-state machine: capture, quality/liveness gating, persistence, and re-enrollment]] depicts the complete machine.
+The **enrollment finite-state machine** is method-generic: it models one enrollment row per user
+and authentication method, with the asynchronous biometric methods (face and voice among them)
+passing through capture, quality assessment, and liveness gating to the `ENROLLED` state that the
+login engine accepts, or to a failure that re-prompts capture. The fail-closed multi-image
+enrollment of Section 4.3.2 is one of
+this machine's transition rules; [[FIG:fsm_enrollment | Enrollment state machine (one row per user and authentication method). Asynchronous methods such as face and voice pass through PENDING until the backing enrollment completes with quality and liveness scores; methods whose data is verified at start and passkey registrations complete immediately. Only ENROLLED satisfies the login engine's enrollment check, and re-enrollment restarts any non-pending row. EXPIRED is defined on the entity but currently has no scheduled trigger.]] depicts the complete machine.
 
-The **user-account finite-state machine** tracks the account lifecycle (pending, active, locked,
-suspended, and soft-deleted), including the lockout transition after repeated failed logins and the
-GDPR soft-delete state that the nightly purge job eventually finalizes, shown in [[FIG:fsm_user | User-account finite-state machine: pending, active, locked, suspended, and soft-deleted states]].
+The **user-account finite-state machine** tracks the account lifecycle (creation as active, a
+pending-enrollment state reserved for self-service onboarding, administrative suspension and
+deactivation, and GDPR soft deletion that the nightly purge job eventually finalizes); the
+temporary lockout after repeated failed logins is deliberately kept orthogonal to the status enum
+as a self-clearing lock-flag pair, shown in [[FIG:fsm_user | User-account lifecycle. Accounts are created ACTIVE; only the self-service tenant-onboarding flow starts its first administrator in PENDING_ENROLLMENT until e-mail ownership is proven. Suspension and deactivation are administrative status changes, and temporary lockout is deliberately orthogonal to the status enum: five failed login factors set a 15-minute lock flag (HTTP 423) that clears itself. Deletion is a soft delete hidden from all reads; a flag-gated nightly job purges rows after a 30-day retention window.]].
 
 Modeling these as explicit state machines made each transition a single, testable method and
 put the illegal states beyond the reach of the code: a session in `COMPLETED`, an enrollment
@@ -626,8 +634,9 @@ outright.
 
 **Proof by test.** Isolation is a CI gate, not an assertion. A set of Testcontainers
 integration tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
-and others) run against a real PostgreSQL+pgvector and Redis on every pull request, and the pipeline
+and others) run against a real PostgreSQL+pgvector and Redis as a required pull-request gate, and the pipeline
 parses the test report to **assert that these named isolation tests actually executed**, a guard against
-a security test being silently skipped. Isolation is therefore mechanically re-verified on every
-merge rather than merely claimed, which is the strongest guarantee the platform can make about the
+a security test being silently skipped (the gate's repair history, including documented administrator
+overrides, is recorded in §5.2). Isolation is therefore mechanically re-verified rather than
+merely claimed, which is the strongest guarantee the platform can make about the
 boundary that matters most in a SaaS.

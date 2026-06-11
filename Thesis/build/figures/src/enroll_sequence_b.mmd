@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    participant W as Browser<br/>(web-app)
+    participant API as Identity Core API
+    participant BIO as Biometric Service<br/>(internal-only)
+    participant PGB as PostgreSQL<br/>biometric_db (pgvector)
+    participant PGI as PostgreSQL<br/>identity_core
+
+    note over BIO: continued from part (a):<br/>frame passed liveness + anti-spoof
+
+    BIO->>BIO: face detection -- MTCNN
+    alt no face or multiple faces
+        BIO-->>API: 400 face detection error
+        API-->>W: retry capture
+    else single face
+        BIO->>BIO: quality score Q = 0.4 blur +<br/>0.3 lighting + 0.3 size,<br/>pose penalty x0.7
+        alt Q below enrollment floor 40
+            BIO-->>API: 400 poor image quality {Q}
+            API-->>W: retry with better lighting/pose
+        else Q at or above 40
+            BIO->>BIO: Facenet512 embedding<br/>(DeepFace, 512-dim, L2-normalised)
+            BIO->>PGB: UPSERT face_embeddings --<br/>vector(512) + Fernet ciphertext<br/>(store-of-record) + key_version<br/>ON CONFLICT (user_id, tenant_id)
+            note right of PGB: ANN index on the live DB:<br/>HNSW, cosine ops<br/>(m=16, ef_construction=64)
+            BIO-->>API: 200 {quality_score,<br/>liveness_score, dimension: 512}
+            API->>PGI: one transaction:<br/>user_enrollments FACE = ENROLLED<br/>+ quality/liveness scores,<br/>users.is_biometric_enrolled = true
+            API->>PGI: audit log (enrollment event)
+            API-->>W: 200 enrolled {scores}
+            note over W: user can now select FACE<br/>as a login factor
+        end
+    end

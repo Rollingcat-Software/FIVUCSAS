@@ -1,0 +1,22 @@
+flowchart TB
+    classDef gate fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef step fill:#f2f4f7,stroke:#52606d,color:#1f2933
+    classDef hand fill:#ffffff,stroke:#52606d,stroke-dasharray:4 3,color:#1f2933
+
+    subgraph CLIENT["Browser — client side"]
+        direction TB
+        C1["Camera stream (getUserMedia)"]:::step
+        C2["MediaPipe FaceLandmarker<br/>478-pt landmarks (in-browser)"]:::step
+        C3["Active liveness challenge:<br/>blink EAR 0.21 / smile MAR —<br/>23-challenge puzzle library<br/>(14 face + 9 hand), server re-scored"]:::step
+        C4["Crop 224 x 224 -> JPEG —<br/>client gates ADVISORY only"]:::step
+        C1 --> C2 --> C3 --> C4
+    end
+
+    C4 -->|"HTTPS — Traefik TLS edge<br/>image + MFA session token<br/>+ X-Request-Nonce"| G1
+
+    subgraph CORE["Identity Core API"]
+        direction TB
+        G1["Request gates:<br/>MFA session valid,<br/>5-strike lockout (HTTP 423),<br/>rate limit,<br/>anti-replay nonce (Redis, 5 min)"]:::step
+    end
+
+    G1 --> H1["internal call -> Biometric Service<br/>X-API-Key, Docker network only<br/>(service has no public route)"]:::hand

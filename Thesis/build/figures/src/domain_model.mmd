@@ -1,0 +1,120 @@
+classDiagram
+    class Identity {
+        +UUID id
+        +Instant createdAt
+    }
+
+    class Tenant {
+        +UUID id
+        +String name
+        +String slug
+        +TenantStatus status
+        +int maxUsers
+        +boolean biometricEnabled
+        +boolean mfaRequired
+        +boolean enforceDomainMatching
+        +Instant deletedAt
+        +activate()
+        +suspend()
+    }
+
+    class User {
+        +UUID id
+        +UUID tenantId
+        +UUID identityId
+        +Email email
+        +FullName fullName
+        +HashedPassword password
+        +PhoneNumber phoneNumber
+        +UserType userType
+        +UserStatus status
+        +boolean isLocked
+        +Instant lockedUntil
+        +int failedLoginAttempts
+        +Instant deletedAt
+        +authenticate()
+        +changePassword()
+        +assignRole()
+    }
+
+    class Role {
+        +UUID id
+        +UUID tenantId
+        +String name
+        +String description
+        +Instant deletedAt
+    }
+
+    class Permission {
+        +UUID id
+        +String name
+        +String resource
+        +String action
+    }
+
+    class UserRole {
+        +UUID userId
+        +UUID roleId
+        +UUID assignedBy
+        +Instant expiresAt
+    }
+
+    class UserEnrollment {
+        +UUID id
+        +UUID userId
+        +UUID tenantId
+        +AuthMethodType authMethodType
+        +EnrollmentStatus status
+        +BigDecimal qualityScore
+        +BigDecimal livenessScore
+        +Instant enrolledAt
+        +Instant revokedAt
+    }
+
+    class VerificationSession {
+        +UUID id
+        +UUID userId
+        +UUID tenantId
+        +UUID flowId
+        +VerificationSessionStatus status
+        +int currentStepNumber
+        +Instant startedAt
+        +Instant completedAt
+        +Instant expiresAt
+    }
+
+    class AuditLog {
+        +UUID id
+        +UUID tenantId
+        +UUID userId
+        +String action
+        +String resourceType
+        +UUID resourceId
+        +boolean success
+        +String ipAddress
+        +Instant createdAt
+    }
+
+    class FaceEmbedding {
+        <<biometric_db>>
+        +UUID id
+        +String userId
+        +UUID tenantId
+        +Vector~512~ embedding
+        +Bytes embeddingCiphertext
+        +int keyVersion
+        +Float qualityScore
+    }
+
+    note for User "userType tiers: ROOT, TENANT_ADMIN, TENANT_MEMBER, GUEST"
+    note for FaceEmbedding "pgvector ANN index (cosine ops); Fernet ciphertext as store of record"
+
+    Identity "1" --> "*" User : tenant memberships
+    Tenant "1" --> "*" User : contains
+    User "1" --> "*" UserRole : holds
+    UserRole "*" --> "1" Role : grants
+    Role "*" --> "*" Permission : carries
+    User "1" --> "*" UserEnrollment : enrolls methods
+    User "1" --> "*" VerificationSession : undergoes
+    Tenant "1" --> "*" AuditLog : records
+    User "1" ..> "*" FaceEmbedding : embeddings, no cross-db FK

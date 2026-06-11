@@ -1,0 +1,68 @@
+stateDiagram-v2
+    classDef okState fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef offState fill:#e8eaed,stroke:#6b7480,color:#1f2933
+    classDef declState fill:#f2f4f7,stroke:#52606d,stroke-dasharray:4 3,color:#1f2933
+
+    state "PENDING" as PEN
+    state "COMPLETED" as DONE
+    state "FAILED" as FAIL
+    state "EXPIRED" as EXP
+    state "CANCELLED" as CAN
+
+    [*] --> PEN : create session on a VERIFICATION flow<br/>(expires_at = now + 30 min)
+
+    PEN --> PROG : first step result submitted<br/>(session.start)
+
+    state "IN_PROGRESS — one result per flow step" as PROG {
+        state "PENDING" as SP
+        state "IN_PROGRESS" as SI
+        state "COMPLETED" as SC
+        state "FAILED" as SF
+        state "PENDING_REVIEW" as SR
+        state "SKIPPED" as SS
+        [*] --> SP
+        SP --> SI : handler executes
+        SI --> SC : handler passed<br/>(confidence + result data)
+        SI --> SF : handler failed or<br/>client-reported error
+        SI --> SR : handler defers<br/>(e.g. VIDEO_INTERVIEW)
+        SP --> SS : optional step skipped
+        SR --> SC : admin approves
+        SR --> SF : admin rejects
+    }
+
+    PROG --> DONE : all flow steps COMPLETED or SKIPPED<br/>(auto-complete) — user marked<br/>identity-verified at computed level
+    PROG --> FAIL : any step FAILED
+
+    PEN --> EXP : submission after expires_at
+    PROG --> EXP : submission after expires_at
+
+    PROG --> CAN : cancel() — declared on the entity,<br/>no caller on current main
+
+    DONE --> [*]
+    FAIL --> [*]
+    EXP --> [*]
+
+    note right of PEN
+        10 registered step handlers:
+        DOCUMENT_SCAN, DATA_EXTRACT,
+        FACE_MATCH, LIVENESS_CHECK,
+        NFC_CHIP_READ, ADDRESS_PROOF,
+        WATCHLIST_CHECK, AGE_VERIFICATION,
+        PHONE_VERIFICATION, VIDEO_INTERVIEW.
+    end note
+
+    note right of CAN
+        Terminal session states answer any
+        further submission with HTTP 409.
+        Manual review exists at STEP level
+        (PENDING_REVIEW), not as a session
+        state — the admin decision feeds the
+        normal COMPLETED/FAILED outcome.
+    end note
+
+    class DONE okState
+    class FAIL offState
+    class EXP offState
+    class CAN declState
+    class SC okState
+    class SF offState

@@ -1,6 +1,6 @@
 # Appendix A: Database Schema Migration Catalog
 
-The Identity Core API database schema was built and evolved exclusively through versioned Flyway migrations [CITE:flyway], applied automatically and in order at service start-up. Every schema change over the project's lifetime is therefore captured as an auditable, replayable script. The complete catalog of applied migrations follows; the biometric processor maintains its own separate schema through Alembic.
+The Identity Core API database schema was built and evolved exclusively through versioned Flyway migrations [CITE:flyway], applied automatically and in order at service startup. Every schema change over the project's lifetime is therefore captured as an auditable, replayable script. The complete catalog of applied migrations follows; the biometric processor maintains its own separate schema through Alembic.
 
 [[TABLE: Flyway migration catalog of the Identity Core API schema (V0–V84)]]
 
@@ -97,7 +97,7 @@ The biometric processor's vector store (face and voice embeddings, liveness logs
 
 This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and roughly 70 endpoints.
 
-## B.1 Identity Core API: principal controllers
+## B.1 Identity Core API: Principal Controllers
 
 [[TABLE: Identity Core API controllers and representative endpoints]]
 
@@ -121,7 +121,7 @@ This appendix summarizes the public REST surface of the platform as implemented.
 
 A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent JSON error envelopes across every controller.
 
-## B.2 Biometric Processor: route categories
+## B.2 Biometric Processor: Route Categories
 
 [[TABLE: Biometric Processor route categories]]
 
@@ -141,11 +141,11 @@ A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent J
 
 This appendix records the production deployment topology of the platform as operated during the project.
 
-## C.1 Host and runtime
+## C.1 Host and Runtime
 
 The platform ran on a single Hetzner CX43 virtual server (8 vCPU, 16 GB RAM, 150 GB disk, Ubuntu 24.04) under Docker Compose [CITE:dockercompose], with a Traefik v3 reverse proxy [CITE:traefik] terminating TLS and routing to the services. Static client surfaces (the React dashboard build, landing site, and demo) were additionally served from Hostinger shared hosting; the Docker host carried the stateful and compute services.
 
-## C.2 Containerized services
+## C.2 Containerized Services
 
 [[TABLE: Production service inventory]]
 
@@ -157,7 +157,7 @@ The platform ran on a single Hetzner CX43 virtual server (8 vCPU, 16 GB RAM, 150
 | redis | Redis 7.4 | internal |
 | traefik | Traefik v3 edge proxy | public (443/80) |
 
-## C.3 Public endpoints
+## C.3 Public Endpoints
 
 [[TABLE: Production subdomains]]
 
@@ -172,6 +172,6 @@ The platform ran on a single Hetzner CX43 virtual server (8 vCPU, 16 GB RAM, 150
 | `docs.fivucsas.com` | Developer documentation |
 | `status.fivucsas.com` | Uptime monitor |
 
-## C.4 Configuration discipline
+## C.4 Configuration Discipline
 
 All environment-specific parameters (database and Redis credentials, the JWT signing key and access/refresh token lifetimes, the default face model and verification thresholds, and the biometric service API key) were externalized as environment variables and supplied at deployment through an `.env.prod` file, keeping secrets out of source control and allowing the same images to run unchanged across environments.

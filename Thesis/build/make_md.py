@@ -89,7 +89,7 @@ def fig_md(m, chapter_no, fignum, emitted):
     pc = A.FIGS.get(key)
     if not pc:
         return "\n**Figure %d.%d.** %s\n" % (chapter_no, num, cap)
-    rel, dcap = pc
+    rel, dcap = pc[0], pc[1]
     return "\n![%s](../%s)\n\n**Figure %d.%d.** %s\n" % (cap or dcap, rel, chapter_no, num, cap or dcap)
 
 doc = []

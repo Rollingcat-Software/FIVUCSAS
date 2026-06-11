@@ -1,0 +1,56 @@
+flowchart TB
+    classDef cell fill:#f2f4f7,stroke:#52606d,color:#1f2933
+    classDef hi fill:#dce7f2,stroke:#2e5f8a,stroke-width:1.5px,color:#1f2933
+    classDef store fill:#e8eaed,stroke:#52606d,color:#1f2933
+    classDef ext fill:#ffffff,stroke:#52606d,color:#1f2933
+
+    U["Users (Internet)"]:::ext
+
+    subgraph HOST["Hetzner CX43 — Ubuntu 24.04, Docker (8 vCPU / 16 GB)"]
+        T["Traefik v3.6.12 — :80/:443<br/>TLS (Let's Encrypt), HSTS,<br/>security headers, rate limit"]:::hi
+
+        subgraph PROXY["'proxy' network — routed by Traefik"]
+            VW["verify-widget (nginx)<br/>verify.fivucsas.com —<br/>hosted login + SDK"]:::cell
+            DOC["docs (VitePress)<br/>docs.fivucsas.com"]:::cell
+            OBS["grafana :3000 —<br/>admin-IP only (+ Loki/<br/>Promtail log pipeline)"]:::cell
+            UK["uptime-kuma :3001<br/>status.fivucsas.com"]:::cell
+        end
+
+        subgraph BRIDGE["'proxy' + 'backend' networks"]
+            API["identity-core-api :8080<br/>Spring Boot — api.fivucsas.com<br/>(Swagger/actuator admin-IP only)"]:::hi
+        end
+
+        subgraph BACK["'backend' network — NO public route"]
+            BIO["biometric-api :8001<br/>FastAPI — no Traefik labels,<br/>X-API-Key required"]:::hi
+            PG[("shared-postgres :5432<br/>PostgreSQL 17 + pgvector —<br/>identity_core + biometric_db")]:::store
+            RD[("shared-redis :6379<br/>Redis 7.4 — AOF,<br/>allkeys-lru")]:::store
+        end
+
+        subgraph SOCK["'socket-proxy' network"]
+            SP["docker-socket-proxy —<br/>filtered, read-only<br/>Docker API for Traefik"]:::cell
+        end
+    end
+
+    subgraph HOSTINGER["Hostinger shared hosting — static sites (LiteSpeed)"]
+        ST["app.fivucsas.com (dashboard SPA)<br/>fivucsas.com (landing)<br/>demo - amispoof - links"]:::cell
+    end
+
+    VW ~~~ OBS
+    DOC ~~~ UK
+
+    U -->|"HTTPS 443 (:80<br/>redirects to TLS)"| T
+    U -->|"HTTPS"| ST
+    ST -.->|"browser XHR to<br/>api.fivucsas.com"| T
+
+    T --> VW
+    T --> DOC
+    T -->|"admin IP<br/>allowlist"| OBS
+    T --> UK
+    T --> API
+    T -.->|"route<br/>discovery"| SP
+
+    API -->|"X-API-Key<br/>:8001"| BIO
+    API --> PG
+    API --> RD
+    BIO --> PG
+    BIO --> RD

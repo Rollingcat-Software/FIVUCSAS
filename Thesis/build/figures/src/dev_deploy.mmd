@@ -1,0 +1,71 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#555555",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 30, "rankSpacing": 52, "htmlLabels": true, "padding": 8, "wrappingWidth": 300 }
+}}%%
+flowchart TB
+    DEV["Developer<br/>push / pull request"]
+    GH[("GitHub repositories<br/>identity-core-api · biometric-processor<br/>web-app · client-apps")]
+    DEP["Dependabot<br/>(weekly, grouped)"]
+
+    subgraph CI["Continuous integration — GitHub-hosted runners (ubuntu-latest)"]
+        direction LR
+        J1["<b>identity-core-api</b><br/>Maven unit tests<br/>Testcontainers integration<br/>(pgvector pg16)<br/>tenant-isolation assertion"]
+        J3["<b>biometric-processor</b><br/>lint · pytest · integration<br/>frontend build<br/>Bandit · pip-audit"]
+        J2["<b>web-app</b><br/>ESLint · type check<br/>Vitest · build (Node 22)<br/>Playwright E2E"]
+        J4["<b>secret scanning</b><br/>gitleaks v8.21.2<br/>full-history scan<br/>(identity + web)"]
+    end
+
+    MERGE(["Branch protection —<br/>required checks pass"])
+    MAIN["main branch"]
+
+    subgraph CD["Continuous deployment — deploy jobs only"]
+        direction LR
+        SH["Self-hosted runner<br/>on Hetzner CX43<br/>docker compose build + up<br/>(--env-file .env.prod)"]
+        RS["GitHub-hosted runner<br/>rsync over SSH"]
+    end
+
+    HETZ["<b>Hetzner CX43 — Docker</b><br/>identity-core-api · biometric-api<br/>verify-widget · docs"]
+    HOST["<b>Hostinger — static hosting</b><br/>app · landing · demo<br/>amispoof · links"]
+
+    DEV --> GH
+    DEP -.-> GH
+    GH --> J1
+    GH --> J3
+    GH --> J2
+    GH --> J4
+    J1 --> MERGE
+    J3 --> MERGE
+    J2 --> MERGE
+    J4 --> MERGE
+    MERGE -->|"merge"| MAIN
+    MAIN --> SH
+    MAIN --> RS
+    SH --> HETZ
+    RS --> HOST
+
+    classDef plain fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef accent fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef target fill:#ebebeb,stroke:#333333,stroke-width:1.5px;
+    classDef aux fill:#fafafa,stroke:#888888,stroke-width:1px;
+
+    class DEV,MAIN plain;
+    class J1,J2,J3,J4 accent;
+    class GH,MERGE plain;
+    class SH,RS plain;
+    class HETZ,HOST target;
+    class DEP aux;
+
+    style CI fill:#fbfbfb,stroke:#888888
+    style CD fill:#fbfbfb,stroke:#888888

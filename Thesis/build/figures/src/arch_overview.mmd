@@ -1,0 +1,70 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#555555",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 38, "rankSpacing": 48, "htmlLabels": true, "padding": 10, "wrappingWidth": 320 }
+}}%%
+flowchart TB
+    subgraph CLIENTS["Client surfaces"]
+        direction LR
+        ADMIN["Admin dashboard<br/>React 18 + TypeScript<br/>app.fivucsas.com<br/><i>(Hostinger, static)</i>"]
+        HOSTED["Hosted login + verification UI<br/>embeddable widget / JS SDK<br/>verify.fivucsas.com<br/><i>(Docker, nginx)</i>"]
+        ANDROID["Android app<br/>Kotlin Multiplatform<br/>Compose"]
+        DESKTOP["Desktop client<br/>Kotlin Multiplatform<br/>Compose (JVM)"]
+    end
+
+    subgraph HETZNER["Hetzner CX43 — Docker services"]
+        TRAEFIK["Traefik v3.6 edge proxy<br/>TLS (Let's Encrypt) · security headers<br/>rate limiting · admin IP allowlist"]
+
+        API["<b>Identity Core API</b><br/>Spring Boot 3.4.7 / Java 21<br/>authentication · OAuth2/OIDC + PKCE<br/>multi-tenancy · RBAC<br/>12 login methods · audit logging"]
+
+        BIO["<b>Biometric Processor</b> <i>(internal only)</i><br/>FastAPI / Python 3.12<br/>MTCNN detection · Facenet512 embeddings<br/>pgvector cosine match · quality gates<br/>hybrid liveness + puzzle rescoring<br/>voice (Resemblyzer, 256-d)"]
+
+        PG[("PostgreSQL 17 + pgvector<br/>identity_core · biometric_db<br/>HNSW ANN indexes<br/><i>(shared instance)</i>")]
+        REDIS[("Redis 7.4<br/>OTP / MFA sessions<br/>rate limits · replay markers")]
+
+        OBS["Observability<br/>Grafana 11.3 · Loki · Promtail<br/>Uptime Kuma<br/><i>(container logs + HTTP probes)</i>"]
+    end
+
+    EXT["External providers<br/>Twilio (SMS) · SMTP (e-mail)"]
+
+    ADMIN -->|"HTTPS<br/>REST /api/v1"| TRAEFIK
+    HOSTED -->|"HTTPS<br/>REST + OAuth2/OIDC"| TRAEFIK
+    ANDROID -->|"HTTPS<br/>OIDC + REST"| TRAEFIK
+    DESKTOP -->|"HTTPS<br/>OIDC + REST"| TRAEFIK
+
+    TRAEFIK -->|"api.fivucsas.com → :8080"| API
+
+    API -->|"internal Docker network only<br/>X-API-Key · :8001<br/>(no public route)"| BIO
+
+    API --> PG
+    API --> REDIS
+    BIO --> PG
+    API --> EXT
+
+    REDIS ~~~ OBS
+
+    classDef client fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef svc fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef store fill:#ebebeb,stroke:#555555,stroke-width:1px;
+    classDef edgebox fill:#e3e3e3,stroke:#333333,stroke-width:1.5px;
+    classDef aux fill:#fafafa,stroke:#888888,stroke-width:1px;
+
+    class ADMIN,ANDROID,DESKTOP,HOSTED client;
+    class API,BIO svc;
+    class PG,REDIS store;
+    class TRAEFIK edgebox;
+    class OBS,EXT aux;
+
+    style HETZNER fill:#fbfbfb,stroke:#888888
+    style CLIENTS fill:#ffffff,stroke:#aaaaaa

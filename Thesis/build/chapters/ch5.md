@@ -91,8 +91,8 @@ installs the `vector` extension, succeeds against a database that actually has p
 The biometric processor runs five jobs: Ruff lint plus format check (with mypy installed), a
 unit-test job with coverage to Codecov, an integration-test job backed by real Redis and
 pgvector services, a security job (Bandit static analysis plus a pip-audit CVE scan), and a
-frontend build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
-production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the 50 MB ONNX model),
+front-end build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
+production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the ~12 MB card-detection model),
 a separate code-quality job, and the Playwright E2E suite in its own workflow.
 
 Two caveats about the test environment need stating. First, the heaviest integration
@@ -106,8 +106,9 @@ those tests are verified through GitHub-hosted CI instead. Second, the Identity 
 integration gate had a documented history of test-infrastructure rot, and during the project's
 most intense authentication-hardening sprint a small number of pull requests were merged with
 an administrator override while that gate was being repaired. We record this instead of
-conceal it: the gate has since had its `continue-on-error` escape hatch removed, so a failing
-isolation test now blocks a merge. The gate's trustworthiness was being *restored*, not taken
+concealing it: the gate has since had its `continue-on-error` escape hatch removed, so a failing
+isolation test now blocks an ordinary merge, with any administrator override leaving a documented
+trail. The gate's trustworthiness was being *restored*, not taken
 for granted.
 
 ## 5.3 Unit Testing
@@ -176,9 +177,9 @@ accurate one: the older summary counted only a subset and predates later test gr
 
 Integration tests verify the seams between components against real infrastructure rather than
 test doubles, on the principle that the subtlest and most expensive bugs live where two
-technologies meet. The Identity Core API's integration layer runs against a real PostgreSQL
-17-class database (provisioned by Testcontainers [CITE:testcontainers] from the
-`pgvector/pgvector` image) and a real Redis instance. This matters because several of the
+technologies meet. The Identity Core API's integration layer runs against a real PostgreSQL 16
+database with pgvector (provisioned by Testcontainers [CITE:testcontainers] from the
+`pgvector/pgvector` image; production runs PostgreSQL 17) and a real Redis instance. This matters because several of the
 platform's behaviors cannot be faithfully mocked: a Flyway migration that installs and depends
 on the pgvector extension; the Hibernate `@Filter(tenantFilter)` SQL rewrite that enforces
 tenant isolation; the Redis-backed token bucket whose correctness depends on atomic
@@ -188,7 +189,7 @@ surfaces in CI rather than in production.
 
 The biometric processor's integration suite (167 authored tests) verifies the FastAPI route
 handlers against a real pgvector database and Redis, including the enroll → store → verify
-round-trip on the `face_embeddings` table with its IVFFlat cosine index, the
+round-trip on the `face_embeddings` table with the migration-created IVFFlat cosine index, the
 embedding-cipher store-of-record path (Fernet-encrypted `embedding_ciphertext` alongside the
 plaintext search vector), and the voice enrollment centroid computation. The heaviest
 machine-learning integration tests, those that actually load TensorFlow, DeepFace, and the
@@ -214,13 +215,14 @@ The cross-tenant isolation integration tests are both the most important and the
 guarded in the suite. The CI pipeline runs them, then parses the surefire XML and asserts that
 `CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`,
 `IdentityBackfillIT`, and `RoleUnificationBackfillIT` each actually executed. A failing
-isolation test now blocks the pull request, and the `continue-on-error` escape hatch that once
-allowed them to be skipped quietly was removed.
+isolation test now blocks an ordinary pull-request merge, and the `continue-on-error` escape
+hatch that once allowed them to be skipped quietly was removed (§5.2 records the
+administrator-override history).
 
 ## 5.5 End-to-End Testing
 
 End-to-end tests close the loop by driving a real headless browser through complete user
-flows, exercising the React front-end, the hosted OIDC login page, the Identity API, the
+flows, exercising the React front end, the hosted OIDC login page, the Identity API, the
 biometric processor, PostgreSQL, and Redis as one integrated system. We used Playwright
 [CITE:playwright] for this layer because of its reliable auto-waiting, multi-browser support,
 and tight integration with the React/TypeScript toolchain. The suite comprises **336
@@ -254,7 +256,7 @@ flows that the committee will recognize as the product's spine.
 
 These end-to-end tests are the closest automated proxy we have for a real user's experience,
 and several genuine defects surfaced through them. An async login-config race that briefly
-blanked the hosted login page, and a default-flow 500 in the flow builder, were both caught by
+blanked the hosted login page and a default-flow 500 in the flow builder were both caught by
 a browser-level test before reaching production. The lesson, consistent with the project's own
 engineering retrospectives, is that green unit tests are necessary but not sufficient: more
 than one bug survived a large green unit suite and was exposed only by driving the real
@@ -276,15 +278,15 @@ requirements, not measured production benchmarks**; Table 5.6 records them with 
 
 One measured snapshot does exist. During the June 2026 poster evaluation we timed the deployed
 service from a client: end-to-end 1:1 face verification completed in roughly 410 ms at the 95th
-percentile (median about 380 ms, P99 about 450 ms), an authentication round-trip in roughly
+percentile (median about 380 ms, p99 about 450 ms), an authentication round-trip in roughly
 66 ms, and the JWKS document fetch in roughly 62 ms, all against the production CX43 host
 (8 vCPU, no GPU). These are spot measurements under light load rather than a sustained k6
-campaign, but they sit inside the 200 ms authentication and 500 ms verification targets of
-Section 2.2 at the percentiles that matter.
+campaign, but they sit inside the latency targets of Section 2.2 (login p95 under 300 ms, token
+refresh under 200 ms, verification under 500 ms) at the percentiles that matter; the measured
+66 ms authentication round-trip sits well inside both the login and refresh budgets.
 
-[^locust]: An early `locustfile.py` survives only in a scratch worktree, and `locust` lingers
-in a legacy requirements file; Locust was an early experiment rather than the maintained tool,
-so we cite k6 throughout.
+[^locust]: Locust was evaluated early in the project and superseded by k6; we cite k6 as the
+maintained load-testing tool.
 
 [[TABLE: k6 load-test thresholds (NFR targets, not measured production results)]]
 
@@ -294,7 +296,7 @@ so we cite k6 throughout.
 | Token refresh | p95 < 200 ms | Target |
 | Enrollment (ML-bound) | p95 < 2000 ms | Target |
 | Verification | p95 < 500 ms, p99 < 1000 ms | Target |
-| Overall failure rate | < 1 % | Target |
+| Overall failure rate | < 1% | Target |
 | Multi-tenant isolation | 0 isolation violations | Target / asserted |
 
 The position for the thesis is therefore clear: the load-testing *harness* is real, scripted,
@@ -330,8 +332,10 @@ isolation integration tests:
   produce false positives on cryptographic pseudocode.
 - **Dependabot** runs weekly, grouped, to keep dependencies patched.
 - The **cross-tenant isolation Testcontainers ITs** function as security-invariant gates:
-  they are required, executed, and asserted-to-have-executed on every Identity API pull
-  request, making multi-tenant data isolation a tested-every-PR guarantee backed by a
+  they are required by branch protection on Identity API pull requests and
+  asserted-to-have-executed whenever the integration lane runs (documented administrator
+  overrides occurred while the lane was being repaired, §5.2), making multi-tenant data
+  isolation a continuously re-verified guarantee backed by a
   defense-in-depth Hibernate `@Filter(tenantFilter)` on the tenant-scoped entities.
 
 The reference framework for the threat model is the **OWASP Top 10** and the OWASP API
@@ -374,7 +378,7 @@ liveness evaluation carefully: it describes the evaluation apparatus, states whi
 implemented to the relevant standard, and reports only what was actually measured,
 distinguishing targets from measured results throughout.
 
-### 5.8.1 Presentation Attack Detection metrics and the evaluation harness
+### 5.8.1 Presentation Attack Detection Metrics and the Evaluation Harness
 
 Anti-spoofing is, in the language of the international standard, **Presentation Attack
 Detection (PAD)**, and the correct way to report it is with the metrics defined in ISO/IEC
@@ -382,7 +386,7 @@ Detection (PAD)**, and the correct way to report it is with the metrics defined 
 
 - **APCER** (Attack Presentation Classification Error Rate): the proportion of *attack*
   presentations (printed photos, screen replays, masks) wrongly classified as *bona fide*.
-- **BPCER** (Bona-fide Presentation Classification Error Rate): the proportion of *genuine*
+- **BPCER** (Bona Fide Presentation Classification Error Rate): the proportion of *genuine*
   presentations wrongly classified as *attacks* (the false-reject side that frustrates real
   users).
 - **ACER** (Average Classification Error Rate): their mean, `ACER = (APCER + BPCER) / 2`.
@@ -396,7 +400,7 @@ library (`src/metrics/iso30107.py`), which computes `apcer`, `bpcer`, `acer`, `e
 `far_at_frr`, and `frr_at_far`, complete with bootstrap confidence intervals. This means the
 evaluation harness exists and produces standard-conformant numbers when fed a labeled dataset.
 
-### 5.8.2 The amispoof analyzer pipeline under evaluation
+### 5.8.2 The amispoof Analyzer Pipeline Under Evaluation
 
 The system under test is the FIVUCSAS anti-spoofing pipeline, exposed for live experimentation
 as **amispoof**, an in-browser anti-spoofing tester deployed at `amispoof.fivucsas.com` and
@@ -447,7 +451,8 @@ directly: that the EAR computation registers a blink as a closed-then-open trans
 baseline ratio above 1.3, that the texture/moiré/frequency/color detector down-scores a flat,
 screen-like presentation, and that a both-eyes-closed still frame triggers the EAR veto. These
 behavioral assertions are real, automated, and passing. The browser port additionally carries
-**276 Vitest cases** covering each analyzer, the pipeline assembler, the quality gates, and a
+**276 Vitest cases** (in the separate `spoof-detector` repository, not counted in Table 5.3's
+4,405-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
 What we do **not** report is a headline accuracy number for the fused system. An internal
@@ -471,14 +476,16 @@ distance falls below the configured threshold: production `VERIFICATION_THRESHOL
 relaxed to `0.55` for embeddings older than two years via an adaptive-threshold rule whose
 validator enforces that the aged threshold is never stricter than the standard one (a guard
 added after an earlier inversion bug). The 1:N search path uses the same cosine operator over a
-pgvector IVFFlat index (`vector_cosine_ops`, `lists = 100`) [CITE:pgvector], with cross-tenant
-search forbidden. These are the operating parameters of the deployed verifier.
+pgvector ANN index (the migration-defined IVFFlat baseline, `vector_cosine_ops` with
+`lists = 100`, upgraded operationally to HNSW on the deployed instance) [CITE:pgvector], with
+cross-tenant search forbidden. These are the operating parameters of the deployed verifier.
 
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
 controlled benchmark whose headline figures also appear on the project poster. The evaluation
 enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
-three public benchmarks. On LFW (5,600 pairs) the FaceNet-512 pipeline reached an AUC of
-0.9943 with an equal-error rate of 1.93%; at a 0.45 distance threshold the false-accept rate
+three public benchmarks. On LFW (5,600 pairs) the Facenet512 pipeline reached an AUC of
+0.9943 with an equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the
+benchmark operating point, distinct from the production threshold of 0.4) the false-accept rate
 was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
 AUC was 0.9845, and on AgeDB-30, which pairs faces across a 30-year age gap, 0.9475. These are
 controlled measurements on public datasets under our own preprocessing: they characterize the
