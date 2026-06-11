@@ -4,7 +4,7 @@ This chapter describes how the conceptual goals of Chapter 1 and the project sco
 
 ## 3.1 Project Requirements
 
-Requirements were captured early, in the project's Analysis and Design Document, then refined continuously as the platform matured across eight development phases. We retain the document's organization, six functional requirements and seven nonfunctional categories, because it proved a stable spine for the work, but the descriptions below reflect what was finally implemented rather than the original intent.
+Requirements were captured early, in the project's Analysis and Design Document, then refined continuously as the platform matured across eight development phases. We retain the document's organization, six functional requirements and seven non-functional categories, because it proved a stable spine for the work, but the descriptions below reflect what was finally implemented rather than the original intent.
 
 ### 3.1.1 Functional Requirements
 
@@ -31,14 +31,14 @@ The platform's behavior was organized around six functional requirements (FR-1 t
 
 **FR-6: Auditing and Compliance.** Sensitive actions are appended to an `audit_logs` table that is tenant-scoped, soft-delete-aware, and designed for time-based partitioning via pg_partman (fail-soft by design; the deployed instance runs without the extension, so the table is currently unpartitioned). Audit records exclude credentials and raw biometric data by design. To satisfy KVKK and GDPR [CITE:kvkk6698,gdpr], `UserDataExportService` produces a per-user data export, a PL/pgSQL trigger forbids hard-deletion of user and tenant rows, and a nightly `SoftDeletePurgeJob` enforces the retention window under a ShedLock guard so a rolling deploy cannot double-run it.
 
-### 3.1.2 Nonfunctional Requirements
+### 3.1.2 Non-Functional Requirements
 
-The platform was held to seven nonfunctional categories. Table 3.2 records the requirement and its design-time target; where a number was a *target* rather than a *measured production result*, it is labeled as such, and Chapter 5 reports the experimental outcomes. [[TABLE: Nonfunctional requirements and their realization]]
+The platform was held to seven non-functional categories. Table 3.2 records the requirement and its design-time target; where a number was a *target* rather than a *measured production result*, it is labeled as such, and Chapter 5 reports the experimental outcomes. [[TABLE: Nonfunctional requirements and their realization]]
 
 | Category | Requirement | Target / measure | How it was realized |
 |---|---|---|---|
 | Performance | Responsive auth and biometric operations | Auth p95 < 300 ms; verification p95 < 500 ms (targets) | Redis-backed coordination, pgvector ANN search, embedding cache, short-lived access tokens (15 min default) |
-| Scalability | Scale across tenants and workloads | Independent scaling of API vs. ML tiers | Microservices split; stateless API; per-tenant token-mint budget (6000/min) |
+| Scalability | Scale across tenants and workloads | Independent scaling of API vs. ML tiers | Microservices split; stateless API; per-tenant token-mint budget (6,000/min) |
 | Reliability | Available during operational hours | Uptime target 99.5%, RPO < 1 h | Health checks, graceful Redis degradation, PITR/DR runbooks, Uptime Kuma monitor |
 | Security | Protect identity and biometric data | TLS in transit; encrypted embeddings at rest | RS256 JWT, BCrypt(12), Fernet-encrypted embeddings, AES-GCM TOTP secrets, hardened containers |
 | Usability | Enrollment with minimal effort | Enrollment under ~60 s incl. liveness | Guided 3-step face capture, client pre-filter, EN/TR i18n |
@@ -47,7 +47,7 @@ The platform was held to seven nonfunctional categories. Table 3.2 records the r
 
 **Performance.** Because biometric verification is computationally heavier than ordinary authentication, the two were separated so each could be tuned independently. The identity service leans heavily on Redis 7.4 as more than a cache: it is the substrate for OAuth2 authorization codes, OTP storage, TOTP replay markers, rate-limit counters, and cross-device session state [CITE:redis]. The biometric processor caches recently computed embeddings (TTL 300 s, up to 500 entries) and serves sub-linear nearest-neighbor search from a pgvector ANN index (IVFFlat with `lists = 100` in the migration baseline; upgraded operationally to HNSW on the deployed instance). The k6 suite encodes the latency targets (login p95 below 300 ms, verification p95 below 500 ms), which we treat as engineering targets validated under controlled load rather than guaranteed production figures.
 
-**Scalability.** The microservices boundary is the central scalability device: the stateless Spring Boot API can be replicated independently of the CPU-intensive ML service [CITE:richardson2018-microservices]. Per-tenant rate budgets (for example, 6000 token mints per minute per tenant) prevent one tenant's load from starving others. The current deployment runs single instances of each service on one VPS; the multi-replica, multi-region topologies described in the parent compose file are a documented scaling plan rather than the live deployment, and are revisited as future work in Chapter 7.
+**Scalability.** The microservices boundary is the central scalability device: the stateless Spring Boot API can be replicated independently of the CPU-intensive ML service [CITE:richardson2018-microservices]. Per-tenant rate budgets (for example, 6,000 token mints per minute per tenant) prevent one tenant's load from starving others. The current deployment runs single instances of each service on one VPS; the multi-replica, multi-region topologies described in the parent compose file are a documented scaling plan rather than the live deployment, and are revisited as future work in Chapter 7.
 
 **Reliability.** Reliability was pursued through defense against partial failures rather than through redundancy alone. The Redis cache adapter degrades gracefully, logging and continuing when Redis is unavailable, except on security-sensitive checks, which fail closed. Operational resilience is codified in a substantial runbook set covering disk capacity, disaster recovery, point-in-time recovery, rollback, secret rotation, and Flyway repair, and external availability is probed continuously by an Uptime Kuma monitor at `status.fivucsas.com`.
 

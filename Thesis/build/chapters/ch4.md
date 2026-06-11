@@ -54,7 +54,7 @@ Flutter as the specification originally proposed; Compose Multiplatform let us s
 single domain layer across Android and desktop and reuse native security primitives such as
 Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
 modeling side, the face recognizer in production is **Facenet512** producing
-512-dimensional embeddings, not the 2622-dimensional VGG-Face embedding sketched in the
+512-dimensional embeddings, not the 2,622-dimensional VGG-Face embedding sketched in the
 specification. We found Facenet512 to be both lighter on CPU and more than adequate at the
 verification thresholds we operate at.
 
@@ -77,7 +77,7 @@ embedding is a 256-dimensional Resemblyzer speaker vector; the client-side geome
 "embedding" is a 128-dimensional landmark-distance vector that is recorded for offline
 analysis but, by the D2 design decision, never used to make an authentication decision. All
 of these are stored in PostgreSQL columns of pgvector's native `vector` type, which is what
-makes approximate-nearest-neighbour search possible inside the relational database itself.
+makes approximate-nearest-neighbor search possible inside the relational database itself.
 A small but important refinement is that the face store is **dual-column**: the plaintext
 `embedding` column is the searchable index surface, while an `embedding_ciphertext` column
 holds the same vector encrypted with Fernet (AES-128-CBC + HMAC-SHA-256) under a versioned
@@ -132,7 +132,7 @@ Liveness and anti-spoofing are treated first because they are the project's rese
 face matching, vector search, and quality assessment follow; and the security algorithms
 (JWT, RBAC, OAuth/OIDC, MFA) are gathered in Section 4.4.
 
-### 4.3.1 Active Liveness Detection: the Biometric Puzzle
+### 4.3.1 Active Liveness Detection: The Biometric Puzzle
 
 The signature contribution of FIVUCSAS is an **active, challenge–response liveness test**
 we call the *Biometric Puzzle*. Rather than passively guessing whether a face is real, the
@@ -213,7 +213,7 @@ only the left or only the right eye, smile, open mouth, turn left, turn right, l
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
 Nine are hand gestures: finger counting, shape tracing with the index finger, tracing an
 on-screen template, waving, a palm flip, a finger tap, a pinch, a hand-covers-face
-"peek-a-boo", and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
+"peek-a-boo," and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
 MediaPipe `HandLandmarker` runs in the client (its ~5 MB WASM cost is paid only on the puzzle
 surface) and streams 21-point hand-landmark sequences to the server, where
 `active_gesture_liveness_manager.py` re-scores each gesture from the raw geometry
@@ -271,7 +271,7 @@ The way this wires into authentication is precise. On `/verify` (and, since the 
 hardening, on `/enroll`) the server runs a **mandatory passive-liveness gate** first: if the
 frame is judged not-live, or its liveness score is below `0.4`, the request is
 rejected with HTTP 400 `LIVENESS_FAILED` before any matching happens. A single-frame EAR veto
-(both eyes closed at threshold 0.18 is a photo signal) and the optional anti-spoof pipeline
+(both eyes closed at threshold 0.18 is a photo signal) and the optional anti-spoofing pipeline
 layers can additionally escalate to HTTP 403 `ANTISPOOF_BLOCKED` when block enforcement is on.
 Multi-image enrollment is **fail-closed**: a single non-live frame rejects the whole batch.
 
@@ -318,7 +318,7 @@ Verification answers "is this the person they claim to be?" (1:1). Identificatio
 is this, out of everyone enrolled?" (1:N), and naively that means comparing the probe against
 every stored embedding, linear in the size of the gallery. We avoid that cost by pushing the
 search into the database with **pgvector** [CITE:pgvector], which adds a native `vector` type
-and approximate-nearest-neighbour (ANN) index to PostgreSQL. The 1:N face search endpoint
+and approximate-nearest-neighbor (ANN) index to PostgreSQL. The 1:N face search endpoint
 (`/search`) issues a query using pgvector's cosine-distance operator `<=>`, and the database
 returns the closest matches without a full scan.
 
@@ -451,7 +451,7 @@ schemes outright.
 
 Authentication in FIVUCSAS is not a single password check but an **adaptive, multi-step engine**.
 A tenant administrator composes a login flow as an ordered list of layers, where each layer is a
-set of acceptable methods plus a "required" flag (the `SEQUENTIAL` vs `CHOICE` step types; CHOICE
+set of acceptable methods plus a "required" flag (the `SEQUENTIAL` vs. `CHOICE` step types; CHOICE
 means "satisfy any one of these"). The N-step flow is driven by `POST /auth/mfa/step`, and the
 JWT is withheld until every required layer is satisfied, at which point the accumulated `amr`
 claim records the full set of factors used. Ten-plus factors plug into this engine through the

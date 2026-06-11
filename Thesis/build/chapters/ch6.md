@@ -36,7 +36,7 @@ because biometric data is uniquely sensitive (it cannot be reset like a password
 platform that asks for a face owes its users transparency in return.
 
 For **service providers**, FIVUCSAS lowered the barrier to deploying modern, multi-factor,
-anti-spoofing authentication from a multi-month engineering programme to a single
+anti-spoofing authentication from a multi-month engineering program to a single
 integration. A tenant does not implement face matching, liveness detection, OAuth 2.0,
 token issuance, rate limiting, or KVKK-compliant data handling; it redirects its users to
 a hosted login page or embeds a widget and consumes a standards-compliant OpenID Connect
@@ -44,7 +44,7 @@ identity token in return [CITE:oauth2-rfc6749,oidc-core]. The implication is eco
 well as technical: the provider lowers its operational cost (no specialist security team
 for the auth surface), reduces its breach exposure (credentials and biometric templates
 never live in the tenant's database), and gains a competitive feature that would otherwise
-be the preserve of large institutions: strong, liveness-protected identity verification. The multi-tenant design makes this realistic at small scale, because the
+be the preserve of large institutions. That feature is strong, liveness-protected identity verification. The multi-tenant design makes this realistic at small scale, because the
 platform's fixed cost is amortized across every tenant rather than rebuilt by each.
 
 There is a third, quieter beneficiary that the original specification did not name but the
@@ -68,7 +68,7 @@ they are the conditions under which the benefits above are legitimate rather tha
 ## 6.2 Scientific Impact
 
 If the project has a single scientific centerpiece, it is the **Biometric Puzzle**, an
-active, challenge-response liveness-detection scheme that the platform implemented end to
+active, challenge–response liveness-detection scheme that the platform implemented end to
 end rather than merely proposing. Conventional active liveness asks a user to blink or turn
 their head, a fixed routine that a sufficiently prepared attacker can pre-record and replay.
 The Biometric Puzzle instead issues a *randomized* sequence of facial and gestural
@@ -76,8 +76,8 @@ challenges from a defined challenge set, then scores the response server-side ag
 specific challenge that was issued. Because the challenge is unpredictable and bound to a
 short-lived session, a pre-recorded video cannot anticipate the challenge it will be asked
 to answer. The implementation grounds this idea in concrete, measurable
-signals: eye-aspect-ratio for blink detection following the landmark-based formulation of
-Soukupová and Čech, mouth-aspect-ratio for smile and mouth-open challenges, and head-pose
+signals: the eye aspect ratio for blink detection following the landmark-based formulation of
+Soukupová and Čech, the mouth aspect ratio for smile and mouth-open challenges, and head-pose
 estimation for turn challenges, with the eye-aspect-ratio blink threshold fixed at 0.21
 in production [CITE:soukupova2016-ear,mediapipe]. The hand-gesture channel of the Puzzle was
 likewise not invented in place: it was prototyped as a standalone gesture-analysis study in the
@@ -105,7 +105,7 @@ review (see Section 5.8).
 Beyond liveness, the project is a worked, public demonstration of how to assemble mature
 research components (MTCNN face detection, a FaceNet-style 512-dimensional embedding with
 cosine-similarity matching, MediaPipe's 478-point face landmarker on the client, and
-approximate nearest-neighbour search over those embeddings in PostgreSQL via pgvector)
+approximate nearest-neighbor search over those embeddings in PostgreSQL via pgvector)
 into a coherent, multi-tenant production pipeline rather than an isolated notebook
 experiment [CITE:zhang2016-mtcnn,schroff2015-facenet,pgvector,deepface-lib]. The
 engineering decisions that made this work are documented design knowledge that other
@@ -149,8 +149,8 @@ multi-factor identity verification cheap to adopt, the platform pushes against t
 reuse and card cloning that underlie a large share of account-takeover and identity-theft
 harm, contributing in a modest way to reducing cybercrime [CITE:verizon2024-dbir,itrc2023].
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
-e-government portals, banking, healthcare, education, and transport (precisely the public-
-facing services named in the problem statement), and its bilingual Turkish/English
+e-government portals, banking, healthcare, education, and transport (precisely the
+public-facing services named in the problem statement), and its bilingual Turkish/English
 interface and accessibility-minded design lower the barrier for the populations those
 services must reach. Third, and inseparable from the first two, **data dignity**: because
 the platform treats biometric data as the uniquely sensitive category it is (encrypting
@@ -166,8 +166,8 @@ project's deliberate design choices are what make its social impact a benefit.
 FIVUCSAS was built, from the start, to be a foundation others can build on, and its
 structure makes that more than aspiration. The platform is an end-to-end, working
 reference for a stack that student and research teams frequently want but rarely see
-assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI machine-
-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
+assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI
+machine-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
 Kotlin Multiplatform clients sharing logic across Android, desktop, and the web, and a
 React dashboard, all wired through OAuth 2.0/OIDC with PKCE
 [CITE:springboot,fastapi,kmp,react,traefik,postgresql,redis,pgvector,pkce-rfc7636]. A new
@@ -195,7 +195,7 @@ browser tester are a ready substrate for further presentation-attack-detection r
 And the documented but not-yet-realized roadmap items (Kubernetes orchestration, formal
 presentation-attack-detection certification, and model retraining pipelines) are
 well-defined entry points for a successor team. The platform is, in short, less a finished
-artefact than a starting line, which is the most useful thing an undergraduate project can
+artifact than a starting line, which is the most useful thing an undergraduate project can
 be for the projects that come after it.
 
 ## 6.5 Impact on National Security
@@ -218,8 +218,8 @@ document was available, so the readers fall back to Basic Access Control.) The b
 `POST /nfc/mrz` and a server-authoritative `POST /nfc/verify-authenticity` that fails
 closed, and the asn1crypto library parses the eMRTD ASN.1 and CMS structures that passive
 authentication depends on. The security significance is precise: this combination lets a
-checkpoint confirm that a presented travel document is a genuine, unaltered, government-
-issued chip, *and* that the live person presenting it is the person bound to that chip, by
+checkpoint confirm that a presented travel document is a genuine, unaltered,
+government-issued chip, *and* that the live person presenting it is the person bound to that chip, by
 matching the holder's liveness-protected face against the chip's stored portrait. That is
 the core trust operation of automated border control, and the project implemented its
 constituent parts.
@@ -227,9 +227,9 @@ constituent parts.
 The second connection is **identity-fraud and impersonation resistance** in the broader
 sense that underpins both civil and national security. Document fraud, synthetic identities,
 and presentation attacks (printed photos, replayed videos, masks, screen replays) are the
-tools of everything from benefit fraud to infiltration. The platform's defence-in-depth
-against exactly these attacks (the active Biometric Puzzle, the passive learned-plus-
-classical anti-spoofing stack with its conservative spoof-wins verdict policy, and the
+tools of everything from benefit fraud to infiltration. The platform's defense-in-depth
+against exactly these attacks (the active Biometric Puzzle, the passive
+learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy, and the
 watchlist-check step type in the KYC pipeline) is the same machinery a state or a regulated
 institution needs to keep forged and stolen identities out of trusted systems
 [CITE:iso30107-3,minifasnet]. By raising the cost of impersonation, the platform contributes
@@ -238,16 +238,16 @@ to the integrity of the identity layer on which secure public services rest.
 The third connection is **cyber-security of critical digital services**. The public services
 named in the problem statement (e-government, banking, healthcare, transport) are critical
 national infrastructure in everything but name, and the dominant route to compromising them
-is credential-based account takeover. By providing a hardened, standards-compliant, multi-
-factor identity layer with server-side decisioning, strict tenant isolation, rate limiting,
+is credential-based account takeover. By providing a hardened, standards-compliant,
+multi-factor identity layer with server-side decisioning, strict tenant isolation, rate limiting,
 and audited sessions, FIVUCSAS strengthens precisely the attack surface that adversaries
 target most [CITE:owasp-top10,verizon2024-dbir]. A national digital ecosystem in which
 strong authentication is cheap and standard is a more resilient one.
 
 We are equally clear about what does **not** apply and what is not claimed. FIVUCSAS is a
 civilian, commercial platform; it is not an intelligence, weapons, or classified-systems
-project, and no aspect of it touches military or signals-intelligence domains. Its border-
-security relevance is the *building blocks* of automated document and identity checking, not
+project, and no aspect of it touches military or signals-intelligence domains. Its
+border-security relevance is the *building blocks* of automated document and identity checking, not
 a deployed, accredited border-control installation. Formal certification (for both the
 presentation-attack detection under ISO/IEC 30107-3 and the document-reading chain under
 the ICAO regime) is explicitly future work, and we do not present the prototype as a

@@ -217,7 +217,7 @@ evaluation: run the anti-spoofing pipeline against standard datasets (CASIA-FASD
 and SiW), report APCER, BPCER, ACER, and EER with bootstrap confidence intervals, and recalibrate
 thresholds from the measured operating curve rather than hand-tuned defaults. The same effort should
 produce honest FAR/FRR numbers for face verification at chosen operating points. Beyond self-evaluation,
-pursuing formal third-party PAD certification (the iBeta / ISO 30107-3 testing path) would let the
+pursuing formal third-party PAD certification (the iBeta / ISO/IEC 30107-3 testing path) would let the
 platform make assurance claims that a graduation thesis, by itself, cannot.
 
 **Model retraining and an upgrade to ArcFace.** Once GPU capacity is available, whether a GPU node or

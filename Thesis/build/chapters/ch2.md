@@ -73,7 +73,7 @@ The PSD defined five objectives and, for each, a measurable success factor. Tabl
 
 | Objective | Target KPI | Delivered outcome |
 |---|---|---|
-| O1: Secure, scalable backend | All microservices run on Docker; API endpoints pass functional tests; user/tenant CRUD works | **Met.** Both services run in production under Docker Compose behind Traefik; ~1,595 JUnit 5 backend test methods and 888 pytest functions exercise the APIs; user/tenant/role CRUD operate live. |
+| O1: Secure, scalable backend | All microservices run on Docker; API endpoints pass functional tests; user/tenant CRUD works | **Met.** Both services run in production under Docker Compose behind Traefik; ~1,595 JUnit 5 backend test methods and 888 pytest functions exercise the APIs; user/tenant/role CRUD operates live. |
 | O2: "Biometric Puzzle" active liveness | ≥95% legitimate pass; ≥99% rejection of simple photo/video spoofs | **Implemented and operational; evaluation ongoing.** The randomized challenge–response runs client- and server-side; ISO/IEC 30107-3 metrics were instrumented, but the specific 95%/99% figures were *targets*, not independently certified results, and are reported as targets throughout. |
 | O3: High-accuracy face recognition | False Accept Rate (FAR) < 1% and False Reject Rate (FRR) < 5% in a controlled test | **Implemented; controlled-test target.** The production verifier is Facenet512 with a cosine-*distance* decision rule (production `VERIFICATION_THRESHOLD = 0.4`, relaxed to 0.55 for embeddings older than two years); FAR/FRR instrumentation exists, but the FAR<1% / FRR<5% figures remain controlled-environment targets, not audited production results. |
 | O4: User-friendly mobile app | Stable on Android and iOS; full enroll+auth flow under 1 minute | **Partially met.** A full native **Android** client was delivered and publicly distributed (signed APK releases); **iOS was not delivered** (stubbed targets only). The sub-one-minute enrollment goal was a usability *target* validated informally, not a benchmarked statistic. |
@@ -101,7 +101,7 @@ We engineered FIVUCSAS to professional standards rather than as throwaway course
 
 We assessed the project against the six realistic-constraint dimensions expected of a professional engineering project.
 
-**Economical.** The exclusive use of open-source technology eliminated all software licensing cost, and the SaaS multi-tenant model was designed for low marginal cost per additional tenant. The production system ran on a single modest VPS, demonstrating that the platform was economically viable to operate at MVP scale. The same multi-tenancy that makes it cheap to run also underpins a future subscription-based commercial model.
+**Economic.** The exclusive use of open-source technology eliminated all software licensing cost, and the SaaS multi-tenant model was designed for low marginal cost per additional tenant. The production system ran on a single modest VPS, demonstrating that the platform was economically viable to operate at MVP scale. The same multi-tenancy that makes it cheap to run also underpins a future subscription-based commercial model.
 
 **Environmental.** FIVUCSAS's environmental footprint is indirect (the energy its servers and client devices consume), and we reduced it in concrete ways: CPU-only inference (no power-hungry GPUs), passive-by-default liveness that avoids redundant compute, aggressive Redis caching that spares repeated database and model work, and a single-host deployment that consolidated rather than multiplied running infrastructure. As a pure software system it produced no direct material waste.
 
@@ -111,7 +111,7 @@ We assessed the project against the six realistic-constraint dimensions expected
 
 **Sustainability.** The modular microservices architecture, hexagonal boundaries, containerized deployment, versioned Flyway/Alembic migrations, and large automated test suite were all chosen to make the system *maintainable* over its lifetime, which is the technical form of sustainability. New biometric models or auth methods can be swapped in behind ports without disturbing the core, so the platform can evolve as biometric technology and regulation change rather than being rebuilt.
 
-**Social.** Socially, the platform strengthened authentication security and improved user experience by removing reliance on stolen-able passwords and clone-able cards, while unifying fragmented physical and digital identity. We were equally conscious of the social risk inherent in face technology (surveillance and misuse) and answered it structurally with strict per-tenant data isolation, consent gating, auditability, and access controls designed to prevent the system from becoming a covert surveillance tool.
+**Social.** Socially, the platform strengthened authentication security and improved user experience by removing reliance on stealable passwords and cloneable cards, while unifying fragmented physical and digital identity. We were equally conscious of the social risk inherent in face technology (surveillance and misuse) and answered it structurally with strict per-tenant data isolation, consent gating, auditability, and access controls designed to prevent the system from becoming a covert surveillance tool.
 
 ### 2.3.3 Legal Considerations
 

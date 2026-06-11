@@ -91,7 +91,7 @@ installs the `vector` extension, succeeds against a database that actually has p
 The biometric processor runs five jobs: Ruff lint plus format check (with mypy installed), a
 unit-test job with coverage to Codecov, an integration-test job backed by real Redis and
 pgvector services, a security job (Bandit static analysis plus a pip-audit CVE scan), and a
-frontend build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
+front-end build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
 production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the ~12 MB card-detection model),
 a separate code-quality job, and the Playwright E2E suite in its own workflow.
 
@@ -222,7 +222,7 @@ administrator-override history).
 ## 5.5 End-to-End Testing
 
 End-to-end tests close the loop by driving a real headless browser through complete user
-flows, exercising the React front-end, the hosted OIDC login page, the Identity API, the
+flows, exercising the React front end, the hosted OIDC login page, the Identity API, the
 biometric processor, PostgreSQL, and Redis as one integrated system. We used Playwright
 [CITE:playwright] for this layer because of its reliable auto-waiting, multi-browser support,
 and tight integration with the React/TypeScript toolchain. The suite comprises **336
@@ -256,7 +256,7 @@ flows that the committee will recognize as the product's spine.
 
 These end-to-end tests are the closest automated proxy we have for a real user's experience,
 and several genuine defects surfaced through them. An async login-config race that briefly
-blanked the hosted login page, and a default-flow 500 in the flow builder, were both caught by
+blanked the hosted login page and a default-flow 500 in the flow builder were both caught by
 a browser-level test before reaching production. The lesson, consistent with the project's own
 engineering retrospectives, is that green unit tests are necessary but not sufficient: more
 than one bug survived a large green unit suite and was exposed only by driving the real
@@ -278,7 +278,7 @@ requirements, not measured production benchmarks**; Table 5.6 records them with 
 
 One measured snapshot does exist. During the June 2026 poster evaluation we timed the deployed
 service from a client: end-to-end 1:1 face verification completed in roughly 410 ms at the 95th
-percentile (median about 380 ms, P99 about 450 ms), an authentication round-trip in roughly
+percentile (median about 380 ms, p99 about 450 ms), an authentication round-trip in roughly
 66 ms, and the JWKS document fetch in roughly 62 ms, all against the production CX43 host
 (8 vCPU, no GPU). These are spot measurements under light load rather than a sustained k6
 campaign, but they sit inside the latency targets of Section 2.2 (login p95 under 300 ms, token
@@ -296,7 +296,7 @@ maintained load-testing tool.
 | Token refresh | p95 < 200 ms | Target |
 | Enrollment (ML-bound) | p95 < 2000 ms | Target |
 | Verification | p95 < 500 ms, p99 < 1000 ms | Target |
-| Overall failure rate | < 1 % | Target |
+| Overall failure rate | < 1% | Target |
 | Multi-tenant isolation | 0 isolation violations | Target / asserted |
 
 The position for the thesis is therefore clear: the load-testing *harness* is real, scripted,
@@ -378,7 +378,7 @@ liveness evaluation carefully: it describes the evaluation apparatus, states whi
 implemented to the relevant standard, and reports only what was actually measured,
 distinguishing targets from measured results throughout.
 
-### 5.8.1 Presentation Attack Detection metrics and the evaluation harness
+### 5.8.1 Presentation Attack Detection Metrics and the Evaluation Harness
 
 Anti-spoofing is, in the language of the international standard, **Presentation Attack
 Detection (PAD)**, and the correct way to report it is with the metrics defined in ISO/IEC
@@ -386,7 +386,7 @@ Detection (PAD)**, and the correct way to report it is with the metrics defined 
 
 - **APCER** (Attack Presentation Classification Error Rate): the proportion of *attack*
   presentations (printed photos, screen replays, masks) wrongly classified as *bona fide*.
-- **BPCER** (Bona-fide Presentation Classification Error Rate): the proportion of *genuine*
+- **BPCER** (Bona Fide Presentation Classification Error Rate): the proportion of *genuine*
   presentations wrongly classified as *attacks* (the false-reject side that frustrates real
   users).
 - **ACER** (Average Classification Error Rate): their mean, `ACER = (APCER + BPCER) / 2`.
@@ -400,7 +400,7 @@ library (`src/metrics/iso30107.py`), which computes `apcer`, `bpcer`, `acer`, `e
 `far_at_frr`, and `frr_at_far`, complete with bootstrap confidence intervals. This means the
 evaluation harness exists and produces standard-conformant numbers when fed a labeled dataset.
 
-### 5.8.2 The amispoof analyzer pipeline under evaluation
+### 5.8.2 The amispoof Analyzer Pipeline Under Evaluation
 
 The system under test is the FIVUCSAS anti-spoofing pipeline, exposed for live experimentation
 as **amispoof**, an in-browser anti-spoofing tester deployed at `amispoof.fivucsas.com` and
@@ -483,7 +483,7 @@ cross-tenant search forbidden. These are the operating parameters of the deploye
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
 controlled benchmark whose headline figures also appear on the project poster. The evaluation
 enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
-three public benchmarks. On LFW (5,600 pairs) the FaceNet-512 pipeline reached an AUC of
+three public benchmarks. On LFW (5,600 pairs) the Facenet512 pipeline reached an AUC of
 0.9943 with an equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the
 benchmark operating point, distinct from the production threshold of 0.4) the false-accept rate
 was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
