@@ -1,125 +1,104 @@
 # FIVUCSAS Load Testing Suite
 
-Comprehensive load testing suite for the FIVUCSAS biometric platform using **Grafana K6**.
+Load / stress / spike testing for the FIVUCSAS platform using **Grafana k6**,
+configured for an **external run** from your own PC against the public endpoint
+`https://api.fivucsas.com`.
 
-## 📊 Overview
+> **👉 Start here: [`RUN_GUIDE.md`](./RUN_GUIDE.md)** — exact install + run
+> commands for the author's PC, profiles, result export, and how to read the
+> thresholds. This README is the reference; the RUN_GUIDE is the walkthrough.
 
-This suite tests the performance, scalability, and reliability of the FIVUCSAS platform under various load conditions:
+## ⚠️ Two things to know before you run
 
-- **Authentication Load Test**: Login, token refresh, session management
-- **Enrollment Load Test**: Biometric enrollment throughput and ML pipeline performance
-- **Verification Load Test**: Biometric verification speed and accuracy under load
-- **Multi-Tenant Load Test**: Tenant isolation and performance with multiple tenants
-- **Stress Test**: Finding system breaking points and maximum capacity
-- **Spike Test**: Response to sudden traffic surges
+1. **Run it from your own PC, not the server.** The generator must be an external
+   client; running it on the API's own host skews the numbers and risks prod. All
+   defaults already point at `https://api.fivucsas.com`.
+2. **Safe by default.** The default scenario (`public-read-load-test.js`) is
+   read-only and needs no credentials. Everything that writes data or touches the
+   (non-public) biometric processor is **OFF until you set `ALLOW_MUTATIONS=true`**.
+
+## 📊 Scenarios
+
+| Scenario | What it hits | Mutates? | Needs creds? | Runs externally? |
+|----------|--------------|----------|--------------|------------------|
+| `public-read-load-test.js` | OIDC discovery, JWKS, auth-health, auth-methods, login-config | No | No | **Yes (default)** |
+| `auth-load-test.js` | `/auth/login` + `/auth/refresh` | Yes (audit + token rotation) | Yes | Yes (opt-in) |
+| `enrollment-load-test.js` | biometric enroll | Yes | Yes | No (biometric host is internal) |
+| `verification-load-test.js` | biometric verify | Yes | Yes | No (biometric host is internal) |
+| `multi-tenant-load-test.js` | mixed, many tenants | Yes | Yes (pre-seeded) | No |
+| `stress-test.js` | mixed (ramp to knee) | Yes | Yes | Partial |
+| `spike-test.js` | mixed (sudden surge) | Yes | Yes | Partial |
+
+All scenarios share **profiles** (`-e PROFILE=smoke|load|stress|spike`) and read a
+configurable **`BASE_URL`** (default `https://api.fivucsas.com`). No secrets are
+baked into the repo — credentials and client_id come from env only.
 
 ## 🚀 Quick Start
 
-### Prerequisites
+Full walkthrough (install per-OS, profiles, exports, thresholds) is in
+[`RUN_GUIDE.md`](./RUN_GUIDE.md). The short version:
 
-1. **Install K6**:
-   ```bash
-   # macOS
-   brew install k6
-
-   # Linux (Debian/Ubuntu)
-   sudo gpg -k
-   sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-   echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-   sudo apt-get update
-   sudo apt-get install k6
-
-   # Windows (via Chocolatey)
-   choco install k6
-
-   # Docker
-   docker pull grafana/k6
-   ```
-
-2. **Start Services**:
-   ```bash
-   # Start Identity Core API
-   cd identity-core-api
-   ./mvnw spring-boot:run
-
-   # Start Biometric Processor
-   cd biometric-processor
-   uvicorn app.main:app --reload
-
-   # Start PostgreSQL and Redis
-   docker-compose up -d postgres redis
-   ```
-
-### Running Tests
-
-**Basic test run**:
 ```bash
-cd load-tests
+# 1. Install k6 on your PC
+winget install k6            # Windows
+brew install k6              # macOS
+# (Linux: see RUN_GUIDE.md)
 
-# Authentication test
-k6 run scenarios/auth-load-test.js
+# 2. Safe default run — read-only, no credentials, against prod
+cd FIVUCSAS/load-tests
+k6 run -e PROFILE=smoke scenarios/public-read-load-test.js   # ~1 min sanity
+k6 run -e PROFILE=load  scenarios/public-read-load-test.js   # ~6 min normal load
 
-# Enrollment test
-k6 run scenarios/enrollment-load-test.js
-
-# Verification test
-k6 run scenarios/verification-load-test.js
-
-# Multi-tenant test
-k6 run scenarios/multi-tenant-load-test.js
-
-# Stress test
-k6 run scenarios/stress-test.js
-
-# Spike test
-k6 run scenarios/spike-test.js
+# 3. Export the summary for the thesis
+k6 run -e PROFILE=load \
+  --summary-export=results/public-read-load-$(date +%Y%m%d).json \
+  scenarios/public-read-load-test.js
 ```
 
-**With custom configuration**:
+**Override the target** (default is `https://api.fivucsas.com`):
 ```bash
-# Override API URLs
-K6_IDENTITY_API_URL=https://api.fivucsas.com \
-K6_BIOMETRIC_API_URL=https://biometric.fivucsas.com \
-k6 run scenarios/auth-load-test.js
-
-# With results output
-k6 run --out json=results/auth-test-results.json scenarios/auth-load-test.js
-
-# With Grafana Cloud integration
-k6 run --out cloud scenarios/auth-load-test.js
+k6 run -e BASE_URL=https://api.fivucsas.com -e PROFILE=load scenarios/public-read-load-test.js
 ```
 
-**Using Docker**:
+**Authenticated run** (opt-in — see RUN_GUIDE §4):
 ```bash
-docker run --rm -i --network=host \
-  -v $(pwd):/tests \
-  grafana/k6 run /tests/scenarios/auth-load-test.js
+k6 run -e ALLOW_MUTATIONS=true \
+  -e TEST_USER_EMAIL=... -e TEST_USER_PASSWORD=... \
+  -e PROFILE=load scenarios/auth-load-test.js
+```
+
+**Using Docker** (read-only scenario):
+```bash
+docker run --rm -i -v "$(pwd):/tests" -w /tests \
+  grafana/k6 run -e PROFILE=smoke /tests/scenarios/public-read-load-test.js
 ```
 
 ## 📁 Project Structure
 
 ```
 load-tests/
-├── config.js                       # Global configuration
-├── README.md                       # This file
-├── LOAD_TESTING_GUIDE.md          # Comprehensive guide
+├── RUN_GUIDE.md                    # 👉 START HERE — external-run walkthrough
+├── README.md                       # This file (reference)
+├── config.js                       # Targets, profiles, thresholds, safety flags
+├── BASELINE_TESTING_GUIDE.md       # Local full-stack baseline guide (legacy)
 │
-├── scenarios/                      # Test scenarios
-│   ├── auth-load-test.js          # Authentication load test
-│   ├── enrollment-load-test.js    # Enrollment load test
-│   ├── verification-load-test.js  # Verification load test
-│   ├── multi-tenant-load-test.js  # Multi-tenant test
-│   ├── stress-test.js             # Stress test
-│   └── spike-test.js              # Spike test
+├── scenarios/
+│   ├── public-read-load-test.js   # SAFE default — read-only public endpoints
+│   ├── auth-load-test.js          # login + token refresh (opt-in)
+│   ├── enrollment-load-test.js    # biometric enroll (opt-in, internal host)
+│   ├── verification-load-test.js  # biometric verify (opt-in, internal host)
+│   ├── multi-tenant-load-test.js  # multi-tenant mix (opt-in)
+│   ├── stress-test.js             # ramp-to-knee (opt-in, -e PROFILE=stress)
+│   └── spike-test.js              # sudden surge (opt-in, -e PROFILE=spike)
 │
-├── utils/                          # Helper utilities
-│   ├── auth.js                    # Authentication helpers
-│   └── biometric.js               # Biometric operation helpers
+├── utils/
+│   ├── auth.js                    # login / refresh helpers
+│   ├── biometric.js               # enroll / verify helpers (internal host)
+│   └── guard.js                   # ALLOW_MUTATIONS opt-in guard
 │
-└── results/                        # Test results (gitignored)
-    ├── auth-test-results.json
-    ├── enrollment-test-results.json
-    └── ...
+└── results/                        # commit write-ups here; raw *.json ignored
+    ├── RESULT_TEMPLATE.md          # paste your k6 summary into a copy of this
+    └── README.md
 ```
 
 ## 🎯 Test Scenarios
@@ -305,22 +284,35 @@ k6-reporter results/test-results.json
 
 ### Environment Variables
 
-Configure test parameters via environment variables:
+Pass via `-e KEY=VALUE` on the k6 command line (or shell exports). Nothing is
+required for the default read-only run.
+
+| Var | Default | Purpose |
+|-----|---------|---------|
+| `BASE_URL` | `https://api.fivucsas.com` | identity API target (preferred) |
+| `IDENTITY_API_URL` | (alias of `BASE_URL`) | legacy alias |
+| `PROFILE` | `smoke` | ramp shape: `smoke`/`load`/`stress`/`spike` |
+| `ALLOW_MUTATIONS` | `false` | opt-in switch for write/biometric scenarios |
+| `TEST_USER_EMAIL` | — | disposable test account (auth/mutating runs) |
+| `TEST_USER_PASSWORD` | — | password for that account |
+| `CLIENT_ID` | — | OIDC client_id (audit attribution + login-config) |
+| `LOGIN_SHARE` | `0.05` | fraction of auth iterations that fully re-login |
+| `BIOMETRIC_API_URL` | (= `BASE_URL`) | biometric host — internal only, not public |
+| `TEST_IMAGE_BASE` | — | base URL for reachable test face images |
 
 ```bash
-# API URLs
-export IDENTITY_API_URL=http://localhost:8080
-export BIOMETRIC_API_URL=http://localhost:8000
-
-# Test credentials
-export TEST_TENANT=my-tenant
-export TEST_USER_EMAIL=test@example.com
-export TEST_USER_PASSWORD=SecurePassword123!
-
-# Monitoring
-export K6_CLOUD_URL=https://ingest.k6.io
-export PROMETHEUS_PUSHGATEWAY=http://localhost:9091
+# Example: authenticated load run against prod
+k6 run \
+  -e BASE_URL=https://api.fivucsas.com \
+  -e ALLOW_MUTATIONS=true \
+  -e TEST_USER_EMAIL=loadtest@example.com \
+  -e TEST_USER_PASSWORD='<password>' \
+  -e CLIENT_ID=marmara-bys-demo \
+  -e PROFILE=load \
+  scenarios/auth-load-test.js
 ```
+
+> **No secrets in the repo.** Credentials only ever come from these env vars.
 
 ### Custom Thresholds
 
@@ -379,14 +371,16 @@ Expected performance metrics for a properly configured system:
 ERRO[0001] Connection refused
 ```
 
-**Solution**: Ensure services are running:
+**Solution**: Confirm the target is reachable from your network:
 ```bash
-# Check Identity API
-curl http://localhost:8080/actuator/health
+# Public liveness (no auth needed) — should print {"status":"UP"} / 200
+curl -i https://api.fivucsas.com/api/v1/auth/health
 
-# Check Biometric API
-curl http://localhost:8000/health
+# OIDC discovery — should be 200 with an "issuer" field
+curl -i https://api.fivucsas.com/.well-known/openid-configuration
 ```
+If these fail from your PC but work elsewhere, it is a network/ISP-routing issue
+to the Hetzner datacenter, not the test kit. See RUN_GUIDE.md §8.
 
 ### High Error Rate
 
@@ -415,10 +409,11 @@ http_req_duration: avg=5.2s p(95)=12s
 
 ## 📚 Additional Resources
 
-- [K6 Documentation](https://k6.io/docs/)
+- [FIVUCSAS Run Guide (start here)](./RUN_GUIDE.md)
+- [FIVUCSAS Baseline Testing Guide (local full-stack)](./BASELINE_TESTING_GUIDE.md)
+- [k6 Documentation](https://k6.io/docs/)
 - [Load Testing Best Practices](https://k6.io/docs/testing-guides/test-types/)
-- [Grafana Cloud K6](https://grafana.com/products/cloud/k6/)
-- [FIVUCSAS Load Testing Guide](./LOAD_TESTING_GUIDE.md)
+- [Grafana Cloud k6](https://grafana.com/products/cloud/k6/)
 
 ## 🤝 Contributing
 
