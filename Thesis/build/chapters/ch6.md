@@ -121,15 +121,17 @@ yield.
 Economically, FIVUCSAS delivered a working prototype with genuine commercialization
 potential, exactly as the specification projected. The platform is structured as a
 multi-tenant Software-as-a-Service, which is the pre-condition for a subscription or
-usage-based revenue model: tenants are onboarded through self-service, isolated from one
-another, and metered on a shared infrastructure whose marginal cost per tenant is low.
+usage-based revenue model: the self-service mechanisms through which a tenant would be
+onboarded and isolated were built and exercised with demonstration tenants, and the
+shared-infrastructure design keeps the marginal cost per additional tenant low.
 This is the cost structure that makes Software-as-a-Service commercially viable, and the
-platform is built to it: self-service tenant creation, DNS-based email-domain verification,
+platform was built to it: self-service tenant creation, DNS-based email-domain verification,
 guest invitation and revocation, and a drop-in JavaScript SDK that an integrating organization
 could adopt with modest engineering effort.
-The cost story for the customer is equally concrete: identity verification, anti-spoofing,
-and standards-compliant token issuance are consumed as a service instead of being rebuilt,
-which converts a large, risky capital project into a predictable operating expense.
+The intended cost story for an adopting organization is correspondingly concrete: identity
+verification, anti-spoofing, and standards-compliant token issuance would be consumed as a
+service instead of being rebuilt, converting a large, risky capital project into a
+predictable operating expense.
 
 On the commercial side, the differentiator is a combination the market rarely offers small
 buyers at once: liveness-protected biometric verification, document and chip reading, twelve

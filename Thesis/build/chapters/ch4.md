@@ -8,7 +8,7 @@ eye-aspect-ratio liveness test all the way to the OAuth 2.0 / OpenID Connect
 authorization-code exchange). From there we cover the operating-system and concurrency
 machinery that lets a single virtual machine serve many tenants safely, the network
 protocols that bind the services together, and finally the finite-state machines and
-multi-tenant isolation guarantees that keep one customer's data invisible to another.
+multi-tenant isolation guarantees that keep one tenant's data invisible to another.
 Every detail here was read from the production source tree at the time of writing; where
 an older planning document disagreed with the shipped code, we followed the code. The
 chapter draws on operating systems, computer networks, databases, distributed systems, and
