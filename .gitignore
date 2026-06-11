@@ -57,3 +57,8 @@ nul
 verify-widget/html/assets/*.css
 verify-widget/html/assets/*.js
 verify-widget/html/assets/*.js.map
+
+# Android release signing material — SECRET, never track (hygiene 2026-06-03)
+.keystore-backup/
+*.jks
+*.keystore
