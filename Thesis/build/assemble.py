@@ -10,8 +10,10 @@ Preserves the template's Guide-compliant format:
 Run:  python3 assemble.py
 """
 import os, re, sys
+from datetime import datetime, timezone
 from docx import Document
-from docx.shared import Pt, Inches, RGBColor, Twips
+from docx.shared import Pt, Inches, RGBColor, Twips, Emu
+from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
@@ -27,6 +29,18 @@ TITLE = "FACE AND IDENTITY VERIFICATION USING CLOUD-BASED SaaS MODELS"
 AUTHORS = ["Ahmet Abdullah Gültekin", "Ayşe Gülsüm Eren", "Ayşenur Arıcı"]
 SUPERVISOR = "Assoc. Prof. Dr. Mustafa Ağaoğlu"
 YEAR = "2026"
+SUBJECT = "CSE4198 Engineering Project, Marmara University, Computer Engineering"
+
+# Page geometry (Guide: A4, 2.5 cm margins + 1 cm binding gutter). The usable text column
+# is 11906 - 2*1418 - 567 = 8505 twips (15.0 cm); python-docx ignores the gutter when it
+# sizes tables, so widths must be set explicitly.
+A4_PGSZ = {"w:w": "11906", "w:h": "16838"}
+BODY_PGMAR = {"w:top": "1418", "w:right": "1418", "w:bottom": "1418", "w:left": "1418",
+              "w:header": "708", "w:footer": "709", "w:gutter": "567"}
+TEXT_COL_TWIPS = 8505
+MAX_FIG_W = Inches(5.9)    # full text-column width
+MAX_FIG_H = Inches(8.85)   # one-page height cap, leaves room for the caption below
+MIN_FIG_DPI = 220          # warn at build time when a raster lands below this
 
 # ---------------------------------------------------------------- bibliography + figures
 def load_bibliography():
@@ -173,6 +187,23 @@ def style_run_font(run, size_pt=12, bold=False, underline=False, italic=False, f
         rf.set(qn(a), font)
     if color: run.font.color.rgb = color
 
+def _para_mark_rpr(pPr, size_pt, bold, underline):
+    """Paragraph-mark run properties. Word formats a numPr auto-number from these; without
+    them the heading numbers fall back to docDefaults (Calibri 11 regular) while the heading
+    text is TNR bold — the template's own headings carry the same pPr/rPr block."""
+    rPr = OxmlElement("w:rPr")
+    rf = OxmlElement("w:rFonts")
+    for a in ("w:ascii", "w:hAnsi", "w:cs"):
+        rf.set(qn(a), TNR)
+    rPr.append(rf)
+    if bold:
+        rPr.append(OxmlElement("w:b"))
+    for tag in ("w:sz", "w:szCs"):
+        sz = OxmlElement(tag); sz.set(qn("w:val"), str(int(size_pt * 2))); rPr.append(sz)
+    if underline:
+        u = OxmlElement("w:u"); u.set(qn("w:val"), "single"); rPr.append(u)
+    pPr.append(rPr)  # rPr is the last formatting child of pPr
+
 def add_heading(doc, title, ilvl, citation_numbering=None, page_break=False, numbered=True):
     p = doc.add_paragraph()
     pPr = p._p.get_or_add_pPr()
@@ -198,6 +229,8 @@ def add_heading(doc, title, ilvl, citation_numbering=None, page_break=False, num
         _set(pPr, "w:ind", **{"w:left": "1105", "w:hanging": "425"})     # number at 1.2 cm
     _set(pPr, "w:jc", **{"w:val": "left"})
     _set(pPr, "w:outlineLvl", **{"w:val": str(ilvl)})
+    _para_mark_rpr(pPr, size_pt=(14 if ilvl == 0 else 12),
+                   bold=(ilvl < 2), underline=(ilvl >= 2))
     run = p.add_run(title.upper() if ilvl == 0 else title)
     style_run_font(run, size_pt=(14 if ilvl == 0 else 12),
                    bold=(ilvl < 2), underline=(ilvl >= 2))
@@ -249,28 +282,54 @@ def add_bullet(doc, text, citation_numbering, numbered=False, idx=1):
     add_inline_runs(p, text)
     return p
 
+def _run_color_auto(run):
+    """Explicit automatic (black) run colour — the Caption style would otherwise paint the
+    run theme-blue; the template's own example captions carry the same override."""
+    c = run._element.get_or_add_rPr().get_or_add_color()
+    c.set(qn("w:val"), "auto")
+
 def add_caption(doc, label, chapter, is_first_in_chapter, text):
-    """Caption paragraph: 'Figure C.' + SEQ(reset per chapter) + ' ' + text. Feeds TOC \\c."""
+    """Caption paragraph: 'Figure C.' + SEQ(reset per chapter) + ' ' + text. Feeds TOC \\c.
+    keepNext glues the caption to the next block: table captions precede their table and a
+    figure paragraph (itself keepNext) precedes its caption, so neither can be orphaned."""
     p = doc.add_paragraph()
     pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:pStyle", **{"w:val": "Caption"})
     _set(pPr, "w:jc", **{"w:val": "center"})
     _set(pPr, "w:spacing", **{"w:before": "60", "w:after": "200"})
+    p.paragraph_format.keep_with_next = True
     def run_text(s, bold=True):
-        r = p.add_run(s); style_run_font(r, size_pt=10, bold=bold); return r
+        r = p.add_run(s); style_run_font(r, size_pt=10, bold=bold); _run_color_auto(r); return r
     run_text(label + " " + str(chapter) + ".")
     # SEQ field
     def fld(instr):
         r = p.add_run(); fb = OxmlElement("w:fldChar"); fb.set(qn("w:fldCharType"), "begin"); r._r.append(fb)
-        style_run_font(r, size_pt=10, bold=True)
+        style_run_font(r, size_pt=10, bold=True); _run_color_auto(r)
         r2 = p.add_run(); it = OxmlElement("w:instrText"); it.set(qn("xml:space"), "preserve"); it.text = instr; r2._r.append(it)
-        style_run_font(r2, size_pt=10, bold=True)
+        style_run_font(r2, size_pt=10, bold=True); _run_color_auto(r2)
         r3 = p.add_run(); fs = OxmlElement("w:fldChar"); fs.set(qn("w:fldCharType"), "separate"); r3._r.append(fs)
-        r4 = p.add_run("1"); style_run_font(r4, size_pt=10, bold=True)
+        r4 = p.add_run("1"); style_run_font(r4, size_pt=10, bold=True); _run_color_auto(r4)
         r5 = p.add_run(); fe = OxmlElement("w:fldChar"); fe.set(qn("w:fldCharType"), "end"); r5._r.append(fe)
     fld(" SEQ %s \\* ARABIC %s " % (label, ("\\r 1" if is_first_in_chapter else "")))
     run_text("  " + text, bold=False)
     return p
+
+def fit_figure_width(img, key):
+    """Displayed width capped to the text column AND to one page of height (aspect kept),
+    so tall diagrams shrink to fit instead of running off the page edge. Warns when the
+    source raster falls below MIN_FIG_DPI at the resulting print size."""
+    im = DocxImage.from_file(img)
+    aspect = im.px_height / float(im.px_width)
+    w = MAX_FIG_W
+    if w * aspect > MAX_FIG_H:
+        w = Emu(int(MAX_FIG_H / aspect))
+    eff_dpi = im.px_width / w.inches
+    if eff_dpi < MIN_FIG_DPI:
+        sys.stderr.write("WARN: figure '%s' (%dx%d px at %.2f x %.2f in) is %d DPI (<%d) — "
+                         "needs a higher-resolution export\n"
+                         % (key, im.px_width, im.px_height, w.inches, w.inches * aspect,
+                            eff_dpi, MIN_FIG_DPI))
+    return w
 
 def add_figure(doc, key, caption, chapter, is_first):
     path_cap = FIGS.get(key)
@@ -278,19 +337,45 @@ def add_figure(doc, key, caption, chapter, is_first):
         # unknown figure key -> placeholder
         add_caption(doc, "Figure", chapter, is_first, caption or ("[missing figure: %s]" % key)); return False
     rel, default_cap = path_cap
-    # ROOT-relative first; fall back to sibling checkouts (e.g. docs cloned next to the parent repo)
-    candidates = [os.path.join(ROOT, rel), os.path.join(os.path.dirname(ROOT), rel)]
-    img = next((c for c in candidates if os.path.exists(c)), candidates[0])
+    # vendored copy under build/figures first (self-contained build), then ROOT-relative,
+    # then sibling checkouts (e.g. docs cloned next to the parent repo)
+    candidates = [os.path.join(T, "figures", os.path.basename(rel)),
+                  os.path.join(ROOT, rel), os.path.join(os.path.dirname(ROOT), rel)]
+    img = next((c for c in candidates if os.path.exists(c)), candidates[1])
     p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:jc", **{"w:val": "center"})
     _set(pPr, "w:spacing", **{"w:before": "120", "w:after": "0"})
+    p.paragraph_format.keep_with_next = True   # never page-break between figure and caption
     run = p.add_run()
     try:
-        run.add_picture(img, width=Inches(5.9))
+        run.add_picture(img, width=fit_figure_width(img, key))
     except Exception as e:
         run.add_text("[image error: %s]" % e)
     add_caption(doc, "Figure", chapter, is_first, caption or default_cap)
     return True
+
+def size_table(tbl, ncols):
+    """Fixed layout sized to the 8505-twip text column. python-docx derives its default
+    table width from page-minus-margins and ignores the 1 cm binding gutter, which pushed
+    every table ~1 cm past the right margin. Rows are made unsplittable and the header row
+    repeats when a table runs over a page break."""
+    tbl.autofit = False
+    tblPr = tbl._tbl.tblPr
+    tblW = tblPr.find(qn("w:tblW"))
+    if tblW is None:
+        tblW = OxmlElement("w:tblW"); tblPr.append(tblW)
+    tblW.set(qn("w:type"), "dxa"); tblW.set(qn("w:w"), str(TEXT_COL_TWIPS))
+    base, rem = divmod(TEXT_COL_TWIPS, ncols)
+    widths = [base + 1 if i < rem else base for i in range(ncols)]
+    for col, w in zip(tbl.columns, widths):
+        col.width = Twips(w)
+    for ri, row in enumerate(tbl.rows):
+        trPr = row._tr.get_or_add_trPr()
+        _set(trPr, "w:cantSplit")          # a row never breaks across pages
+        if ri == 0:
+            _set(trPr, "w:tblHeader")      # header row repeats on every page
+        for cell, w in zip(row.cells, widths):
+            cell.width = Twips(w)
 
 def add_table(doc, caption, rows, chapter, is_first, citation_numbering):
     data = parse_table(rows)
@@ -309,6 +394,7 @@ def add_table(doc, caption, rows, chapter, is_first, citation_numbering):
             add_inline_runs(para, txt)
             for rr in para.runs:
                 style_run_font(rr, size_pt=10, bold=(ri == 0))
+    size_table(tbl, ncols)
     return tbl
 
 def add_code(doc, text):
@@ -393,15 +479,58 @@ def add_equation(doc, name, eq, chapter, counter):
     p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:jc", **{"w:val": "center"})
     _set(pPr, "w:spacing", **{"w:before": "60", "w:after": "60"})
-    tabs = OxmlElement("w:tabs"); _set(tabs, "w:tab", **{"w:val": "right", "w:pos": "9000"}); pPr.append(tabs)
+    # right tab for the "(Equation x.y)" label at the right edge of the text column
+    tabs = OxmlElement("w:tabs"); _set(tabs, "w:tab", **{"w:val": "right", "w:pos": "8500"}); pPr.append(tabs)
     builder = EQUATION_BUILDERS.get(name)
     if builder:
-        om = _m("oMath"); builder(om); p._p.append(om)
+        # oMathPara marks display math — the proper OOXML form, survives more converters
+        omp = _m("oMathPara"); om = _m("oMath", omp); builder(om); p._p.append(omp)
     else:
         sys.stderr.write("WARN: no OMML builder for equation '%s' — plain-text fallback\n" % name)
         r = p.add_run(_latex_to_plain(eq) if eq else name); style_run_font(r, italic=True)
     r2 = p.add_run("\t(Equation %d.%d)" % (chapter, counter[0])); style_run_font(r2)
     return p
+
+def normalize_caption_style(doc):
+    """The template's Caption style inherits the theme blue. Run-level overrides keep the
+    literal caption runs black, but renderers that recalculate the SEQ fields (LibreOffice)
+    style the recomputed number from the style itself — so fix the style too."""
+    try:
+        st = doc.styles["Caption"]
+    except KeyError:
+        return
+    c = st.element.get_or_add_rPr().get_or_add_color()
+    for a in ("w:themeColor", "w:themeTint", "w:themeShade"):
+        if c.get(qn(a)) is not None:
+            del c.attrib[qn(a)]
+    c.set(qn("w:val"), "auto")
+
+# ---------------------------------------------------------------- page geometry
+def normalize_page_geometry(doc):
+    """The template ships the title/approval sections as US Letter (12240x15840) while the
+    rest is A4 — the Guide requires A4 throughout, and Letter is 2.5 cm shorter, which can
+    overflow the title/copyright block. Force every section to A4; sections converted from
+    Letter also take the body margin block (2.5 cm + 1 cm gutter)."""
+    for sectPr in doc.element.body.iter(qn("w:sectPr")):
+        pgSz = sectPr.find(qn("w:pgSz"))
+        if pgSz is None:
+            continue
+        if (pgSz.get(qn("w:w")), pgSz.get(qn("w:h"))) == (A4_PGSZ["w:w"], A4_PGSZ["w:h"]):
+            continue
+        for k, v in A4_PGSZ.items():
+            pgSz.set(qn(k), v)
+        pgMar = sectPr.find(qn("w:pgMar"))
+        if pgMar is not None:
+            for k, v in BODY_PGMAR.items():
+                pgMar.set(qn(k), v)
+
+def drop_orphan_sign(doc):
+    """The template pairs the supervisor AND the optional co-advisor each with a 'Sign'
+    line on the Approval page; we blank the co-advisor lines, so his 'Sign' placeholder
+    would survive as a floating line. Keep only the supervisor's."""
+    signs = [p for p in doc.paragraphs if p.text.strip() == "Sign"]
+    for p in signs[1:]:
+        p._p.getparent().remove(p._p)
 
 # ---------------------------------------------------------------- body section reset
 def remove_body_after_frontmatter(doc):
@@ -517,7 +646,9 @@ def render_chapter(doc, chapter_no, toks, citation_numbering):
         for k, cap in keys:
             embed(k, cap)
 
+    num_idx = 0   # position within a run of consecutive ordered-list items
     for t in toks:
+        num_idx = num_idx + 1 if t[0] == "num" else 0
         if t[0] == "h":
             ilvl = t[1] - 1
             add_heading(doc, t[2], ilvl, page_break=(ilvl == 0))
@@ -526,7 +657,7 @@ def render_chapter(doc, chapter_no, toks, citation_numbering):
         elif t[0] == "bullet":
             text_token(lambda s: add_bullet(doc, s, citation_numbering), t[1])
         elif t[0] == "num":
-            text_token(lambda s: add_bullet(doc, s, citation_numbering, numbered=True), t[1])
+            text_token(lambda s, i=num_idx: add_bullet(doc, s, citation_numbering, numbered=True, idx=i), t[1])
         elif t[0] == "fig":
             embed(t[1], t[2])
         elif t[0] == "table":
@@ -543,13 +674,13 @@ def add_references(doc, citation_numbering):
     inv = sorted(citation_numbering.items(), key=lambda kv: kv[1])
     for key, num in inv:
         ref = REFS.get(key, "[MISSING REFERENCE: %s]" % key)
-        ref = re.sub(r"\*(.+?)\*", r"\1", ref)  # strip md italics (we add via runs)
         p = doc.add_paragraph(); pPr = p._p.get_or_add_pPr()
         _set(pPr, "w:jc", **{"w:val": "both"})
         _set(pPr, "w:spacing", **{"w:after": "120", "w:line": "276", "w:lineRule": "auto"})
         _set(pPr, "w:ind", **{"w:left": "567", "w:hanging": "567"})
         r = p.add_run("[%d] " % num); style_run_font(r, bold=True)
-        r2 = p.add_run(ref); style_run_font(r2)
+        # entries carry the Guide-mandated italics as *...* (journal/conference/book/web titles)
+        add_inline_runs(p, ref)
 
 def main():
     doc = Document(TEMPLATE)
@@ -576,7 +707,10 @@ def main():
     ordered = [chap_md[i] for i in range(1, 8)] + [appendix_md]
     citation_numbering = collect_citations(ordered)
 
+    normalize_page_geometry(doc)
+    normalize_caption_style(doc)
     replace_frontmatter(doc, abstract or "(abstract pending)", ack or "")
+    drop_orphan_sign(doc)
     trailing = remove_body_after_frontmatter(doc)
     for i in range(1, 8):
         if chap_md[i].strip():
@@ -589,6 +723,13 @@ def main():
     settings = doc.settings.element
     if settings.find(qn("w:updateFields")) is None:
         uf = OxmlElement("w:updateFields"); uf.set(qn("w:val"), "true"); settings.append(uf)
+    # document metadata: the template carries its own creator's name — stamp ours
+    cp = doc.core_properties
+    cp.author = "; ".join(AUTHORS)
+    cp.last_modified_by = AUTHORS[0]
+    cp.title = TITLE
+    cp.subject = SUBJECT
+    cp.modified = datetime.now(timezone.utc)
     doc.save(OUT)
     # stats
     wc_abs = len(abstract.split())
@@ -601,7 +742,9 @@ def main():
 def render_appendices(doc, md, citation_numbering):
     letters = iter("ABCDEFGHIJ")
     cur_letter = ["A"]; first_tbl = [True]
+    num_idx = 0
     for t in tokenize(md):
+        num_idx = num_idx + 1 if t[0] == "num" else 0
         if t[0] == "h" and t[1] == 1:
             cur_letter[0] = next(letters); first_tbl[0] = True
             add_heading(doc, t[2], 0, numbered=False, page_break=True)  # APPENDIX X — Title (new page)
@@ -612,7 +755,7 @@ def render_appendices(doc, md, citation_numbering):
         elif t[0] == "bullet":
             add_bullet(doc, t[1], citation_numbering)
         elif t[0] == "num":
-            add_bullet(doc, t[1], citation_numbering, numbered=True)
+            add_bullet(doc, t[1], citation_numbering, numbered=True, idx=num_idx)
         elif t[0] == "table":
             add_table(doc, t[1], t[2], cur_letter[0], first_tbl[0], citation_numbering)
             first_tbl[0] = False

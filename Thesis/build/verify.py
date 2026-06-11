@@ -30,7 +30,11 @@ print("  OMML math objects:", doc.count("<m:oMath>"))
 print("  images embedded:", len(media))
 print("\n=== leftover markers (must be 0) ===")
 for m in ["[[FIG", "[[TABLE", "[[EQ", "[CITE:", "## ", "**", "```", "$$", "\\frac", "\\lVert", "`"]:
-    print("  %-9r %d" % (m, doc.count(m)))
+    if m == "**":
+        n = len(re.findall(r"(?<!/)\*\*", doc))  # `/**` Ant route globs are real content
+    else:
+        n = doc.count(m)
+    print("  %-9r %d" % (m, n))
 print("\n=== References ===")
 refs = [text(p) for p in paras if re.match(r"^\[\d+\] ", text(p))]
 print("  entries:", len(refs))
