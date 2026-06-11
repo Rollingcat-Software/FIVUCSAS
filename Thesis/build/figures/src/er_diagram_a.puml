@@ -1,0 +1,93 @@
+@startuml er_a_identity_rbac
+!include er_style.iuml
+top to bottom direction
+
+entity "identities" as identities {
+  * id : uuid <<PK>>
+  --
+  display_name : varchar
+  status : varchar
+}
+
+entity "identity_emails" as identity_emails {
+  * id : uuid <<PK>>
+  --
+  * identity_id : uuid <<FK>>
+  * email : varchar <<UQ lower(email)>>
+  verified : boolean
+}
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  --
+  * tenant_id : uuid <<FK>>
+  * identity_id : uuid <<FK>>
+  * email : varchar
+  password_hash : varchar (BCrypt, cost 12)
+  user_type : ROOT | TENANT_ADMIN |\n  TENANT_MEMBER | GUEST
+  failed_login_attempts : int (lock at 5)
+  expires_at : timestamptz (guest TTL)
+  deleted_at : timestamptz (soft delete)
+}
+
+entity "tenants" as tenants {
+  * id : uuid <<PK>>
+  --
+  * name : varchar <<UQ>>
+  * slug : varchar <<UQ>>
+  status : enum
+  biometric_enabled : boolean
+  mfa_required : boolean
+  deleted_at : timestamptz (soft delete)
+}
+
+entity "tenant_email_domains" as domains {
+  * tenant_id : uuid <<FK>>
+  * email_domain : varchar <<UQ>>
+  verified : boolean (DNS TXT)
+}
+
+entity "roles" as roles {
+  * id : uuid <<PK>>
+  --
+  tenant_id : uuid <<FK>> (NULL = global)
+  * name : varchar
+  is_system_role : boolean
+}
+
+entity "permissions" as permissions {
+  * id : uuid <<PK>>
+  --
+  * name : varchar <<UQ>> (48 seeded)
+  resource : varchar
+  action : varchar
+}
+
+entity "user_roles" as user_roles {
+  * user_id : uuid <<PK, FK>>
+  * role_id : uuid <<PK, FK>>
+  --
+  expires_at : timestamptz (time-limited)
+}
+
+entity "identity_tenant_biometric_consent" as consent {
+  * id : uuid <<PK>>
+  --
+  * identity_id : uuid <<FK>>
+  * tenant_id : uuid <<FK>>
+  method : varchar (NULL = all methods)
+  granted : boolean (default deny)
+}
+
+identities ||--o{ identity_emails
+identities ||--o{ users : person behind\nmembership
+tenants ||--o{ users : has members
+tenants ||--o{ domains
+tenants ||--o{ roles : NULL tenant_id\n= global role
+users ||--o{ user_roles
+roles ||--o{ user_roles
+roles }o--o{ permissions : role_permissions
+identities ||--o{ consent
+tenants ||--o{ consent
+
+@enduml

@@ -1,0 +1,28 @@
+' Shared engineering style for FIVUCSAS thesis ER figures
+!pragma layout smetana
+hide circle
+hide empty members
+skinparam dpi 300
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam Padding 3
+skinparam entity {
+  BackgroundColor #f5f5f5
+  BorderColor #555555
+  FontColor #111111
+  HeaderBackgroundColor #e3e3e3
+}
+skinparam class {
+  BackgroundColor #f5f5f5
+  BorderColor #555555
+  FontColor #111111
+  HeaderBackgroundColor #e3e3e3
+}
+skinparam ArrowColor #555555
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam NoteBackgroundColor #fbfbfb
+skinparam NoteBorderColor #999999
+skinparam NoteFontSize 12

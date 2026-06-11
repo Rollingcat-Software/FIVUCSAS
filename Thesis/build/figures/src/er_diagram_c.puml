@@ -1,0 +1,55 @@
+@startuml er_c_biometric_store
+!include er_style.iuml
+left to right direction
+
+entity "users\n(identity_core database)" as users {
+  * id : uuid <<PK>>
+}
+
+entity "face_embeddings" as face {
+  * id : uuid <<PK>>
+  --
+  * user_id : varchar (logical ref., no FK)
+  tenant_id : varchar
+  * embedding : vector(512) (Facenet512)
+  embedding_ciphertext : bytea (Fernet)
+  * key_version : smallint
+  * quality_score : float (0-100)
+  enrollment_type : INDIVIDUAL | CENTROID
+  deleted_at : timestamptz (soft delete)
+}
+
+entity "voice_enrollments" as voice {
+  * id : uuid <<PK>>
+  --
+  * user_id : varchar (logical ref., no FK)
+  tenant_id : varchar
+  embedding : vector(256) (Resemblyzer)
+  embedding_ciphertext : bytea (Fernet)
+  * quality_score : float
+  enrollment_type : INDIVIDUAL | CENTROID
+}
+
+entity "fingerprint_enrollments" as finger {
+  * id : uuid <<PK>>
+  --
+  * user_id : varchar (logical ref., no FK)
+  tenant_id : varchar
+  embedding : vector(256)
+  finger_position : varchar
+  * quality_score : float
+}
+
+users |o..o{ face : user_id as string\n(cross-database)
+users |o..o{ voice : user_id as string
+users |o..o{ finger : user_id as string
+
+note bottom of face
+  ANN index on every embedding column:
+  HNSW (m=16, ef_construction=64),
+  vector_cosine_ops — production state.
+  Alembic baseline creates IVFFlat
+  (lists=100) on fresh installs.
+end note
+
+@enduml

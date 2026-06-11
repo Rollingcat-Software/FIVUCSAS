@@ -1,0 +1,69 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#f5f5f5",
+    "primaryBorderColor": "#555555",
+    "primaryTextColor": "#111111",
+    "lineColor": "#555555",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#999999",
+    "edgeLabelBackground": "#ffffff",
+    "tertiaryColor": "#ffffff"
+  },
+  "flowchart": { "curve": "linear", "nodeSpacing": 28, "rankSpacing": 48, "htmlLabels": true, "padding": 8, "wrappingWidth": 330 }
+}}%%
+flowchart TB
+    ROUTES["<b>Driving adapters — 26 FastAPI route modules (≈71 endpoints, X-API-Key)</b><br/>verification · enrollment · search · liveness · quality · voice · nfc<br/>landmarks · multi_face · comparison · puzzle · proctor · demographics · ..."]
+
+    subgraph APPL["application/"]
+        UCASE["Use cases<br/>verify_face · enroll_face<br/>check_liveness · search_face<br/>detect_card_type · ..."]
+        ASVC["Services<br/>active_liveness_manager<br/>active_gesture_liveness_manager<br/>occlusion_detector · ..."]
+    end
+
+    subgraph DOM["domain/ (framework-free core)"]
+        DENT["Entities<br/>face_embedding · liveness_report<br/>quality_assessment · ..."]
+        DIF["Ports (interfaces)<br/>face_detector · embedding_extractor<br/>liveness_detector · quality_assessor<br/>embedding_repository · file_storage"]
+        DSVC["Domain services<br/>emrtd_passive_auth · mrz_parser<br/>embedding_fusion"]
+    end
+
+    subgraph INF["infrastructure/ (driven adapters)"]
+        ML["ml/ adapters<br/>detectors · extractors · liveness<br/>quality · voice · card_type"]
+        PERS["persistence/<br/>pgvector embedding repository<br/>(asyncpg)"]
+        STORE["storage/<br/>LocalFileStorage"]
+        AUX["auth (X-API-Key) · rate-limit<br/>cache · audit · webhooks"]
+    end
+
+    MODELS["<b>ML models (CPU-only · ALLOW_HEAVY_ML=false)</b><br/>Facenet512 (DeepFace) · MTCNN · MediaPipe FaceLandmarker (478 pt)<br/>MiniFASNet v2 ONNX passive liveness · Resemblyzer voice (256-d)"]
+    PGV[("biometric_db<br/>pgvector · HNSW")]
+    VOL[("biometric_uploads<br/>Docker volume")]
+
+    ROUTES --> UCASE
+    ROUTES --> ASVC
+    UCASE --> DENT
+    UCASE --> DIF
+    UCASE --> DSVC
+    ASVC --> DIF
+    DIF -. "implemented by" .-> ML
+    DIF -. "implemented by" .-> PERS
+    DIF -. "implemented by" .-> STORE
+    ML --> MODELS
+    PERS --> PGV
+    STORE --> VOL
+
+    classDef drv fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;
+    classDef app fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef dom fill:#ebebeb,stroke:#333333,stroke-width:1.5px;
+    classDef inf fill:#f5f5f5,stroke:#555555,stroke-width:1px;
+    classDef ext fill:#fafafa,stroke:#888888,stroke-width:1px;
+
+    class ROUTES drv;
+    class UCASE,ASVC app;
+    class DENT,DIF,DSVC dom;
+    class ML,PERS,STORE,AUX inf;
+    class MODELS,PGV,VOL ext;
+
+    style APPL fill:#fbfbfb,stroke:#999999
+    style DOM fill:#fbfbfb,stroke:#999999
+    style INF fill:#fbfbfb,stroke:#999999
