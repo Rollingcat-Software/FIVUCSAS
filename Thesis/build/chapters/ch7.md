@@ -97,7 +97,7 @@ infrastructure.
 ## 7.2 Advantages and Limitations
 
 No engineering decision is free; this section names the cost of each choice alongside
-its benefit. This section weighs the principal methods we adopted.
+its benefit, weighing the principal methods we adopted.
 
 ### 7.2.1 Advantages of the Chosen Methods
 

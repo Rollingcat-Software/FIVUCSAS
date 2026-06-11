@@ -142,7 +142,7 @@ however, does exist: a running, multi-tenant, standards-based platform.
 
 Socially, the impact runs along three lines the specification identified and the build
 made real. First, **safer everyday authentication**: by making strong, anti-spoofing,
-multi-factor identity verification cheap to adopt, the platform pushed against the password
+multi-factor identity verification cheap to adopt, the platform pushes against the password
 reuse and card cloning that underlie a large share of account-takeover and identity-theft
 harm, contributing in a modest way to reducing cybercrime [CITE:verizon2024-dbir,itrc2023].
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
@@ -152,7 +152,7 @@ interface and accessibility-minded design lower the barrier for the populations 
 services must reach. Third, and inseparable from the first two, **data dignity**: because
 the platform treats biometric data as the uniquely sensitive category it is (encrypting
 stored templates, requiring explicit per-tenant biometric consent, isolating tenants, and
-giving every user export and deletion controls), it advanced the social norm that strong
+giving every user export and deletion controls), it advances the social norm that strong
 authentication and strong privacy are not opposites but requirements of the same system,
 in line with KVKK Law No. 6698 and the GDPR [CITE:kvkk6698,gdpr]. A platform that
 collected faces without those guarantees would have a *negative* social impact; the

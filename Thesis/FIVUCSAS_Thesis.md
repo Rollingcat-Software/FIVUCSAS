@@ -31,7 +31,7 @@ Physical access tokens fare no better. RFID and proximity cards are the badges t
 
 Biometrics promised to close this gap by binding authentication to the human body itself, but naive biometric deployments introduced a new failure mode: **spoofing**. A face-recognition system that merely matches an image against a stored template can be defeated by holding up a printed photograph, replaying a video on a screen, or, at the sophisticated end, presenting a three-dimensional mask. These *presentation attacks* are precisely why **liveness detection** matters: without a reliable way to confirm that a real, living person is physically present at the moment of capture, a face is just another copyable credential. Many fielded systems still treat biometrics as a convenience layer rather than a hardened identity primitive, leaving them exposed to exactly the photo-and-video attacks that liveness detection exists to prevent.
 
-Beyond the weakness of any individual factor lay a deeper, structural problem: **a person's identity is splintered into physical and digital fragments, each held captive by the ecosystem that manages it.** Device-bound biometrics such as Apple Face ID and Android fingerprint unlock are excellent, but they are tethered to a single handset and a single vendor; the identity they assert cannot travel to a turnstile, a kiosk, or a partner organization's service. Physical access control, meanwhile, is typically procured as an isolated installation from a third party and never speaks to the digital identity provider that governs logins. The result is a patchwork in which a person's "office badge identity," "corporate login identity," and "phone-unlock identity" are three unrelated facts about the same human being, each managed by a different system, none aware of the others. This fragmentation multiplies attack surface, frustrates auditing, and makes coherent, organization-wide trust impossible to reason about.
+Beyond the weakness of any individual factor lies a deeper, structural problem: **a person's identity is splintered into physical and digital fragments, each held captive by the ecosystem that manages it.** Device-bound biometrics such as Apple Face ID and Android fingerprint unlock are excellent, but they are tethered to a single handset and a single vendor; the identity they assert cannot travel to a turnstile, a kiosk, or a partner organization's service. Physical access control, meanwhile, is typically procured as an isolated installation from a third party and never speaks to the digital identity provider that governs logins. The result is a patchwork in which a person's "office badge identity," "corporate login identity," and "phone-unlock identity" are three unrelated facts about the same human being, each managed by a different system, none aware of the others. This fragmentation multiplies attack surface, frustrates auditing, and makes coherent, organization-wide trust impossible to reason about.
 
 There is also a market and software-engineering gap that compounds the technical one. The most capable liveness and face-verification engines today fall into two camps, neither of them satisfactory. Some are locked inside proprietary cloud APIs that are opaque, costly, and a source of vendor lock-in and data-residency concern for privacy-sensitive institutions. Others are research-grade models that excel on benchmarks but were never engineered into a complete, multi-tenant, production-ready service. Organizations that want strong biometric authentication as a shared, rentable capability find little that combines open extensibility, robust anti-spoofing, cloud-native scalability, and strict per-tenant data isolation in a single coherent system. The capability they seek amounts to a **Software-as-a-Service (SaaS)** offering that serves many client organizations from one platform, in the **B2B** and **B2B2C** delivery models.
 
@@ -188,7 +188,7 @@ We engineered FIVUCSAS to professional standards rather than as throwaway course
 
 We assessed the project against the six realistic-constraint dimensions expected of a professional engineering project.
 
-**Economical.** The exclusive use of open-source technology eliminated all software licensing cost, and the SaaS multi-tenant model was designed for low marginal cost per additional tenant. The production system ran on a single modest VPS, demonstrating that the platform was economically viable to operate at MVP scale. The same multi-tenancy that made it cheap to run also underpins a future subscription-based commercial model.
+**Economical.** The exclusive use of open-source technology eliminated all software licensing cost, and the SaaS multi-tenant model was designed for low marginal cost per additional tenant. The production system ran on a single modest VPS, demonstrating that the platform was economically viable to operate at MVP scale. The same multi-tenancy that makes it cheap to run also underpins a future subscription-based commercial model.
 
 **Environmental.** FIVUCSAS's environmental footprint is indirect (the energy its servers and client devices consume), and we reduced it in concrete ways: CPU-only inference (no power-hungry GPUs), passive-by-default liveness that avoids redundant compute, aggressive Redis caching that spares repeated database and model work, and a single-host deployment that consolidated rather than multiplied running infrastructure. As a pure software system it produced no direct material waste.
 
@@ -497,7 +497,7 @@ Within the identity service, the security subsystem is dense and layered: a filt
 
 The data tier is a single shared **PostgreSQL 17 instance with the pgvector extension** [7,8] and a single shared **Redis 7.4** instance, both running on the VPS. Postgres hosts two logical databases: `identity_core` for the IAM schema and `biometric_db` for the pgvector embedding store. The multi-tenancy strategy is shared-database, shared-schema with a `tenant_id` discriminator, isolated at the application layer by the Hibernate `@Filter` mechanism described earlier. (PostgreSQL row-level-security policies authored in early migrations were found inert in production; the operative isolation is the Hibernate filter plus the JWT-rebound tenant context, examined in detail in §4.8.)
 
-Schema evolution is managed by Flyway across V0–V83 [9]. The vector search surface is an IVFFlat index using `vector_cosine_ops` with `lists = 100` over the 512-dimensional Facenet512 embeddings; voice enrollments use the same index family over 256-dimensional embeddings, and the log-only client-geometry observations carry no ANN index at all, consistent with the decision that the browser-side embedding is recorded for offline analysis but never used to make an authentication decision. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
+Schema evolution is managed by Flyway across V0–V84 [9]. The vector search surface is an IVFFlat index using `vector_cosine_ops` with `lists = 100` over the 512-dimensional Facenet512 embeddings; voice enrollments use the same index family over 256-dimensional embeddings, and the log-only client-geometry observations carry no ANN index at all, consistent with the decision that the browser-side embedding is recorded for offline analysis but never used to make an authentication decision. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
 
 Redis is far more than a read cache; it is the platform's distributed-coordination backbone. It holds single-use OAuth2 authorization codes (10-minute TTL), email/SMS OTPs (5 minutes) with per-OTP attempt counters, TOTP used-code replay markers (`SET … EX 120 NX`), QR and approve-login cross-device sessions, step-up challenges, anti-replay nonces, rate-limit counters, and ShedLock distributed locks. Production Redis runs with AOF persistence and an LRU eviction policy. Table 3.6 summarizes the caching strategy.
 
@@ -1956,7 +1956,7 @@ however, does exist: a running, multi-tenant, standards-based platform.
 
 Socially, the impact runs along three lines the specification identified and the build
 made real. First, **safer everyday authentication**: by making strong, anti-spoofing,
-multi-factor identity verification cheap to adopt, the platform pushed against the password
+multi-factor identity verification cheap to adopt, the platform pushes against the password
 reuse and card cloning that underlie a large share of account-takeover and identity-theft
 harm, contributing in a modest way to reducing cybercrime [1,2].
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
@@ -1966,7 +1966,7 @@ interface and accessibility-minded design lower the barrier for the populations 
 services must reach. Third, and inseparable from the first two, **data dignity**: because
 the platform treats biometric data as the uniquely sensitive category it is (encrypting
 stored templates, requiring explicit per-tenant biometric consent, isolating tenants, and
-giving every user export and deletion controls), it advanced the social norm that strong
+giving every user export and deletion controls), it advances the social norm that strong
 authentication and strong privacy are not opposites but requirements of the same system,
 in line with KVKK Law No. 6698 and the GDPR [37,38]. A platform that
 collected faces without those guarantees would have a *negative* social impact; the
@@ -2168,7 +2168,7 @@ infrastructure.
 ## 7.2 Advantages and Limitations
 
 No engineering decision is free; this section names the cost of each choice alongside
-its benefit. This section weighs the principal methods we adopted.
+its benefit, weighing the principal methods we adopted.
 
 ### 7.2.1 Advantages of the Chosen Methods
 
