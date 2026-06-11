@@ -750,16 +750,21 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 `mouthSmileLeft/Right > 0.4`, `jawOpen > 0.4`, brow blendshapes `> 0.3`), which is both more
 robust and cheaper than re-deriving geometry.
 
-**Hand-gesture challenges.** The challenge vocabulary spans two body channels. Alongside the
-facial actions above, the server can request nine hand-gesture challenges: finger counting,
-tracing a template shape with the index finger, waving, a palm flip, a finger tap, a pinch, a
-hand-covers-face "peek-a-boo", finger arithmetic, and a hold-position task. MediaPipe Hands runs
-on the client and streams 21-point hand-landmark sequences to the server, where
-`active_gesture_liveness_manager.py` re-scores each gesture from the raw landmark geometry
-(finger-extension ratios for counting, a sign change on the palm-normal proxy for the flip, and
-dynamic-time-warping distance against a JSON shape-template catalog for tracing). Widening the
-library across two independent body channels shrinks the chance that an attacker holds a
-pre-recorded clip matching the exact sequence the server happens to draw.
+**A 23-challenge library across two body channels.** The platform's canonical challenge
+enumeration (`BiometricPuzzleId` in the web client, mirroring the biometric engine's
+`ChallengeType`) defines twenty-three micro-challenges. Fourteen are facial: blink, closing
+only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
+down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
+Nine are hand gestures: finger counting, shape tracing with the index finger, tracing an
+on-screen template, waving, a palm flip, a finger tap, a pinch, a hand-covers-face
+"peek-a-boo", and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
+MediaPipe `HandLandmarker` runs in the client (its ~5 MB WASM cost is paid only on the puzzle
+surface) and streams 21-point hand-landmark sequences to the server, where
+`active_gesture_liveness_manager.py` re-scores each gesture from the raw geometry
+(finger-extension ratios for counting, a sign change on the palm-normal proxy for the flip,
+and dynamic-time-warping distance against a JSON shape-template catalog for tracing). Drawing
+each puzzle's randomized steps from a 23-deep, two-channel library shrinks the chance that an
+attacker holds a pre-recorded clip matching the exact sequence the server happens to draw.
 
 **Scoring and anti-replay.** `VerifyPuzzleUseCase` requires each step to clear
 `MIN_STEP_CONFIDENCE = 0.6` and last at least `MIN_STEP_DURATION_SECONDS = 0.5`, and the

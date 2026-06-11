@@ -68,8 +68,12 @@ Compared the v6 poster (PDF text layer + HTML) against the thesis and the code:
   and "29 controllers" (29 is right); poster's "0.40 passive + 0.60 active, PASS ≥ 65"
   fusion is a simplification — the code uses dynamic weights
   (`passive_weight = 0.40 + 0.34·quality + 0.18·reliability`, enhanced_liveness_detector);
-  poster's "23-action library" counts the wider client gesture engine, the production bio
-  server enum has 7 face + 9 hand = 16 challenge types.
+  the "23-action library" IS canonical and code-verified (corrected 2026-06-11 round 3):
+  `web-app/src/features/biometric-puzzles/BiometricPuzzleId.ts` defines all 23 (14 face,
+  mirrored by `lib/biometric-engine/types` `ChallengeType`, + 9 hand via a real lazily
+  loaded MediaPipe HandLandmarker); the bio server's own enum carries 7 face + 9 hand,
+  with `active_gesture_liveness_manager.py` re-scoring the hand channel server-side.
+  §4.3.1 now describes the full 23-challenge library.
 
 ## Content & accuracy + format pass (2026-06-11)
 
