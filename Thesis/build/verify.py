@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import re, zipfile, sys
+import re, zipfile, sys, os
 from docx import Document
-DOCX = "/opt/projects/fivucsas/Thesis/FIVUCSAS_Thesis.docx"
+DOCX = os.environ.get("THESIS_OUT") or os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "FIVUCSAS_Thesis.docx")
 z = zipfile.ZipFile(DOCX)
 doc = z.read("word/document.xml").decode("utf-8")
 media = [n for n in z.namelist() if n.startswith("word/media/")]
@@ -25,9 +26,10 @@ print("  tables:", doc.count("<w:tbl>"))
 print("  SEQ Figure fields:", doc.count("SEQ Figure"))
 print("  SEQ Table fields:", doc.count("SEQ Table"))
 print("  equations:", doc.count("(Equation"))
+print("  OMML math objects:", doc.count("<m:oMath>"))
 print("  images embedded:", len(media))
 print("\n=== leftover markers (must be 0) ===")
-for m in ["[[FIG", "[[TABLE", "[[EQ", "[CITE:", "## ", "**", "```"]:
+for m in ["[[FIG", "[[TABLE", "[[EQ", "[CITE:", "## ", "**", "```", "$$", "\\frac", "\\lVert", "`"]:
     print("  %-9r %d" % (m, doc.count(m)))
 print("\n=== References ===")
 refs = [text(p) for p in paras if re.match(r"^\[\d+\] ", text(p))]

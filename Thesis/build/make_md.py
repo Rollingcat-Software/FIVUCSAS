@@ -4,7 +4,7 @@
 import os, re
 import assemble as A
 
-OUT = "/opt/projects/fivucsas/Thesis/FIVUCSAS_Thesis.md"
+OUT = os.path.join(A.ROOT, "Thesis", "FIVUCSAS_Thesis.md")
 CHAP = A.CHAP_DIR
 
 def read(n):
@@ -27,7 +27,7 @@ def render_md(md, chapter_no):
     # also standalone fig lines counted above since FIG_RE matches them too
     out = []
     lines = md.split("\n")
-    i = 0; tbl = 0; emitted = set(); pending_cap = None
+    i = 0; tbl = 0; eqn = 0; emitted = set(); pending_cap = None
     while i < len(lines):
         ln = lines[i]; st = ln.strip()
         # table block
@@ -49,13 +49,20 @@ def render_md(md, chapter_no):
             for fm2 in re.finditer(A.FIG_RE, st):
                 out.append(fig_md(fm2, chapter_no, fignum, emitted))
             i += 1; continue
-        # equation
+        # equation (the LaTeX line may be separated by blank lines)
         m = re.match(r"^\[\[EQ:\s*(.*?)\]\]$", st)
         if m:
-            i += 1; eq = ""
+            i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            eq = ""
             if i < len(lines) and lines[i].strip() and not lines[i].strip().startswith("["):
                 eq = lines[i].strip(); i += 1
-            out.append("\n> **%s:**  `%s`\n" % (m.group(1).strip(), eq)); continue
+            eqn += 1
+            if not eq.startswith("$$"):
+                eq = "$$" + eq.strip().strip("$").strip() + "$$"
+            out.append("\n**Equation %d.%d — %s:**\n\n%s\n"
+                       % (chapter_no, eqn, m.group(1).strip(), eq)); continue
         # a line with inline table caption marker -> capture caption, strip from text
         if "[[TABLE:" in ln:
             tabs = re.findall(r"\[\[TABLE:\s*(.*?)\]\]", ln)
