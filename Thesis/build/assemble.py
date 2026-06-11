@@ -29,7 +29,7 @@ TITLE = "FACE AND IDENTITY VERIFICATION USING CLOUD-BASED SaaS MODELS"
 AUTHORS = ["Ahmet Abdullah Gültekin", "Ayşe Gülsüm Eren", "Ayşenur Arıcı"]
 SUPERVISOR = "Assoc. Prof. Dr. Mustafa Ağaoğlu"
 YEAR = "2026"
-SUBJECT = "CSE4198 Engineering Project, Marmara University, Computer Engineering"
+SUBJECT = "CSE4298 Engineering Project, Marmara University, Computer Engineering"
 
 # Page geometry (Guide: A4, 2.5 cm margins + 1 cm binding gutter). The usable text column
 # is 11906 - 2*1418 - 567 = 8505 twips (15.0 cm); python-docx ignores the gutter when it
