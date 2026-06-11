@@ -11,10 +11,9 @@ protocols that bind the services together, and finally the finite-state machines
 multi-tenant isolation guarantees that keep one customer's data invisible to another.
 Every detail here was read from the production source tree at the time of writing; where
 an older planning document disagreed with the shipped code, we followed the code. The
-chapter is, in effect, a working synthesis of the undergraduate Computer Engineering
-curriculum: operating systems, computer networks, databases, distributed systems, and
-machine learning all appear in it not as topics but as load-bearing parts of a deployed
-service.
+chapter draws on operating systems, computer networks, databases, distributed systems, and
+machine learning; each appears as a load-bearing part of the deployed service rather than
+as an isolated topic.
 
 ## 4.1 Hardware and Software Requirements and Tools
 
@@ -355,8 +354,9 @@ the face occupies. A best-effort head-pose penalty multiplies the score by 0.7 w
 estimated yaw exceeds 30° or pitch exceeds 25°, and a frame with Laplacian variance below 5
 (essentially unusable) is hard-rejected outright. The operational thresholds are tuned to
 admit real-world webcam frames without admitting junk: enrollment uses a floor of 40 and
-verification a slightly stricter 50, values arrived at empirically because over-strict gating
-frustrated genuine users far more than it stopped attackers.
+verification a slightly stricter 50, values arrived at empirically, since over-strict gating
+demonstrably frustrated genuine users during testing while offering no observable security
+benefit at those margins.
 
 ## 4.4 Authentication, Authorization and Security
 

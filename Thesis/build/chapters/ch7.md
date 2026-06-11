@@ -10,8 +10,8 @@ benchmark? Over two semesters we designed, built, deployed, and tested **FIVUCSA
 Identity Verification Using Cloud-based SaaS). The working system answers in the affirmative,
 qualified by the limitations enumerated in the next section.
 
-What we delivered is a running, multi-tenant, cloud-native identity platform, not a prototype on
-a laptop. At its core sit two backend microservices that divide the problem cleanly along the
+What we delivered is a running, multi-tenant, cloud-native identity platform, deployed and
+publicly reachable rather than confined to a development machine. At its core sit two backend microservices that divide the problem cleanly along the
 seam that matters most. The **Identity Core API** (Spring Boot on Java 21, organized as a
 hexagonal, ports-and-adapters codebase [CITE:cockburn-hexagonal]) owns authentication,
 authorization, tenant administration, OAuth 2.0 / OpenID Connect, and every security-policy

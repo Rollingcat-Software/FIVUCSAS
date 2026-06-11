@@ -285,9 +285,8 @@ campaign, but they sit inside the latency targets of Section 2.2 (login p95 unde
 refresh under 200 ms, verification under 500 ms) at the percentiles that matter; the measured
 66 ms authentication round-trip sits well inside both the login and refresh budgets.
 
-[^locust]: An early `locustfile.py` survives only in a scratch worktree, and `locust` lingers
-in a legacy requirements file; Locust was an early experiment rather than the maintained tool,
-so we cite k6 throughout.
+[^locust]: Locust was evaluated early in the project and superseded by k6; we cite k6 as the
+maintained load-testing tool.
 
 [[TABLE: k6 load-test thresholds (NFR targets, not measured production results)]]
 

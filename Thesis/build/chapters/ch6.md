@@ -87,21 +87,20 @@ service's server-side re-scorer. A rigorous analysis of such a scheme's
 accuracy and spoofing resistance, which the evaluation roadmap in Section 7.3 scopes, is
 the kind of contribution that could anchor a future publication.
 
-A second, more systemic scientific contribution is the **reproducible evaluation posture**
-the project adopted around anti-spoofing, a posture that matters because the field is
-plagued by unreproducible claims. The platform's passive defenses combine a
+A second contribution is the **reproducible evaluation apparatus** the project released: a
+standalone, inspectable anti-spoofing library, a browser-based tester deployed at
+amispoof.fivucsas.com, and an ISO/IEC 30107-3 metric harness with bootstrap confidence
+intervals [CITE:iso30107-3]. The platform's passive defenses combine a
 learned model (UniFace MiniFASNet, run as a shared ONNX session) with classical
 computer-vision detectors that need no GPU: texture analysis, moiré-pattern detection,
 frequency-domain analysis, color-distribution checks, screen-replay detection, and an rPPG
 (remote photoplethysmography) analyzer, fused under a conservative verdict policy in which
-either backend voting "spoof" wins [CITE:minifasnet,opencv]. These were exposed as a
-standalone, inspectable library and a browser-based tester so that their behavior can be
-examined rather than taken on faith. Crucially, this thesis reports presentation-attack
-results in the vocabulary of the international standard (APCER and BPCER in the
-ISO/IEC 30107-3 sense) and labels every figure as measured on a specific test set or as a
-target, never as a universal accuracy claim [CITE:iso30107-3]. The project also declined to
-publish the unverified "100% accuracy" fuser figure pending a reproducibility review (see
-Section 5.8).
+either backend voting "spoof" wins [CITE:minifasnet,opencv]; releasing them in inspectable
+form means their behavior can be examined rather than taken on faith. The evaluation posture
+built on that apparatus was deliberately conservative: every figure was labeled as measured
+on a specific test set or as a target, never as a universal accuracy claim, and the project
+declined to publish the unverified "100% accuracy" fuser figure pending a reproducibility
+review (see Section 5.8).
 
 Beyond liveness, the project is a worked, public demonstration of how to assemble mature
 research components (MTCNN face detection, a FaceNet-style 512-dimensional embedding with
