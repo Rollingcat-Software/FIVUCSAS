@@ -151,7 +151,7 @@ The PSD defined five objectives and, for each, a measurable success factor. Tabl
 | O5: Isolated multi-tenant data model | Integration tests prove no cross-tenant data access | **Met.** A shared-schema/`tenant_id` model with a Hibernate `@Filter` is guarded by named cross-tenant isolation Testcontainers tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, and others) that are *required and asserted-to-have-executed* on every backend pull request. |
 
 
-Several observations follow from this table. First, every *architectural and security* objective (O1, O5) was met cleanly and is continuously re-verified by the test suite; these are the strongest claims we make. Second, the *biometric-accuracy* objectives (O2, O3) were fully *implemented*: the algorithms run in production and the ISO/IEC 30107-3 evaluation harness (APCER, BPCER, ACER, EER) exists. Their headline numbers (95%, 99%, FAR<1%, FRR<5%), however, were stated as targets and measured only under controlled conditions. We therefore present them as targets throughout, never as certified benchmark results. Third, the *cross-platform* objective (O4) was *partially* achieved: Android (and a JVM desktop client) shipped, iOS did not.
+Several observations follow from this table. First, every *architectural and security* objective (O1, O5) was met cleanly and is continuously re-verified by the test suite; these are the strongest claims we make. Second, the *biometric-accuracy* objectives (O2, O3) were fully *implemented*: the algorithms run in production and the ISO/IEC 30107-3 evaluation harness (APCER, BPCER, ACER, EER) exists. Their headline numbers (95%, 99%, FAR<1%, FRR<5%), however, were stated as targets and measured only under controlled conditions. We therefore present them as targets throughout, never as certified benchmark results; the controlled recognition benchmark itself is reported in Section 5.8.3. Third, the *cross-platform* objective (O4) was *partially* achieved: Android (and a JVM desktop client) shipped, iOS did not.
 
 Beyond the five formal objectives, the project also met its non-functional success criteria in the sense that the system was actually deployed, healthy, and publicly reachable, with continuous CI gates (unit, integration, security, and isolation tests) protecting every change. The defined performance KPIs (for example, p95 authentication latency under 200 ms and verification under 500 ms) were encoded as thresholds in a Grafana k6 load-test suite [30] (six scenarios spanning auth, enrollment, verification, multi-tenant, stress, and spike load); these remained engineering targets rather than audited production benchmarks, and we label them as such.
 
@@ -749,6 +749,17 @@ Eyebrow-raise uses the brow-to-eye vertical distance against a `0.08` threshold.
 MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right > 0.5`,
 `mouthSmileLeft/Right > 0.4`, `jawOpen > 0.4`, brow blendshapes `> 0.3`), which is both more
 robust and cheaper than re-deriving geometry.
+
+**Hand-gesture challenges.** The challenge vocabulary spans two body channels. Alongside the
+facial actions above, the server can request nine hand-gesture challenges: finger counting,
+tracing a template shape with the index finger, waving, a palm flip, a finger tap, a pinch, a
+hand-covers-face "peek-a-boo", finger arithmetic, and a hold-position task. MediaPipe Hands runs
+on the client and streams 21-point hand-landmark sequences to the server, where
+`active_gesture_liveness_manager.py` re-scores each gesture from the raw landmark geometry
+(finger-extension ratios for counting, a sign change on the palm-normal proxy for the flip, and
+dynamic-time-warping distance against a JSON shape-template catalog for tracing). Widening the
+library across two independent body channels shrinks the chance that an attacker holds a
+pre-recorded clip matching the exact sequence the server happens to draw.
 
 **Scoring and anti-replay.** `VerifyPuzzleUseCase` requires each step to clear
 `MIN_STEP_CONFIDENCE = 0.6` and last at least `MIN_STEP_DURATION_SECONDS = 0.5`, and the
@@ -1492,6 +1503,14 @@ The status of the numbers attached to these scenarios must be stated plainly. Th
 thresholds encoded in the k6 configuration are **targets derived from the non-functional
 requirements, not measured production benchmarks**; Table 5.6 records them with that caveat.
 
+One measured snapshot does exist. During the June 2026 poster evaluation we timed the deployed
+service from a client: end-to-end 1:1 face verification completed in roughly 410 ms at the 95th
+percentile (median about 380 ms, P99 about 450 ms), an authentication round-trip in roughly
+66 ms, and the JWKS document fetch in roughly 62 ms, all against the production CX43 host
+(8 vCPU, no GPU). These are spot measurements under light load rather than a sustained k6
+campaign, but they sit inside the 200 ms authentication and 500 ms verification targets of
+Section 2.2 at the percentiles that matter.
+
 [^locust]: An early `locustfile.py` survives only in a scratch worktree, and `locust` lingers
 in a legacy requirements file; Locust was an early experiment rather than the maintained tool,
 so we cite k6 throughout.
@@ -1672,11 +1691,12 @@ behavioral assertions are real, automated, and passing. The browser port additio
 **276 Vitest cases** covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
-What we do **not** report is a headline accuracy number for the fused system. A "100% accuracy
-/ ACER 0.00%" figure for a learned-fuser variant appears in the project's promotional poster,
-derived from a 120-video subset. That result is **unverified**, flagged internally for a
-reproducibility review before any use in a paper, and we therefore do **not** cite it as an
-experimental result of this thesis. The defensible statement is this: the ISO/IEC 30107-3
+What we do **not** report is a headline accuracy number for the fused system. An internal
+learned-fuser experiment once produced a "100% accuracy / ACER 0.00%" figure on a 120-video
+subset, and the number briefly surfaced in early promotional material. That result is
+**unverified**, flagged internally for a reproducibility review before any use in a paper, and
+we therefore do **not** cite it as an experimental result of this thesis; the final project
+poster does not carry it either. The defensible statement is this: the ISO/IEC 30107-3
 metric harness is implemented and capable of producing APCER/BPCER/ACER/EER (the metrics
 defined in §5.8.1) with confidence intervals, the analyzer behaviors are verified by automated
 tests, and the pipeline is deployed and demonstrable live at `amispoof.fivucsas.com`. But a
@@ -1693,9 +1713,18 @@ relaxed to `0.55` for embeddings older than two years via an adaptive-threshold 
 validator enforces that the aged threshold is never stricter than the standard one (a guard
 added after an earlier inversion bug). The 1:N search path uses the same cosine operator over a
 pgvector IVFFlat index (`vector_cosine_ops`, `lists = 100`) [8], with cross-tenant
-search forbidden. These are the operating parameters of the deployed verifier; we report the
-thresholds the system actually runs at rather than an accuracy figure we did not independently
-measure.
+search forbidden. These are the operating parameters of the deployed verifier.
+
+The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
+controlled benchmark whose headline figures also appear on the project poster. The evaluation
+enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
+three public benchmarks. On LFW (5,600 pairs) the FaceNet-512 pipeline reached an AUC of
+0.9943 with an equal-error rate of 1.93%; at a 0.45 distance threshold the false-accept rate
+was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
+AUC was 0.9845, and on AgeDB-30, which pairs faces across a 30-year age gap, 0.9475. These are
+controlled measurements on public datasets under our own preprocessing: they characterize the
+discriminative power of the embedding model, not the end-to-end production service with its
+liveness and quality gates, and we label them accordingly.
 
 ## 5.9 Multi-Tenant Isolation Testing
 

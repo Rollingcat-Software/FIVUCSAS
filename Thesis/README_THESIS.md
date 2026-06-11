@@ -48,6 +48,29 @@ python3 make_md.py     # rebuild FIVUCSAS_Thesis.md
 python3 verify.py      # structural sanity check
 ```
 
+## Poster cross-check + measured results (2026-06-11, round 2)
+
+Compared the v6 poster (PDF text layer + HTML) against the thesis and the code:
+
+- **Added the poster's controlled recognition benchmark to §5.8.3** (user-approved): LFW
+  AUC 0.9943 / EER 1.93% / FAR 0.27% @ 0.45 / TAR 95.6%; CFP-FP AUC 0.9845; AgeDB-30 AUC
+  0.9475; 1,342 images / 100 identities / 12,062 pairs — labeled controlled-benchmark,
+  not production-audited. **Added the measured latency snapshot to §5.6** (~410 ms P95
+  verification, ~66 ms auth, ~62 ms JWKS, spot measurements under light load).
+- **Added the hand-gesture challenge channel to §4.3.1** (code-verified against
+  `gesture_liveness.py` + `active_gesture_liveness_manager.py`): the 9 server-verified
+  hand challenges via 21-point MediaPipe Hands landmarks.
+- **Fixed a stale accusation in §5.8.3**: the "100% accuracy / ACER 0.00%" figure is NOT
+  on the final v6 poster (its only "100%" is "5 random × 20%"); reworded to "early
+  promotional material" + noted the final poster does not carry it.
+- **Defense notes (poster is printed; thesis is correct, just be ready):** poster says
+  "82 migrations V0→V75" (stale; real: 84, V0–V84); poster shows both "30 controllers"
+  and "29 controllers" (29 is right); poster's "0.40 passive + 0.60 active, PASS ≥ 65"
+  fusion is a simplification — the code uses dynamic weights
+  (`passive_weight = 0.40 + 0.34·quality + 0.18·reliability`, enhanced_liveness_detector);
+  poster's "23-action library" counts the wider client gesture engine, the production bio
+  server enum has 7 face + 9 hand = 16 challenge types.
+
 ## Content & accuracy + format pass (2026-06-11)
 
 Two audit agents (full reports: `build/reviews/accuracy_2026-06-11.md` + `build/reviews/gaps_and_improvements_2026-06-11.md`) drove this pass; ~130 code-grounded claims re-verified (117 ✅ / 2 ❌ / 11 ⚠️), all findings fixed:
