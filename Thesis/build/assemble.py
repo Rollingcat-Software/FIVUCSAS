@@ -600,6 +600,17 @@ def replace_frontmatter(doc, abstract, acknowledgements):
             setp(SUPERVISOR)
         elif "Insert co-advisor" in txt or "Co-advised by" in txt:
             setp("")
+        elif "CSE4197" in txt:
+            # The template boilerplate reads "CSE4197 / CSE4198"; this team's course codes
+            # are CSE4297 (fall PSD term) / CSE4298 (thesis term). The digits sit in their
+            # own runs, so flip just the "1" runs and keep the template formatting intact.
+            runs = p.runs
+            for _i in range(1, len(runs)):
+                if runs[_i].text == "1" and runs[_i - 1].text.endswith("CSE4"):
+                    runs[_i].text = "2"
+            if "CSE4197" in p.text:  # fallback if the template's run layout ever changes
+                for r in p.runs:
+                    r.text = r.text.replace("4197", "4297").replace("4198", "4298")
         elif "Year of Graduation" in txt:
             setp(YEAR)
         elif txt.strip().startswith("The abstract part is a brief summary"):
