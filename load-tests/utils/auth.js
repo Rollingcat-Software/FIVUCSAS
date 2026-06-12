@@ -51,6 +51,83 @@ export function login(email, password, clientId) {
 }
 
 /**
+ * Login expecting an MFA challenge (does NOT fail when accessToken is absent).
+ *
+ * Unlike `login()` — which is written for single-factor accounts and treats an
+ * MFA-pending body as a failure — this returns the raw login outcome so a
+ * multi-step (2FA/3FA) account can be driven through `/auth/mfa/step`.
+ *
+ * On an MFA-pending login the API returns (see AuthResponse.ofMfa):
+ *   { mfaRequired: true, mfaSessionToken: "...", currentStep, totalSteps,
+ *     twoFactorMethod, availableMethods, completedMethods }
+ *
+ * @returns {object|null} `{ mfaRequired, mfaSessionToken, currentStep,
+ *   totalSteps, twoFactorMethod, availableMethods, completedMethods,
+ *   accessToken, refreshToken }`, or null if the login HTTP call itself failed
+ *   (non-200 — e.g. 401 bad creds, 429 rate-limited).
+ */
+export function loginForMfa(email, password, clientId) {
+  const loginUrl = `${config.identityApiUrl}/api/v1/auth/login`;
+
+  const body = { email: email, password: password };
+  if (clientId) body.clientId = clientId;
+
+  const response = http.post(loginUrl, JSON.stringify(body), {
+    headers: { 'Content-Type': 'application/json' },
+    tags: { name: 'login' },
+  });
+
+  const ok = check(response, {
+    'login status is 200': (r) => r.status === 200,
+  });
+  if (!ok) {
+    // 429 = login rate-limit (10/5min per IP); 401 = bad creds / unknown user.
+    console.error(`MFA login failed: ${response.status} ${String(response.body).slice(0, 200)}`);
+    return null;
+  }
+
+  return {
+    mfaRequired: response.json('mfaRequired') === true,
+    mfaSessionToken: response.json('mfaSessionToken'),
+    currentStep: response.json('currentStep'),
+    totalSteps: response.json('totalSteps'),
+    twoFactorMethod: response.json('twoFactorMethod'),
+    availableMethods: response.json('availableMethods'),
+    completedMethods: response.json('completedMethods'),
+    // Present only if the account turned out to be single-factor.
+    accessToken: response.json('accessToken'),
+    refreshToken: response.json('refreshToken'),
+  };
+}
+
+/**
+ * Submit one MFA step.
+ *
+ * Mirrors the web client (MfaStepRenderer.tsx) and the API controller
+ * (AuthController.verifyMfaStep -> VerifyMfaStepService). The body shape is:
+ *   { sessionToken, method, data: { ...stepData } }
+ *
+ * For the client-side-embedding FACE path, `stepData` is `{ embedding: [512] }`
+ * — the 512-d Facenet512 vector the browser computed locally. The server routes
+ * it to the biometric processor `/verify-embedding` (a pgvector cosine compare),
+ * skipping all server-side image ML.
+ *
+ * @returns the raw k6 http response (caller inspects status / json()).
+ */
+export function verifyMfaStep(sessionToken, method, stepData, tagName) {
+  const url = `${config.identityApiUrl}/api/v1/auth/mfa/step`;
+  const payload = JSON.stringify({
+    sessionToken: sessionToken,
+    method: method,
+    data: stepData || {},
+  });
+  return http.post(url, payload, {
+    headers: { 'Content-Type': 'application/json' },
+    tags: { name: tagName || 'mfa_step' },
+  });
+}
+
+/**
  * Refresh access token using refresh token
  */
 export function refreshToken(refreshToken) {
@@ -193,6 +270,8 @@ export function getSessions(accessToken) {
 
 export default {
   login,
+  loginForMfa,
+  verifyMfaStep,
   refreshToken,
   register,
   authHeaders,

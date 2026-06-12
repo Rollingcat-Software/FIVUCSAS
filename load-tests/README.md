@@ -23,8 +23,9 @@ configured for an **external run** from your own PC against the public endpoint
 |----------|--------------|----------|--------------|------------------|
 | `public-read-load-test.js` | OIDC discovery, JWKS, auth-health, auth-methods, login-config | No | No | **Yes (default)** |
 | `auth-load-test.js` | `/auth/login` + `/auth/refresh` | Yes (audit + token rotation) | Yes | Yes (opt-in) |
-| `enrollment-load-test.js` | biometric enroll | Yes | Yes | No (biometric host is internal) |
-| `verification-load-test.js` | biometric verify | Yes | Yes | No (biometric host is internal) |
+| `verify-embedding-load-test.js` | **GPU-less** face verify: `/auth/mfa/step { embedding[512] }` → pgvector compare | Yes (audit) | Yes (2FA acct w/ FACE step) | **Yes (opt-in)** |
+| `enrollment-load-test.js` | biometric enroll (legacy image ML) | Yes | Yes | No (biometric host is internal) |
+| `verification-load-test.js` | biometric verify (legacy image ML) | Yes | Yes | No (biometric host is internal) |
 | `multi-tenant-load-test.js` | mixed, many tenants | Yes | Yes (pre-seeded) | No |
 | `stress-test.js` | mixed (ramp to knee) | Yes | Yes | Partial |
 | `spike-test.js` | mixed (sudden surge) | Yes | Yes | Partial |
@@ -125,16 +126,19 @@ load-tests/
 ├── scenarios/
 │   ├── public-read-load-test.js   # SAFE default — read-only public endpoints
 │   ├── auth-load-test.js          # login + token refresh (opt-in)
-│   ├── enrollment-load-test.js    # biometric enroll (opt-in, internal host)
-│   ├── verification-load-test.js  # biometric verify (opt-in, internal host)
+│   ├── verify-embedding-load-test.js # GPU-less face verify: /auth/mfa/step {embedding} (opt-in, PUBLIC)
+│   ├── enrollment-load-test.js    # biometric enroll, legacy image ML (opt-in, internal host)
+│   ├── verification-load-test.js  # biometric verify, legacy image ML (opt-in, internal host)
 │   ├── multi-tenant-load-test.js  # multi-tenant mix (opt-in)
 │   ├── stress-test.js             # ramp-to-knee (opt-in, -e PROFILE=stress)
 │   └── spike-test.js              # sudden surge (opt-in, -e PROFILE=spike)
 │
 ├── utils/
-│   ├── auth.js                    # login / refresh helpers
+│   ├── auth.js                    # login / refresh + MFA-step (embedding) helpers
 │   ├── biometric.js               # enroll / verify helpers (internal host)
 │   └── guard.js                   # ALLOW_MUTATIONS opt-in guard
+│
+├── EMBEDDING_VS_IMAGE.md           # why the GPU-less embedding path scales (read for #3)
 │
 └── results/                        # commit write-ups here; raw *.json ignored
     ├── RESULT_TEMPLATE.md          # paste your k6 summary into a copy of this
@@ -152,11 +156,12 @@ profile with `-e PROFILE=...` (or `LOAD_PROFILE=...` for `run.sh`).
 |---|----------|-----------|-------------------------------|----------------------|
 | 1 | `public-read-load-test.js` | OIDC discovery, JWKS, auth-health, auth-methods, login-config | `public_read_duration` p95<500ms, `http_req_failed` rate<1% | **Yes — default, no creds** |
 | 2 | `auth-load-test.js` | `/auth/login` + `/auth/refresh` | `login_duration` p95<300ms, `token_refresh_duration` p95<200ms | Yes — opt-in, real creds |
-| 3 | `enrollment-load-test.js` | biometric enroll | `enrollment_duration` p95<2000ms, success>95% | No — biometric host internal |
-| 4 | `verification-load-test.js` | biometric verify | `verification_duration` p95<500ms / p99<1000ms | No — biometric host internal |
-| 5 | `multi-tenant-load-test.js` | mixed across 20 tenants | `http_req_duration` p95<1000ms, `tenant_isolation_violations`==0 | No — biometric host internal |
-| 6 | `stress-test.js` | mixed ramp-to-knee | degradation expected (`http_req_failed`<10%) | Partial (auth path only) |
-| 7 | `spike-test.js` | mixed sudden surge | degradation expected (`http_req_failed`<15%) | Partial (auth path only) |
+| 3 | `verify-embedding-load-test.js` | **GPU-less face verify** — `/auth/mfa/step {embedding[512]}` → server pgvector cosine (no image ML) | `embedding_verify_duration` p95<500ms / p99<1000ms, `embedding_verify_served` rate>95% | **Yes — opt-in, 2FA acct w/ FACE step**. See [`EMBEDDING_VS_IMAGE.md`](./EMBEDDING_VS_IMAGE.md) |
+| 4 | `enrollment-load-test.js` | biometric enroll (legacy image ML) | `enrollment_duration` p95<2000ms, success>95% | No — biometric host internal |
+| 5 | `verification-load-test.js` | biometric verify (legacy image ML) | `verification_duration` p95<500ms / p99<1000ms | No — biometric host internal |
+| 6 | `multi-tenant-load-test.js` | mixed across 20 tenants | `http_req_duration` p95<1000ms, `tenant_isolation_violations`==0 | No — biometric host internal |
+| 7 | `stress-test.js` | mixed ramp-to-knee | degradation expected (`http_req_failed`<10%) | Partial (auth path only) |
+| 8 | `spike-test.js` | mixed sudden surge | degradation expected (`http_req_failed`<15%) | Partial (auth path only) |
 
 > **Smoke relaxes thresholds.** When `PROFILE=smoke` (the default), each
 > scenario's strict latency/success thresholds are dropped and replaced by a
@@ -164,6 +169,44 @@ profile with `-e PROFILE=...` (or `LOAD_PROFILE=...` for `run.sh`).
 > instead of exiting non-zero. The latency Trends are still collected and
 > printed — they just aren't asserted. (`multi-tenant`'s
 > `tenant_isolation_violations==0` correctness invariant is kept even in smoke.)
+
+### 🔋 Scenario #3 — the GPU-less scaling test (`verify-embedding-load-test.js`)
+
+This is the scenario that validates the headline scaling claim: **the server no
+longer does per-request face ML, so face verify scales to thousands of users.**
+
+- **Legacy image path** (`verification-load-test.js`): the browser uploads a face
+  *image*; the server runs MTCNN detection + a Facenet512 forward pass on the
+  CPU-only CX43 — O(100ms–seconds) of heavy ML per request. It "works for 1 user,
+  collapses at 1000". Internal host only.
+- **New embedding path** (this scenario): the browser computes the 512-d Facenet512
+  embedding locally and submits ONLY the vector to the **public** identity API
+  (`POST /api/v1/auth/mfa/step { sessionToken, method:'FACE', data:{ embedding[512] } }`).
+  The server forwards it to the biometric processor `/verify-embedding` route — a
+  pgvector cosine compare, O(ms), no image ML, no GPU.
+
+It submits a **random L2-normalized 512-d embedding**, which will NOT match the
+stored template. That is intentional: a non-match runs the *identical* server code
+path (decrypt template → pgvector cosine → threshold) as a match, so it measures
+the server's **capacity / latency** of the cheap verify path under load — which is
+exactly the scaling question. It does NOT measure recognition accuracy, nor the
+one-time client-side cost of the model download + onnx forward pass (that is a
+per-device browser cost, not a server-scaling factor).
+
+```bash
+# SAFE prod smoke — needs a REAL 2FA test account whose flow includes a FACE step:
+LOAD_PROFILE=smoke ALLOW_MUTATIONS=true \
+  TEST_USER_EMAIL='you@real-test.acct' TEST_USER_PASSWORD='...' \
+  ./run.sh verify-embedding https://api.fivucsas.com
+
+# Heavy capacity run — LOCAL / throwaway stack ONLY (never the shared prod box):
+LOAD_PROFILE=stress ALLOW_MUTATIONS=true \
+  TEST_USER_EMAIL='...' TEST_USER_PASSWORD='...' \
+  ./run.sh verify-embedding http://localhost:8080
+```
+
+Full rationale + how to read the result (compare p95/p99 + max-RPS + server CPU
+against the image path) is in **[`EMBEDDING_VS_IMAGE.md`](./EMBEDDING_VS_IMAGE.md)**.
 
 **Profile shapes** (defined once in `config.js`):
 
