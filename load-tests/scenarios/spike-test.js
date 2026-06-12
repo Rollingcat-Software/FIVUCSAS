@@ -12,7 +12,7 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config, { profileStages } from '../config.js';
+import config, { profileStages, scenarioThresholds } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
 import { requireMutationsOptIn } from '../utils/guard.js';
@@ -27,7 +27,7 @@ const recoveryTime = new Trend('recovery_time');
 export const options = {
   stages: profileStages(),
 
-  thresholds: {
+  thresholds: scenarioThresholds({
     // Allow higher failure rate during spikes
     'http_req_failed': ['rate<0.15'], // 15% failure acceptable during spikes
 
@@ -36,7 +36,7 @@ export const options = {
 
     // Spike errors should recover quickly
     'spike_errors': ['rate<0.15'],
-  },
+  }),
 };
 
 /**

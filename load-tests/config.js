@@ -14,6 +14,11 @@
  *   k6 run -e PROFILE=smoke scenarios/public-read-load-test.js
  *   k6 run -e PROFILE=load  scenarios/public-read-load-test.js
  *   k6 run -e PROFILE=spike scenarios/public-read-load-test.js
+ *
+ * PROFILE vs LOAD_PROFILE: PROFILE is the canonical knob (smoke|load|stress|
+ * spike). LOAD_PROFILE is a convenience alias used by run.sh and the laptop
+ * runbook — it accepts the same names plus "full" (an alias for "load", the
+ * sustained normal-load profile). If both are set, PROFILE wins.
  */
 
 // ---------------------------------------------------------------------------
@@ -39,7 +44,14 @@ function envBool(name, fallback) {
 // below "take prod down" territory — raise the numbers yourself if you have a
 // throwaway environment.
 // ---------------------------------------------------------------------------
-export const PROFILE_NAME = envStr('PROFILE', 'smoke').toLowerCase();
+// Resolve the active profile name. PROFILE is canonical; LOAD_PROFILE is an
+// accepted alias (run.sh / runbook) where "full" means the "load" profile.
+// Default is "smoke" so a bare run can never accidentally fire a heavy test.
+function resolveProfileName() {
+  const raw = envStr('PROFILE', envStr('LOAD_PROFILE', 'smoke')).toLowerCase();
+  return raw === 'full' ? 'load' : raw;
+}
+export const PROFILE_NAME = resolveProfileName();
 
 const PROFILES = {
   // ~1 min, a handful of VUs — proves the kit + endpoints work end-to-end.
@@ -76,6 +88,35 @@ const PROFILES = {
 
 export function profileStages(name) {
   return PROFILES[(name || PROFILE_NAME)] || PROFILES.smoke;
+}
+
+// True when running the safe ~1-min/5-VU smoke profile.
+export const IS_SMOKE = PROFILE_NAME === 'smoke';
+
+/**
+ * Pick the thresholds for a scenario.
+ *
+ * For `smoke` we DON'T want a tiny prod sanity run to exit non-zero (and "page")
+ * just because one slow request blew a strict p95 — a smoke run should just
+ * REPORT the latency. So in smoke mode we drop the scenario's strict thresholds
+ * and keep only a single, loose error-rate guard (so a totally broken endpoint
+ * still fails the run). All the latency Trends are still collected and printed;
+ * we simply don't assert on them.
+ *
+ * For every other profile (load/stress/spike/...) the scenario's real
+ * thresholds are used unchanged.
+ *
+ *   export const options = {
+ *     stages: profileStages(),
+ *     thresholds: scenarioThresholds({ 'login_duration': ['p(95)<300'], ... }),
+ *   };
+ */
+export function scenarioThresholds(fullThresholds) {
+  if (IS_SMOKE) {
+    // Loose: only catch a hard failure (most reqs erroring), never latency.
+    return { http_req_failed: ['rate<0.50'] };
+  }
+  return fullThresholds;
 }
 
 export const config = {

@@ -12,7 +12,7 @@
 
 import { sleep, check } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config, { profileStages } from '../config.js';
+import config, { profileStages, scenarioThresholds } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
 import { requireMutationsOptIn } from '../utils/guard.js';
@@ -29,7 +29,7 @@ const enrollmentsCompleted = new Counter('enrollments_completed');
 export const options = {
   stages: profileStages(),
 
-  thresholds: {
+  thresholds: scenarioThresholds({
     // 95% of enrollments should complete in < 2 seconds
     'enrollment_duration': ['p(95)<2000'],
 
@@ -38,7 +38,7 @@ export const options = {
 
     // HTTP request failure rate should be < 5% (ML can fail on bad images)
     'http_req_failed': ['rate<0.05'],
-  },
+  }),
 
   // Graceful stop
   gracefulStop: '60s',

@@ -12,7 +12,7 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config, { profileStages } from '../config.js';
+import config, { profileStages, scenarioThresholds } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
 import { requireMutationsOptIn } from '../utils/guard.js';
@@ -29,7 +29,7 @@ const throughput = new Counter('throughput');
 export const options = {
   stages: profileStages(),
 
-  thresholds: {
+  thresholds: scenarioThresholds({
     // We expect some failures in stress test
     'http_req_failed': ['rate<0.10'], // Allow 10% failures
 
@@ -38,7 +38,7 @@ export const options = {
 
     // System should not be overloaded for > 10% of requests
     'system_overloaded': ['rate<0.10'],
-  },
+  }),
 
   // NB: httpDebug was intentionally REMOVED — at high VU it dumps every request
   // to stdout, drowning the summary and skewing the client. Use --http-debug on
