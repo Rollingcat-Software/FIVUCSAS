@@ -183,14 +183,22 @@ Layer-1 methods in the flow builder — see `ROADMAP_AUTH_2026-05-30.md`.
 
 ## Biometric Pipeline (CRITICAL — Read Before Touching biometric-processor or web-app auth)
 
-**Architecture decision:** Auth kararı sunucuda olmalı — tarayıcı güvenilmez. Client geometry embedding (512-dim landmark distance) LOG-ONLY'dir, auth için kullanılmaz (D2 kararı).
+**Architecture decision:** Auth kararı **sunucuda** kalır — tarayıcı güvenilmezdir (liveness + pgvector eşleştirme + kabul/ret kararı her zaman sunucuda). Embedding ise iki yoldan üretilebilir (flag ile):
 
-### Gerçek Üretim Durumu (2026-04-28 afternoon, post-fix)
+- **Legacy / default (`app.auth.client-side-embedding=false`):** tarayıcı ön-eler (detect/quality/crop) ve JPEG yükler; sunucu MTCNN → Facenet512 ile embedding'i çıkarır. Eski 512-dim landmark-geometri `client_embedding` alanı LOG-ONLY'dir (D2), auth'ta kullanılmaz.
+- **Client-side embedding (`app.auth.client-side-embedding=true`, default OFF — 2026-06-12):** Facenet512 embedding'i **tarayıcıda** (onnxruntime-web) hesaplanır ve **yalnızca 512-float vektör** yüklenir — ham görüntü cihazdan hiç çıkmaz. Sunucu yalnızca pgvector eşleştirme + eşik + kararı çalıştırır (`POST /verify-embedding` / `/enroll-embedding`). Bu yolda görüntü olmadığı için **liveness yoktur** → mutlaka bir liveness faktörü (passive ya da **Puzzle layer**) ile eşlenmelidir.
+
+**Puzzle layer (`app.auth.puzzle-layer`, default OFF):** Biometric Puzzle artık birinci-sınıf bir auth-flow katmanı — sunucunun ürettiği, tek-kullanımlık, rastgele, sahip-bağlı (user+tenant), kısa-TTL bir **session** ile (anti-replay). İsteğe bağlı kimlik-bağlama (`alsoMatchFaceIdentity`) embedding'i aynı canlı puzzle karelerinden alır (split-capture'a karşı). Sözleşme: `docs/superpowers/plans/2026-06-12-puzzle-session-convergence.md`.
+
+**Gizlilik (dürüst çerçeve):** ham görüntü iletilmez; iletilen tek biyometrik veri, türetilmiş ve geri-çevrilemez 512-boyutlu bir embedding'tir (TLS üzerinden, Fernet ile şifreli saklanır) — bu bir **veri minimizasyonudur**, "biyometrik veri cihazdan hiç çıkmaz" DEĞİL.
+
+### Gerçek Üretim Durumu (2026-04-28; client-side-embedding + puzzle-layer 2026-06-12 eklendi, flag-OFF)
 | Katman | Durum |
 |---|---|
 | Client detection (auth) | ✅ MediaPipe FaceLandmarker 478pt primary, BlazeFace fallback |
-| Server detection | ✅ MTCNN (bundled weights, deviation from centerface roadmap due to DeepFace bug) |
-| Server embedding | ✅ Facenet512 (512-dim) |
+| **Client embedding (flag ON)** | ✅ Facenet512 onnxruntime-web — yalnızca 512-vektör yüklenir (ham görüntü cihazda kalır); `app.auth.client-side-embedding` default OFF |
+| Server detection | ✅ MTCNN (bundled weights, deviation from centerface roadmap due to DeepFace bug) — legacy/fallback yolu |
+| Server embedding | ✅ Facenet512 (512-dim) — legacy/fallback yolu (flag OFF iken default) |
 | Server liveness (/verify) | ✅ UniFace MiniFASNet passive — `LIVENESS_BACKEND=uniface`, `LIVENESS_MODE=passive` |
 | Server liveness (/enroll) | ✅ Wired |
 | Server anti-spoofing | ✅ `ANTI_SPOOFING_ENABLED=true` |
