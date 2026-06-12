@@ -33,6 +33,45 @@ All scenarios share **profiles** (`-e PROFILE=smoke|load|stress|spike`) and read
 configurable **`BASE_URL`** (default `https://api.fivucsas.com`). No secrets are
 baked into the repo — credentials and client_id come from env only.
 
+## 💻 Running from your laptop against prod (read this)
+
+There is a one-command wrapper, **[`run.sh`](./run.sh)**, plus a full
+end-to-end runbook at the repo root: **[`LOCAL_TESTING_RUNBOOK.md`](../LOCAL_TESTING_RUNBOOK.md)**
+(covers k6 + every other component — web, API, biometric, Android).
+
+```bash
+cd FIVUCSAS/load-tests
+
+# SAFE prod smoke — read-only public endpoints, NO credentials, ~1 min:
+LOAD_PROFILE=smoke ./run.sh public-read https://api.fivucsas.com
+```
+
+What you need to know before pointing it at production:
+
+- **Correct env vars** (NOT prefixed with `K6_`): `IDENTITY_API_URL` (or its
+  preferred alias `BASE_URL`), `BIOMETRIC_API_URL`, `TEST_USER_EMAIL`,
+  `TEST_USER_PASSWORD`, `CLIENT_ID`, `ALLOW_MUTATIONS`. (`config.js` reads these
+  exact names — a `K6_` prefix is ignored.)
+- **`LOAD_PROFILE`** is an accepted alias for `PROFILE`: `smoke` (default, safe),
+  `load`/`full`, `stress`, `spike`. `smoke` is ~5 VUs / ~1 min and **relaxes the
+  strict thresholds** so a quick prod check reports latency without exiting
+  non-zero. If both `PROFILE` and `LOAD_PROFILE` are set, `PROFILE` wins.
+- **You need a REAL prod test account** for any authenticated/mutating run. The
+  placeholder `loadtest@example.com` does **not** exist on prod and will just
+  return `401`. Use a disposable, password-only (no-2FA) admin/test user.
+- **Only `auth` and `public-read` are reachable from outside.** The biometric
+  processor (`enrollment`/`verification`/`multi-tenant` and the biometric half of
+  `stress`/`spike`) has **no public route** — it is Docker-network-internal
+  behind the API. Those scenarios can only run against a local/VPN stack.
+
+> ## ⛔ SAFETY — never run `stress`/`spike` or any non-`smoke`/high-VU profile against prod
+>
+> Production is a single shared Hetzner CX43 (15 GiB / 8 cores) hosting ~23
+> containers **and** a CI runner. Heavy external load self-DoSes the box, trips
+> the per-IP login rate-limiter and fail2ban, and produces meaningless numbers.
+> `run.sh` will **refuse** a non-`smoke` profile against `api.fivucsas.com`. Run
+> heavy profiles against a **local or throwaway stack only.**
+
 ## 🚀 Quick Start
 
 Full walkthrough (install per-OS, profiles, exports, thresholds) is in
@@ -79,6 +118,7 @@ docker run --rm -i -v "$(pwd):/tests" -w /tests \
 load-tests/
 ├── RUN_GUIDE.md                    # 👉 START HERE — external-run walkthrough
 ├── README.md                       # This file (reference)
+├── run.sh                          # one-command wrapper (LOAD_PROFILE=smoke ./run.sh auth <url>)
 ├── config.js                       # Targets, profiles, thresholds, safety flags
 ├── BASELINE_TESTING_GUIDE.md       # Local full-stack baseline guide (legacy)
 │
@@ -103,127 +143,41 @@ load-tests/
 
 ## 🎯 Test Scenarios
 
-### 1. Authentication Load Test
+The **shape** of every run (VU count + duration) comes from the selected
+**profile**, not from per-scenario hard-coded numbers — so the table below lists
+*what each scenario exercises*, and the profile decides *how hard*. Pick the
+profile with `-e PROFILE=...` (or `LOAD_PROFILE=...` for `run.sh`).
 
-**Purpose**: Test login, token refresh, and session management
+| # | Scenario | Exercises | Strict thresholds (non-smoke) | Externally runnable? |
+|---|----------|-----------|-------------------------------|----------------------|
+| 1 | `public-read-load-test.js` | OIDC discovery, JWKS, auth-health, auth-methods, login-config | `public_read_duration` p95<500ms, `http_req_failed` rate<1% | **Yes — default, no creds** |
+| 2 | `auth-load-test.js` | `/auth/login` + `/auth/refresh` | `login_duration` p95<300ms, `token_refresh_duration` p95<200ms | Yes — opt-in, real creds |
+| 3 | `enrollment-load-test.js` | biometric enroll | `enrollment_duration` p95<2000ms, success>95% | No — biometric host internal |
+| 4 | `verification-load-test.js` | biometric verify | `verification_duration` p95<500ms / p99<1000ms | No — biometric host internal |
+| 5 | `multi-tenant-load-test.js` | mixed across 20 tenants | `http_req_duration` p95<1000ms, `tenant_isolation_violations`==0 | No — biometric host internal |
+| 6 | `stress-test.js` | mixed ramp-to-knee | degradation expected (`http_req_failed`<10%) | Partial (auth path only) |
+| 7 | `spike-test.js` | mixed sudden surge | degradation expected (`http_req_failed`<15%) | Partial (auth path only) |
 
-**Load Pattern**:
-- Ramp up: 50 → 100 → 200 VUs
-- Duration: ~20 minutes
-- Operations: Login, token refresh, logout
+> **Smoke relaxes thresholds.** When `PROFILE=smoke` (the default), each
+> scenario's strict latency/success thresholds are dropped and replaced by a
+> single loose error-rate guard, so a tiny prod sanity run **reports** latency
+> instead of exiting non-zero. The latency Trends are still collected and
+> printed — they just aren't asserted. (`multi-tenant`'s
+> `tenant_isolation_violations==0` correctness invariant is kept even in smoke.)
 
-**Thresholds**:
-- Login: p95 < 300ms
-- Token refresh: p95 < 200ms
-- Failure rate: < 1%
+**Profile shapes** (defined once in `config.js`):
 
-**Run**:
+| Profile | VUs over time | ~Duration | Use for |
+|---------|---------------|-----------|---------|
+| `smoke` | 5 | ~1 min | sanity / prod-safe |
+| `load` (= `full`) | 20 → 20 → 50 | ~6 min | normal sustained load |
+| `stress` | 50 → 100 → 200 → 300 | ~7 min | find capacity knee (local only) |
+| `spike` | 20 → **200** → 20 | ~4 min | sudden-surge resilience (local only) |
+
+Run any scenario with the wrapper or k6 directly:
 ```bash
-k6 run scenarios/auth-load-test.js
-```
-
----
-
-### 2. Enrollment Load Test
-
-**Purpose**: Test biometric enrollment pipeline
-
-**Load Pattern**:
-- Ramp up: 10 → 25 → 50 → 100 VUs
-- Duration: ~15 minutes
-- Operations: Image upload, ML processing, embedding storage
-
-**Thresholds**:
-- Enrollment: p95 < 2000ms
-- Success rate: > 95%
-- ML quality: Quality score > 0.5
-
-**Run**:
-```bash
-k6 run scenarios/enrollment-load-test.js
-```
-
----
-
-### 3. Verification Load Test
-
-**Purpose**: Test biometric verification speed
-
-**Load Pattern**:
-- Ramp up: 50 → 100 → 200 → 500 VUs
-- Duration: ~17 minutes
-- Operations: Face verification, embedding comparison
-
-**Thresholds**:
-- Verification: p95 < 500ms, p99 < 1000ms
-- Success rate: > 95%
-- False positive rate: < 1%
-
-**Run**:
-```bash
-k6 run scenarios/verification-load-test.js
-```
-
----
-
-### 4. Multi-Tenant Load Test
-
-**Purpose**: Test tenant isolation and performance
-
-**Load Pattern**:
-- 20 tenants, 100-200 VUs distributed
-- Duration: ~16 minutes
-- Operations: Mixed (enrollment, verification, auth)
-
-**Thresholds**:
-- Response time: p95 < 1000ms
-- Failure rate: < 1%
-- Tenant isolation violations: 0
-
-**Run**:
-```bash
-k6 run scenarios/multi-tenant-load-test.js
-```
-
----
-
-### 5. Stress Test
-
-**Purpose**: Find system breaking point
-
-**Load Pattern**:
-- Gradual increase: 50 → 1500 VUs
-- Duration: ~25 minutes
-- Operations: Mixed workload
-
-**Expected**:
-- System will fail at some point
-- Goal: Identify maximum capacity
-
-**Run**:
-```bash
-k6 run scenarios/stress-test.js
-```
-
----
-
-### 6. Spike Test
-
-**Purpose**: Test response to traffic spikes
-
-**Load Pattern**:
-- Baseline: 50 VUs
-- Spike 1: 300 VUs (6x)
-- Spike 2: 500 VUs (10x)
-- Spike 3: 1000 VUs (20x)
-
-**Thresholds**:
-- Spike errors: < 15%
-- Recovery: Return to baseline performance
-
-**Run**:
-```bash
-k6 run scenarios/spike-test.js
+LOAD_PROFILE=smoke ./run.sh public-read https://api.fivucsas.com   # wrapper
+k6 run -e PROFILE=load scenarios/public-read-load-test.js          # raw k6
 ```
 
 ## 📈 Analyzing Results
@@ -290,8 +244,9 @@ required for the default read-only run.
 | Var | Default | Purpose |
 |-----|---------|---------|
 | `BASE_URL` | `https://api.fivucsas.com` | identity API target (preferred) |
-| `IDENTITY_API_URL` | (alias of `BASE_URL`) | legacy alias |
-| `PROFILE` | `smoke` | ramp shape: `smoke`/`load`/`stress`/`spike` |
+| `IDENTITY_API_URL` | (alias of `BASE_URL`) | identity API target (config.js reads this exact name — NOT `K6_IDENTITY_API_URL`) |
+| `PROFILE` | `smoke` | ramp shape: `smoke`/`load`/`stress`/`spike` (canonical) |
+| `LOAD_PROFILE` | (= `PROFILE`) | alias used by `run.sh`; also accepts `full` (= `load`). `PROFILE` wins if both set |
 | `ALLOW_MUTATIONS` | `false` | opt-in switch for write/biometric scenarios |
 | `TEST_USER_EMAIL` | — | disposable test account (auth/mutating runs) |
 | `TEST_USER_PASSWORD` | — | password for that account |
@@ -301,18 +256,21 @@ required for the default read-only run.
 | `TEST_IMAGE_BASE` | — | base URL for reachable test face images |
 
 ```bash
-# Example: authenticated load run against prod
+# Example: authenticated SMOKE run against prod (safe, ~1 min)
+# Replace the email/password with a REAL disposable prod test account —
+# loadtest@example.com does NOT exist on prod and will 401.
 k6 run \
   -e BASE_URL=https://api.fivucsas.com \
   -e ALLOW_MUTATIONS=true \
-  -e TEST_USER_EMAIL=loadtest@example.com \
-  -e TEST_USER_PASSWORD='<password>' \
+  -e TEST_USER_EMAIL='your-real-test@account' \
+  -e TEST_USER_PASSWORD='<the-real-password>' \
   -e CLIENT_ID=marmara-bys-demo \
-  -e PROFILE=load \
+  -e PROFILE=smoke \
   scenarios/auth-load-test.js
 ```
 
 > **No secrets in the repo.** Credentials only ever come from these env vars.
+> **`PROFILE=load` and above are for a local/throwaway stack, not prod.**
 
 ### Custom Thresholds
 

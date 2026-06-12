@@ -12,7 +12,7 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config, { profileStages } from '../config.js';
+import config, { profileStages, scenarioThresholds } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
 import { requireMutationsOptIn } from '../utils/guard.js';
@@ -30,7 +30,7 @@ const verificationsCompleted = new Counter('verifications_completed');
 export const options = {
   stages: profileStages(),
 
-  thresholds: {
+  thresholds: scenarioThresholds({
     // 95% of verifications < 500ms, 99% < 1000ms (single key, array of both —
     // the old config defined 'verification_duration' twice so p95 was silently
     // dropped; k6 needs both expressions under ONE key).
@@ -41,7 +41,7 @@ export const options = {
 
     // HTTP request failure rate should be < 2%
     'http_req_failed': ['rate<0.02'],
-  },
+  }),
 
   // Graceful stop
   gracefulStop: '30s',

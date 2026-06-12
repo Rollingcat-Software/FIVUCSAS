@@ -39,7 +39,7 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
-import config, { profileStages, PROFILE_NAME } from '../config.js';
+import config, { profileStages, scenarioThresholds, PROFILE_NAME } from '../config.js';
 import auth from '../utils/auth.js';
 
 const loginSuccess = new Counter('login_success');
@@ -55,12 +55,14 @@ const LOGIN_SHARE = parseFloat(__ENV.LOGIN_SHARE || '0.05');
 
 export const options = {
   stages: profileStages(),
-  thresholds: {
+  // In smoke mode these strict thresholds are relaxed so a tiny prod sanity run
+  // reports latency without exiting non-zero (see config.scenarioThresholds).
+  thresholds: scenarioThresholds({
     'login_duration': ['p(95)<300'],
     'token_refresh_duration': ['p(95)<200'],
     // Allow a few 429s if you crank VUs — the login bucket is shared per IP.
     'http_req_failed': ['rate<0.05'],
-  },
+  }),
   gracefulStop: '30s',
 };
 

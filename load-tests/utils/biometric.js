@@ -25,12 +25,15 @@ export const embeddingGenerationDuration = new Trend('embedding_generation_durat
 export function startEnrollment(accessToken, imageUrl, metadata = {}) {
   const enrollUrl = `${config.biometricApiUrl}/api/v1/biometric/enroll`;
 
+  // NB: only the snake_case fields below are sent — the camelCase metadata keys
+  // (userId/tenantId/correlationId) are read above, not forwarded verbatim. (An
+  // object spread here was both wrong — it would inject unexpected camelCase keys
+  // — and unsupported by k6's bundled compiler, which broke this scenario.)
   const payload = JSON.stringify({
     image_url: imageUrl,
     user_id: metadata.userId || 'load-test-user',
     tenant_id: metadata.tenantId || 'load-test-tenant',
     correlation_id: metadata.correlationId || `enrollment-${Date.now()}-${Math.random()}`,
-    ...metadata,
   });
 
   const params = {
@@ -131,7 +134,6 @@ export function verify(accessToken, imageUrl, userId, metadata = {}) {
     user_id: userId,
     tenant_id: metadata.tenantId || 'load-test-tenant',
     correlation_id: metadata.correlationId || `verify-${Date.now()}-${Math.random()}`,
-    ...metadata,
   });
 
   const params = {

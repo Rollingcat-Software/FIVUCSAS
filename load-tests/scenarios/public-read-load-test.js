@@ -27,17 +27,19 @@
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
-import config, { profileStages, PROFILE_NAME } from '../config.js';
+import config, { profileStages, scenarioThresholds, PROFILE_NAME } from '../config.js';
 
 const readDuration = new Trend('public_read_duration', true);
 
 export const options = {
   stages: profileStages(),
-  thresholds: {
+  // smoke relaxes these so a quick prod sanity run reports latency without
+  // failing the process (see config.scenarioThresholds).
+  thresholds: scenarioThresholds({
     'public_read_duration': ['p(95)<500'],
     'http_req_failed': ['rate<0.01'],
     'http_req_duration': ['p(95)<800'],
-  },
+  }),
   gracefulStop: '15s',
 };
 

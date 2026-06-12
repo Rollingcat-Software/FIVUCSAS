@@ -103,6 +103,15 @@ scenario, so the same flag means the same shape everywhere.
 Default is `smoke` if `PROFILE` is omitted — so a bare `k6 run scenarios/<x>.js`
 can never accidentally fire a full stress test.
 
+> **One-command wrapper.** `./run.sh <scenario> [BASE_URL]` reads `LOAD_PROFILE`
+> (alias of `PROFILE`, also accepts `full` = `load`), exports the right `-e`
+> flags from your env, writes a JSON summary into `results/`, and prints the
+> p95/p99/error table. It **refuses** any non-`smoke` profile against
+> `api.fivucsas.com`. Example:
+> ```bash
+> LOAD_PROFILE=smoke ./run.sh public-read https://api.fivucsas.com
+> ```
+
 > Want a harder run? Edit the `PROFILES` object in `config.js`. The numbers are
 > deliberately conservative for a single shared host; raise them only if you have
 > a throwaway environment.
@@ -117,12 +126,14 @@ not a pure read). You must opt in and supply a **disposable test account** via
 env (no credentials live in the repo).
 
 ```bash
+# Use a REAL disposable prod test account — loadtest@example.com does NOT exist
+# on prod and will 401. Against prod, use -e PROFILE=smoke (not load).
 k6 run \
   -e ALLOW_MUTATIONS=true \
-  -e TEST_USER_EMAIL="loadtest@example.com" \
-  -e TEST_USER_PASSWORD="<the-password>" \
+  -e TEST_USER_EMAIL="your-real-test@account" \
+  -e TEST_USER_PASSWORD="<the-real-password>" \
   -e CLIENT_ID="marmara-bys-demo" \
-  -e PROFILE=load \
+  -e PROFILE=smoke \
   scenarios/auth-load-test.js
 ```
 

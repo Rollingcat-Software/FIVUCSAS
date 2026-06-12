@@ -12,7 +12,7 @@
 
 import { sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
-import config, { profileStages } from '../config.js';
+import config, { profileStages, scenarioThresholds } from '../config.js';
 import auth from '../utils/auth.js';
 import biometric from '../utils/biometric.js';
 import { requireMutationsOptIn } from '../utils/guard.js';
@@ -27,14 +27,18 @@ const tenantIsolationViolations = new Counter('tenant_isolation_violations');
 export const options = {
   stages: profileStages(),
 
-  thresholds: {
-    // Performance should not degrade with multiple tenants
-    'http_req_duration': ['p(95)<1000'],
-    'http_req_failed': ['rate<0.01'],
-
-    // No tenant isolation violations should occur
-    'tenant_isolation_violations': ['count==0'],
-  },
+  thresholds: Object.assign(
+    scenarioThresholds({
+      // Performance should not degrade with multiple tenants
+      'http_req_duration': ['p(95)<1000'],
+      'http_req_failed': ['rate<0.01'],
+    }),
+    {
+      // No tenant isolation violations EVER — a correctness invariant, kept
+      // even in smoke mode (a leak must fail the run regardless of profile).
+      'tenant_isolation_violations': ['count==0'],
+    },
+  ),
 
   tags: {
     test_type: 'multi_tenant',
