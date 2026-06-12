@@ -48,7 +48,7 @@ const t = {
       {
         icon: 'shield',
         title: { en: 'Liveness & anti-spoof',      tr: 'Canlılık & spoof koruması' },
-        body:  { en: 'On-device liveness detection, screen-replay checks, rPPG pulse cues, and NFC document cross-reference.', tr: 'Cihaz üstü canlılık tespiti, ekran tekrarı kontrolleri, rPPG nabız sinyalleri ve NFC belge çapraz doğrulaması.' },
+        body:  { en: 'In-browser liveness detection with a randomized active challenge that the server re-scores, plus screen-replay checks, rPPG pulse cues, and NFC document cross-reference.', tr: 'Tarayıcı içi canlılık tespiti, sunucunun yeniden puanladığı rastgele aktif meydan okuma, ekran tekrarı kontrolleri, rPPG nabız sinyalleri ve NFC belge çapraz doğrulaması.' },
       },
       {
         icon: 'lock',
@@ -148,6 +148,7 @@ const t = {
       { k: { en: 'OIDC discovery + JWKS',       tr: 'OIDC keşif + JWKS' }, v: { en: 'RFC 6749 / OpenID Connect', tr: 'RFC 6749 / OpenID Connect' } },
       { k: { en: 'JWT signing',                 tr: 'JWT imzalama' },     v: { en: 'RS256 default + JWKS',        tr: 'Varsayılan RS256 + JWKS' } },
       { k: { en: 'At-rest encryption',          tr: 'Depoda şifreleme' }, v: { en: 'AES-GCM-256 / Fernet at rest',      tr: 'Depoda AES-GCM-256 / Fernet' } },
+      { k: { en: 'Biometric data minimization', tr: 'Biyometrik veri minimizasyonu' }, v: { en: 'Stored as a non-invertible 512-d embedding (Fernet)', tr: 'Geri döndürülemez 512-boyutlu gömme olarak (Fernet)' } },
       { k: { en: 'Audit retention',             tr: 'Denetim saklama' },  v: { en: 'Monthly partitioned logs',    tr: 'Aylık bölümlenmiş günlükler' } },
       { k: { en: 'Data export & purge',         tr: 'Veri dışa aktarma & silme' }, v: { en: 'KVKK / GDPR compliant', tr: 'KVKK / GDPR uyumlu' } },
       { k: { en: 'MFA rate-limiting',           tr: 'MFA hız sınırı' },   v: { en: 'Retry-After + lockout',       tr: 'Retry-After + kilitleme' } },
