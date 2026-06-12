@@ -9,7 +9,7 @@
 #   ./run.sh <scenario> [BASE_URL]
 #
 #   <scenario>  one of: public-read | auth | enrollment | verification |
-#               multi-tenant | stress | spike
+#               verify-embedding | multi-tenant | stress | spike
 #               (also accepts the full file name, e.g. public-read-load-test.js)
 #   [BASE_URL]  optional target; defaults to https://api.fivucsas.com
 #
@@ -61,6 +61,7 @@ case "$SCENARIO_ARG" in
   auth)                          SCENARIO_FILE="scenarios/auth-load-test.js" ;;
   enrollment|enroll)             SCENARIO_FILE="scenarios/enrollment-load-test.js" ;;
   verification|verify)           SCENARIO_FILE="scenarios/verification-load-test.js" ;;
+  verify-embedding|embedding)    SCENARIO_FILE="scenarios/verify-embedding-load-test.js" ;;
   multi-tenant|multitenant)      SCENARIO_FILE="scenarios/multi-tenant-load-test.js" ;;
   stress)                        SCENARIO_FILE="scenarios/stress-test.js" ;;
   spike)                         SCENARIO_FILE="scenarios/spike-test.js" ;;
@@ -68,7 +69,7 @@ case "$SCENARIO_ARG" in
   scenarios/*)                   SCENARIO_FILE="$SCENARIO_ARG" ;;
   *)
     echo "ERROR: unknown scenario '$SCENARIO_ARG'." >&2
-    echo "Use one of: public-read auth enrollment verification multi-tenant stress spike" >&2
+    echo "Use one of: public-read auth enrollment verification verify-embedding multi-tenant stress spike" >&2
     exit 2
     ;;
 esac
