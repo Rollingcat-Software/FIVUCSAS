@@ -4,10 +4,15 @@
 # layout (see .repo-structure.yml) and FAILS the PR when a disallowed/forbidden
 # file appears — e.g. a stray dated tracking doc at the root.
 #
-# Owner step to make it BLOCK merges: add the status check named
-# "structure-check / repo-structure / structure-check" (the reusable job) as a
-# REQUIRED check in this repo's branch protection. See the PR body for the exact
-# command.
+# This is BLOCKING on master via an additive repository ruleset "structure-lock"
+# (ruleset id 17635884) that requires the check named exactly:
+#     repo-structure / structure-check
+# To replicate on another repo, POST an additive ruleset (NOT a branch-protection
+# PUT — a full-replacement PUT of branch protection is blocked/risky). Example:
+#   gh api -X POST repos/<owner>/<repo>/rulesets --input ruleset.json
+# where ruleset.json requires required_status_checks context
+# "repo-structure / structure-check" on the default branch, with a RepositoryRole
+# (admin) bypass actor. See PR Rollingcat-Software/FIVUCSAS#210 for details.
 name: structure-check
 
 on:
