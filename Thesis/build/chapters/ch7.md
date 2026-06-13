@@ -75,7 +75,7 @@ factor 12 protected passwords [CITE:bcrypt]; production access tokens were RS256
 issuer and audience binding, key-id routing that closed algorithm-confusion forgeries, and RFC 8176
 `amr` accumulation that recorded genuine N-factor evidence [CITE:jwt-rfc7519]; WebAuthn / passkeys
 used the Yubico server library with an explicit origin allowlist [CITE:webauthn]; two complementary
-rate-limiting layers (a Redis sliding window and Bucket4j token buckets [CITE:bucket4j]) failed closed
+rate-limiting layers (a Redis fixed window and Bucket4j token buckets [CITE:bucket4j]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
 isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
 Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified by a required

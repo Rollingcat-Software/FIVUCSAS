@@ -115,11 +115,23 @@ def tokenize(md):
         m = re.match(r"^\[\[TABLE:\s*(.*?)\]\]$", st)
         if m:
             pending_cap = m.group(1).strip(); i += 1; continue
-        # bullet / numbered
+        # bullet / numbered (merge wrapped continuation lines like the paragraph branch:
+        # a list item that wraps over several indented source lines is ONE item, not an
+        # item followed by orphan justified paragraphs)
+        def _consume_list_continuation(text, j):
+            while j < n and lines[j].strip() and not re.match(
+                    r"^(#{1,4}\s|\[\[FIG:|\[\[TABLE:|\[\[EQ:|[-*]\s|\d+[.)]\s|\||```)",
+                    lines[j].strip()):
+                text += " " + lines[j].strip(); j += 1
+            return text, j
         m = re.match(r"^[-*]\s+(.*)$", st)
-        if m: toks.append(("bullet", m.group(1).strip())); i += 1; continue
+        if m:
+            text, i = _consume_list_continuation(m.group(1).strip(), i + 1)
+            toks.append(("bullet", text)); continue
         m = re.match(r"^\d+[.)]\s+(.*)$", st)
-        if m: toks.append(("num", m.group(1).strip())); i += 1; continue
+        if m:
+            text, i = _consume_list_continuation(m.group(1).strip(), i + 1)
+            toks.append(("num", text)); continue
         # paragraph (merge wrapped lines until blank/special); inline [[FIG]] stays in text
         buf = [st]; i += 1
         while i < n and lines[i].strip() and not re.match(
@@ -399,6 +411,10 @@ def add_table(doc, caption, rows, chapter, is_first, citation_numbering):
             for rr in para.runs:
                 style_run_font(rr, size_pt=10, bold=(ri == 0))
     size_table(tbl, ncols)
+    # Word glues the paragraph that follows a table flush against its bottom border. A small
+    # empty spacer paragraph after the table restores breathing room before the next text.
+    spacer = doc.add_paragraph(); sp = spacer._p.get_or_add_pPr()
+    _set(sp, "w:spacing", **{"w:after": "0", "w:before": "0", "w:line": "120", "w:lineRule": "exact"})
     return tbl
 
 def add_code(doc, text):

@@ -481,16 +481,33 @@ pgvector ANN index (the migration-defined IVFFlat baseline, `vector_cosine_ops` 
 cross-tenant search forbidden. These are the operating parameters of the deployed verifier.
 
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
-controlled benchmark whose headline figures also appear on the project poster. The evaluation
-enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
-three public benchmarks. On LFW (5,600 pairs) the Facenet512 pipeline reached an AUC of
-0.9943 with an equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the
-benchmark operating point, distinct from the production threshold of 0.4) the false-accept rate
-was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
-AUC was 0.9845, and on AgeDB-30, which pairs faces across a 30-year age gap, 0.9475. These are
-controlled measurements on public datasets under our own preprocessing: they characterize the
+controlled benchmark conducted by Ayşe Gülsüm Eren, whose committed evaluation harness
+(`practice-and-test/fivucsas-test`) enrolled the public gallery for each dataset and scored
+verification pairs across three standard benchmarks. On LFW the Facenet512 pipeline was scored
+over 5,600 pairs (772 genuine and 4,828 imposter), reaching an AUC of 0.9943 with an
+equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the benchmark
+operating point, distinct from the production threshold of 0.4) the false-accept rate was 0.27%
+and the false-reject rate 4.4%, a genuine-accept rate of 95.6%. On CFP-FP (1,378
+frontal-to-profile pairs) the AUC was 0.9845, and on AgeDB-30, which pairs faces across a
+30-year age gap (5,084 pairs), the AUC was 0.9475.
+
+These AUC figures alone would paint too rosy a picture, and the committed evaluation summaries
+say so directly. The same model that excels on frontal, same-age faces degrades markedly off
+that operating point. At the production-side 0.45 distance threshold the LFW false-reject rate
+is an excellent 4.4%, but on the frontal-to-profile CFP-FP set the equal-error rate rises to
+roughly 27% (false-reject roughly 55% at that threshold), and on the age-gap AgeDB-30 set the
+equal-error rate reaches roughly 34% (false-reject roughly 68%). In plain terms, the embedding
+model is strong when the probe is a well-lit frontal capture taken close in time to enrollment
+and weak when the pose is a hard profile or the enrollment is years stale. The evaluation's own
+recommendation follows from this: standardize capture (prompt the user to look straight at the
+camera) and re-enroll every one to two years to keep the stored template fresh. We report this
+honestly rather than headline the AUCs, consistent with the same conservative posture that led
+us to disavow the unverified "100% accuracy" poster figure above. These are controlled
+measurements on public datasets under our own preprocessing: they characterize the
 discriminative power of the embedding model, not the end-to-end production service with its
-liveness and quality gates, and we label them accordingly.
+liveness and quality gates, and we label them accordingly. Because the client-side embedding
+path (Section 3.3.3) computes the same Facenet512 representation in the browser, it inherits the
+same profile and age-gap sensitivity, so the re-enrollment guidance applies there too.
 
 ## 5.9 Multi-Tenant Isolation Testing
 

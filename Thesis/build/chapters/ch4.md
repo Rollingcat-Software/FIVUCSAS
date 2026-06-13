@@ -9,11 +9,9 @@ authorization-code exchange). From there we cover the operating-system and concu
 machinery that lets a single virtual machine serve many tenants safely, the network
 protocols that bind the services together, and finally the finite-state machines and
 multi-tenant isolation guarantees that keep one tenant's data invisible to another.
-Every detail here was read from the production source tree at the time of writing; where
-an older planning document disagreed with the shipped code, we followed the code. The
-chapter draws on operating systems, computer networks, databases, distributed systems, and
-machine learning; each appears as a load-bearing part of the deployed service rather than
-as an isolated topic.
+Throughout, the chapter reports the system as implemented and deployed. It draws on
+operating systems, computer networks, databases, distributed systems, and machine learning;
+each appears as a load-bearing part of the deployed service rather than as an isolated topic.
 
 ## 4.1 Hardware and Software Requirements and Tools
 
@@ -45,11 +43,10 @@ place. Table 4.1 summarizes the principal tools.
 | Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
 | DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V84) checked into source control |
 
-Three details need clarifying, because earlier planning documents pointed
-elsewhere and we followed the shipped reality. First, the production **edge is Traefik v3,
-not NGINX**. The "API gateway" described in the original analysis document was a
-development-era plan, and the only NGINX on the host serves branded error pages and the
-static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
+Three of these choices departed from the original planning documents and are worth
+clarifying. First, the production **edge is Traefik v3, not NGINX**. The "API gateway"
+described in the original analysis document was a development-era plan, and the only NGINX on
+the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
 Flutter as the specification originally proposed; Compose Multiplatform let us share a
 single domain layer across Android and desktop and reuse native security primitives such as
 Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
@@ -206,21 +203,25 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 `mouthSmileLeft/Right > 0.4`, `jawOpen > 0.4`, brow blendshapes `> 0.3`), which is both more
 robust and cheaper than re-deriving geometry.
 
-**A 23-challenge library across two body channels.** The platform's canonical challenge
-enumeration (`BiometricPuzzleId` in the web client, mirroring the biometric engine's
-`ChallengeType`) defines twenty-three micro-challenges. Fourteen are facial: blink, closing
+**A 24-challenge library across two body channels.** The biometric engine's canonical
+challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
+defines twenty-four micro-challenges. Fifteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
-down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
-Nine are hand gestures: finger counting, shape tracing with the index finger, tracing an
-on-screen template, waving, a palm flip, a finger tap, a pinch, a hand-covers-face
-"peek-a-boo," and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
-MediaPipe `HandLandmarker` runs in the client (its ~5 MB WASM cost is paid only on the puzzle
-surface) and streams 21-point hand-landmark sequences to the server, where
-`active_gesture_liveness_manager.py` re-scores each gesture from the raw geometry
-(finger-extension ratios for counting, a sign change on the palm-normal proxy for the flip,
-and dynamic-time-warping distance against a JSON shape-template catalog for tracing). Drawing
-each puzzle's randomized steps from a 23-deep, two-channel library shrinks the chance that an
-attacker holds a pre-recorded clip matching the exact sequence the server happens to draw.
+down, raising both brows, raising the left or the right brow alone, a nod, a head shake, and a
+passive brightness check. Fourteen of these fifteen are active motion challenges; the
+fifteenth, the brightness check, is a passive lighting-quality probe rather than a commanded
+movement, which is why the user-facing web enumeration lists fourteen selectable facial
+actions while the server engine carries fifteen. Nine are hand gestures: finger counting,
+shape tracing with the index finger, tracing an on-screen template, waving, a palm flip, a
+finger tap, a pinch, a hand-covers-face "peek-a-boo," and finger arithmetic. The hand channel
+is real, not simulated: a lazily loaded MediaPipe `HandLandmarker` runs in the client (its
+~5 MB WASM cost is paid only on the puzzle surface) and streams 21-point hand-landmark
+sequences to the server, where `active_gesture_liveness_manager.py` re-scores each gesture
+from the raw geometry (finger-extension ratios for counting, a sign change on the palm-normal
+proxy for the flip, and dynamic-time-warping distance against a JSON shape-template catalog
+for tracing). Drawing each puzzle's randomized steps from a two-channel library this deep
+shrinks the chance that an attacker holds a pre-recorded clip matching the exact sequence the
+server happens to draw.
 
 **Scoring and anti-replay.** `VerifyPuzzleUseCase` requires each step to clear
 `MIN_STEP_CONFIDENCE = 0.6` and last at least `MIN_STEP_DURATION_SECONDS = 0.5`, and the
@@ -363,7 +364,7 @@ benefit at those margins.
 If liveness is the project's research heart, the identity service is its engineering heart.
 This section documents the cryptographic and protocol-level algorithms that make FIVUCSAS an
 authentication platform rather than a face-matching demo. The corresponding security
-architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis sliding-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
+architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
 
 ### 4.4.1 JWT, RBAC and Password Security
 
@@ -393,8 +394,8 @@ party can see that genuine multi-factor authentication occurred rather than mere
 (`@EnableMethodSecurity` + `@PreAuthorize`) backed by a custom `RbacPermissionEvaluator`. The
 authority model is deliberately two-tier: a `user_type` platform tier
 (`ROOT > TENANT_ADMIN > TENANT_MEMBER > GUEST`) is the sole source of platform-level authority,
-while `role` is purely within-tenant RBAC across 48 fine-grained permissions. The former global
-`SUPER_ADMIN` was renamed `ROOT` and granted all permissions in a controlled migration. This
+while `role` is purely within-tenant RBAC across 48 fine-grained permissions. The platform-tier
+`ROOT` authority is granted all permissions. This
 separation is what lets a tenant administrator manage their own users without ever gaining
 visibility into another tenant, and it is enforced by the same `@PreAuthorize` checks on every
 controller method.
@@ -554,7 +555,7 @@ HTTP's request/response model would be a poor fit.
 electronic passport or national ID card following ICAO Doc 9303 [CITE:icao9303]. The Android client
 performs the on-device chip dialogue over `IsoDep` APDUs (Basic Access Control, secure messaging, and
 data-group reads), while the **passive-authentication** cryptography is server-authoritative. The
-client submits the EF.SOD security object and the data groups, and the biometric service's
+client submits the EF.SOD (Document Security Object) and the data groups, and the biometric service's
 `POST /nfc/verify-authenticity` runs the standard three-step passive-authentication chain:
 
 1. each data-group hash must match the value signed in the SOD;
@@ -616,10 +617,10 @@ caller into another tenant; only a `ROOT` platform-tier user keeps the legitimat
 override.
 
 **Persistence-layer filtering.** The operative isolation is a Hibernate `@Filter`. A global
-`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the nine tenant-scoped entities
-(`AuditLog`, `AuthSession`, `MfaSession`, `UserEnrollment`, `VerificationSession`, `OAuth2Client`,
-`UserDevice`, `AuthFlow`, `UserSettings`), automatically constraining every derived query. Role definitions widen the
-filter to `(tenant_id = :tenantId OR tenant_id IS NULL)` so global roles stay visible, and the
+`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the eleven tenant-scoped entities
+(`User`, `Role`, `AuditLog`, `AuthSession`, `MfaSession`, `UserEnrollment`, `VerificationSession`, `OAuth2Client`,
+`UserDevice`, `AuthFlow`, `UserSettings`), automatically constraining every derived query. `Role` widens the
+filter to `(tenant_id = :tenantId OR tenant_id IS NULL)` so global system roles stay visible, and the
 cross-tenant identity entities (`Identity`, `IdentityEmail`, `IdentityTenantBiometricConsent`)
 deliberately carry **no** filter because they are platform-level by design. A `TenantFilterBypass`
 exists for the user-centric `/my` self-service endpoints, which must resolve a user under a foreign

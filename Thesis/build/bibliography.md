@@ -27,7 +27,7 @@ just use stable keys. If you need a source not listed, ADD it here in the same G
 - **mediapipe** :: Google, *MediaPipe Face Landmarker*, 2025, https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker, Date accessed: June 2026.
 - **pgvector** :: pgvector Contributors, *pgvector: Open-source Vector Similarity Search for PostgreSQL*, 2025, https://github.com/pgvector/pgvector, Date accessed: June 2026.
 - **faiss** :: Johnson, J., M. Douze and H. Jégou, "Billion-scale Similarity Search with GPUs", *IEEE Transactions on Big Data*, Vol. 7, No. 3, pp. 535–547, 2021.
-- **iso30107-3** :: ISO/IEC 30107-3:2023, *Information Technology — Biometric Presentation Attack Detection — Part 3: Testing and Reporting*, 2nd ed., International Organization for Standardization, Geneva, Switzerland, 2023.
+- **iso30107-3** :: ISO/IEC 30107-3:2023, *Information Technology – Biometric Presentation Attack Detection – Part 3: Testing and Reporting*, 2nd ed., International Organization for Standardization, Geneva, Switzerland, 2023.
 - **icao9303** :: International Civil Aviation Organization, *Doc 9303: Machine Readable Travel Documents*, 8th ed., ICAO, Montréal, Canada, 2021.
 - **linddun** :: LINDDUN, *LINDDUN Privacy Threat Modeling Framework*, 2025, https://linddun.org/, Date accessed: June 2026.
 - **kvkk6698** :: Republic of Türkiye, *Personal Data Protection Law No. 6698 (KVKK)*, Official Gazette No. 29677, 2016.
@@ -98,14 +98,14 @@ fourth cell (e.g. `4.3in`) caps a figure's display width below the 5.9 in column
 | ha_deploy | docs/02-architecture/diagrams/ha_deployment.png | High-availability deployment topology |
 | multiregion_deploy | docs/02-architecture/diagrams/multi_region_deployment.png | Multi-region deployment topology |
 | seq_registration | Thesis/build/figures/user_registration.png | User registration sequence |
-| dataflow_verification | Thesis/build/figures/data_flow_verification.png | Data-flow of the verification pipeline |
+| dataflow_verification | Thesis/build/figures/data_flow_verification.png | Data-flow of the verification pipeline | 4.5in |
 | verify_decision | docs/02-architecture/diagrams/verification_decision_activity.png | Verification decision activity diagram |
 | verify_sequence_a | Thesis/build/figures/verify_sequence_a.png | Face verification sequence, capture and server-side gates |
 | verify_sequence_b | Thesis/build/figures/verify_sequence_b.png | Face verification sequence, matching and decision pipeline |
 | enroll_sequence_a | Thesis/build/figures/enroll_sequence_a.png | Face enrollment sequence, capture and liveness gates |
 | enroll_sequence_b | Thesis/build/figures/enroll_sequence_b.png | Face enrollment sequence, quality, embedding and storage |
-| fsm_session | Thesis/build/figures/session_state_machine.png | Session finite-state machine |
-| fsm_verification | Thesis/build/figures/verification_state_machine.png | Verification finite-state machine |
+| fsm_session | Thesis/build/figures/session_state_machine.png | Session finite-state machine | 5.0in |
+| fsm_verification | Thesis/build/figures/verification_state_machine.png | Verification finite-state machine | 5.2in |
 | fsm_user | Thesis/build/figures/user_state_machine.png | User-account finite-state machine |
 | fsm_enrollment | Thesis/build/figures/biometric_enrollment_state.png | Biometric-enrollment finite-state machine |
 | act_tenant_create | docs/02-architecture/diagrams/multi_tenant_creation.png | Multi-tenant creation activity |
