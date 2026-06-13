@@ -9,8 +9,8 @@ step-by-step**, how to **verify**, and **rollback**.
 > **Location note:** the project's `docs/` directory is a git **submodule**
 > (`Rollingcat-Software/docs`), so a parent-repo-tracked file cannot live under `docs/`
 > without a second PR + pointer bump. This runbook therefore lives at the **parent repo
-> root**, alongside the other operator-facing docs (`ROADMAP.md`, `PROJECT_STATUS_*.md`,
-> `SECURITY.md`, and the `infra/RUNBOOK_*.md` set).
+> root**, alongside the other operator-facing docs (`SECURITY.md` and the
+> `infra/RUNBOOK_*.md` set). Delivery tracking is on the **FIVUCSAS Delivery** board.
 
 > These runbooks describe actions. They do **not** ship any secret values. Every
 > `<PLACEHOLDER>` is something the operator fills in from their own console / vault.
@@ -47,7 +47,8 @@ step-by-step**, how to **verify**, and **rollback**.
 
 **Unblocks:** GitGuardian alert **#29836028** (the Android keystore password `fivucsas2026`
 was committed to the public git history of `Rollingcat-Software/client-apps`, reachable via
-commit `db18fa7` / tag `v3.0.0`). See `ROADMAP.md` C6 and `client-apps` `docs/SECURITY_INCIDENTS.md`.
+commit `db18fa7` / tag `v3.0.0`). See `client-apps` `docs/SECURITY_INCIDENTS.md` and the
+**FIVUCSAS Delivery** board (operator tasks).
 
 ### Why it matters
 
@@ -365,7 +366,8 @@ in lockstep. See the operator note in `identity-core-api/CLAUDE.md` ("Operator r
 Presentation Attack Detection (PAD) evaluations. A **PAD Level-1** pass is the credible,
 third-party proof that the face-liveness defends against common presentation attacks (printed
 photos, screen replays, simple masks). It is the headline external-validation milestone for the
-biometric stack and is referenced as an ongoing item in `ROADMAP.md` and `spoof-detector/ROADMAP.md`.
+biometric stack and is tracked as an ongoing item on the **FIVUCSAS Delivery** board
+(see the spoof / PAD issues).
 
 > **Honest framing:** this is an **external, paid, scheduled engagement** with iBeta — it is not
 > something we run ourselves or complete in software. This runbook is a planning checklist so the
@@ -376,7 +378,7 @@ biometric stack and is referenced as an ongoing item in `ROADMAP.md` and `spoof-
 > `LIVENESS_MODE=passive`). The research/paper pipeline lives in the `spoof-detector` submodule
 > (current self-measured ISO 30107-3 grade is **Grade C**, and its iBeta package is *currently
 > scoped to the Python pipeline*, with a re-scope to the browser bundle as a planned iteration —
-> see `spoof-detector/ROADMAP.md`). **Decide and state explicitly which system is the
+> tracked on the **FIVUCSAS Delivery** board). **Decide and state explicitly which system is the
 > "system under test" (SUT) before engaging iBeta** — they certify a specific, frozen build, not
 > a moving target.
 
@@ -403,7 +405,7 @@ biometric stack and is referenced as an ongoing item in `ROADMAP.md` and `spoof-
 5. **Run the evaluation window.** iBeta presents the attack species, records APCER/BPCER, and
    reports against the Level-1 pass criteria. Be prepared to retest after fixes if a species fails.
 6. **Receive and publish the report.** On a pass, iBeta issues a report/letter. Record the result
-   and version in `spoof-detector/README.md` / `ROADMAP.md` and update the project status.
+   and version in `spoof-detector/README.md` and update the relevant **FIVUCSAS Delivery** issue.
 
 ### Verify success
 
