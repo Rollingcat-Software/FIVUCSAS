@@ -7,3 +7,11 @@ repos:
     rev: v8.21.2
     hooks:
       - id: gitleaks
+  # Repo structure-lock (FIVUCSAS#209) — fast local feedback mirroring the CI
+  # gate (.github/workflows/structure-check.yml). Freezes the root layout and
+  # blocks stray/dated tracking docs before they are committed. Pin `rev` to a
+  # tag/SHA once the org .github repo cuts one.
+  - repo: https://github.com/Rollingcat-Software/.github
+    rev: main
+    hooks:
+      - id: repo-structure
