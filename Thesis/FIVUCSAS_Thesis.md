@@ -11,7 +11,7 @@
 
 # ABSTRACT
 
-Modern identity rests on a brittle foundation: passwords are phished, access cards are cloned, and naive face-recognition systems are defeated by a printed photograph. This thesis presents FIVUCSAS (Face and Identity Verification Using Cloud-based SaaS), a multi-tenant identity-and-access-management platform that unified strong biometric verification, document-grounded identity proofing, and standards-based federated login in a single cloud-native service. Our objective was to close the gap between modern face-recognition research and a deployable, tenant-isolated product that organizations could adopt without building biometrics in-house. We engineered the system as two cooperating microservices that followed a hexagonal architecture. A Spring Boot identity core handled authentication, OAuth 2.0 / OpenID Connect with PKCE, role-based access control, and twelve selectable login factors: ten canonical methods plus passkey and cross-device approve-login. A FastAPI biometric processor performed face embedding with Facenet512, cosine-similarity matching over a pgvector index, quality assessment, and a hybrid anti-spoofing pipeline. For liveness, we combined a randomized active challenge–response scheme (the Biometric Puzzle, drawing facial and hand-gesture challenges from a 23-item library and re-scoring them server-side from landmark geometry) with passive MiniFASNet texture analysis, while NFC reading performed ICAO 9303 passive authentication of electronic travel documents. We deployed the platform to production behind a Traefik edge alongside PostgreSQL and Redis, and shipped React and Kotlin Multiplatform clients, including a publicly released Android application. We validated the work with roughly 4,400 authored automated tests across five test technologies, spanning the unit, integration, and end-to-end levels, complemented by k6 load scenarios and a separate security battery (Bandit, pip-audit, gitleaks, and Dependabot). The project demonstrated that hybrid liveness, interchangeable recognition models, and rigorous tenant isolation could coexist in one extensible SaaS, and it surfaced honest limitations as concrete future work: formal presentation-attack certification and additional biometric modalities.
+Modern identity rests on a brittle foundation: passwords are phished, access cards are cloned, and naive face-recognition systems are defeated by a printed photograph. This thesis presents FIVUCSAS (Face and Identity Verification Using Cloud-based SaaS), a multi-tenant identity-and-access-management platform that unified strong biometric verification, document-grounded identity proofing, and standards-based federated login in a single cloud-native service. Our objective was to close the gap between modern face-recognition research and a deployable, tenant-isolated product that organizations could adopt without building biometrics in-house. We engineered the system as two cooperating microservices that followed a hexagonal architecture. A Spring Boot identity core handled authentication, OAuth 2.0 / OpenID Connect with PKCE, role-based access control, and twelve selectable login factors: ten canonical methods plus passkey and cross-device approve-login. A FastAPI biometric processor performed face embedding with Facenet512, cosine-similarity matching over a pgvector index, quality assessment, and a hybrid anti-spoofing pipeline. For liveness, we combined a randomized active challenge–response scheme (the Biometric Puzzle, drawing facial and hand-gesture challenges from a 23-challenge library and re-scoring them server-side from landmark geometry) with passive MiniFASNet texture analysis, while NFC reading performed ICAO 9303 passive authentication of electronic travel documents. We deployed the platform to production behind a Traefik edge alongside PostgreSQL and Redis, and shipped React and Kotlin Multiplatform clients, including a publicly released Android application. We validated the work with approximately 4,860 authored automated tests across five test technologies (as of the submission date, 13 June 2026), spanning the unit, integration, and end-to-end levels, complemented by k6 load scenarios and a separate security battery (Bandit, pip-audit, gitleaks, and Dependabot). The project demonstrated that hybrid liveness, interchangeable recognition models, and rigorous tenant isolation could coexist in one extensible SaaS, and it surfaced honest limitations as concrete future work: formal presentation-attack certification and additional biometric modalities.
 
 # ACKNOWLEDGEMENTS
 
@@ -61,9 +61,9 @@ To realize this goal, we pursued the following concrete, measurable objectives:
 
 In delivering these objectives, this thesis makes four concrete contributions:
 
-1. **The Biometric Puzzle**: a randomized, server-verified active liveness scheme drawing on a 23-challenge library across two body channels (fourteen facial actions and nine hand gestures), with per-step confidence and duration floors, anti-replay timestamp checks, and server-side geometric re-scoring (Section 4.3.1).
+1. **The Biometric Puzzle**: a randomized, server-verified active liveness scheme drawing on a 23-challenge library across two body channels (fourteen facial challenges and nine hand gestures), with per-step confidence and duration floors, anti-replay timestamp checks, and server-side geometric re-scoring (Section 4.3.1).
 2. **A hybrid presentation-attack-detection pipeline** fusing this active channel with a passive layer (MiniFASNet plus classical texture, frequency-domain, moiré, and color analyzers), released as a standalone open-source library with a public in-browser tester so its behavior can be inspected rather than taken on faith (Sections 4.3.2 and 5.8).
-3. **A production reference architecture for multi-tenant biometric identity and access management (IAM)**: hexagonal microservices, pgvector embedding search, server-authoritative decisioning over untrusted clients, and tenant isolation guarded by required cross-tenant integration tests, documented end to end and backed by roughly 4,400 authored tests (Chapters 3–5).
+3. **A production reference architecture for multi-tenant biometric identity and access management (IAM)**: hexagonal microservices, pgvector embedding search, server-authoritative decisioning over untrusted clients, and tenant isolation guarded by required cross-tenant integration tests, documented end to end and backed by approximately 4,860 authored tests (Chapters 3–5).
 4. **An open, deployed artifact**: the complete platform, publicly released under the MIT license and running in production, available for replication, audit, and extension.
 
 
@@ -87,13 +87,13 @@ The realized scope of the platform covered the following areas.
 
 **Database architecture.** We persisted all data in a single multi-tenant PostgreSQL 17 database [7] with the pgvector extension [8] storing high-dimensional face and voice embeddings. Tenant isolation followed a shared-database, shared-schema model keyed by a `tenant_id` column, enforced in the application layer by a Hibernate `@Filter` applied to tenant-scoped entities and guarded by cross-tenant isolation tests required by branch protection on backend pull requests (with documented administrator overrides while the integration lane was being repaired, §5.2). The schema was managed with Flyway migrations [9], which by the time of writing had grown to more than eighty versioned migrations.
 
-**Face biometrics.** The platform performed both 1:1 face verification and 1:N face identification. Server-side detection used MTCNN [10], embeddings were generated with Facenet512 [11] (512-dimensional), and identity comparison used cosine similarity against pgvector-indexed templates. The underlying DeepFace framework [12,13] gave us interchangeable model backends, though production was pinned to Facenet512 for its accuracy/dimension balance.
+**Face biometrics.** The platform performed both 1:1 face verification and 1:N face identification. Server-side detection used the Multi-Task Cascaded Convolutional Network (MTCNN) detector [10], embeddings were generated with Facenet512 [11] (512-dimensional), and identity comparison used cosine similarity against pgvector-indexed templates. The underlying DeepFace framework [12,13] gave us interchangeable model backends, though production was pinned to Facenet512 for its accuracy/dimension balance.
 
-**Liveness detection.** We implemented a hybrid liveness strategy. The active, challenge–response layer, the project's signature "Biometric Puzzle," issued a randomized sequence drawn from a 23-challenge library spanning two body channels: facial actions (blink, smile, head turn) scored against MediaPipe FaceLandmarker geometry [14] using Eye Aspect Ratio (EAR) [15] and Mouth Aspect Ratio (MAR) thresholds, and hand gestures (finger counting, shape tracing, a palm flip) scored from MediaPipe hand landmarks, with every response re-verified server-side from the raw landmark sequences. The passive layer used a UniFace MiniFASNet ONNX classifier [16] complemented by texture (Local Binary Patterns), frequency-domain, color-consistency, and moiré-pattern analysis to detect presentation artifacts without user interaction.
+**Liveness detection.** We implemented a hybrid liveness strategy. The active, challenge–response layer, the project's signature "Biometric Puzzle," issued a randomized sequence drawn from a 23-challenge library spanning two body channels: fourteen facial challenges (blink, smile, head turn, and others) scored against MediaPipe FaceLandmarker geometry [14] using Eye Aspect Ratio (EAR) [15] and Mouth Aspect Ratio (MAR) thresholds, and nine hand gestures (finger counting, shape tracing, a palm flip, and others) scored from MediaPipe hand landmarks, with every response re-verified server-side from the raw landmark sequences. The passive layer used a UniFace MiniFASNet ONNX classifier [16] complemented by texture (Local Binary Patterns), frequency-domain, color-consistency, and moiré-pattern analysis to detect presentation artifacts without user interaction.
 
-**Identity-document verification.** Beyond faces, we built a near-field-communication (NFC) reading capability for electronic machine-readable travel documents (eMRTDs) into the Android client, following International Civil Aviation Organization (ICAO) Doc 9303 [17], and a separate visual document/card detection pipeline (a YOLOv8 model [18] plus OCR) able to classify Turkish national identity cards, biometric passports, driver's licenses, and Marmara University student and academic-staff cards; chip reading applies only to the chip-bearing documents, while the visual classifier covers all four classes.
+**Identity-document verification.** Beyond faces, we built three distinct document capabilities that the thesis is careful to keep separate, because they operate on different documents through different mechanisms. First, an in-browser **visual document detection** pipeline (a client-side YOLOv8n model [17], with no optical character recognition wired) classifies a card held to the camera into one of five classes: Turkish national identity card, biometric passport, driver's license, and Marmara University student and academic-staff cards. This is detection and classification only, never a login factor. Second, a **Web NFC** path (the browser `NDEFReader`, available on Chrome for Android only) reads a card's serial or unique identifier for enrollment, not its contents. Third, and most rigorously, the native **Android NFC** client reads the contactless chip of an electronic Machine-Readable Travel Document (eMRTD), an electronic passport or chip-bearing national identity card, following International Civil Aviation Organization (ICAO) Doc 9303 [18], with the server performing the cryptographic passive authentication. A crucial distinction follows from the hardware: a driver's license carries no chip, so it can only be detected visually and can never be NFC-read, while the chip-read path applies solely to chip-bearing travel documents.
 
-**Infrastructure and security.** The entire backend was containerized with Docker and orchestrated by Docker Compose [19,20], fronted in production by a Traefik v3 edge proxy [21] handling TLS termination, routing, security headers, and edge rate limiting. Redis 7.4 [22] provided session caching, a sliding-window rate-limiting layer, and an event bus, complemented by an in-process Bucket4j token-bucket limiter [23] inside the identity service. Security spanned JWT-based stateless authentication [24], Role-Based Access Control (RBAC), BCrypt password hashing [25], OAuth 2.0 / OIDC with PKCE [26,27,28], optional WebAuthn/passkeys [29], and rate limiting. The platform was deployed and reachable on the public internet under the `fivucsas.com` family of domains.
+**Infrastructure and security.** The entire backend was containerized with Docker and orchestrated by Docker Compose [19,20], fronted in production by a Traefik v3 edge proxy [21] handling TLS termination, routing, security headers, and edge rate limiting. Redis 7.4 [22] provided session caching, a fixed-window rate-limiting layer, and an event bus, complemented by an in-process Bucket4j token-bucket limiter [23] inside the identity service. Security spanned JWT-based stateless authentication [24], Role-Based Access Control (RBAC), BCrypt password hashing [25], OAuth 2.0 / OIDC with Proof Key for Code Exchange (PKCE) [26,27,28], optional WebAuthn/passkeys [29], and rate limiting. The platform was deployed and reachable on the public internet under the `fivucsas.com` family of domains.
 
 The high-level shape of this delivered system is summarized in Figure 2.1.
 
@@ -151,7 +151,7 @@ The PSD defined five objectives and, for each, a measurable success factor. Tabl
 
 | Objective | Target KPI | Delivered outcome |
 |---|---|---|
-| O1: Secure, scalable backend | All microservices run on Docker; API endpoints pass functional tests; user/tenant CRUD works | **Met.** Both services run in production under Docker Compose behind Traefik; ~1,595 JUnit 5 backend test methods and 888 pytest functions exercise the APIs; user/tenant/role CRUD operates live. |
+| O1: Secure, scalable backend | All microservices run on Docker; API endpoints pass functional tests; user/tenant CRUD works | **Met.** Both services run in production under Docker Compose behind Traefik; ~1,743 JUnit 5 backend test methods and 980 pytest functions exercise the APIs; user/tenant/role CRUD operates live. |
 | O2: "Biometric Puzzle" active liveness | ≥95% legitimate pass; ≥99% rejection of simple photo/video spoofs | **Implemented and operational; evaluation ongoing.** The randomized challenge–response runs client- and server-side; ISO/IEC 30107-3 metrics were instrumented, but the specific 95%/99% figures were *targets*, not independently certified results, and are reported as targets throughout. |
 | O3: High-accuracy face recognition | False Accept Rate (FAR) < 1% and False Reject Rate (FRR) < 5% in a controlled test | **Implemented; controlled-test target.** The production verifier is Facenet512 with a cosine-*distance* decision rule (production `VERIFICATION_THRESHOLD = 0.4`, relaxed to 0.55 for embeddings older than two years); FAR/FRR instrumentation exists, but the FAR<1% / FRR<5% figures remain controlled-environment targets, not audited production results. |
 | O4: User-friendly mobile app | Stable on Android and iOS; full enroll+auth flow under 1 minute | **Partially met.** A full native **Android** client was delivered and publicly distributed (signed APK releases); **iOS was not delivered** (stubbed targets only). The sub-one-minute enrollment goal was a usability *target* validated informally, not a benchmarked statistic. |
@@ -182,7 +182,7 @@ We engineered FIVUCSAS to professional standards rather than as throwaway course
 **Figure 2.3.** Spring-semester project Gantt chart
 
 
-**Standards conformance.** The work aligned with recognized standards where they applied: RFC 6749 (OAuth 2.0), OpenID Connect Core, RFC 7636 (PKCE), and RFC 7519 (JWT) for the authorization and token layer [24,26,27,28]; ISO/IEC 30107-3 for presentation-attack-detection terminology and metrics [35]; ICAO Doc 9303 for machine-readable travel documents [17]; the OWASP Top 10 [36] as the security reference checklist; and W3C WebAuthn [29] for passkey support.
+**Standards conformance.** The work aligned with recognized standards where they applied: RFC 6749 (OAuth 2.0), OpenID Connect Core, RFC 7636 (PKCE), and RFC 7519 (JWT) for the authorization and token layer [24,26,27,28]; ISO/IEC 30107-3 for presentation-attack-detection terminology and metrics [35]; ICAO Doc 9303 for machine-readable travel documents [18]; the OWASP Top 10 [36] as the security reference checklist; and W3C WebAuthn [29] for passkey support.
 
 **Code quality and automation.** Language-specific linting and formatting were enforced: Ruff (lint and format) and mypy for Python, ESLint and TypeScript `tsc --noEmit` for the web app. Continuous-integration pipelines ran on every push and pull request. Identity Core API CI ran both the unit tests (`mvn -T 2C test`) and the heavier Testcontainers integration tests on GitHub-hosted runners, reserving the self-hosted runner on the production host for deploy jobs; the Biometric Processor ran Ruff, mypy, pytest with coverage, and dependency/security scans; the web app ran lint, type-check, Vitest, and a production build; Kotlin clients ran their JVM and Android test sets. Dependabot kept dependencies current (weekly, grouped). The development environment and its CI/CD context are shown in Figure 2.4.
 
@@ -256,7 +256,7 @@ The literature's recurring weakness is that proposed liveness solutions tend to 
 
 ### 2.4.4 Identity Document Verification and Standards
 
-In high-assurance scenarios, biometric authentication is reinforced by identity-document verification: ID-to-selfie matching, optical character recognition, Machine-Readable-Zone (MRZ) parsing, and document layout analysis. Purpose-built document-to-selfie matching models are reported to outperform generic face recognition when comparing an ID photo with a live capture. International standards are central here: ICAO Doc 9303 [17] specifies electronic Machine-Readable Travel Documents (eMRTDs), including facial biometrics stored in NFC-enabled passport chips, and NFC-based reads provide strong cryptographic guarantees widely used in border control and e-government. Commercial systems built on ICAO-compliant NFC pipelines achieve high trust but are typically coupled to specialized hardware and offer little extensibility for broader cloud SaaS deployment. The literature accordingly favors modular, extensible architectures that let document verification coexist with biometric and behavioral modules, a recommendation FIVUCSAS took to heart by building NFC/eMRTD reading and document classification as composable steps in its verification pipeline rather than as a separate, hardware-locked product.
+In high-assurance scenarios, biometric authentication is reinforced by identity-document verification: ID-to-selfie matching, optical character recognition, Machine-Readable-Zone (MRZ) parsing, and document layout analysis. Purpose-built document-to-selfie matching models are reported to outperform generic face recognition when comparing an ID photo with a live capture. International standards are central here: ICAO Doc 9303 [18] specifies electronic Machine-Readable Travel Documents (eMRTDs), including facial biometrics stored in NFC-enabled passport chips, and NFC-based reads provide strong cryptographic guarantees widely used in border control and e-government. Commercial systems built on ICAO-compliant NFC pipelines achieve high trust but are typically coupled to specialized hardware and offer little extensibility for broader cloud SaaS deployment. The literature accordingly favors modular, extensible architectures that let document verification coexist with biometric and behavioral modules, a recommendation FIVUCSAS took to heart by building NFC/eMRTD reading and document classification as composable steps in its verification pipeline rather than as a separate, hardware-locked product.
 
 ### 2.4.5 Industrial Biometric Solutions
 
@@ -317,13 +317,13 @@ The platform's behavior was organized around six functional requirements (FR-1 t
 | FR-6 | Auditing and regulatory compliance | `AuditLogController`, `UserDataExportService`, partition-ready `audit_logs` | `GET /audit-logs`, `GET /users/{id}/export` |
 
 
-**FR-1: Authentication.** The system authenticates users with a password as a baseline and composes that with any number of additional factors into a tenant-configurable login flow. We implemented ten canonical login factors (`PASSWORD`, `EMAIL_OTP`, `SMS_OTP`, `TOTP`, `FACE`, `VOICE`, `FINGERPRINT`, `HARDWARE_KEY`, `QR_CODE`, and `NFC_DOCUMENT`) plus two cross-device additions, `PASSKEY` (discoverable WebAuthn) and `APPROVE_LOGIN` (number-matching push approval), all gated by an `isLoginMethod()` check on the `AuthMethodType` enum. First-factor verification runs through a Strategy/Registry of `AuthMethodHandler` implementations; each subsequent factor is consumed by an N-step MFA dispatcher (`VerifyMfaStepService`) that holds the JWT back until every step of the flow has been satisfied and accumulates RFC 8176 `amr` evidence into the issued access token [24]. The original specification's error contract was honored: invalid credentials return `401 Unauthorized`, and an account is locked (`423 Locked`) after five consecutive failures via `LoginAccountStateGuard`.
+**FR-1: Authentication.** The system authenticates users with a password as a baseline and composes that with any number of additional factors into a tenant-configurable login flow. We implemented ten canonical login factors (`PASSWORD`, `EMAIL_OTP`, `SMS_OTP`, `TOTP`, `FACE`, `VOICE`, `FINGERPRINT`, `HARDWARE_KEY`, `QR_CODE`, and `NFC_DOCUMENT`) plus two cross-device additions, `PASSKEY` (discoverable WebAuthn) and `APPROVE_LOGIN` (number-matching push approval); the canonical login factors are identified by an `isLoginMethod()` check on the `AuthMethodType` enum. First-factor verification runs through a Strategy/Registry of `AuthMethodHandler` implementations; each subsequent factor is consumed by an N-step MFA dispatcher (`VerifyMfaStepService`) that holds the JWT back until every step of the flow has been satisfied and accumulates RFC 8176 `amr` evidence into the issued access token [24]. The original specification's error contract was honored: invalid credentials return `401 Unauthorized`, and an account is locked (`423 Locked`) after five consecutive failures via `LoginAccountStateGuard`.
 
 **FR-2: Biometric Enrollment.** A user enrolls a facial template only after passing a liveness challenge and a quality gate. The identity service forwards the request to the biometric processor, which detects the face with MTCNN [10], scores quality (blur via Laplacian variance, lighting, and face size), runs UniFace MiniFASNet passive liveness [16], and only then generates a 512-dimensional Facenet512 embedding [11]. Since the 2026-05 hardening pass, enrollment is server-authoritative and fail-closed: any non-live frame rejects the whole multi-image batch before any embedding is persisted. Voice enrollment follows the same shape, producing 256-dimensional Resemblyzer speaker embeddings. The original error semantics survive: no face yields `400`, insufficient quality yields `422`, and a failed liveness challenge yields a rejection with a specific reason.
 
 **FR-3: Biometric Verification.** Verification compares a freshly captured sample against the stored template. For 1:1 verification the processor recomputes the probe embedding and returns a match when the cosine *distance* between L2-normalized embeddings falls below the configured threshold (production `VERIFICATION_THRESHOLD = 0.4`, with an aged-embedding adaptive relaxation to `0.55` for templates older than two years). For 1:N identification the system runs a pgvector approximate-nearest-neighbor search over the tenant's embeddings using the cosine-distance operator over a pgvector ANN index [8]. Passive liveness runs on the verify path as well, rejecting frames scored below `0.4` with a `LIVENESS_FAILED` response, and rate limiting protects the endpoint, returning `429` when a tenant or user budget is exhausted.
 
-**FR-4: Multi-Tenant Management.** Tenants are first-class entities with their own configuration, quotas, login flows, OAuth2 clients, and verified email domains. Isolation is enforced in depth: a global Hibernate `@FilterDef("tenantFilter")` is applied to the nine tenant-scoped entities (audit logs, sessions, MFA sessions, enrollments, verification sessions, OAuth2 clients, devices, auth flows, and user settings), and a `TenantBindFromAuthFilter` re-binds the active tenant from the verified JWT after authentication so that a forged `X-Tenant-ID` header cannot cross tenant boundaries. Self-service onboarding (`OnboardingController`) and DNS-TXT email-domain verification round out tenant lifecycle management.
+**FR-4: Multi-Tenant Management.** Tenants are first-class entities with their own configuration, quotas, login flows, OAuth2 clients, and verified email domains. Isolation is enforced in depth: a global Hibernate `@FilterDef("tenantFilter")` is applied to the eleven tenant-scoped entities (users, roles, audit logs, sessions, MFA sessions, enrollments, verification sessions, OAuth2 clients, devices, auth flows, and user settings), and a `TenantBindFromAuthFilter` re-binds the active tenant from the verified JWT after authentication so that a forged `X-Tenant-ID` header cannot cross tenant boundaries. Roles carry the same filter under a widened condition (`tenant_id = :tenantId OR tenant_id IS NULL`) so that platform-wide system roles remain visible to every tenant. Self-service onboarding (`OnboardingController`) and DNS-TXT email-domain verification round out tenant lifecycle management.
 
 **FR-5: Authorization (RBAC).** Every protected endpoint is guarded by Spring method security (`@EnableMethodSecurity` + `@PreAuthorize`) backed by a custom `RbacPermissionEvaluator`. The model is two-tiered: a platform-tier authority carried on `user_type` (`ROOT > TENANT_ADMIN > TENANT_MEMBER > GUEST`) governs cross-tenant capabilities, while a within-tenant `role` carries one of 48 fine-grained permissions. Insufficient permissions yield `403`, and an invalid or expired token yields `401`, matching the original contract.
 
@@ -343,7 +343,7 @@ The platform was held to seven non-functional categories. Table 3.2 records the 
 | Reliability | Available during operational hours | Uptime target 99.5%, RPO < 1 h | Health checks, graceful Redis degradation, PITR/DR runbooks, Uptime Kuma monitor |
 | Security | Protect identity and biometric data | TLS in transit; encrypted embeddings at rest | RS256 JWT, BCrypt(12), Fernet-encrypted embeddings, AES-GCM TOTP secrets, hardened containers |
 | Usability | Enrollment with minimal effort | Enrollment under ~60 s incl. liveness | Guided 3-step face capture, client pre-filter, EN/TR i18n |
-| Maintainability | Modular, extensible, well-tested | Hexagonal architecture; ≥ 70% coverage (ratchet target) | Ports and adapters; ArchUnit boundary tests; ~4,400 authored tests |
+| Maintainability | Modular, extensible, well-tested | Hexagonal architecture; ≥ 70% coverage (ratchet target) | Ports and adapters; ArchUnit boundary tests; ~4,860 authored tests |
 | Portability | Consistent across platforms | Docker + Kotlin Multiplatform (KMP) shared code | Containerized services; KMP shared module |
 
 
@@ -385,7 +385,7 @@ The domain model places the tenant at the root of nearly every relationship, exp
 **Figure 3.2.** Core domain model for multi-tenant identity and biometric verification. A platform-level Identity links a person's per-tenant User memberships; RBAC joins users to roles and permissions through UserRole; method-generic enrollments and verification sessions hang off the user; face embeddings live in the separate biometric_db store, referenced by user identifier without a cross-database foreign key.
 
 
-At the persistence layer, the schema comprises 31 JPA entities materialized through 84 Flyway migrations spanning V0–V84 (the V13 number was never used; the highest applied in production at the time of writing was V83). The complete migration catalog appears as Table A.1 in Appendix A. The entity-relationship structure spans `users`, `tenants`, `roles`/`permissions`/`user_roles`, the auth-flow tables (`auth_flows`, `auth_flow_steps`, `auth_methods`, `tenant_auth_methods`), `refresh_tokens` (hashed at rest with a rotation `family_id` for reuse detection per RFC 6749 §10.4), `webauthn_credentials`, `nfc_cards`, `oauth2_clients`, the verification pipeline tables, `user_enrollments`, `voice_enrollments`, the partition-ready `audit_logs`, and the identity-linking tables (`identities`, `identity_emails`, `identity_tenant_biometric_consent`); the identity, tenancy, and RBAC core is shown in Figure 3.3, the authentication-engine and token tables in Figure 3.4, and the separate biometric vector store in Figure 3.5. Two design choices in this schema are worth highlighting. First, the soft-delete pattern: `User` carries an `@SQLDelete` plus `@SQLRestriction("deleted_at IS NULL")`, so every derived finder automatically respects the GDPR retention window. Second, the dual face/voice embedding store lives not in the identity database but in the biometric processor's own pgvector schema (table `face_embeddings`), where the searchable plaintext vector and the Fernet-encrypted store-of-record sit side by side; the identity service reaches it only through a thin REST client.
+At the persistence layer, the schema comprises 31 JPA entities materialized through 86 Flyway migrations spanning V0–V86 (the V13 number was never used); as of the submission date (13 June 2026), V86 is the highest migration applied in production. The complete migration catalog appears as Table A.1 in Appendix A. The entity-relationship structure spans `users`, `tenants`, `roles`/`permissions`/`user_roles`, the auth-flow tables (`auth_flows`, `auth_flow_steps`, `auth_methods`, `tenant_auth_methods`), `refresh_tokens` (hashed at rest with a rotation `family_id` for reuse detection per RFC 6749 §10.4), `webauthn_credentials`, `nfc_cards`, `oauth2_clients`, the verification pipeline tables, `user_enrollments`, `voice_enrollments`, the partition-ready `audit_logs`, and the identity-linking tables (`identities`, `identity_emails`, `identity_tenant_biometric_consent`); the identity, tenancy, and RBAC core is shown in Figure 3.3, the authentication-engine and token tables in Figure 3.4, and the separate biometric vector store in Figure 3.5. Two design choices in this schema are worth highlighting. First, the soft-delete pattern: `User` carries an `@SQLDelete` plus `@SQLRestriction("deleted_at IS NULL")`, so every derived finder automatically respects the GDPR retention window. Second, the dual face/voice embedding store lives not in the identity database but in the biometric processor's own pgvector schema (table `face_embeddings`), where the searchable plaintext vector and the Fernet-encrypted store-of-record sit side by side; the identity service reaches it only through a thin REST client.
 
 ![Identity, tenancy, and RBAC core of the identity_core schema. A platform-level person (identities) holds one membership row (users) per tenant; roles are tenant-scoped (a NULL tenant_id marks global system roles) and grant fine-grained permissions through role_permissions. Biometric processing is consented per identity-tenant pair with default-deny semantics. Key attributes only; the full schema is cataloged in Appendix A.](../Thesis/build/figures/er_a_identity_rbac.png)
 
@@ -415,21 +415,21 @@ The platform is operated through four distinct surfaces, all sharing a common au
 |---|---|---|
 | `/login`, `/register`, `/forgot-password` | Auth pages | Identifier-first authentication, registration, recovery |
 | `/onboarding`, `/accept-invite` | Onboarding | Self-service tenant signup; guest-invitation acceptance |
-| `/dashboard` | Dashboard | Analytics overview, enrollment and verification trends |
+| `/` | Dashboard | Analytics overview, enrollment and verification trends |
 | `/users`, `/tenants`, `/roles` | Admin CRUD | User, tenant, and role management (tenant scope vs. platform scope) |
 | `/auth-flows` | Auth-Flow Builder | Layered, drag-to-compose login flows per tenant |
 | `/enrollment`, `/enrollments`, `/biometric-tools` | Biometric | Guided capture, enrollment records, consolidated biometric utilities |
 | `/biometric-puzzles`, `/auth-methods-testing` | Liveness / testing | Active-liveness challenge testing; per-method auth testing |
-| `/verification-flows`, `/verification-dashboard` | KYC pipeline | Industry-template builder and verification session review |
+| `/verification-flows`, `/verification-dashboard` | Know Your Customer (KYC) pipeline | Industry-template builder and verification session review |
 | `/audit-logs`, `/analytics` | Compliance | Searchable audit trail; usage analytics |
 | `/my-profile`, `/settings` | Self-service | Enrollments, activity, KVKK/GDPR export, linked accounts, biometric consent |
 
 
 The Auth-Flow Builder deserves special note: it lets a tenant administrator model a login flow as an ordered list of *layers*, each a checkbox set of allowed methods with a "satisfy any one" semantics and a "required" toggle, persisting as an `authMethodType` plus `alternativeMethodTypes` wire contract. This is the user-facing manifestation of the adaptive-MFA engine. The dashboard is a progressive web app whose shell is served network-first so that it remains usable under flaky connectivity.
 
-**Hosted login (`verify.fivucsas.com`).** Following the 2026-04 "hosted-first" decision, the primary integration mode is redirective OIDC, mirroring Auth0 Universal Login, Okta, Microsoft Entra, Keycloak, and Türkiye's e-Devlet [26,27]. A third-party application calls the SDK's `loginRedirect(...)`, the browser navigates top-level to the hosted page, the user completes whatever MFA the tenant configured, and the browser returns to the application with an authorization code. The hosted page resolves the UI locale and fetches the tenant's branding and login configuration before first paint to avoid a password-first to identifier-first flash, frame-busts to defeat clickjacking, and validates the redirect scheme again before navigating back. Top-level context was chosen deliberately because it is required for Web NFC, WebAuthn, and password-manager autofill, and is robust against Safari's tracking prevention and third-party-cookie deprecation. The embeddable iframe widget, packaged as the zero-dependency `@fivucsas/auth-js` SDK and the `@fivucsas/auth-elements` web component and served as a script-tag bundle from `verify.fivucsas.com` (npm publication was prepared but had not been released at the time of writing), is demoted to inline step-up MFA only.
+**Hosted login (`verify.fivucsas.com`).** Following the project's "hosted-first" architectural decision, the primary integration mode is redirective OIDC, mirroring Auth0 Universal Login, Okta, Microsoft Entra, Keycloak, and Türkiye's e-Devlet [26,27]. A third-party application calls the SDK's `loginRedirect(...)`, the browser navigates top-level to the hosted page, the user completes whatever MFA the tenant configured, and the browser returns to the application with an authorization code. The hosted page resolves the UI locale and fetches the tenant's branding and login configuration before first paint to avoid a password-first to identifier-first flash, frame-busts to defeat clickjacking, and validates the redirect scheme again before navigating back. Top-level context was chosen deliberately because it is required for Web NFC, WebAuthn, and password-manager autofill, and is robust against Safari's tracking prevention and third-party-cookie deprecation. The embeddable iframe widget, packaged as the zero-dependency `@fivucsas/auth-js` SDK and the `@fivucsas/auth-elements` web component and served as a script-tag bundle from `verify.fivucsas.com`, is demoted to inline step-up MFA only.
 
-**Mobile and desktop clients.** The Android application is the one fully delivered, publicly distributed native client (latest signed release v5.3.1). Rather than a thin OAuth shell, it is a full native client: native password plus adaptive MFA across all methods, on-device NFC document reading and card enrollment, CameraX/ML-Kit biometric capture, cross-device session and approval handling, and a standalone RFC 6238 TOTP authenticator with hardware-Keystore-protected secrets. The desktop client (Windows and Linux, packaged as `.deb` and `.msi` installers by a dedicated CI pipeline; public release of the signed installers was still pending) is an OAuth-loopback client with OS-native secure token storage (DPAPI on Windows, libsecret on Linux) and two modes: an admin dashboard and a self-service kiosk. The principal mobile screens are summarized in Table 3.4.
+**Mobile and desktop clients.** The Android application is the one fully delivered, publicly distributed native client (latest signed release v5.3.2). Rather than a thin OAuth shell, it is a full native client: native password plus adaptive MFA across all methods, on-device NFC document reading and card enrollment, CameraX/ML-Kit biometric capture, cross-device session and approval handling, and a standalone RFC 6238 TOTP authenticator with hardware-Keystore-protected secrets. The desktop client (Windows and Linux, packaged as `.deb` and `.msi` installers by a dedicated CI pipeline; public release of the signed installers was still pending) is an OAuth-loopback client with OS-native secure token storage (DPAPI on Windows, libsecret on Linux) and two modes: an admin dashboard and a self-service kiosk. The principal mobile screens are summarized in Table 3.4.
 
 
 **Table 3.4.** Principal Android client screens
@@ -449,24 +449,24 @@ Two qualifications keep the delivery picture accurate. The iOS target is *not de
 
 The enrollment and verification surfaces are supported by the sequence flows captured in Figure 3.6 and Figure 3.7 for face enrollment, Figure 3.8 and Figure 3.9 for face verification, and by the end-user registration flow in Figure 3.10.
 
-![Face enrollment, part 1: capture and the server-side liveness gates. The browser's MediaPipe pre-checks are advisory only; the internal biometric service re-validates every frame with passive liveness (MiniFASNet, HTTP 400 LIVENESS_FAILED) and an anti-spoof veto with a single-frame eye-aspect-ratio check (HTTP 403 ANTISPOOF_BLOCKED) before any embedding is computed.](../Thesis/build/figures/enroll_sequence_a.png)
+![Face enrollment, part (a): capture and the server-side liveness gates. The browser's MediaPipe pre-checks are advisory only; the internal biometric service re-validates every frame with passive liveness (MiniFASNet, HTTP 400 LIVENESS_FAILED) and an anti-spoof veto with a single-frame eye-aspect-ratio check (HTTP 403 ANTISPOOF_BLOCKED) before any embedding is computed.](../Thesis/build/figures/enroll_sequence_a.png)
 
-**Figure 3.6.** Face enrollment, part 1: capture and the server-side liveness gates. The browser's MediaPipe pre-checks are advisory only; the internal biometric service re-validates every frame with passive liveness (MiniFASNet, HTTP 400 LIVENESS_FAILED) and an anti-spoof veto with a single-frame eye-aspect-ratio check (HTTP 403 ANTISPOOF_BLOCKED) before any embedding is computed.
-
-
-![Face enrollment, part 2: MTCNN detection, the quality gate (production floor 40/100), Facenet512 embedding (512 dimensions), and dual-column storage in pgvector with the Fernet ciphertext as the store of record. The identity service records the ENROLLED state, both scores, and the user's enrollment flag in a single transaction.](../Thesis/build/figures/enroll_sequence_b.png)
-
-**Figure 3.7.** Face enrollment, part 2: MTCNN detection, the quality gate (production floor 40/100), Facenet512 embedding (512 dimensions), and dual-column storage in pgvector with the Fernet ciphertext as the store of record. The identity service records the ENROLLED state, both scores, and the user's enrollment flag in a single transaction.
+**Figure 3.6.** Face enrollment, part (a): capture and the server-side liveness gates. The browser's MediaPipe pre-checks are advisory only; the internal biometric service re-validates every frame with passive liveness (MiniFASNet, HTTP 400 LIVENESS_FAILED) and an anti-spoof veto with a single-frame eye-aspect-ratio check (HTTP 403 ANTISPOOF_BLOCKED) before any embedding is computed.
 
 
-![Face verification during a multi-step login, part 1: capture and server-side gates. The biometric service enforces a passive-liveness floor of 0.4 (MiniFASNet, passive mode) and answers HTTP 400 LIVENESS_FAILED below it; failed steps count toward the five-strike lockout (HTTP 423).](../Thesis/build/figures/verify_sequence_a.png)
+![Face enrollment, part (b): MTCNN detection, the quality gate (production floor 40/100), Facenet512 embedding (512 dimensions), and dual-column storage in pgvector with the Fernet ciphertext as the store of record. The identity service records the ENROLLED state, both scores, and the user's enrollment flag in a single transaction.](../Thesis/build/figures/enroll_sequence_b.png)
 
-**Figure 3.8.** Face verification during a multi-step login, part 1: capture and server-side gates. The biometric service enforces a passive-liveness floor of 0.4 (MiniFASNet, passive mode) and answers HTTP 400 LIVENESS_FAILED below it; failed steps count toward the five-strike lockout (HTTP 423).
+**Figure 3.7.** Face enrollment, part (b): MTCNN detection, the quality gate (production floor 40/100), Facenet512 embedding (512 dimensions), and dual-column storage in pgvector with the Fernet ciphertext as the store of record. The identity service records the ENROLLED state, both scores, and the user's enrollment flag in a single transaction.
 
 
-![Face verification, part 2: the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.](../Thesis/build/figures/verify_sequence_b.png)
+![Face verification during a multi-step login, part (a): capture and server-side gates. The biometric service enforces a passive-liveness floor of 0.4 (MiniFASNet, passive mode) and answers HTTP 400 LIVENESS_FAILED below it; failed steps count toward the five-strike lockout (HTTP 423).](../Thesis/build/figures/verify_sequence_a.png)
 
-**Figure 3.9.** Face verification, part 2: the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.
+**Figure 3.8.** Face verification during a multi-step login, part (a): capture and server-side gates. The biometric service enforces a passive-liveness floor of 0.4 (MiniFASNet, passive mode) and answers HTTP 400 LIVENESS_FAILED below it; failed steps count toward the five-strike lockout (HTTP 423).
+
+
+![Face verification, part (b): the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.](../Thesis/build/figures/verify_sequence_b.png)
+
+**Figure 3.9.** Face verification, part (b): the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.
 
 
 ![User registration sequence. After the duplicate check (HTTP 409), the service resolves the tenant fail-closed, enforces the domain-matching and user-quota gates before paying for the BCrypt (cost 12) hash, creates the user in ACTIVE state, and issues the token pair immediately (HTTP 201). E-mail verification runs asynchronously via a Redis-backed one-time code.](../Thesis/build/figures/user_registration.png)
@@ -490,7 +490,7 @@ Testing followed a multi-layered strategy spanning unit, integration, end-to-end
 | Security | SAST, secrets, dependency, isolation | Bandit, pip-audit, gitleaks, Dependabot, isolation ITs |
 
 
-Representative test cases were specified per service and traced to expected HTTP outcomes: for example `TC-AUTH-001` (valid login → `200` with tokens), `TC-AUTH-003` (locked account → `423`), `TC-RBAC-002` (insufficient permissions → `403`), `TC-TENANT-001` (cross-tenant access denied), and on the biometric side `TC-BIO-006`/`TC-BIO-007` (matching vs. non-matching faces around the threshold) and `TC-LIVE-003` (static-photo attack → spoof detected). The realized test inventory grew well beyond the early estimates, reaching roughly 4,400 authored automated test cases across the five test technologies in use. Chapter 5 reports the full inventory (Table 5.3) together with the counting methodology that produced it.
+Representative test cases were specified per service and traced to expected HTTP outcomes: for example `TC-AUTH-001` (valid login → `200` with tokens), `TC-AUTH-003` (locked account → `423`), `TC-RBAC-002` (insufficient permissions → `403`), `TC-TENANT-001` (cross-tenant access denied), and on the biometric side `TC-BIO-006`/`TC-BIO-007` (matching vs. non-matching faces around the threshold) and `TC-LIVE-003` (static-photo attack → spoof detected). The realized test inventory grew well beyond the early estimates, reaching approximately 4,860 authored automated test cases across the five test technologies in use. Chapter 5 reports the full inventory (Table 5.3) together with the counting methodology that produced it.
 
 A word on what these counts do and do not include. The figure is the number of *authored* test cases, not the number that run on every commit: the heaviest machine-learning and Testcontainers integration tests are environment-gated and run inside the dedicated Docker ML and integration stacks rather than on the lightweight CI runners. Chapter 5 reconciles this magnitude with the earlier "~1,800" summary figure that predates later test growth; here we simply note the scale. The security-critical isolation integration tests (`CrossTenantIsolationIT`, `TenantSwitcherIsolationIT`, `IdentityBiometricConsentIT`, and two backfill ITs) are not merely required but *asserted to have executed*: the continuous-integration job parses the Surefire XML so that a silently skipped isolation test fails the build rather than passing it by omission. The full experimental results, including the anti-spoofing evaluation, appear in Chapter 5.
 
@@ -506,25 +506,25 @@ At the micro level, each service is built with **Hexagonal Architecture (Ports a
 
 ### 3.3.2 Component Architecture
 
-The platform's components are layered from client to data. **Clients** (the React dashboard, the hosted-login SPA, the Kotlin Multiplatform mobile and desktop apps, and third-party OIDC integrations) speak to the backend over HTTPS. The **Traefik v3 edge** terminates TLS and routes by host. The **Identity Core API** is the system's spine, exposing 29 controllers covering authentication, MFA, OAuth2/OIDC, WebAuthn/passkeys, NFC/eMRTD, biometrics (as a proxy), the KYC verification pipeline, identity linking, tenant and RBAC administration, and compliance. The **Biometric Processor** exposes 26 route modules and roughly 70 endpoints covering enrollment, 1:1 verification, 1:N search, passive and active (Biometric Puzzle) liveness, quality assessment, voice, NFC/eMRTD passive authentication, and proctoring. The component decomposition is shown in Figure 3.11 for the identity service and in Figure 3.12 for the biometric service.
+The platform's components are layered from client to data. **Clients** (the React dashboard, the hosted-login SPA, the Kotlin Multiplatform mobile and desktop apps, and third-party OIDC integrations) speak to the backend over HTTPS. The **Traefik v3 edge** terminates TLS and routes by host. The **Identity Core API** is the system's spine, exposing 29 controllers covering authentication, MFA, OAuth2/OIDC, WebAuthn/passkeys, NFC/eMRTD, biometrics (as a proxy), the KYC verification pipeline, identity linking, tenant and RBAC administration, and compliance. The **Biometric Processor** exposes 26 route modules and 84 endpoints covering enrollment, 1:1 verification, 1:N search, passive and active (Biometric Puzzle) liveness, quality assessment, voice, NFC/eMRTD passive authentication, and proctoring. The component decomposition is shown in Figure 3.11 for the identity service and in Figure 3.12 for the biometric service.
 
 ![Component structure of the Identity Core API (ports and adapters). The 29 REST controllers drive use-case services through input ports; output ports are realized by infrastructure adapters for persistence (JPA with the Hibernate tenant filter), authentication channels, and cross-cutting concerns. Legacy packages coexist with the hexagonal tree; an ArchUnit rule freezes the entity-usage boundary.](../Thesis/build/figures/system_components_a.png)
 
 **Figure 3.11.** Component structure of the Identity Core API (ports and adapters). The 29 REST controllers drive use-case services through input ports; output ports are realized by infrastructure adapters for persistence (JPA with the Hibernate tenant filter), authentication channels, and cross-cutting concerns. Legacy packages coexist with the hexagonal tree; an ArchUnit rule freezes the entity-usage boundary.
 
 
-![Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (roughly 70 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.](../Thesis/build/figures/system_components_b.png)
+![Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (84 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.](../Thesis/build/figures/system_components_b.png)
 
-**Figure 3.12.** Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (roughly 70 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.
+**Figure 3.12.** Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (84 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.
 
 
-Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (a Redis sliding-window `RateLimitFilter` and a Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
+Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (a Redis fixed-window `RateLimitFilter` and a Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
 
 ### 3.3.3 Data Architecture
 
 The data tier is a single shared **PostgreSQL 17 instance with the pgvector extension** [7,8] and a single shared **Redis 7.4** instance, both running on the VPS. Postgres hosts two logical databases: `identity_core` for the IAM schema and `biometric_db` for the pgvector embedding store. The multi-tenancy strategy is shared-database, shared-schema with a `tenant_id` discriminator, isolated at the application layer by the Hibernate `@Filter` mechanism described earlier. (PostgreSQL row-level-security policies authored in early migrations were found inert in production; the operative isolation is the Hibernate filter plus the JWT-rebound tenant context, examined in detail in §4.8.)
 
-Schema evolution is managed by Flyway across V0–V84 [9]. The migration-defined vector search surface is an IVFFlat index using `vector_cosine_ops` with `lists = 100` over the 512-dimensional Facenet512 embeddings; on the deployed instance this baseline was later upgraded operationally to an HNSW index (m = 16, ef_construction = 64) of the same cosine-operator family. Voice enrollments follow the same pattern over 256-dimensional embeddings, and the log-only client-geometry observation table was defined without any ANN index, consistent with the decision that the browser-side embedding was reserved for offline analysis and never used to make an authentication decision. In the deployed system this telemetry channel remained dormant: the login flow did not transmit the client vector, and the observation schema retained the earlier 128-dimensional format, which the 512-dimensional geometry embedding no longer matched. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
+Schema evolution is managed by Flyway across V0–V86 [9]. The migration-defined vector search surface is an IVFFlat index using `vector_cosine_ops` with `lists = 100` over the 512-dimensional Facenet512 embeddings; on the deployed instance this baseline was later upgraded operationally to an HNSW index (m = 16, ef_construction = 64) of the same cosine-operator family. Voice enrollments follow the same pattern over 256-dimensional embeddings, and the log-only client-geometry observation table was defined without any ANN index, consistent with the decision that the browser-side embedding was reserved for offline analysis and never used to make an authentication decision. This log-only telemetry channel kept the earlier 128-dimensional landmark-geometry format and was never wired into an authentication decision. A separate client-side path was subsequently added behind a feature flag: with the flag enabled, as in the current production deployment, the browser computes the 512-dimensional Facenet512 embedding and uploads only that vector, while the server retains the cosine-distance comparison, the threshold, and the accept-or-reject verdict, so decision D2's untrusted-browser principle still holds. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
 
 Redis is far more than a read cache; it is the platform's distributed-coordination backbone. It holds single-use OAuth2 authorization codes (10-minute TTL), email/SMS OTPs (5 minutes) with per-OTP attempt counters, TOTP used-code replay markers (`SET … EX 120 NX`), QR and approve-login cross-device sessions, step-up challenges, anti-replay nonces, and rate-limit counters. Production Redis runs with AOF persistence and an LRU eviction policy. Table 3.6 summarizes the caching strategy.
 
@@ -552,11 +552,11 @@ The production system runs on a single **Hetzner CX43 VPS** (8 vCPU, 16 GB RAM, 
 **Figure 3.13.** Production container topology on the Hetzner CX43 host. Traefik is the only edge: containers on the proxy network are publicly routable, while the backend network is internal with no published ports; the Biometric Processor lives only there and is callable solely by the Identity Core API with an X-API-Key. PostgreSQL 17 (pgvector) and Redis 7.4 are shared infrastructure also serving the host's other projects, 23 containers in all. Static sites are served from Hostinger, outside the Docker estate.
 
 
-At the edge, **Traefik v3.6.12** terminates TLS (Let's Encrypt) and routes by host via Docker labels, reading the Docker socket only through a hardened, read-scoped `docker-socket-proxy` [19,21]. This is the single most important deviation from the original design document, which anticipated an NGINX gateway: the running edge is Traefik v3, and the only NGINX on the host serves branded error pages and the static verify-widget SPA. Traefik enforces global secure-headers and rate-limit middleware, gates the administrative surfaces (`/swagger-ui`, `/v3/api-docs`, `/actuator`) behind an IP allowlist, and overwrites `X-Forwarded-For` with the real peer IP to close a rate-limit-bypass surface.
+At the edge, **Traefik v3.6.12** terminates TLS (Let's Encrypt) and routes by host via Docker labels, reading the Docker socket only through a hardened, read-scoped `docker-socket-proxy` [19,21]. This was a deliberate deviation from the original design document, which anticipated an NGINX gateway: the running edge is Traefik v3, and the only NGINX on the host serves branded error pages and the static verify-widget SPA. Traefik enforces global secure-headers and rate-limit middleware, gates the administrative surfaces (`/swagger-ui`, `/v3/api-docs`, `/actuator`) behind an IP allowlist, and overwrites `X-Forwarded-For` with the real peer IP to close a rate-limit-bypass surface.
 
 Containers are deployed via per-service production Compose files [20] wired onto shared external `backend` and `proxy` networks, with the shared PostgreSQL and Redis as singletons. Every application container runs hardened: read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, and resource limits (the identity API at 2 CPU / 2 GB, the biometric processor at 4 CPU / 4 GB). The biometric image is digest-pinned to a specific `python:3.12-slim` SHA with a frozen known-good constraints lock, because a floating-dependency rebuild once segfaulted the UniFace ONNX preload under that hardened runtime. The React and other static surfaces are deliberately *not* dockerized; they are deployed to Hostinger shared hosting by rsync, a standing rule that keeps the VPS focused on the stateful, security-sensitive services.
 
-Continuous integration and delivery run through GitHub Actions, with most jobs on GitHub-hosted runners and a self-hosted runner on the CX43 reserved for the deploy jobs, which SSH in, pull, rebuild the affected service, and poll its `/actuator/health` until it is live. Observability that is actually running consists of Grafana, Loki, and Promtail for logs and Uptime Kuma for availability; a Prometheus/Alertmanager stack is configured but not yet deployed, a gap we revisit in Chapter 7. The complete CI/CD, monitoring, and load/security testing apparatus is detailed in Chapter 5, and Appendix C records the production deployment in reference form: Table C.1 lists the containerized service inventory and Table C.2 the public subdomains.
+Continuous integration and delivery run through GitHub Actions, with most jobs on GitHub-hosted runners and a self-hosted runner on the CX43 reserved for the deploy jobs, which SSH in, pull, rebuild the affected service, and poll its `/actuator/health` until it is live. Observability that is actually running consists of Grafana, Loki, and Promtail for logs and Uptime Kuma for availability; a Prometheus/Alertmanager stack is configured but not yet deployed, a gap we revisit in Chapter 7. The complete CI/CD, monitoring, and load/security testing apparatus is detailed in Chapter 5, and Appendix C records the production deployment in reference form: Table C.2 lists the containerized service inventory and Table C.3 the public subdomains.
 
 
 ---
@@ -572,11 +572,9 @@ authorization-code exchange). From there we cover the operating-system and concu
 machinery that lets a single virtual machine serve many tenants safely, the network
 protocols that bind the services together, and finally the finite-state machines and
 multi-tenant isolation guarantees that keep one tenant's data invisible to another.
-Every detail here was read from the production source tree at the time of writing; where
-an older planning document disagreed with the shipped code, we followed the code. The
-chapter draws on operating systems, computer networks, databases, distributed systems, and
-machine learning; each appears as a load-bearing part of the deployed service rather than
-as an isolated topic.
+Throughout, the chapter reports the system as implemented and deployed. It draws on
+operating systems, computer networks, databases, distributed systems, and machine learning;
+each appears as a load-bearing part of the deployed service rather than as an isolated topic.
 
 ## 4.1 Hardware and Software Requirements and Tools
 
@@ -608,14 +606,13 @@ place. Table 4.1 summarizes the principal tools.
 | Coordination / cache | **Redis 7.4** [22] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [21] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [19] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
-| DB migrations | **Flyway** [9] | Versioned, repeatable schema evolution (V0–V84) checked into source control |
+| DB migrations | **Flyway** [9] | Versioned, repeatable schema evolution (V0–V86) checked into source control |
 
 
-Three details need clarifying, because earlier planning documents pointed
-elsewhere and we followed the shipped reality. First, the production **edge is Traefik v3,
-not NGINX**. The "API gateway" described in the original analysis document was a
-development-era plan, and the only NGINX on the host serves branded error pages and the
-static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
+Three of these choices departed from the original planning documents and are worth
+clarifying. First, the production **edge is Traefik v3, not NGINX**. The "API gateway"
+described in the original analysis document was a development-era plan, and the only NGINX on
+the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
 Flutter as the specification originally proposed; Compose Multiplatform let us share a
 single domain layer across Android and desktop and reuse native security primitives such as
 Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
@@ -628,7 +625,7 @@ Developer tooling and standards round out the picture: IntelliJ IDEA and PyCharm
 backends, VS Code for the front ends, Git/GitHub for version control with branch protection
 and pull-request review, Maven for the Java build and Gradle for the Kotlin clients, and a
 GitHub Actions continuous-integration pipeline (covered in Chapter 5) that gates every
-merge on roughly **4,400 automated tests** across five test technologies.
+merge on approximately **4,860 automated tests** across five test technologies.
 
 ## 4.2 Data Structures
 
@@ -776,21 +773,26 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 `mouthSmileLeft/Right > 0.4`, `jawOpen > 0.4`, brow blendshapes `> 0.3`), which is both more
 robust and cheaper than re-deriving geometry.
 
-**A 23-challenge library across two body channels.** The platform's canonical challenge
-enumeration (`BiometricPuzzleId` in the web client, mirroring the biometric engine's
-`ChallengeType`) defines twenty-three micro-challenges. Fourteen are facial: blink, closing
+**A 23-challenge library across two body channels.** The biometric engine's canonical
+challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
+defines twenty-three commanded challenges. Fourteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
-Nine are hand gestures: finger counting, shape tracing with the index finger, tracing an
-on-screen template, waving, a palm flip, a finger tap, a pinch, a hand-covers-face
-"peek-a-boo," and finger arithmetic. The hand channel is real, not simulated: a lazily loaded
-MediaPipe `HandLandmarker` runs in the client (its ~5 MB WASM cost is paid only on the puzzle
-surface) and streams 21-point hand-landmark sequences to the server, where
-`active_gesture_liveness_manager.py` re-scores each gesture from the raw geometry
-(finger-extension ratios for counting, a sign change on the palm-normal proxy for the flip,
-and dynamic-time-warping distance against a JSON shape-template catalog for tracing). Drawing
-each puzzle's randomized steps from a 23-deep, two-channel library shrinks the chance that an
-attacker holds a pre-recorded clip matching the exact sequence the server happens to draw.
+The engine additionally exposes a passive brightness probe, but it is a lighting-quality check
+rather than a commanded movement, so it is not one of the twenty-three challenges (which is also
+why the user-facing web enumeration lists exactly these fourteen selectable facial actions).
+Nine are hand gestures: finger counting,
+tracing a shape against a stored template catalog, waving, a palm flip, a finger tap,
+a pinch, a hand-covers-face "peek-a-boo," finger arithmetic, and holding the hand steady in
+place (a low-variance hold check). The hand channel
+is real, not simulated: a lazily loaded MediaPipe `HandLandmarker` runs in the client (its
+~5 MB WASM cost is paid only on the puzzle surface) and streams 21-point hand-landmark
+sequences to the server, where `active_gesture_liveness_manager.py` re-scores each gesture
+from the raw geometry (finger-extension ratios for counting, a sign change on the palm-normal
+proxy for the flip, and dynamic-time-warping distance against a JSON shape-template catalog
+for tracing). Drawing each puzzle's randomized steps from a two-channel library this deep
+shrinks the chance that an attacker holds a pre-recorded clip matching the exact sequence the
+server happens to draw.
 
 **Scoring and anti-replay.** `VerifyPuzzleUseCase` requires each step to clear
 `MIN_STEP_CONFIDENCE = 0.6` and last at least `MIN_STEP_DURATION_SECONDS = 0.5`, and the
@@ -939,9 +941,9 @@ This section documents the cryptographic and protocol-level algorithms that make
 authentication platform rather than a face-matching demo. The corresponding security
 architecture is shown in Figure 4.1.
 
-![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis sliding-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
+![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
 
-**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis sliding-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
+**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
 
 
 ### 4.4.1 JWT, RBAC and Password Security
@@ -972,8 +974,8 @@ party can see that genuine multi-factor authentication occurred rather than mere
 (`@EnableMethodSecurity` + `@PreAuthorize`) backed by a custom `RbacPermissionEvaluator`. The
 authority model is deliberately two-tier: a `user_type` platform tier
 (`ROOT > TENANT_ADMIN > TENANT_MEMBER > GUEST`) is the sole source of platform-level authority,
-while `role` is purely within-tenant RBAC across 48 fine-grained permissions. The former global
-`SUPER_ADMIN` was renamed `ROOT` and granted all permissions in a controlled migration. This
+while `role` is purely within-tenant RBAC across 48 fine-grained permissions. The platform-tier
+`ROOT` authority is granted all permissions. This
 separation is what lets a tenant administrator manage their own users without ever gaining
 visibility into another tenant, and it is enforced by the same `@PreAuthorize` checks on every
 controller method.
@@ -1140,10 +1142,10 @@ documentation). This is the project's use of a stateful application-layer protoc
 HTTP's request/response model would be a poor fit.
 
 **NFC and the eMRTD protocol.** Document-based identity verification reads the contactless chip of an
-electronic passport or national ID card following ICAO Doc 9303 [17]. The Android client
+electronic passport or national ID card following ICAO Doc 9303 [18]. The Android client
 performs the on-device chip dialogue over `IsoDep` APDUs (Basic Access Control, secure messaging, and
 data-group reads), while the **passive-authentication** cryptography is server-authoritative. The
-client submits the EF.SOD security object and the data groups, and the biometric service's
+client submits the EF.SOD (Document Security Object) and the data groups, and the biometric service's
 `POST /nfc/verify-authenticity` runs the standard three-step passive-authentication chain:
 
 1. each data-group hash must match the value signed in the SOD;
@@ -1225,10 +1227,10 @@ caller into another tenant; only a `ROOT` platform-tier user keeps the legitimat
 override.
 
 **Persistence-layer filtering.** The operative isolation is a Hibernate `@Filter`. A global
-`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the nine tenant-scoped entities
-(`AuditLog`, `AuthSession`, `MfaSession`, `UserEnrollment`, `VerificationSession`, `OAuth2Client`,
-`UserDevice`, `AuthFlow`, `UserSettings`), automatically constraining every derived query. Role definitions widen the
-filter to `(tenant_id = :tenantId OR tenant_id IS NULL)` so global roles stay visible, and the
+`@FilterDef("tenantFilter")` is applied as `tenant_id = :tenantId` on the eleven tenant-scoped entities
+(`User`, `Role`, `AuditLog`, `AuthSession`, `MfaSession`, `UserEnrollment`, `VerificationSession`, `OAuth2Client`,
+`UserDevice`, `AuthFlow`, `UserSettings`), automatically constraining every derived query. `Role` widens the
+filter to `(tenant_id = :tenantId OR tenant_id IS NULL)` so global system roles stay visible, and the
 cross-tenant identity entities (`Identity`, `IdentityEmail`, `IdentityTenantBiometricConsent`)
 deliberately carry **no** filter because they are platform-level by design. A `TenantFilterBypass`
 exists for the user-centric `/my` self-service endpoints, which must resolve a user under a foreign
@@ -1380,10 +1382,10 @@ annotations, `def test_` functions, and `it()`/`test()` blocks), with throwaway 
 build directories, and duplicated scratch copies excluded. They are *authored* method counts,
 not *passing* counts, because some tests are environment-gated or marked skip/xfail at runtime.
 
-In the **Identity Core API**, we authored **1,595 `@Test` methods across 179 test files**, all
-under `src/test/java`, with no stray tests in the main source set. A further **22
+In the **Identity Core API**, we authored **1,743 `@Test` methods across 179 test files**, all
+under `src/test/java`, with no stray tests in the main source set. A further **23
 `@ParameterizedTest` methods** each expand into several executed cases at runtime, so the true
-executed count exceeds 1,595. These tests mix pure unit tests over domain and application
+executed count exceeds 1,743. These tests mix pure unit tests over domain and application
 logic, Spring-context tests, Testcontainers integration tests, and ArchUnit boundary tests.
 The unit-level work concentrates on the security-sensitive logic that is hardest to get right
 and most dangerous to get wrong: password hashing with bcrypt
@@ -1395,28 +1397,28 @@ finished green: **1,670 tests run, 0 failures, 0 errors, 67 skipped**. The skipp
 the Docker-gated Testcontainers integration tests, and the executed count exceeds the authored
 method count because parameterized tests expand at runtime.
 
-In the **biometric processor**, we authored **888 `def test_` functions across 68 test
-files**. By directory these break down as 683 unit tests, 167 integration tests, 22 e2e tests,
-10 benchmarks, and 6 manual tests. The unit suite covers the algorithm-level building blocks:
+In the **biometric processor**, we authored **980 `def test_` functions across 68 test
+files**, dominated by unit tests with smaller integration, e2e, benchmark, and manual suites.
+The unit suite covers the algorithm-level building blocks:
 the eye-aspect-ratio and mouth-aspect-ratio computations that drive the Biometric Puzzle
 [15], cosine-similarity comparison over L2-normalized embeddings, the
 texture/moiré/frequency/color liveness scoring, the MRZ TD1/TD3 parser, and the eMRTD
 passive-authentication crypto. A representative bare-host CI baseline recorded **647 passed,
 1 skipped, and 1 xfailed** in `tests/unit/`, and **50 passed with 111 skipped** in
 `tests/integration/`; the skipped integration tests are the ML-lifespan and full-stack cases
-that run only inside the Docker ML stack. The gap between the 888 authored and the roughly 700
+that run only inside the Docker ML stack. The gap between the 980 authored and the subset
 executed on a bare host is therefore deliberate, not a sign of neglect.
 
-In the **web dashboard and hosted login**, we authored **1,025 Vitest cases across 105 test
+In the **web dashboard and hosted login**, we authored **1,208 Vitest cases across 105 test
 files** using Vitest with React Testing Library. These verify React hooks (face detection,
 quality scoring, challenge state), API-client error handling, i18n string coverage in both
 English and Turkish, and the authentication-flow builder UI logic.
 
-In the **Kotlin Multiplatform clients**, we authored **561 `@Test` methods across 64 test
-files**: 489 in the shared `commonTest` set, 30 Android instrumented tests, 25 in
-`desktopTest`, and 17 Android JVM unit tests. Table 5.3 consolidates the inventory. The
-shared `commonTest` set exercises the cross-platform domain layer once and reuses it across
-Android and desktop targets.
+In the **Kotlin Multiplatform clients**, we authored **573 `@Test` methods across 64 test
+files**, concentrated in the shared `commonTest` set, with the remainder split across the
+Android instrumented, `desktopTest`, and Android JVM unit targets. Table 5.3 consolidates the
+inventory. The shared `commonTest` set exercises the cross-platform domain layer once and
+reuses it across Android and desktop targets.
 
 
 
@@ -1424,16 +1426,17 @@ Android and desktop targets.
 
 | Module | Tool | Files | Authored test cases |
 |---|---|---|---|
-| Identity Core API | JUnit 5 | 179 | 1,595 (+22 parameterized) |
-| Web dashboard (unit/component) | Vitest | 105 | 1,025 |
+| Identity Core API | JUnit 5 | 179 | 1,743 (+23 parameterized) |
+| Web dashboard (unit/component) | Vitest | 105 | 1,208 |
 | Web dashboard (E2E) | Playwright | 28 | 336 |
-| Mobile / desktop clients | Kotlin / JUnit | 64 | 561 |
-| Biometric processor | pytest | 68 | 888 |
-| **Total** | | **444** | **≈ 4,405 authored** |
+| Mobile / desktop clients | Kotlin / JUnit | 64 | 573 |
+| Biometric processor | pytest | 68 | 980 |
+| **Total** | | **444** | **4,863 authored** |
 
 
-The headline figure for the thesis is therefore **approximately 4,400 authored automated test
-cases across five test technologies**, materially higher than the "~1,800+" figure that appears
+The headline figure for the thesis is therefore **approximately 4,860 authored automated test
+cases across five test technologies** (as of the submission date, 13 June 2026), materially
+higher than the "~1,800+" figure that appears
 in an older internal summary. We report the verified, grep-derived figure because it is the
 accurate one: the older summary counted only a subset and predates later test growth.
 
@@ -1734,7 +1737,7 @@ baseline ratio above 1.3, that the texture/moiré/frequency/color detector down-
 screen-like presentation, and that a both-eyes-closed still frame triggers the EAR veto. These
 behavioral assertions are real, automated, and passing. The browser port additionally carries
 **276 Vitest cases** (in the separate `spoof-detector` repository, not counted in Table 5.3's
-4,405-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
+4,863-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
 What we do **not** report is a headline accuracy number for the fused system. An internal
@@ -1763,16 +1766,33 @@ pgvector ANN index (the migration-defined IVFFlat baseline, `vector_cosine_ops` 
 cross-tenant search forbidden. These are the operating parameters of the deployed verifier.
 
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
-controlled benchmark whose headline figures also appear on the project poster. The evaluation
-enrolled 1,342 face images across 100 identities and scored 12,062 verification pairs over
-three public benchmarks. On LFW (5,600 pairs) the Facenet512 pipeline reached an AUC of
-0.9943 with an equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the
-benchmark operating point, distinct from the production threshold of 0.4) the false-accept rate
-was 0.27% and the genuine-accept rate 95.6%. On CFP-FP (1,378 frontal-to-profile pairs) the
-AUC was 0.9845, and on AgeDB-30, which pairs faces across a 30-year age gap, 0.9475. These are
-controlled measurements on public datasets under our own preprocessing: they characterize the
+controlled benchmark conducted by Ayşe Gülsüm Eren, whose committed evaluation harness
+(`practice-and-test/fivucsas-test`) enrolled the public gallery for each dataset and scored
+verification pairs across three standard benchmarks. On LFW the Facenet512 pipeline was scored
+over 5,600 pairs (772 genuine and 4,828 imposter), reaching an AUC of 0.9943 with an
+equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the benchmark
+operating point, distinct from the production threshold of 0.4) the false-accept rate was 0.27%
+and the false-reject rate 4.4%, a genuine-accept rate of 95.6%. On CFP-FP (1,378
+frontal-to-profile pairs) the AUC was 0.9845, and on AgeDB-30, which pairs faces across a
+30-year age gap (5,084 pairs), the AUC was 0.9475.
+
+These AUC figures alone would paint too rosy a picture, and the committed evaluation summaries
+say so directly. The same model that excels on frontal, same-age faces degrades markedly off
+that operating point. At that same 0.45 benchmark threshold the LFW false-reject rate
+is an excellent 4.4%, but on the frontal-to-profile CFP-FP set the equal-error rate rises to
+roughly 27% (false-reject roughly 55% at that threshold), and on the age-gap AgeDB-30 set the
+equal-error rate reaches roughly 34% (false-reject roughly 68%). In plain terms, the embedding
+model is strong when the probe is a well-lit frontal capture taken close in time to enrollment
+and weak when the pose is a hard profile or the enrollment is years stale. The evaluation's own
+recommendation follows from this: standardize capture (prompt the user to look straight at the
+camera) and re-enroll every one to two years to keep the stored template fresh. We report this
+honestly rather than headline the AUCs, consistent with the same conservative posture that led
+us to disavow the unverified "100% accuracy" poster figure above. These are controlled
+measurements on public datasets under our own preprocessing: they characterize the
 discriminative power of the embedding model, not the end-to-end production service with its
-liveness and quality gates, and we label them accordingly.
+liveness and quality gates, and we label them accordingly. Because the client-side embedding
+path (Section 3.3.3) computes the same Facenet512 representation in the browser, it inherits the
+same profile and age-gap sensitivity, so the re-enrollment guidance applies there too.
 
 ## 5.9 Multi-Tenant Isolation Testing
 
@@ -1816,11 +1836,12 @@ defense-in-depth applied to the test strategy itself, as Table 5.9 traces.
 
 ## 5.10 Results Summary and Discussion
 
-The testing program produced a large, multi-technology, CI-integrated body of evidence. The
-verified inventory is **approximately 4,405 authored automated test cases across 444 test
-files in five technologies**: 1,595 JUnit 5 methods (plus 22 parameterized) in the Identity
-Core API, 1,025 Vitest cases in the web dashboard, 336 Playwright E2E cases, 561 Kotlin
-methods in the clients, and 888 pytest functions in the biometric processor. A large subset of
+The testing program produced a large, multi-technology, CI-integrated body of evidence. As of
+the submission date (13 June 2026), the verified inventory is **4,863 authored automated test
+cases across 444 test files in five technologies**: 1,743 JUnit 5 methods (plus 23
+parameterized) in the Identity Core API, 1,208 Vitest cases in the web dashboard, 336
+Playwright E2E cases, 573 Kotlin methods in the clients, and 980 pytest functions in the
+biometric processor. A large subset of
 these runs on every continuous-integration pipeline; the heaviest machine-learning and
 Testcontainers-dependent integration tests run inside the Docker ML and integration stacks
 rather than on the lightweight CI runners, by deliberate design. The pipelines enforce coverage
@@ -2070,7 +2091,7 @@ defined by ICAO Doc 9303: it authenticates to the chip with Basic Access Control
 from the machine-readable zone, reads the
 document data groups and the security object, and the *server* verifies the document's
 authenticity through passive authentication rather than trusting the phone
-[17]. (A Password Authenticated Connection Establishment (PACE) implementation
+[18]. (A Password Authenticated Connection Establishment (PACE) implementation
 was scaffolded, with the EF.CardAccess parser and key derivation written and unit-tested,
 but its cryptographic core was deliberately left unimplemented until a PACE-capable test
 document was available, so the readers fall back to Basic Access Control.) The biometric service exposes the matching endpoints,
@@ -2087,9 +2108,10 @@ The second connection is **identity-fraud and impersonation resistance** in the 
 sense that underpins both civil and national security. Document fraud, synthetic identities,
 and presentation attacks (printed photos, replayed videos, masks, screen replays) are the
 tools of everything from benefit fraud to infiltration. The platform's defense-in-depth
-against exactly these attacks (the active Biometric Puzzle, the passive
-learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy, and the
-watchlist-check step type in the KYC pipeline) is the same machinery a state or a regulated
+against exactly these attacks (the active Biometric Puzzle and the passive
+learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy; a
+watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
+stub awaiting a sanctions-data provider) is the same machinery a state or a regulated
 institution needs to keep forged and stolen identities out of trusted systems
 [16,35]. By raising the cost of impersonation, the platform contributes
 to the integrity of the identity layer on which secure public services rest.
@@ -2116,7 +2138,7 @@ technical components that identity, border, and cyber security depend upon, to a
 appropriate for an undergraduate engineering project. In doing so it demonstrated, in code,
 how a cloud-native SaaS platform can serve national-security-relevant ends without
 abandoning the privacy and transparency that a democratic society requires of any system
-that asks to read its citizens' faces and documents [17,37,38].
+that asks to read its citizens' faces and documents [18,37,38].
 
 
 ---
@@ -2144,7 +2166,7 @@ the same clean layers) carries the compute-intensive work: face detection with M
 [10], 512-dimensional embedding with Facenet512 [11] via
 the DeepFace framework [12,13], passive liveness with the
 UniFace MiniFASNet ONNX model [16], voice speaker embeddings, document and eMRTD
-reading [17], and the anti-spoofing pipeline drawn from a dedicated `spoof-detector`
+reading [18], and the anti-spoofing pipeline drawn from a dedicated `spoof-detector`
 library. The two services communicate over an internal REST contract guarded by an API key. The
 biometric processor has **no public route** and is reachable only on the internal Docker network,
 which keeps the most sensitive surface off the open internet entirely.
@@ -2161,7 +2183,7 @@ at the edge and routed by Docker labels, with an admin-IP-gated surface for Swag
 and hardened forwarded-header handling. The whole deployment ran on a single Hetzner CX43 VPS
 under Docker Compose [19,20], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
-evolved through 84 Flyway migrations [9] (the V0–V84 range, with V13 unused), an auditable record of the
+evolved through 86 Flyway migrations [9] (the V0–V86 range, with V13 unused), an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
 partition-ready audit logs, and discoverable passkeys.
 
@@ -2198,15 +2220,15 @@ factor 12 protected passwords [25]; production access tokens were RS256-signed J
 issuer and audience binding, key-id routing that closed algorithm-confusion forgeries, and RFC 8176
 `amr` accumulation that recorded genuine N-factor evidence [24]; WebAuthn / passkeys
 used the Yubico server library with an explicit origin allowlist [29]; two complementary
-rate-limiting layers (a Redis sliding window and Bucket4j token buckets [23]) failed closed
+rate-limiting layers (a Redis fixed window and Bucket4j token buckets [23]) failed closed
 on sensitive paths; and refresh tokens rotated within a family with reuse detection. Multi-tenant
 isolation, the hardest SaaS guarantee, was enforced in depth (JWT-rebound tenant context plus a
 Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-verified by a required
 pull-request gate** of Testcontainers integration tests that the CI pipeline asserted had actually executed
 [51] (§5.2 records the gate's repair history).
 
-The engineering process itself is part of the result. The platform was backed by roughly
-**4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
+The engineering process itself is part of the result. The platform was backed by approximately
+**4,860 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
 Kotlin/JUnit suite, and pytest [52]), exercised by per-repository CI pipelines, with
 load scenarios in k6 [30] and static security scanning via Bandit, pip-audit, gitleaks, and
 Dependabot. We are equally clear about what those numbers do *not* mean: a large green test suite is
@@ -2264,7 +2286,7 @@ a familiar, low-effort integration via a small SDK and standard OAuth 2.0 / OIDC
 Hibernate `@Filter`, fail-closed rate limiting, single-use replay-proof tokens, refresh-token family
 revocation) mean no single failure breaches the tenant boundary, and the isolation guarantee is
 re-checked on every merge rather than asserted once [51]. The hardened container
-runtime and the 84-step auditable migration history extend the same discipline to operations.
+runtime and the 86-step auditable migration history extend the same discipline to operations.
 
 ### 7.2.2 Limitations of the Chosen Methods
 
@@ -2276,7 +2298,7 @@ graduation prototype and a controlled demo, but not for a production SLA.
 
 **CPU-only hardware constrained the model choices.** Because the CX43 has no GPU, the platform
 deliberately blocks GPU-hungry backends (RetinaFace, ArcFace [40], heavier YOLO
-variants [18]) at boot via `ALLOW_HEAVY_ML=false`. MTCNN, Facenet512, and UniFace MiniFASNet
+variants [17]) at boot via `ALLOW_HEAVY_ML=false`. MTCNN, Facenet512, and UniFace MiniFASNet
 are all CPU-safe and were chosen partly for that reason. This keeps the system runnable but means the
 platform is not using the current state-of-the-art recognition model, and the enrollment path is
 ML-bound and comparatively slow.
@@ -2308,7 +2330,7 @@ plainly:
 - The **OIDC pairwise-subject resolver** is shipped but **dormant** behind a default-off flag.
 - The server-side **fingerprint biometric was removed** (it was a placeholder); `FINGERPRINT` is now
   delivered only via WebAuthn.
-- **Iris recognition** is declared in the enum but **not implemented**.
+- **Iris recognition** is **not yet implemented**.
 - Some verification-pipeline handlers (for example, the **watchlist check**) are production fail-fast
   stubs awaiting a real data source.
 - The in-browser **card-detection model** (a 12.3 MB YOLOv8n) was trained on a limited corpus and
@@ -2362,7 +2384,7 @@ horizontally under load instead of being capped on one machine.
 
 **Additional biometric modalities.** The hexagonal handler architecture was built precisely so new
 factors slot in as adapters. The voice modality (Resemblyzer speaker embeddings) is wired and can be
-matured into a first-class factor; **iris recognition**, declared in the enum but not implemented, is
+matured into a first-class factor; **iris recognition**, not yet implemented, is
 the most obvious next modality; and gait or behavioral signals could extend continuous-verification
 (proctoring) scenarios. Each new modality benefits from the same server-authoritative, log-only-client
 discipline established for face.
@@ -2412,8 +2434,8 @@ identity-verification service, the production-grade destination this thesis set 
 14. Google, *MediaPipe Face Landmarker*, 2025, https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker, Date accessed: June 2026.
 15. Soukupová, T. and J. Čech, "Real-Time Eye Blink Detection Using Facial Landmarks", *Proceedings of the 21st Computer Vision Winter Workshop*, Rimske Toplice, Slovenia, 2016.
 16. Minivision AI, *Silent-Face-Anti-Spoofing (MiniFASNet)*, 2020, https://github.com/minivision-ai/Silent-Face-Anti-Spoofing, Date accessed: June 2026.
-17. International Civil Aviation Organization, *Doc 9303: Machine Readable Travel Documents*, 8th ed., ICAO, Montréal, Canada, 2021.
-18. Jocher, G., A. Chaurasia and J. Qiu, *Ultralytics YOLOv8*, 2023, https://github.com/ultralytics/ultralytics, Date accessed: June 2026.
+17. Jocher, G., A. Chaurasia and J. Qiu, *Ultralytics YOLOv8*, 2023, https://github.com/ultralytics/ultralytics, Date accessed: June 2026.
+18. International Civil Aviation Organization, *Doc 9303: Machine Readable Travel Documents*, 8th ed., ICAO, Montréal, Canada, 2021.
 19. Docker Inc., *Docker Documentation*, 2025, https://docs.docker.com/, Date accessed: June 2026.
 20. Docker Inc., *Docker Compose Documentation*, 2025, https://docs.docker.com/compose/, Date accessed: June 2026.
 21. Traefik Labs, *Traefik Proxy Documentation*, 2025, https://doc.traefik.io/traefik/, Date accessed: June 2026.
@@ -2430,7 +2452,7 @@ identity-verification service, the production-grade destination this thesis set 
 32. Richardson, C., *Microservices Patterns: With Examples in Java*, Manning Publications, Shelter Island, NY, USA, 2018.
 33. Newman, S., *Building Microservices: Designing Fine-Grained Systems*, 2nd ed., O'Reilly Media, Sebastopol, CA, USA, 2021.
 34. Evans, E., *Domain-Driven Design: Tackling Complexity in the Heart of Software*, Addison-Wesley, Boston, MA, USA, 2003.
-35. ISO/IEC 30107-3:2023, *Information Technology — Biometric Presentation Attack Detection — Part 3: Testing and Reporting*, 2nd ed., International Organization for Standardization, Geneva, Switzerland, 2023.
+35. ISO/IEC 30107-3:2023, *Information Technology – Biometric Presentation Attack Detection – Part 3: Testing and Reporting*, 2nd ed., International Organization for Standardization, Geneva, Switzerland, 2023.
 36. OWASP Foundation, *OWASP Top 10:2021, The Ten Most Critical Web Application Security Risks*, 2021, https://owasp.org/Top10/, Date accessed: June 2026.
 37. Republic of Türkiye, *Personal Data Protection Law No. 6698 (KVKK)*, Official Gazette No. 29677, 2016.
 38. European Parliament and Council of the European Union, *Regulation (EU) 2016/679 (General Data Protection Regulation)*, Official Journal of the European Union, L 119, 2016.
@@ -2458,7 +2480,7 @@ The Identity Core API database schema was built and evolved exclusively through 
 
 
 
-**Table A.1.** Flyway migration catalog of the Identity Core API schema (V0–V84)
+**Table A.1.** Flyway migration catalog of the Identity Core API schema (V0–V86)
 
 | Version | Migration |
 | --- | --- |
@@ -2546,6 +2568,8 @@ The Identity Core API database schema was built and evolved exclusively through 
 | V82 | Oauth2 clients cross tenant |
 | V83 | Widen chk enrollment method approve login passkey |
 | V84 | User settings tenant id |
+| V85 | Refresh tokens client id |
+| V86 | Seed puzzle auth method |
 
 
 The biometric processor's vector store (face and voice embeddings, liveness logs) was migrated independently with Alembic across 5 revisions, keeping the compute-intensive biometric schema fully decoupled from the identity schema, in line with the microservices boundary.
@@ -2553,7 +2577,7 @@ The biometric processor's vector store (face and voice embeddings, liveness logs
 
 # Appendix B: REST API Surface Reference
 
-This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and roughly 70 endpoints.
+This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and 84 endpoints.
 
 ## B.1 Identity Core API: Principal Controllers
 

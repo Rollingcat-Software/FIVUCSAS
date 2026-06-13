@@ -38,7 +38,7 @@ at the edge and routed by Docker labels, with an admin-IP-gated surface for Swag
 and hardened forwarded-header handling. The whole deployment ran on a single Hetzner CX43 VPS
 under Docker Compose [CITE:docker,dockercompose], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
-evolved through 84 Flyway migrations [CITE:flyway] (the V0–V84 range, with V13 unused), an auditable record of the
+evolved through 86 Flyway migrations [CITE:flyway] (the V0–V86 range, with V13 unused), an auditable record of the
 platform's growth from a core IAM schema to identity linking, account-level biometric consent,
 partition-ready audit logs, and discoverable passkeys.
 
@@ -82,8 +82,8 @@ Hibernate `@Filter` on the tenant-scoped entities) and, just as important, **re-
 pull-request gate** of Testcontainers integration tests that the CI pipeline asserted had actually executed
 [CITE:testcontainers] (§5.2 records the gate's repair history).
 
-The engineering process itself is part of the result. The platform was backed by roughly
-**4,400 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
+The engineering process itself is part of the result. The platform was backed by approximately
+**4,860 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
 Kotlin/JUnit suite, and pytest [CITE:playwright]), exercised by per-repository CI pipelines, with
 load scenarios in k6 [CITE:k6] and static security scanning via Bandit, pip-audit, gitleaks, and
 Dependabot. We are equally clear about what those numbers do *not* mean: a large green test suite is
@@ -141,7 +141,7 @@ a familiar, low-effort integration via a small SDK and standard OAuth 2.0 / OIDC
 Hibernate `@Filter`, fail-closed rate limiting, single-use replay-proof tokens, refresh-token family
 revocation) mean no single failure breaches the tenant boundary, and the isolation guarantee is
 re-checked on every merge rather than asserted once [CITE:testcontainers]. The hardened container
-runtime and the 84-step auditable migration history extend the same discipline to operations.
+runtime and the 86-step auditable migration history extend the same discipline to operations.
 
 ### 7.2.2 Limitations of the Chosen Methods
 
@@ -185,7 +185,7 @@ plainly:
 - The **OIDC pairwise-subject resolver** is shipped but **dormant** behind a default-off flag.
 - The server-side **fingerprint biometric was removed** (it was a placeholder); `FINGERPRINT` is now
   delivered only via WebAuthn.
-- **Iris recognition** is declared in the enum but **not implemented**.
+- **Iris recognition** is **not yet implemented**.
 - Some verification-pipeline handlers (for example, the **watchlist check**) are production fail-fast
   stubs awaiting a real data source.
 - The in-browser **card-detection model** (a 12.3 MB YOLOv8n) was trained on a limited corpus and
@@ -239,7 +239,7 @@ horizontally under load instead of being capped on one machine.
 
 **Additional biometric modalities.** The hexagonal handler architecture was built precisely so new
 factors slot in as adapters. The voice modality (Resemblyzer speaker embeddings) is wired and can be
-matured into a first-class factor; **iris recognition**, declared in the enum but not implemented, is
+matured into a first-class factor; **iris recognition**, not yet implemented, is
 the most obvious next modality; and gait or behavioral signals could extend continuous-verification
 (proctoring) scenarios. Each new modality benefits from the same server-authoritative, log-only-client
 discipline established for face.

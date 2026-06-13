@@ -119,10 +119,10 @@ annotations, `def test_` functions, and `it()`/`test()` blocks), with throwaway 
 build directories, and duplicated scratch copies excluded. They are *authored* method counts,
 not *passing* counts, because some tests are environment-gated or marked skip/xfail at runtime.
 
-In the **Identity Core API**, we authored **1,595 `@Test` methods across 179 test files**, all
-under `src/test/java`, with no stray tests in the main source set. A further **22
+In the **Identity Core API**, we authored **1,743 `@Test` methods across 179 test files**, all
+under `src/test/java`, with no stray tests in the main source set. A further **23
 `@ParameterizedTest` methods** each expand into several executed cases at runtime, so the true
-executed count exceeds 1,595. These tests mix pure unit tests over domain and application
+executed count exceeds 1,743. These tests mix pure unit tests over domain and application
 logic, Spring-context tests, Testcontainers integration tests, and ArchUnit boundary tests.
 The unit-level work concentrates on the security-sensitive logic that is hardest to get right
 and most dangerous to get wrong: password hashing with bcrypt
@@ -134,42 +134,43 @@ finished green: **1,670 tests run, 0 failures, 0 errors, 67 skipped**. The skipp
 the Docker-gated Testcontainers integration tests, and the executed count exceeds the authored
 method count because parameterized tests expand at runtime.
 
-In the **biometric processor**, we authored **888 `def test_` functions across 68 test
-files**. By directory these break down as 683 unit tests, 167 integration tests, 22 e2e tests,
-10 benchmarks, and 6 manual tests. The unit suite covers the algorithm-level building blocks:
+In the **biometric processor**, we authored **980 `def test_` functions across 68 test
+files**, dominated by unit tests with smaller integration, e2e, benchmark, and manual suites.
+The unit suite covers the algorithm-level building blocks:
 the eye-aspect-ratio and mouth-aspect-ratio computations that drive the Biometric Puzzle
 [CITE:soukupova2016-ear], cosine-similarity comparison over L2-normalized embeddings, the
 texture/moiré/frequency/color liveness scoring, the MRZ TD1/TD3 parser, and the eMRTD
 passive-authentication crypto. A representative bare-host CI baseline recorded **647 passed,
 1 skipped, and 1 xfailed** in `tests/unit/`, and **50 passed with 111 skipped** in
 `tests/integration/`; the skipped integration tests are the ML-lifespan and full-stack cases
-that run only inside the Docker ML stack. The gap between the 888 authored and the roughly 700
+that run only inside the Docker ML stack. The gap between the 980 authored and the subset
 executed on a bare host is therefore deliberate, not a sign of neglect.
 
-In the **web dashboard and hosted login**, we authored **1,025 Vitest cases across 105 test
+In the **web dashboard and hosted login**, we authored **1,208 Vitest cases across 105 test
 files** using Vitest with React Testing Library. These verify React hooks (face detection,
 quality scoring, challenge state), API-client error handling, i18n string coverage in both
 English and Turkish, and the authentication-flow builder UI logic.
 
-In the **Kotlin Multiplatform clients**, we authored **561 `@Test` methods across 64 test
-files**: 489 in the shared `commonTest` set, 30 Android instrumented tests, 25 in
-`desktopTest`, and 17 Android JVM unit tests. Table 5.3 consolidates the inventory. The
-shared `commonTest` set exercises the cross-platform domain layer once and reuses it across
-Android and desktop targets.
+In the **Kotlin Multiplatform clients**, we authored **573 `@Test` methods across 64 test
+files**, concentrated in the shared `commonTest` set, with the remainder split across the
+Android instrumented, `desktopTest`, and Android JVM unit targets. Table 5.3 consolidates the
+inventory. The shared `commonTest` set exercises the cross-platform domain layer once and
+reuses it across Android and desktop targets.
 
 [[TABLE: Final grep-verified authored automated test inventory per module (confirming the planned inventory of §3.2.4)]]
 
 | Module | Tool | Files | Authored test cases |
 |---|---|---|---|
-| Identity Core API | JUnit 5 | 179 | 1,595 (+22 parameterized) |
-| Web dashboard (unit/component) | Vitest | 105 | 1,025 |
+| Identity Core API | JUnit 5 | 179 | 1,743 (+23 parameterized) |
+| Web dashboard (unit/component) | Vitest | 105 | 1,208 |
 | Web dashboard (E2E) | Playwright | 28 | 336 |
-| Mobile / desktop clients | Kotlin / JUnit | 64 | 561 |
-| Biometric processor | pytest | 68 | 888 |
-| **Total** | | **444** | **≈ 4,405 authored** |
+| Mobile / desktop clients | Kotlin / JUnit | 64 | 573 |
+| Biometric processor | pytest | 68 | 980 |
+| **Total** | | **444** | **4,863 authored** |
 
-The headline figure for the thesis is therefore **approximately 4,400 authored automated test
-cases across five test technologies**, materially higher than the "~1,800+" figure that appears
+The headline figure for the thesis is therefore **approximately 4,860 authored automated test
+cases across five test technologies** (as of the submission date, 13 June 2026), materially
+higher than the "~1,800+" figure that appears
 in an older internal summary. We report the verified, grep-derived figure because it is the
 accurate one: the older summary counted only a subset and predates later test growth.
 
@@ -452,7 +453,7 @@ baseline ratio above 1.3, that the texture/moiré/frequency/color detector down-
 screen-like presentation, and that a both-eyes-closed still frame triggers the EAR veto. These
 behavioral assertions are real, automated, and passing. The browser port additionally carries
 **276 Vitest cases** (in the separate `spoof-detector` repository, not counted in Table 5.3's
-4,405-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
+4,863-case inventory) covering each analyzer, the pipeline assembler, the quality gates, and a
 small CASIA-FASD micro-benchmark harness (`CasiaFasdMicroBench`).
 
 What we do **not** report is a headline accuracy number for the fused system. An internal
@@ -548,11 +549,12 @@ defense-in-depth applied to the test strategy itself, as Table 5.9 traces.
 
 ## 5.10 Results Summary and Discussion
 
-The testing program produced a large, multi-technology, CI-integrated body of evidence. The
-verified inventory is **approximately 4,405 authored automated test cases across 444 test
-files in five technologies**: 1,595 JUnit 5 methods (plus 22 parameterized) in the Identity
-Core API, 1,025 Vitest cases in the web dashboard, 336 Playwright E2E cases, 561 Kotlin
-methods in the clients, and 888 pytest functions in the biometric processor. A large subset of
+The testing program produced a large, multi-technology, CI-integrated body of evidence. As of
+the submission date (13 June 2026), the verified inventory is **4,863 authored automated test
+cases across 444 test files in five technologies**: 1,743 JUnit 5 methods (plus 23
+parameterized) in the Identity Core API, 1,208 Vitest cases in the web dashboard, 336
+Playwright E2E cases, 573 Kotlin methods in the clients, and 980 pytest functions in the
+biometric processor. A large subset of
 these runs on every continuous-integration pipeline; the heaviest machine-learning and
 Testcontainers-dependent integration tests run inside the Docker ML and integration stacks
 rather than on the lightweight CI runners, by deliberate design. The pipelines enforce coverage

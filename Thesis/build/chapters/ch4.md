@@ -41,7 +41,7 @@ place. Table 4.1 summarizes the principal tools.
 | Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [CITE:traefik] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
-| DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V84) checked into source control |
+| DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V86) checked into source control |
 
 Three of these choices departed from the original planning documents and are worth
 clarifying. First, the production **edge is Traefik v3, not NGINX**. The "API gateway"
@@ -59,7 +59,7 @@ Developer tooling and standards round out the picture: IntelliJ IDEA and PyCharm
 backends, VS Code for the front ends, Git/GitHub for version control with branch protection
 and pull-request review, Maven for the Java build and Gradle for the Kotlin clients, and a
 GitHub Actions continuous-integration pipeline (covered in Chapter 5) that gates every
-merge on roughly **4,400 automated tests** across five test technologies.
+merge on approximately **4,860 automated tests** across five test technologies.
 
 ## 4.2 Data Structures
 
