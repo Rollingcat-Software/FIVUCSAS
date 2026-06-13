@@ -493,7 +493,7 @@ frontal-to-profile pairs) the AUC was 0.9845, and on AgeDB-30, which pairs faces
 
 These AUC figures alone would paint too rosy a picture, and the committed evaluation summaries
 say so directly. The same model that excels on frontal, same-age faces degrades markedly off
-that operating point. At the production-side 0.45 distance threshold the LFW false-reject rate
+that operating point. At that same 0.45 benchmark threshold the LFW false-reject rate
 is an excellent 4.4%, but on the frontal-to-profile CFP-FP set the equal-error rate rises to
 roughly 27% (false-reject roughly 55% at that threshold), and on the age-gap AgeDB-30 set the
 equal-error rate reaches roughly 34% (false-reject roughly 68%). In plain terms, the embedding
