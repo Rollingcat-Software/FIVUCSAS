@@ -28,7 +28,8 @@ Generated 2026-06-05. Software-Oriented track. ~32,000 words, 7 chapters + 3 app
 ## Accuracy posture (important for defense)
 
 Every technical claim was grounded in the real codebase (Spring Boot 3.4.7, PostgreSQL 17 + pgvector,
-Flyway V0–V83, Facenet512/MTCNN/MediaPipe/MiniFASNet, Traefik, ~4,400 authored tests). FAR/FRR/APCER
+Flyway V0–V86, Facenet512/MTCNN/MediaPipe/MiniFASNet, Traefik, ~4,860 authored tests as of the
+13 June 2026 submission date). FAR/FRR/APCER
 and latency numbers are labelled **targets / controlled-test**, never as audited production results, and
 the unverified "100 % accuracy" poster claim is **explicitly disavowed**. See `build/reviews/accuracy.md`.
 

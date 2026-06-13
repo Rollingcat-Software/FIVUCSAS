@@ -230,9 +230,10 @@ The second connection is **identity-fraud and impersonation resistance** in the 
 sense that underpins both civil and national security. Document fraud, synthetic identities,
 and presentation attacks (printed photos, replayed videos, masks, screen replays) are the
 tools of everything from benefit fraud to infiltration. The platform's defense-in-depth
-against exactly these attacks (the active Biometric Puzzle, the passive
-learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy, and the
-watchlist-check step type in the KYC pipeline) is the same machinery a state or a regulated
+against exactly these attacks (the active Biometric Puzzle and the passive
+learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy; a
+watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
+stub awaiting a sanctions-data provider) is the same machinery a state or a regulated
 institution needs to keep forged and stolen identities out of trusted systems
 [CITE:iso30107-3,minifasnet]. By raising the cost of impersonation, the platform contributes
 to the integrity of the identity layer on which secure public services rest.

@@ -2,7 +2,7 @@
 
 The Identity Core API database schema was built and evolved exclusively through versioned Flyway migrations [CITE:flyway], applied automatically and in order at service startup. Every schema change over the project's lifetime is therefore captured as an auditable, replayable script. The complete catalog of applied migrations follows; the biometric processor maintains its own separate schema through Alembic.
 
-[[TABLE: Flyway migration catalog of the Identity Core API schema (V0–V84)]]
+[[TABLE: Flyway migration catalog of the Identity Core API schema (V0–V86)]]
 
 | Version | Migration |
 | --- | --- |
@@ -90,12 +90,14 @@ The Identity Core API database schema was built and evolved exclusively through 
 | V82 | Oauth2 clients cross tenant |
 | V83 | Widen chk enrollment method approve login passkey |
 | V84 | User settings tenant id |
+| V85 | Refresh tokens client id |
+| V86 | Seed puzzle auth method |
 
 The biometric processor's vector store (face and voice embeddings, liveness logs) was migrated independently with Alembic across 5 revisions, keeping the compute-intensive biometric schema fully decoupled from the identity schema, in line with the microservices boundary.
 
 # Appendix B: REST API Surface Reference
 
-This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and roughly 70 endpoints.
+This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and 84 endpoints.
 
 ## B.1 Identity Core API: Principal Controllers
 
