@@ -212,8 +212,9 @@ passive brightness check. Fourteen of these fifteen are active motion challenges
 fifteenth, the brightness check, is a passive lighting-quality probe rather than a commanded
 movement, which is why the user-facing web enumeration lists fourteen selectable facial
 actions while the server engine carries fifteen. Nine are hand gestures: finger counting,
-shape tracing with the index finger, tracing an on-screen template, waving, a palm flip, a
-finger tap, a pinch, a hand-covers-face "peek-a-boo," and finger arithmetic. The hand channel
+tracing a shape against a stored template catalog, waving, a palm flip, a finger tap,
+a pinch, a hand-covers-face "peek-a-boo," finger arithmetic, and holding the hand steady in
+place (a low-variance hold check). The hand channel
 is real, not simulated: a lazily loaded MediaPipe `HandLandmarker` runs in the client (its
 ~5 MB WASM cost is paid only on the puzzle surface) and streams 21-point hand-landmark
 sequences to the server, where `active_gesture_liveness_manager.py` re-scores each gesture
