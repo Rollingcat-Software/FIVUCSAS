@@ -203,15 +203,15 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 `mouthSmileLeft/Right > 0.4`, `jawOpen > 0.4`, brow blendshapes `> 0.3`), which is both more
 robust and cheaper than re-deriving geometry.
 
-**A 24-challenge library across two body channels.** The biometric engine's canonical
+**A 23-challenge library across two body channels.** The biometric engine's canonical
 challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
-defines twenty-four micro-challenges. Fifteen belong to the facial channel: blink, closing
+defines twenty-three commanded challenges. Fourteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
-down, raising both brows, raising the left or the right brow alone, a nod, a head shake, and a
-passive brightness check. Fourteen of these fifteen are active motion challenges; the
-fifteenth, the brightness check, is a passive lighting-quality probe rather than a commanded
-movement, which is why the user-facing web enumeration lists fourteen selectable facial
-actions while the server engine carries fifteen. Nine are hand gestures: finger counting,
+down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
+The engine additionally exposes a passive brightness probe, but it is a lighting-quality check
+rather than a commanded movement, so it is not one of the twenty-three challenges (which is also
+why the user-facing web enumeration lists exactly these fourteen selectable facial actions).
+Nine are hand gestures: finger counting,
 tracing a shape against a stored template catalog, waving, a palm flip, a finger tap,
 a pinch, a hand-covers-face "peek-a-boo," finger arithmetic, and holding the hand steady in
 place (a low-variance hold check). The hand channel
