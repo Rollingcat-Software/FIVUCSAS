@@ -147,9 +147,11 @@ FIVUCSAS/                    # Parent repo (submodules)
 ├── landing-website/         # Landing page → Hostinger
 ├── links-website/           # links.fivucsas.com hub (static index.html) → Hostinger
 ├── practice-and-test/       # R&D experiments
-├── scripts/                 # Deploy scripts, setup-twilio.sh
-└── ROADMAP.md               # Product roadmap
+└── scripts/                 # Deploy scripts, setup-twilio.sh
 ```
+
+> Product roadmap / delivery tracking lives on the **FIVUCSAS Delivery** GitHub
+> project board (org project 2) + issues — not in a tracked roadmap file.
 
 ## Auth Methods (10)
 
@@ -159,8 +161,9 @@ PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KE
 WebAuthn mode — browser/OS resolves the user by `userHandle`, no app needed; folds into the
 WebAuthn/HARDWARE_KEY method as its discoverable mode) and **approve-login** (no-Firebase,
 number-matching, poll-based cross-device approval; companion to QR_CODE). The config-driven
-login work (in-flight, feature-flagged) will surface PASSKEY + APPROVE_LOGIN as selectable
-Layer-1 methods in the flow builder — see `ROADMAP_AUTH_2026-05-30.md`.
+login work (now shipped, feature-flagged) surfaces PASSKEY + APPROVE_LOGIN as selectable
+Layer-1 methods in the flow builder. Auth-program history is in `CHANGELOG.md` + the
+**FIVUCSAS Delivery** board.
 
 ## Architectural direction (2026-04-16)
 
