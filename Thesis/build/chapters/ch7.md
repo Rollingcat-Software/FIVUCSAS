@@ -30,7 +30,7 @@ On the current production path (client-side embedding), the browser computes the
 Facenet512 embedding via onnxruntime-web and uploads only the 512-dimensional L2-normalized
 vector; the Biometric Processor then performs the pgvector cosine match and issues the
 accept/reject verdict, skipping MTCNN detection and the DeepFace forward pass entirely. The
-128-dimensional landmark-geometry vector produced by the Biometric Puzzle is recorded for offline
+landmark-geometry vector produced during the Biometric Puzzle capture is recorded for offline
 analysis under architectural decision D2 (log-only, server-authoritative verdict) and is
 distinct from the 512-dimensional production embedding. The two services communicate over an internal REST contract guarded by an API key, and the
 Biometric Processor has **no public route** and is reachable only on the internal Docker network,
@@ -77,8 +77,7 @@ client was built and CI-packaged** as a hosted-first OAuth loopback application 
 token storage; its `.deb`/`.msi` installers were produced on Linux and Windows runners but had not
 yet been published for end-user download, pending release signing. **iOS was not delivered**: the shared module compiles for iOS targets, but
 the platform implementations are stubs, and the app remains future work blocked on Apple Developer
-enrollment. The PSD-era plan to build the clients in Flutter was abandoned in favor of Kotlin
-Multiplatform, and we report that as the reality.
+enrollment.
 
 Security was treated as a first-class, tested property rather than a coat of paint. BCrypt at work
 factor 12 protected passwords [CITE:bcrypt]; production access tokens were RS256-signed JWTs with
