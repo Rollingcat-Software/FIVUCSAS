@@ -168,7 +168,7 @@ reuses it across Android and desktop targets.
 | Biometric processor | pytest | 68 | 980 |
 | **Total** | | **444** | **4,863 authored** |
 
-The headline figure for the thesis is therefore **approximately 4,860 authored automated test
+The headline figure for the thesis is therefore **approximately 4,863 authored automated test
 cases across five test technologies** (as of the submission date, 13 June 2026), materially
 higher than the "~1,800+" figure that appears
 in an older internal summary. We report the verified, grep-derived figure because it is the

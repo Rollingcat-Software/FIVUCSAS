@@ -59,7 +59,7 @@ Developer tooling and standards round out the picture: IntelliJ IDEA and PyCharm
 backends, VS Code for the front ends, Git/GitHub for version control with branch protection
 and pull-request review, Maven for the Java build and Gradle for the Kotlin clients, and a
 GitHub Actions continuous-integration pipeline (covered in Chapter 5) that gates every
-merge on approximately **4,860 automated tests** across five test technologies.
+merge on approximately **4,863 automated tests** across five test technologies.
 
 ## 4.2 Data Structures
 
