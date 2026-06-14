@@ -153,9 +153,10 @@ FIVUCSAS/                    # Parent repo (submodules)
 > Product roadmap / delivery tracking lives on the **FIVUCSAS Delivery** GitHub
 > project board (org project 2) + issues — not in a tracked roadmap file.
 
-## Auth Methods (10)
+## Auth Methods (12)
 
 PASSWORD | EMAIL_OTP | SMS_OTP | TOTP | FACE | VOICE | FINGERPRINT | HARDWARE_KEY | QR_CODE | NFC_DOCUMENT
++ cross-device: PASSKEY (discoverable WebAuthn) | APPROVE_LOGIN (number-matching push). `AuthMethodType.LOGIN_METHODS` = 12. (A 13th, PUZZLE active-liveness, is enum-defined + V86-seeded but flag-gated default-OFF.) SMS_OTP is LIVE (Twilio Verify, `.env.prod SMS_PROVIDER=twilio-verify`).
 
 **Cross-device login surfaces (2026-05-30, shipped):** **passkey hybrid login** (discoverable
 WebAuthn mode — browser/OS resolves the user by `userHandle`, no app needed; folds into the
@@ -224,13 +225,13 @@ Layer-1 methods in the flow builder. Auth-program history is in `CHANGELOG.md` +
 CX43 CPU-only — GPU ihtiyacı doğmaz (Faz 1-3 roadmap CPU-safe).
 
 ### Kural: Liveness Entegrasyonu
-`/liveness` endpoint'i ayrı çalışıyor. `/enroll` ve `/verify` liveness çağırmıyor — bu kasıtlı değil, açık bir boşluk. Faz 2'de düzeltilecek.
+Server-side legacy yolda `/enroll` + `/verify` passive liveness'i (UniFace MiniFASNet, `LIVENESS_MODE=passive`) **bundled** çağırır. **Üretim varsayılanı CLIENT-SIDE embedding** (`.env.prod APP_AUTH_CLIENT_SIDE_EMBEDDING=true`, 2026-06-14 doğrulandı): bu yolda sunucuya görüntü gitmez → server-side image liveness YOK; liveness, tarayıcı-taraflı advisory MiniFASNet PAD + sunucu-doğrulamalı aktif **Biometric Puzzle** ile sağlanır. (Eski "liveness çağrılmıyor / açık boşluk" notu ARTIK GEÇERSİZ.)
 
 **Detay:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_PIPELINE_AUDIT_2026-04-28.md` | **Roadmap:** `archive/2026-04-pre-roadmap-2028/BIOMETRIC_ROADMAP_2026-04-28.md`
 
 ## Database
 
-- Flyway migrations V0-V83 — 83 files, V13 number unused (identity-core-api; e.g. V37 tenant_id index, V38 SPA public client flip, V59 audit_logs tenant_id backfill, V60 refresh_tokens plaintext column drop, V73 passkey seed, V79 NFC serial backfill, V80 fivucsas-mobile OAuth client, V81 consent singleton, V82 cross_tenant clients, V83 widen chk_enrollment_method for approve_login/passkey) + Alembic 0001-0005 (biometric-processor)
+- Flyway migrations V0-V86 — 86 files, V13 number unused (identity-core-api; e.g. V37 tenant_id index, V38 SPA public client flip, V59 audit_logs tenant_id backfill, V60 refresh_tokens plaintext column drop, V73 passkey seed, V79 NFC serial backfill, V80 fivucsas-mobile OAuth client, V81 consent singleton, V82 cross_tenant clients, V83 widen chk_enrollment_method for approve_login/passkey, V84 user_settings tenant_id, V85 refresh_tokens client_id, V86 seed puzzle auth method) + Alembic 0001-0005 (biometric-processor)
 - Key tables: users, tenants, auth_flows, auth_flow_steps, auth_methods, biometric_enrollments, audit_logs, oauth2_clients, verification_sessions, voice_enrollments (V33), client_embedding_observations (Alembic 0004, log-only per D2), mfa_sessions (V35 consumed_at, V36 client_id for cross-client replay guard), oauth2_clients.confidential (V34)
 - pgvector HNSW indexes on face_embeddings + voice_enrollments; no HNSW on observations (log, not search surface)
 
