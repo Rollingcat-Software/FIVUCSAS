@@ -124,11 +124,11 @@ reason about and test, and it leaves a clear path to scaling the two services in
 [CITE:cockburn-hexagonal,evans2003-ddd] meant that swapping an SMS provider, a cache, or a biometric
 backend was a matter of writing a new adapter, not surgery on the domain. The Strategy-plus-Registry
 pattern used for login handlers, MFA step handlers, and verification-pipeline handlers made the
-twelve authentication methods and the ten verification steps genuinely pluggable, and ArchUnit
+twelve authentication methods and the verification step-type handlers genuinely pluggable, and ArchUnit
 boundary tests froze the most important architectural invariants so they cannot silently rot.
 
 **Server-authoritative liveness with an active challenge.** Placing the auth decision on the server
-and combining passive liveness with the active Biometric Puzzle is, we believe, the project's
+and combining passive liveness with the active Biometric Puzzle is the project's
 strongest design choice. It directly addresses the presentation-attack threat that defeats naive
 "match a photo" systems, and the log-only client embedding (decision D2) means a compromised or
 spoofed browser cannot manufacture a positive verdict. The anti-spoofing pipeline is deliberately

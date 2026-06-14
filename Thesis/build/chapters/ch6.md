@@ -93,8 +93,11 @@ intervals [CITE:iso30107-3]. The platform's passive defenses combine a
 learned model (UniFace MiniFASNet, run as a shared ONNX session) with classical
 computer-vision detectors that need no GPU: texture analysis, moiré-pattern detection,
 frequency-domain analysis, color-distribution checks, screen-replay detection, and an rPPG
-(remote photoplethysmography) analyzer, fused under a conservative verdict policy in which
-either backend voting "spoof" wins [CITE:minifasnet,opencv]; releasing them in inspectable
+(remote photoplethysmography) analyzer, fused under a conservative, spoof-wins verdict policy
+in the standalone library and its amispoof tester [CITE:minifasnet,opencv]; integrated into the
+production login path the same detectors act as an additive, fail-soft signal behind the
+always-on passive gate and eye-aspect-ratio veto (Section 4.3.2), so a single misbehaving
+detector can never hard-block a legitimate user. Releasing them in inspectable
 form means their behavior can be examined rather than taken on faith. The evaluation posture
 built on that apparatus was deliberately conservative: every figure was labeled as measured
 on a specific test set or as a target, never as a universal accuracy claim, and the project
@@ -167,7 +170,7 @@ structure makes that more than aspiration. The platform is an end-to-end, workin
 reference for a stack that student and research teams frequently want but rarely see
 assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI
 machine-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
-Kotlin Multiplatform clients sharing logic across Android and desktop (the shared module also targets iOS, which is scaffolded but not yet shipped), and a
+Kotlin Multiplatform clients sharing one business-logic core across Android, desktop, and iOS (the Android app is publicly released, the desktop client is CI-packaged with public distribution still pending, and the iOS target is scaffolded but not yet shipped), and a
 React dashboard, all wired through OAuth 2.0/OIDC with PKCE
 [CITE:springboot,fastapi,kmp,react,traefik,postgresql,redis,pgvector,pkce-rfc7636]. A new
 project does not have to rediscover how these pieces fit; it can study a system where they
@@ -235,8 +238,8 @@ sense that underpins both civil and national security. Document fraud, synthetic
 and presentation attacks (printed photos, replayed videos, masks, screen replays) are the
 tools of everything from benefit fraud to infiltration. The platform's defense-in-depth
 against exactly these attacks (the active Biometric Puzzle and the passive
-learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy; a
-watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
+learned-plus-classical anti-spoofing stack with its conservative, fail-soft fusion behind an
+always-on liveness floor; a watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
 stub awaiting a sanctions-data provider) is the same machinery a state or a regulated
 institution needs to keep forged and stolen identities out of trusted systems
 [CITE:iso30107-3,minifasnet]. By raising the cost of impersonation, the platform contributes

@@ -39,7 +39,7 @@ Legacy authentication codebases make the gap worse still. By bundling user manag
 
 These deficiencies are intertwined: the brittleness of passwords and cards, the spoofability of shallow biometrics, the fragmentation of physical and digital identity, and the absence of an open, multi-tenant biometric platform. Together they defined both the motivation and the worth of this project. The problem was practical as well as academic: it directly affected the security of individuals whose identities were stolen and the operational resilience of the institutions that served them, and it sat squarely at the intersection of cybersecurity, machine learning, distributed systems, and privacy law. That intersection is precisely what made the problem worth solving carefully.
 
-In response, we designed, built, and deployed **FIVUCSAS** (*Face and Identity Verification Using Cloud-based SaaS*), a multi-tenant, cloud-native biometric identity-verification platform. At its core, FIVUCSAS pairs high-accuracy deep-learning face recognition with an active, challenge–response liveness mechanism we call the **Biometric Puzzle**, which asks the user to complete a randomly generated sequence of facial and hand-gesture actions, drawn from a 23-challenge library and re-verified on the server, so that a static photo or a replayed video cannot satisfy the unpredictable, live challenge. The platform was implemented as two backend microservices: an **Identity Core API** that owns authentication, authorization, tenant administration, and security policy, and a **Biometric Processor** that performs the compute-intensive face detection, embedding, similarity search, and anti-spoofing analysis. Faces are stored as high-dimensional embeddings in a vector-enabled relational database and matched by vector similarity, an in-memory cache holds rate-limiting state and short-lived session data, and an edge reverse proxy terminates TLS in front of the services. Around this backend we delivered multiple client surfaces: a React web administration dashboard, a hosted login experience with an embeddable authentication widget and JavaScript SDK (the widget was subsequently demoted to inline step-up MFA, with the hosted redirect flow as the primary integration mode; see Section 4.5), and a Kotlin Multiplatform mobile application, all bound together by a multi-tenant data model that isolates each client organization's users and biometric data at the data layer. The exact technology versions and the reasons behind each choice are detailed in Chapters 2 and 3; the remainder of this thesis describes how each of these pieces was specified, designed, implemented, and tested.
+In response, we designed, built, and deployed **FIVUCSAS** (*Face and Identity Verification Using Cloud-based SaaS*), a multi-tenant, cloud-native biometric identity-verification platform. At its core, FIVUCSAS pairs high-accuracy deep-learning face recognition with an active, challenge–response liveness mechanism we call the **Biometric Puzzle**, which asks the user to complete a randomly generated sequence of facial and hand-gesture actions, drawn from a 23-challenge library and re-verified on the server, so that a static photo or a replayed video cannot satisfy the unpredictable, live challenge. The platform was implemented as two backend microservices: an **Identity Core API** that owns authentication, authorization, tenant administration, and security policy, and a **Biometric Processor** that performs the compute-intensive face detection, embedding, similarity search, and anti-spoofing analysis. Faces are stored as high-dimensional embeddings in a vector-enabled relational database and matched by vector similarity, an in-memory cache holds rate-limiting state and short-lived session data, and an edge reverse proxy terminates TLS in front of the services. Around this backend we delivered multiple client surfaces: a React web administration dashboard, a hosted login experience with an embeddable authentication widget and JavaScript SDK (the widget was subsequently demoted to inline step-up MFA, with the hosted redirect flow as the primary integration mode; see Section 4.4.2), and a Kotlin Multiplatform mobile application, all bound together by a multi-tenant data model that isolates each client organization's users and biometric data at the data layer. The exact technology versions and the reasons behind each choice are detailed in Chapters 2 and 3; the remainder of this thesis describes how each of these pieces was specified, designed, implemented, and tested.
 
 This thesis asked whether high-accuracy face verification, robust anti-spoofing, and strict multi-tenant isolation could be engineered into a single, deployable Software-as-a-Service platform; the chapters that follow answer it with a built and operated system.
 
@@ -318,7 +318,7 @@ The platform's behavior was organized around six functional requirements (FR-1 t
 
 **FR-1: Authentication.** The system authenticates users with a password as a baseline and composes that with any number of additional factors into a tenant-configurable login flow. We implemented ten canonical login factors (`PASSWORD`, `EMAIL_OTP`, `SMS_OTP`, `TOTP`, `FACE`, `VOICE`, `FINGERPRINT`, `HARDWARE_KEY`, `QR_CODE`, and `NFC_DOCUMENT`) plus two cross-device additions, `PASSKEY` (discoverable WebAuthn) and `APPROVE_LOGIN` (number-matching push approval); the canonical login factors are identified by an `isLoginMethod()` check on the `AuthMethodType` enum. First-factor verification runs through a Strategy/Registry of `AuthMethodHandler` implementations; each subsequent factor is consumed by an N-step MFA dispatcher (`VerifyMfaStepService`) that holds the JWT back until every step of the flow has been satisfied and accumulates RFC 8176 `amr` evidence into the issued access token [24]. The original specification's error contract was honored: invalid credentials return `401 Unauthorized`, and an account is locked (`423 Locked`) after five consecutive failures via `LoginAccountStateGuard`.
 
-**FR-2: Biometric Enrollment.** In the current production deployment (client-side embedding) the browser computes the 512-dimensional Facenet512 embedding via ONNX Runtime Web [11] and uploads only that vector to `/enroll-embedding`; the biometric processor validates the vector dimension and persists it in dual columns (searchable plaintext vector plus a Fernet-encrypted store-of-record). The raw face image never leaves the device. Liveness on this path is the server-verified active Biometric Puzzle together with an advisory client-side MiniFASNet PAD — there is no server-side image-liveness gate, because no image is uploaded. The legacy server-side path remains available under a feature flag: the image is uploaded and the processor detects the face with MTCNN [10], scores quality (blur via Laplacian variance, lighting, and face size), runs UniFace MiniFASNet passive liveness [16], and generates the embedding server-side, rejecting a frame with no face (`400`) or insufficient quality (`422`) before persistence. Voice enrollment follows the same shape, producing 256-dimensional Resemblyzer speaker embeddings. In every path the accept/reject decision stays server-authoritative (decision D2).
+**FR-2: Biometric Enrollment.** In the current production deployment (client-side embedding) the browser computes the 512-dimensional Facenet512 embedding via ONNX Runtime Web [11] and uploads only that vector to `/enroll-embedding`; the biometric processor validates the vector dimension and persists it in dual columns (searchable plaintext vector plus a Fernet-encrypted store-of-record). The raw face image never leaves the device. Liveness on this path is the server-verified active Biometric Puzzle together with an advisory client-side MiniFASNet PAD; there is no server-side image-liveness gate, because no image is uploaded. The legacy server-side path remains available under a feature flag: the image is uploaded and the processor detects the face with MTCNN [10], scores quality (blur via Laplacian variance, lighting, and face size), runs UniFace MiniFASNet passive liveness [16], and generates the embedding server-side, rejecting a frame with no face (`400`) or insufficient quality (`422`) before persistence. Voice enrollment follows the same shape, producing 256-dimensional Resemblyzer speaker embeddings. In every path the accept/reject decision stays server-authoritative (decision D2).
 
 **FR-3: Biometric Verification.** Verification compares a freshly captured sample against the stored template. For 1:1 verification the processor recomputes the probe embedding and returns a match when the cosine *distance* between L2-normalized embeddings falls below the configured threshold (production `VERIFICATION_THRESHOLD = 0.4`, with an aged-embedding adaptive relaxation to `0.55` for templates older than two years). For 1:N identification the system runs a pgvector approximate-nearest-neighbor search over the tenant's embeddings using the cosine-distance operator over a pgvector ANN index [8]. Passive liveness runs on the verify path as well, rejecting frames scored below `0.4` with a `LIVENESS_FAILED` response, and rate limiting protects the endpoint, returning `429` when a tenant or user budget is exhausted.
 
@@ -444,7 +444,7 @@ The Auth-Flow Builder deserves special note: it lets a tenant administrator mode
 | TOTP Authenticator | Standalone RFC 6238 code generator |
 
 
-Two qualifications keep the delivery picture accurate. The iOS target is *not delivered*: the shared module declares iOS targets and an `iosMain` source set, but it consists of stubs (the TOTP HMAC implementation throws a `TODO`), and there is no shippable `iosApp` module, so iOS remains Phase-2 work blocked on Apple Developer enrollment. macOS is out of scope for lack of code-signing capability. Both statuses are tracked in the client-apps parity matrix and revisited in Chapter 7.
+Two qualifications keep the delivery picture accurate. The iOS target is *not delivered*: the shared module declares iOS targets and an `iosMain` source set, but it consists of stubs (the TOTP HMAC implementation throws a `TODO`), and there is no shippable `iosApp` module, so iOS remains Phase-2 work blocked on Apple Developer enrollment. macOS is out of scope for lack of code-signing capability. Both statuses are revisited in the cross-platform retrospective of Chapter 7. The delivery picture is therefore deliberately uneven but honest: one production-grade native client (Android) shipped publicly, a second (desktop) built and CI-packaged but not yet distributed, and a third (iOS) scaffolded for a later phase. A single shared Kotlin business-logic core thus demonstrates its portability across three targets even where the per-platform packaging and release work remains incomplete.
 
 The enrollment and verification surfaces are supported by the sequence flows captured in Figure 3.6 and Figure 3.7 for face enrollment, Figure 3.8 and Figure 3.9 for face verification, and by the end-user registration flow in Figure 3.10.
 
@@ -1203,8 +1203,8 @@ The **enrollment finite-state machine** is method-generic: it models one enrollm
 and authentication method, with the asynchronous biometric methods (face and voice among them)
 passing through capture, quality assessment, and liveness gating to the `ENROLLED` state that the
 login engine accepts, or to a failure that re-prompts capture. The fail-closed multi-image
-enrollment of Section 4.3.2 is one of
-this machine's transition rules; Figure 4.6 depicts the complete machine.
+enrollment rule introduced in Section 4.3.2 (a single non-live frame rejects the whole batch)
+is realized as one of this machine's transitions; Figure 4.6 depicts the complete machine.
 
 ![Enrollment state machine (one row per user and authentication method). Asynchronous methods such as face and voice pass through PENDING until the backing enrollment completes with quality and liveness scores; methods whose data is verified at start and passkey registrations complete immediately. Only ENROLLED satisfies the login engine's enrollment check, and re-enrollment restarts any non-pending row. EXPIRED is defined on the entity but currently has no scheduled trigger.](../Thesis/build/figures/biometric_enrollment_state.png)
 
@@ -1971,8 +1971,11 @@ intervals [35]. The platform's passive defenses combine a
 learned model (UniFace MiniFASNet, run as a shared ONNX session) with classical
 computer-vision detectors that need no GPU: texture analysis, moiré-pattern detection,
 frequency-domain analysis, color-distribution checks, screen-replay detection, and an rPPG
-(remote photoplethysmography) analyzer, fused under a conservative verdict policy in which
-either backend voting "spoof" wins [16,47]; releasing them in inspectable
+(remote photoplethysmography) analyzer, fused under a conservative, spoof-wins verdict policy
+in the standalone library and its amispoof tester [16,47]; integrated into the
+production login path the same detectors act as an additive, fail-soft signal behind the
+always-on passive gate and eye-aspect-ratio veto (Section 4.3.2), so a single misbehaving
+detector can never hard-block a legitimate user. Releasing them in inspectable
 form means their behavior can be examined rather than taken on faith. The evaluation posture
 built on that apparatus was deliberately conservative: every figure was labeled as measured
 on a specific test set or as a target, never as a universal accuracy claim, and the project
@@ -2045,7 +2048,7 @@ structure makes that more than aspiration. The platform is an end-to-end, workin
 reference for a stack that student and research teams frequently want but rarely see
 assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI
 machine-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
-Kotlin Multiplatform clients sharing logic across Android and desktop (the shared module also targets iOS, which is scaffolded but not yet shipped), and a
+Kotlin Multiplatform clients sharing one business-logic core across Android, desktop, and iOS (the Android app is publicly released, the desktop client is CI-packaged with public distribution still pending, and the iOS target is scaffolded but not yet shipped), and a
 React dashboard, all wired through OAuth 2.0/OIDC with PKCE
 [3,4,5,6,7,8,21,22,28]. A new
 project does not have to rediscover how these pieces fit; it can study a system where they
@@ -2113,8 +2116,8 @@ sense that underpins both civil and national security. Document fraud, synthetic
 and presentation attacks (printed photos, replayed videos, masks, screen replays) are the
 tools of everything from benefit fraud to infiltration. The platform's defense-in-depth
 against exactly these attacks (the active Biometric Puzzle and the passive
-learned-plus-classical anti-spoofing stack with its conservative spoof-wins verdict policy; a
-watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
+learned-plus-classical anti-spoofing stack with its conservative, fail-soft fusion behind an
+always-on liveness floor; a watchlist-check step type also exists as an integration seam in the KYC pipeline, currently a
 stub awaiting a sanctions-data provider) is the same machinery a state or a regulated
 institution needs to keep forged and stolen identities out of trusted systems
 [16,35]. By raising the cost of impersonation, the platform contributes
@@ -2270,11 +2273,11 @@ reason about and test, and it leaves a clear path to scaling the two services in
 [31,34] meant that swapping an SMS provider, a cache, or a biometric
 backend was a matter of writing a new adapter, not surgery on the domain. The Strategy-plus-Registry
 pattern used for login handlers, MFA step handlers, and verification-pipeline handlers made the
-twelve authentication methods and the ten verification steps genuinely pluggable, and ArchUnit
+twelve authentication methods and the verification step-type handlers genuinely pluggable, and ArchUnit
 boundary tests froze the most important architectural invariants so they cannot silently rot.
 
 **Server-authoritative liveness with an active challenge.** Placing the auth decision on the server
-and combining passive liveness with the active Biometric Puzzle is, we believe, the project's
+and combining passive liveness with the active Biometric Puzzle is the project's
 strongest design choice. It directly addresses the presentation-attack threat that defeats naive
 "match a photo" systems, and the log-only client embedding (decision D2) means a compromised or
 spoofed browser cannot manufacture a positive verdict. The anti-spoofing pipeline is deliberately
@@ -2428,58 +2431,58 @@ identity-verification service, the production-grade destination this thesis set 
 
 # REFERENCES
 
-1. Verizon, *2024 Data Breach Investigations Report (DBIR)*, 2024, https://www.verizon.com/business/resources/reports/dbir/, Date accessed: June 2026.
-2. Identity Theft Resource Center, *2023 Annual Data Breach Report*, 2024, https://www.idtheftcenter.org/, Date accessed: June 2026.
-3. Broadcom (VMware Tanzu), *Spring Boot Reference Documentation*, 2025, https://docs.spring.io/spring-boot/, Date accessed: June 2026.
-4. Ramírez, S., *FastAPI Documentation*, 2025, https://fastapi.tiangolo.com/, Date accessed: June 2026.
-5. Meta Open Source, *React Documentation*, 2025, https://react.dev/, Date accessed: June 2026.
-6. JetBrains, *Kotlin Multiplatform Documentation*, 2025, https://kotlinlang.org/docs/multiplatform.html, Date accessed: June 2026.
-7. PostgreSQL Global Development Group, *PostgreSQL 17 Documentation*, 2025, https://www.postgresql.org/docs/, Date accessed: June 2026.
-8. pgvector Contributors, *pgvector: Open-source Vector Similarity Search for PostgreSQL*, 2025, https://github.com/pgvector/pgvector, Date accessed: June 2026.
-9. Redgate, *Flyway Database Migrations Documentation*, 2025, https://documentation.red-gate.com/flyway, Date accessed: June 2026.
+1. Verizon, *2024 Data Breach Investigations Report (DBIR)*, 2024, https://www.verizon.com/business/resources/reports/dbir/, Date accessed: 14 June 2026.
+2. Identity Theft Resource Center, *2023 Annual Data Breach Report*, 2024, https://www.idtheftcenter.org/, Date accessed: 14 June 2026.
+3. Broadcom (VMware Tanzu), *Spring Boot Reference Documentation*, 2025, https://docs.spring.io/spring-boot/, Date accessed: 14 June 2026.
+4. Ramírez, S., *FastAPI Documentation*, 2025, https://fastapi.tiangolo.com/, Date accessed: 14 June 2026.
+5. Meta Open Source, *React Documentation*, 2025, https://react.dev/, Date accessed: 14 June 2026.
+6. JetBrains, *Kotlin Multiplatform Documentation*, 2025, https://kotlinlang.org/docs/multiplatform.html, Date accessed: 14 June 2026.
+7. PostgreSQL Global Development Group, *PostgreSQL 17 Documentation*, 2025, https://www.postgresql.org/docs/, Date accessed: 14 June 2026.
+8. pgvector Contributors, *pgvector: Open-source Vector Similarity Search for PostgreSQL*, 2025, https://github.com/pgvector/pgvector, Date accessed: 14 June 2026.
+9. Redgate, *Flyway Database Migrations Documentation*, 2025, https://documentation.red-gate.com/flyway, Date accessed: 14 June 2026.
 10. Zhang, K., Z. Zhang, Z. Li and Y. Qiao, "Joint Face Detection and Alignment Using Multitask Cascaded Convolutional Networks", *IEEE Signal Processing Letters*, Vol. 23, No. 10, pp. 1499–1503, 2016.
-11. Schroff, F., D. Kalenichenko and J. Philbin, "FaceNet: A Unified Embedding for Face Recognition and Clustering", *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, Boston, MA, USA, pp. 815–823, 2015.
-12. Serengil, S. I. and A. Ozpinar, *DeepFace: A Lightweight Face Recognition and Facial Attribute Analysis Framework for Python*, 2024, https://github.com/serengil/deepface, Date accessed: June 2026.
+11. Schroff, F., D. Kalenichenko and J. Philbin, "FaceNet: A Unified Embedding for Face Recognition and Clustering", *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, Boston, MA, USA, IEEE, pp. 815–823, 2015.
+12. Serengil, S. I. and A. Ozpinar, *DeepFace: A Lightweight Face Recognition and Facial Attribute Analysis Framework for Python*, 2024, https://github.com/serengil/deepface, Date accessed: 14 June 2026.
 13. Serengil, S. I. and A. Ozpinar, "LightFace: A Hybrid Deep Face Recognition Framework", *Proceedings of the Innovations in Intelligent Systems and Applications Conference (ASYU)*, IEEE, 2020.
-14. Google, *MediaPipe Face Landmarker*, 2025, https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker, Date accessed: June 2026.
+14. Google, *MediaPipe Face Landmarker*, 2025, https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker, Date accessed: 14 June 2026.
 15. Soukupová, T. and J. Čech, "Real-Time Eye Blink Detection Using Facial Landmarks", *Proceedings of the 21st Computer Vision Winter Workshop*, Rimske Toplice, Slovenia, 2016.
-16. Minivision AI, *Silent-Face-Anti-Spoofing (MiniFASNet)*, 2020, https://github.com/minivision-ai/Silent-Face-Anti-Spoofing, Date accessed: June 2026.
-17. Jocher, G., A. Chaurasia and J. Qiu, *Ultralytics YOLOv8*, 2023, https://github.com/ultralytics/ultralytics, Date accessed: June 2026.
+16. Minivision AI, *Silent-Face-Anti-Spoofing (MiniFASNet)*, 2020, https://github.com/minivision-ai/Silent-Face-Anti-Spoofing, Date accessed: 14 June 2026.
+17. Jocher, G., A. Chaurasia and J. Qiu, *Ultralytics YOLOv8*, 2023, https://github.com/ultralytics/ultralytics, Date accessed: 14 June 2026.
 18. International Civil Aviation Organization, *Doc 9303: Machine Readable Travel Documents*, 8th ed., ICAO, Montréal, Canada, 2021.
-19. Docker Inc., *Docker Documentation*, 2025, https://docs.docker.com/, Date accessed: June 2026.
-20. Docker Inc., *Docker Compose Documentation*, 2025, https://docs.docker.com/compose/, Date accessed: June 2026.
-21. Traefik Labs, *Traefik Proxy Documentation*, 2025, https://doc.traefik.io/traefik/, Date accessed: June 2026.
-22. Redis Ltd., *Redis Documentation*, 2025, https://redis.io/docs/, Date accessed: June 2026.
-23. Bucket4j Contributors, *Bucket4j: Java Rate-Limiting Library Based on the Token-Bucket Algorithm*, 2025, https://bucket4j.com/, Date accessed: June 2026.
+19. Docker Inc., *Docker Documentation*, 2025, https://docs.docker.com/, Date accessed: 14 June 2026.
+20. Docker Inc., *Docker Compose Documentation*, 2025, https://docs.docker.com/compose/, Date accessed: 14 June 2026.
+21. Traefik Labs, *Traefik Proxy Documentation*, 2025, https://doc.traefik.io/traefik/, Date accessed: 14 June 2026.
+22. Redis Ltd., *Redis Documentation*, 2025, https://redis.io/docs/, Date accessed: 14 June 2026.
+23. Bucket4j Contributors, *Bucket4j: Java Rate-Limiting Library Based on the Token-Bucket Algorithm*, 2025, https://bucket4j.com/, Date accessed: 14 June 2026.
 24. Jones, M., J. Bradley and N. Sakimura, *RFC 7519: JSON Web Token (JWT)*, Internet Engineering Task Force (IETF), 2015.
-25. Provos, N. and D. Mazières, "A Future-Adaptable Password Scheme", *Proceedings of the USENIX Annual Technical Conference*, Monterey, CA, USA, 1999.
+25. Provos, N. and D. Mazières, "A Future-Adaptable Password Scheme", *Proceedings of the USENIX Annual Technical Conference*, Monterey, CA, USA, USENIX Association, 1999.
 26. Hardt, D., *RFC 6749: The OAuth 2.0 Authorization Framework*, Internet Engineering Task Force (IETF), 2012.
 27. Sakimura, N., J. Bradley, M. Jones, B. de Medeiros and C. Mortimore, *OpenID Connect Core 1.0*, OpenID Foundation, 2014.
 28. Sakimura, N., J. Bradley and N. Agarwal, *RFC 7636: Proof Key for Code Exchange by OAuth Public Clients*, Internet Engineering Task Force (IETF), 2015.
 29. World Wide Web Consortium (W3C), *Web Authentication: An API for Accessing Public Key Credentials (WebAuthn) Level 2*, W3C Recommendation, 2021.
-30. Grafana Labs, *k6: Load Testing for Engineering Teams*, 2025, https://k6.io/docs/, Date accessed: June 2026.
-31. Cockburn, A., *Hexagonal Architecture (Ports and Adapters)*, 2005, https://alistair.cockburn.us/hexagonal-architecture/ (archived at https://web.archive.org/web/2024/https://alistair.cockburn.us/hexagonal-architecture/), Date accessed: June 2026.
+30. Grafana Labs, *k6: Load Testing for Engineering Teams*, 2025, https://k6.io/docs/, Date accessed: 14 June 2026.
+31. Cockburn, A., *Hexagonal Architecture (Ports and Adapters)*, 2005, https://alistair.cockburn.us/hexagonal-architecture/ (archived at https://web.archive.org/web/2024/https://alistair.cockburn.us/hexagonal-architecture/), Date accessed: 14 June 2026.
 32. Richardson, C., *Microservices Patterns: With Examples in Java*, Manning Publications, Shelter Island, NY, USA, 2018.
 33. Newman, S., *Building Microservices: Designing Fine-Grained Systems*, 2nd ed., O'Reilly Media, Sebastopol, CA, USA, 2021.
 34. Evans, E., *Domain-Driven Design: Tackling Complexity in the Heart of Software*, Addison-Wesley, Boston, MA, USA, 2003.
 35. ISO/IEC 30107-3:2023, *Information Technology – Biometric Presentation Attack Detection – Part 3: Testing and Reporting*, 2nd ed., International Organization for Standardization, Geneva, Switzerland, 2023.
-36. OWASP Foundation, *OWASP Top 10:2021, The Ten Most Critical Web Application Security Risks*, 2021, https://owasp.org/Top10/, Date accessed: June 2026.
+36. OWASP Foundation, *OWASP Top 10:2021, The Ten Most Critical Web Application Security Risks*, 2021, https://owasp.org/Top10/, Date accessed: 14 June 2026.
 37. Republic of Türkiye, *Personal Data Protection Law No. 6698 (KVKK)*, Official Gazette No. 29677, 2016.
 38. European Parliament and Council of the European Union, *Regulation (EU) 2016/679 (General Data Protection Regulation)*, Official Journal of the European Union, L 119, 2016.
-39. Taigman, Y., M. Yang, M. Ranzato and L. Wolf, "DeepFace: Closing the Gap to Human-Level Performance in Face Verification", *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, Columbus, OH, USA, 2014.
-40. Deng, J., J. Guo, N. Xue and S. Zafeiriou, "ArcFace: Additive Angular Margin Loss for Deep Face Recognition", *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, Long Beach, CA, USA, pp. 4690–4699, 2019.
-41. Kim, M., A. K. Jain and X. Liu, "AdaFace: Quality Adaptive Margin for Face Recognition", *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, New Orleans, LA, USA, 2022.
+39. Taigman, Y., M. Yang, M. Ranzato and L. Wolf, "DeepFace: Closing the Gap to Human-Level Performance in Face Verification", *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, Columbus, OH, USA, IEEE, 2014.
+40. Deng, J., J. Guo, N. Xue and S. Zafeiriou, "ArcFace: Additive Angular Margin Loss for Deep Face Recognition", *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, Long Beach, CA, USA, IEEE, pp. 4690–4699, 2019.
+41. Kim, M., A. K. Jain and X. Liu, "AdaFace: Quality Adaptive Margin for Face Recognition", *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, New Orleans, LA, USA, IEEE, 2022.
 42. Chen, S., Y. Liu, X. Gao and Z. Han, "MobileFaceNets: Efficient CNNs for Accurate Real-Time Face Verification on Mobile Devices", *arXiv preprint arXiv:1804.06655*, 2018.
 43. Koch, G., R. Zemel and R. Salakhutdinov, "Siamese Neural Networks for One-shot Image Recognition", *Proceedings of the ICML Deep Learning Workshop*, Lille, France, 2015.
-44. Parkhi, O. M., A. Vedaldi and A. Zisserman, "Deep Face Recognition", *Proceedings of the British Machine Vision Conference (BMVC)*, Swansea, UK, 2015.
+44. Parkhi, O. M., A. Vedaldi and A. Zisserman, "Deep Face Recognition", *Proceedings of the British Machine Vision Conference (BMVC)*, Swansea, UK, BMVA Press, 2015.
 45. Bazarevsky, V., Y. Kartynnik, A. Vakunov, K. Raveendran and M. Grundmann, "BlazeFace: Sub-millisecond Neural Face Detection on Mobile GPUs", *arXiv preprint arXiv:1907.05047*, 2019.
 46. Kottakota, S. S. and A. Gnaneswar, "Secured Artificial-Intelligence-Based Face Anti-Spoofing Detection Model via Serverless Architecture and SaaS-Based Cloud Platform", *Preprints*, 2024.
 47. Bradski, G., "The OpenCV Library", *Dr. Dobb's Journal of Software Tools*, 2000.
-48. Lewis, J. and M. Fowler, *Microservices: A Definition of This New Architectural Term*, 2014, https://martinfowler.com/articles/microservices.html, Date accessed: June 2026.
+48. Lewis, J. and M. Fowler, *Microservices: A Definition of This New Architectural Term*, 2014, https://martinfowler.com/articles/microservices.html, Date accessed: 14 June 2026.
 49. Johnson, J., M. Douze and H. Jégou, "Billion-scale Similarity Search with GPUs", *IEEE Transactions on Big Data*, Vol. 7, No. 3, pp. 535–547, 2021.
 50. Challapalli, S. S. A., B. Kandukuri, H. Bandireddi and J. Pudi, "Profile Face Recognition and Classification Using Multi-Task Cascaded Convolutional Networks", *Journal of Computer Allied Intelligence*, Vol. 2, No. 6, pp. 65–78, 2024, DOI 10.69996/jcai.2024029.
-51. AtomicJar, *Testcontainers: Throwaway Containers for Integration Tests*, 2025, https://testcontainers.com/, Date accessed: June 2026.
-52. Microsoft, *Playwright: Reliable End-to-End Testing for Modern Web Apps*, 2025, https://playwright.dev/, Date accessed: June 2026.
+51. AtomicJar, *Testcontainers: Throwaway Containers for Integration Tests*, 2025, https://testcontainers.com/, Date accessed: 14 June 2026.
+52. Microsoft, *Playwright: Reliable End-to-End Testing for Modern Web Apps*, 2025, https://playwright.dev/, Date accessed: 14 June 2026.
 
 ---
 
