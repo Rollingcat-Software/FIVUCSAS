@@ -36,24 +36,19 @@ place. Table 4.1 summarizes the principal tools.
 | Identity service | **Spring Boot 3.4.7 / Java 21** [CITE:springboot] | Mature security ecosystem (Spring Security 6.4), first-class JPA, records and virtual-thread-capable runtime; the natural home for transactional IAM logic |
 | Biometric service | **FastAPI / Python 3.12** [CITE:fastapi] | Direct access to the Python ML ecosystem (DeepFace, MediaPipe, OpenCV, ONNX Runtime); async I/O and automatic OpenAPI generation |
 | Web dashboard & hosted login | **React 18.3 + TypeScript 5.5** [CITE:react] | Component model, strong typing, large ecosystem (MUI, React Router, react-hook-form, i18next) for an admin SPA and a hosted OIDC login page |
-| Mobile & desktop clients | **Kotlin Multiplatform + Compose** [CITE:kmp] | One shared business-logic module compiled to Android, JVM desktop, and (planned) iOS; native NFC and biometric APIs where they matter |
+| Mobile & desktop clients | **Kotlin Multiplatform + Compose** [CITE:kmp] | One shared business-logic module targeting Android, JVM desktop, and iOS (the iOS target is scaffolded, not yet shipped); native NFC and biometric APIs where they matter |
 | Relational + vector store | **PostgreSQL 17 + pgvector** [CITE:postgresql,pgvector] | One engine for both ACID identity data and high-dimensional embedding similarity search; no separate vector database to operate |
-| Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
+| Coordination / cache | **Redis 7.4** [CITE:redis] | Sub-millisecond store for OTPs, OAuth codes, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [CITE:traefik] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [CITE:docker] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
 | DB migrations | **Flyway** [CITE:flyway] | Versioned, repeatable schema evolution (V0–V86) checked into source control |
 
-Three of these choices departed from the original planning documents and are worth
-clarifying. First, the production **edge is Traefik v3, not NGINX**. The "API gateway"
-described in the original analysis document was a development-era plan, and the only NGINX on
-the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
-Flutter as the specification originally proposed; Compose Multiplatform let us share a
+Three of these choices deserve a brief note. First, the production **edge is Traefik v3**, which provides automatic TLS, Docker-label service discovery, and security-header and IP-allowlist middleware; the only NGINX on
+the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are built on **Kotlin Multiplatform** with Compose Multiplatform, which lets us share a
 single domain layer across Android and desktop and reuse native security primitives such as
-Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
-modeling side, the face recognizer in production is **Facenet512** producing
-512-dimensional embeddings, not the 2,622-dimensional VGG-Face embedding sketched in the
-specification. We found Facenet512 to be both lighter on CPU and more than adequate at the
-verification thresholds we operate at.
+Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, the production face recognizer is **Facenet512**, producing
+512-dimensional embeddings that are light on CPU and accurate at the
+verification thresholds the system operates at.
 
 Developer tooling and standards round out the picture: IntelliJ IDEA and PyCharm for the
 backends, VS Code for the front ends, Git/GitHub for version control with branch protection
@@ -72,7 +67,7 @@ ones that carry the most weight.
 of 32-bit floats. A face embedding is a `vector(512)` produced by Facenet512; a voice
 embedding is a 256-dimensional Resemblyzer speaker vector; the client-side geometry
 "embedding" is a 128-dimensional landmark-distance vector that is recorded for offline
-analysis but, by the D2 design decision, never used to make an authentication decision. All
+analysis but, as a log-only telemetry channel, never used to make an authentication decision. All
 of these are stored in PostgreSQL columns of pgvector's native `vector` type, which is what
 makes approximate-nearest-neighbor search possible inside the relational database itself.
 A small but important refinement is that the face store is **dual-column**: the plaintext
@@ -144,8 +139,8 @@ MediaPipe Face Landmarker [CITE:mediapipe].
 The server code lives in `app/application/use_cases/generate_puzzle.py`,
 `active_liveness_manager.py`, and `verify_puzzle.py`, exposed through
 `/liveness/generate-puzzle`, `/liveness/verify`, and `/liveness/verify-challenge`. Face
-geometry is scored against MediaPipe's **478-point** landmark mesh (and, when available, its
-blendshape coefficients).
+geometry is scored against the MediaPipe Face Landmarker mesh (468 base points plus iris refinement, 478 in total) and, when available, its
+blendshape coefficients.
 
 **Randomized challenge sequence.** `GeneratePuzzleUseCase` builds each puzzle freshly with
 `random.randint` and `random.choice`. A difficulty configuration controls both the number of
@@ -204,7 +199,7 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 robust and cheaper than re-deriving geometry.
 
 **A 23-challenge library across two body channels.** The biometric engine's canonical
-challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
+challenge enumeration (`ChallengeType`, with a parallel `BiometricPuzzleId` in the web client)
 defines twenty-three commanded challenges. Fourteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
@@ -215,7 +210,7 @@ Nine are hand gestures: finger counting,
 tracing a shape against a stored template catalog, waving, a palm flip, a finger tap,
 a pinch, a hand-covers-face "peek-a-boo," finger arithmetic, and holding the hand steady in
 place (a low-variance hold check). The hand channel
-is real, not simulated: a lazily loaded MediaPipe `HandLandmarker` runs in the client (its
+runs a lazily loaded MediaPipe `HandLandmarker` in the client (its
 ~5 MB WASM cost is paid only on the puzzle surface) and streams 21-point hand-landmark
 sequences to the server, where `active_gesture_liveness_manager.py` re-scores each gesture
 from the raw geometry (finger-extension ratios for counting, a sign change on the palm-normal
@@ -284,11 +279,13 @@ always-on and fail-closed; anti-spoof fusion is additive and fail-soft.
 ### 4.3.3 Face Embedding and Similarity Matching
 
 Face verification is one-shot metric learning [CITE:schroff2015-facenet]. Rather than
-training a classifier per user, we map every face into a 512-dimensional vector with
-**Facenet512** via the DeepFace library [CITE:deepface-lib], after detecting and aligning the
-face server-side with **MTCNN** [CITE:zhang2016-mtcnn,challapalli2024-mtcnn]. Two faces belong
-to the same person when their embeddings are close in this space; recognition reduces to a
-distance comparison.
+training a classifier per user, the system maps every face into a 512-dimensional **Facenet512**
+embedding; two faces belong to the same person when their embeddings are close in this space,
+so recognition reduces to a distance comparison. In the current production configuration this
+embedding is computed in the browser, on the client-side path detailed below. A legacy
+server-side path, in which the **DeepFace** library [CITE:deepface-lib] detects and aligns the
+face with **MTCNN** [CITE:zhang2016-mtcnn,challapalli2024-mtcnn] before extracting the same
+Facenet512 embedding, remains available behind a feature flag.
 
 We measure closeness with **cosine distance** on L2-normalized embeddings. Cosine similarity
 is the dot product of the unit vectors, and we work in the complementary distance so that
@@ -318,8 +315,7 @@ modalities but with the correct polarity in each: face verify uses cosine *dista
 `<` test, while voice verify uses cosine *similarity* with a `>= 0.65` test, and the two must
 not be confused.
 
-When the client-side-embedding flag is active (the current production configuration,
-`app.auth.client-side-embedding=true`), the embedding computation shifts to the browser.
+On this production client-side path (`app.auth.client-side-embedding=true`), the embedding computation runs in the browser.
 The browser loads `facenet512-1ad91552.fp16.onnx` via onnxruntime-web (WASM backend) and
 produces the same L2-normalized 512-dimensional vector that the server-side path would
 produce. Only this vector is transmitted over TLS; the raw image never leaves the device.
@@ -339,15 +335,13 @@ and approximate-nearest-neighbor (ANN) index to PostgreSQL. The 1:N face search 
 (`/search`) issues a query using pgvector's cosine-distance operator `<=>`, and the database
 returns the closest matches without a full scan.
 
-The migration-defined index is an **IVFFlat** index built with `vector_cosine_ops` and `lists = 100`
-(`CREATE INDEX … USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`). IVFFlat
-partitions the vector space into clusters at build time and probes only the nearest clusters
-at query time, trading a controllable amount of recall for a large speed-up. This is the same
-inverted-file idea that underlies GPU ANN systems such as FAISS [CITE:faiss], here available
-inside the relational store we already operate. (On the deployed instance, the operators later
-replaced this baseline with an HNSW index of the same cosine-operator family, m = 16 and
-ef_construction = 64, a graph-based alternative that trades index build time for better query
-recall; a fresh install still creates the IVFFlat baseline.) Every search is
+The baseline index is an **HNSW** index built with `vector_cosine_ops`, `m = 16`, and
+`ef_construction = 64` (`CREATE INDEX … USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)`).
+HNSW is a graph-based approximate-nearest-neighbor structure that trades a longer build time
+for high query recall. A later migration also defines an **IVFFlat** alternative (`lists = 100`),
+which partitions the vector space into clusters at build time and probes only the nearest
+clusters at query time; this is the same inverted-file idea that underlies GPU ANN systems
+such as FAISS [CITE:faiss], here available inside the relational store we already operate. Every search is
 **tenant-scoped**: the query is constrained to the caller's tenant and a server-side cap bounds
 the maximum acceptable distance, so identification can never reach across a tenant boundary.
 This is where databases and machine learning meet in the platform (classical index theory
@@ -380,7 +374,7 @@ benefit at those margins.
 If liveness is the project's research heart, the identity service is its engineering heart.
 This section documents the cryptographic and protocol-level algorithms that make FIVUCSAS an
 authentication platform rather than a face-matching demo. The corresponding security
-architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
+architecture is shown in [[FIG:security_arch | Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j token buckets, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.]].
 
 ### 4.4.1 JWT, RBAC and Password Security
 
@@ -481,7 +475,7 @@ marks a verified `(userId, timeStep)` pair as consumed in Redis with an atomic
 `SET key 1 EX 120 NX`, so the same code cannot be replayed within its validity window, and the
 secret is encrypted at rest with AES-GCM-256. **OTP** codes store an attempt counter alongside the
 code and delete the code once the counter reaches five wrong guesses, capping the brute-force budget. **WebAuthn/passkeys**
-[CITE:webauthn] are validated with the Yubico library against an explicit origin allowlist, with
+[CITE:webauthn] are validated server-side against an explicit origin allowlist, with
 manual `rpIdHash` (SHA-256) comparison and `signCount` monotonicity to detect cloned authenticators.
 **Approve-login** uses Redis-backed number matching where the match number is a zero-padded string
 and an unknown email returns a decoy session, so the endpoint reveals nothing about which accounts

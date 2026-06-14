@@ -25,13 +25,13 @@ flowchart TB
             VW["<b>fivucsas-verify-widget</b><br/>nginx — hosted login UI<br/>verify.fivucsas.com"]
             DOCS["<b>fivucsas-docs</b><br/>nginx — VitePress book<br/>docs.fivucsas.com"]
             OBSB["<b>observability</b><br/>grafana 11.3 · loki 3.2<br/>promtail · uptime-kuma"]
-            OTHERF["<b>other projects + fallback</b><br/>mizan · muhabbet · sarnic<br/>share-agent · gelecegin<br/>error-pages (default)"]
+            OTHERF["<b>other host containers</b><br/>(unrelated, co-located)<br/>error-pages (default vhost)"]
         end
 
         subgraph BACKEND["'backend' network — internal only, no published ports"]
             API["<b>identity-core-api</b> :8080<br/>Spring Boot<br/><i>(attached to both networks)</i>"]
             BIO["<b>biometric-api</b> :8001<br/>FastAPI — X-API-Key<br/><i>(backend network only —<br/>no Traefik labels)</i>"]
-            SPG[("<b>shared-postgres</b><br/>pgvector/pgvector:pg17<br/>identity_core · biometric_db<br/>+ other projects' DBs")]
+            SPG[("<b>shared-postgres</b><br/>pgvector/pgvector:pg17<br/>identity_core · biometric_db")]
             SRD[("<b>shared-redis</b><br/>redis:7.4-alpine<br/>AOF · allkeys-lru")]
             VOLUP[("biometric_uploads<br/>Docker volume")]
         end
@@ -60,7 +60,7 @@ flowchart TB
     OBSB ~~~ SOCK
     OTHERF ~~~ SOCK
 
-    LEGEND["Blue = FIVUCSAS containers — gray = shared infrastructure — 23 containers total on the host"]
+    LEGEND["Blue = FIVUCSAS services; gray = shared infrastructure"]
     VOLUP ~~~ LEGEND
 
     classDef fivucsas fill:#dce8f5,stroke:#2e5e8c,stroke-width:1.5px;

@@ -316,9 +316,9 @@ The platform's behavior was organized around six functional requirements (FR-1 t
 | FR-6 | Auditing and regulatory compliance | `AuditLogController`, `UserDataExportService`, partition-ready `audit_logs` | `GET /audit-logs`, `GET /users/{id}/export` |
 
 
-**FR-1: Authentication.** The system authenticates users with a password as a baseline and composes that with any number of additional factors into a tenant-configurable login flow. We implemented ten canonical login factors (`PASSWORD`, `EMAIL_OTP`, `SMS_OTP`, `TOTP`, `FACE`, `VOICE`, `FINGERPRINT`, `HARDWARE_KEY`, `QR_CODE`, and `NFC_DOCUMENT`) plus two cross-device additions, `PASSKEY` (discoverable WebAuthn) and `APPROVE_LOGIN` (number-matching push approval); the canonical login factors are identified by an `isLoginMethod()` check on the `AuthMethodType` enum. First-factor verification runs through a Strategy/Registry of `AuthMethodHandler` implementations; each subsequent factor is consumed by an N-step MFA dispatcher (`VerifyMfaStepService`) that holds the JWT back until every step of the flow has been satisfied and accumulates RFC 8176 `amr` evidence into the issued access token [24]. The original specification's error contract was honored: invalid credentials return `401 Unauthorized`, and an account is locked (`423 Locked`) after five consecutive failures via `LoginAccountStateGuard`.
+**FR-1: Authentication.** The system authenticates users with a password as a baseline and composes that with any number of additional factors into a tenant-configurable login flow. We implemented ten canonical login factors (`PASSWORD`, `EMAIL_OTP`, `SMS_OTP`, `TOTP`, `FACE`, `VOICE`, `FINGERPRINT`, `HARDWARE_KEY`, `QR_CODE`, and `NFC_DOCUMENT`) plus two cross-device additions, `PASSKEY` (discoverable WebAuthn) and `APPROVE_LOGIN` (number-matching push approval); all twelve report `true` from `AuthMethodType.isLoginMethod()`, as does a thirteenth method, `PUZZLE`, an active-liveness layer that the service tier hides from login catalogs while its feature flag remains off. First-factor verification runs through a Strategy/Registry of `AuthMethodHandler` implementations; each subsequent factor is consumed by an N-step MFA dispatcher (`VerifyMfaStepService`) that holds the JWT back until every step of the flow has been satisfied and accumulates RFC 8176 `amr` evidence into the issued access token [24]. The original specification's error contract was honored: invalid credentials return `401 Unauthorized`, and an account is locked (`423 Locked`) after five consecutive failures via `LoginAccountStateGuard`.
 
-**FR-2: Biometric Enrollment.** In the current production deployment (client-side embedding) the browser computes the 512-dimensional Facenet512 embedding via ONNX Runtime Web [11] and uploads only that vector to `/enroll-embedding`; the biometric processor validates the vector dimension and persists it in dual columns (searchable plaintext vector plus a Fernet-encrypted store-of-record). The raw face image never leaves the device. Liveness on this path is the server-verified active Biometric Puzzle together with an advisory client-side MiniFASNet PAD; there is no server-side image-liveness gate, because no image is uploaded. The legacy server-side path remains available under a feature flag: the image is uploaded and the processor detects the face with MTCNN [10], scores quality (blur via Laplacian variance, lighting, and face size), runs UniFace MiniFASNet passive liveness [16], and generates the embedding server-side, rejecting a frame with no face (`400`) or insufficient quality (`422`) before persistence. Voice enrollment follows the same shape, producing 256-dimensional Resemblyzer speaker embeddings. In every path the accept/reject decision stays server-authoritative (decision D2).
+**FR-2: Biometric Enrollment.** In the current production deployment (client-side embedding) the browser computes the 512-dimensional Facenet512 embedding via ONNX Runtime Web [11] and uploads only that vector to `/enroll-embedding`; the biometric processor validates the vector dimension and persists it in dual columns (searchable plaintext vector plus a Fernet-encrypted store-of-record). The raw face image never leaves the device. Liveness on this path is the server-verified active Biometric Puzzle together with an advisory client-side MiniFASNet PAD; there is no server-side image-liveness gate, because no image is uploaded. The legacy server-side path remains available under a feature flag: the image is uploaded and the processor detects the face with MTCNN [10], scores quality (blur via Laplacian variance, lighting, and face size), runs UniFace MiniFASNet passive liveness [16], and generates the embedding server-side, rejecting a frame with no detected face or insufficient quality (`400`) before persistence. Voice enrollment follows the same shape, producing 256-dimensional Resemblyzer speaker embeddings. In every path the accept/reject decision stays server-authoritative (decision D2).
 
 **FR-3: Biometric Verification.** Verification compares a freshly captured sample against the stored template. For 1:1 verification the processor recomputes the probe embedding and returns a match when the cosine *distance* between L2-normalized embeddings falls below the configured threshold (production `VERIFICATION_THRESHOLD = 0.4`, with an aged-embedding adaptive relaxation to `0.55` for templates older than two years). For 1:N identification the system runs a pgvector approximate-nearest-neighbor search over the tenant's embeddings using the cosine-distance operator over a pgvector ANN index [8]. Passive liveness runs on the verify path as well, rejecting frames scored below `0.4` with a `LIVENESS_FAILED` response, and rate limiting protects the endpoint, returning `429` when a tenant or user budget is exhausted.
 
@@ -346,7 +346,7 @@ The platform was held to seven non-functional categories. Table 3.2 records the 
 | Portability | Consistent across platforms | Docker + Kotlin Multiplatform (KMP) shared code | Containerized services; KMP shared module |
 
 
-**Performance.** Because biometric verification is computationally heavier than ordinary authentication, the two were separated so each could be tuned independently. The identity service leans heavily on Redis 7.4 as more than a cache: it is the substrate for OAuth2 authorization codes, OTP storage, TOTP replay markers, rate-limit counters, and cross-device session state [22]. The biometric processor caches recently computed embeddings (TTL 300 s, up to 500 entries) and serves sub-linear nearest-neighbor search from a pgvector ANN index (IVFFlat with `lists = 100` in the migration baseline; upgraded operationally to HNSW on the deployed instance). The k6 suite encodes the latency targets (login p95 below 300 ms, verification p95 below 500 ms), which we treat as engineering targets validated under controlled load rather than guaranteed production figures.
+**Performance.** Because biometric verification is computationally heavier than ordinary authentication, the two were separated so each could be tuned independently. The identity service leans heavily on Redis 7.4 as more than a cache: it is the substrate for OAuth2 authorization codes, OTP storage, TOTP replay markers, rate-limit counters, and cross-device session state [22]. The biometric processor caches recently computed embeddings (TTL 300 s, up to 1,000 entries) and serves sub-linear nearest-neighbor search from a pgvector ANN index (HNSW with `m = 16` and `ef_construction = 64` in the migration baseline, with a secondary IVFFlat index, `lists = 100`, added in a later migration). The k6 suite encodes the latency targets (login p95 below 300 ms, verification p95 below 500 ms), which we treat as engineering targets validated under controlled load rather than guaranteed production figures.
 
 **Scalability.** The microservices boundary is the central scalability device: the stateless Spring Boot API can be replicated independently of the CPU-intensive ML service [32]. Per-tenant rate budgets (for example, 6,000 token mints per minute per tenant) prevent one tenant's load from starving others. The current deployment runs single instances of each service on one VPS; the multi-replica, multi-region topologies described in the parent compose file are a documented scaling plan rather than the live deployment, and are revisited as future work in Chapter 7.
 
@@ -384,7 +384,7 @@ The domain model places the tenant at the root of nearly every relationship, exp
 **Figure 3.2.** Core domain model for multi-tenant identity and biometric verification. A platform-level Identity links a person's per-tenant User memberships; RBAC joins users to roles and permissions through UserRole; method-generic enrollments and verification sessions hang off the user; face embeddings live in the separate biometric_db store, referenced by user identifier without a cross-database foreign key.
 
 
-At the persistence layer, the schema comprises 31 JPA entities materialized through 86 Flyway migrations spanning V0–V86 (the V13 number was never used); as of the submission date (13 June 2026), V86 is the highest migration applied in production. The complete migration catalog appears as Table A.1 in Appendix A. The entity-relationship structure spans `users`, `tenants`, `roles`/`permissions`/`user_roles`, the auth-flow tables (`auth_flows`, `auth_flow_steps`, `auth_methods`, `tenant_auth_methods`), `refresh_tokens` (hashed at rest with a rotation `family_id` for reuse detection per RFC 6749 §10.4), `webauthn_credentials`, `nfc_cards`, `oauth2_clients`, the verification pipeline tables, `user_enrollments`, `voice_enrollments`, the partition-ready `audit_logs`, and the identity-linking tables (`identities`, `identity_emails`, `identity_tenant_biometric_consent`); the identity, tenancy, and RBAC core is shown in Figure 3.3, the authentication-engine and token tables in Figure 3.4, and the separate biometric vector store in Figure 3.5. Two design choices in this schema are worth highlighting. First, the soft-delete pattern: `User` carries an `@SQLDelete` plus `@SQLRestriction("deleted_at IS NULL")`, so every derived finder automatically respects the GDPR retention window. Second, the dual face/voice embedding store lives not in the identity database but in the biometric processor's own pgvector schema (table `face_embeddings`), where the searchable plaintext vector and the Fernet-encrypted store-of-record sit side by side; the identity service reaches it only through a thin REST client.
+At the persistence layer, the schema comprises 31 JPA entities materialized through 86 Flyway migrations spanning V0–V86 (the V13 number was never used); V86 is the highest migration applied in production at the time of writing. The complete migration catalog appears as Table A.1 in Appendix A. The entity-relationship structure spans `users`, `tenants`, `roles`/`permissions`/`user_roles`, the auth-flow tables (`auth_flows`, `auth_flow_steps`, `auth_methods`, `tenant_auth_methods`), `refresh_tokens` (hashed at rest with a rotation `family_id` for reuse detection per RFC 6749 §10.4), `webauthn_credentials`, `nfc_cards`, `oauth2_clients`, the verification pipeline tables, `user_enrollments`, `voice_enrollments`, the partition-ready `audit_logs`, and the identity-linking tables (`identities`, `identity_emails`, `identity_tenant_biometric_consent`). Three figures decompose the schema: the identity, tenancy, and RBAC core in Figure 3.3, the authentication-engine and token tables in Figure 3.4, and the separate biometric vector store in Figure 3.5. Two design choices in this schema are worth highlighting. First, the soft-delete pattern: `User` carries an `@SQLDelete` plus `@SQLRestriction("deleted_at IS NULL")`, so every derived finder automatically respects the GDPR retention window. Second, the dual face/voice embedding store lives not in the identity database but in the biometric processor's own pgvector schema (table `face_embeddings`), where the searchable plaintext vector and the Fernet-encrypted store-of-record sit side by side; the identity service reaches it only through a thin REST client.
 
 ![Identity, tenancy, and RBAC core of the identity_core schema. A platform-level person (identities) holds one membership row (users) per tenant; roles are tenant-scoped (a NULL tenant_id marks global system roles) and grant fine-grained permissions through role_permissions. Biometric processing is consented per identity-tenant pair with default-deny semantics. Key attributes only; the full schema is cataloged in Appendix A.](../Thesis/build/figures/er_a_identity_rbac.png)
 
@@ -405,7 +405,7 @@ At the persistence layer, the schema comprises 31 JPA entities materialized thro
 
 The platform is operated through four distinct surfaces, all sharing a common authentication engine and internationalization layer: a web admin dashboard, a hosted login page, embeddable widgets, and native mobile/desktop clients.
 
-**Web admin dashboard (`app.fivucsas.com`).** Built with React 18.3, TypeScript 5.5, Material-UI v5, and InversifyJS dependency injection [5], the dashboard comprises roughly 38 page components organized into feature folders. Public routes handle the unauthenticated flow; everything else sits under a protected dashboard layout and is gated by role-aware route guards. Table 3.3 summarizes the route map.
+**Web admin dashboard (`app.fivucsas.com`).** Built with React 18.3, TypeScript 5.5, Material-UI v5, and InversifyJS dependency injection [5], the dashboard comprises more than forty page components organized into feature folders. Public routes handle the unauthenticated flow; everything else sits under a protected dashboard layout and is gated by role-aware route guards. Table 3.3 summarizes the route map.
 
 
 **Table 3.3.** Principal web dashboard routes
@@ -463,9 +463,9 @@ The enrollment and verification surfaces are supported by the sequence flows cap
 **Figure 3.8.** Face verification during a multi-step login, part (a): capture and client-side embedding path. The browser computes the Facenet512 embedding via onnxruntime-web and uploads only the 512-dimensional vector to the server; liveness is provided by the advisory client-side MiniFASNet PAD and the server-verified active Biometric Puzzle; there is no server-side image liveness floor on this path. Failed steps count toward the five-strike lockout (HTTP 423).
 
 
-![Face verification, part (b): the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.](../Thesis/build/figures/verify_sequence_b.png)
+![Face verification, part (b): the decision pipeline. After the Facenet512 embedding (and, on the legacy image path only, a server-side quality floor of 50/100), the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.](../Thesis/build/figures/verify_sequence_b.png)
 
-**Figure 3.9.** Face verification, part (b): the decision pipeline. After the quality floor (50/100) and the Facenet512 embedding, the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.
+**Figure 3.9.** Face verification, part (b): the decision pipeline. After the Facenet512 embedding (and, on the legacy image path only, a server-side quality floor of 50/100), the cosine distance must fall below 0.4 in production (0.55 for enrollments older than two years). The anti-spoof assembler and an eye-aspect-ratio veto can still reject a matching face with HTTP 403 ANTISPOOF_BLOCKED; the identity service trusts only the server's verified flag.
 
 
 ![User registration sequence. After the duplicate check (HTTP 409), the service resolves the tenant fail-closed, enforces the domain-matching and user-quota gates before paying for the BCrypt (cost 12) hash, creates the user in ACTIVE state, and issues the token pair immediately (HTTP 201). E-mail verification runs asynchronously via a Redis-backed one-time code.](../Thesis/build/figures/user_registration.png)
@@ -499,31 +499,31 @@ With the requirements, the design artifacts, and the test plan now in place, we 
 
 ### 3.3.1 Architectural Style
 
-The system combines two complementary styles. At the macro level it is a **microservices** architecture [32,33]: a Spring Boot Identity Core API owns all identity, authentication, authorization, OAuth2/OIDC, and tenant logic, while a separate FastAPI Biometric Processor owns all face/voice/liveness/document machine learning [4]. The two communicate over REST secured by an `X-API-Key`, and the biometric service has no public route at all; it is reachable only on the internal Docker network, and the identity service is its sole caller. This split lets the stateless API tier and the heavy ML tier be sized, restarted, and scaled independently, and it confines GPU-class dependencies to a single service.
+The system combines two complementary styles. At the macro level it is a **microservices** architecture [32,33]: a Spring Boot Identity Core API owns all identity, authentication, authorization, OAuth2/OIDC, and tenant logic, while a separate FastAPI Biometric Processor owns all face/voice/liveness/document machine learning [4]. The two communicate over REST secured by an `X-API-Key`, and the biometric service has no public route at all; it is reachable only on the internal Docker network, and the identity service is its sole caller. This split lets the stateless API tier and the heavy ML tier be sized, restarted, and scaled independently, and it confines the heavy machine-learning dependencies (all CPU-only in this deployment) to a single service.
 
 At the micro level, each service is built with **Hexagonal Architecture (Ports and Adapters)** [31]. The domain layer holds pure business logic and value objects; the application layer defines several dozen inbound use-case ports and outbound infrastructure ports, implemented by the service classes that carry the business logic; and the infrastructure layer supplies the adapters that fulfill the outbound ports: Spring Data repositories, the Redis cache, the biometric REST client, SMTP, and SMS gateways among them. The 29 REST controllers are themselves inbound web adapters. The dependency direction always points inward, so the database, the ML models, and the message bus are all swappable details rather than load-bearing assumptions, and the Strategy/Registry pattern for login methods, MFA steps, and verification steps reduces adding a new factor to registering one more handler. This high-level shape was introduced in Figure 2.1; the sections that follow decompose it into its component, data, and deployment views.
 
 ### 3.3.2 Component Architecture
 
-The platform's components are layered from client to data. **Clients** (the React dashboard, the hosted-login SPA, the Kotlin Multiplatform mobile and desktop apps, and third-party OIDC integrations) speak to the backend over HTTPS. The **Traefik v3 edge** terminates TLS and routes by host. The **Identity Core API** is the system's spine, exposing 29 controllers covering authentication, MFA, OAuth2/OIDC, WebAuthn/passkeys, NFC/eMRTD, biometrics (as a proxy), the KYC verification pipeline, identity linking, tenant and RBAC administration, and compliance. The **Biometric Processor** exposes 26 route modules and 84 endpoints covering enrollment, 1:1 verification, 1:N search, passive and active (Biometric Puzzle) liveness, quality assessment, voice, NFC/eMRTD passive authentication, and proctoring. The component decomposition is shown in Figure 3.11 for the identity service and in Figure 3.12 for the biometric service.
+The platform's components are layered from client to data. **Clients** (the React dashboard, the hosted-login SPA, the Kotlin Multiplatform mobile and desktop apps, and third-party OIDC integrations) speak to the backend over HTTPS. The **Traefik v3 edge** terminates TLS and routes by host. The **Identity Core API** is the system's spine, exposing 29 controllers covering authentication, MFA, OAuth2/OIDC, WebAuthn/passkeys, NFC/eMRTD, biometrics (as a proxy), the KYC verification pipeline, identity linking, tenant and RBAC administration, and compliance. The **Biometric Processor** exposes 26 route modules and roughly 80 endpoints covering enrollment, 1:1 verification, 1:N search, passive and active (Biometric Puzzle) liveness, quality assessment, voice, NFC/eMRTD passive authentication, and proctoring. The component decomposition is shown in Figure 3.11 for the identity service and in Figure 3.12 for the biometric service.
 
 ![Component structure of the Identity Core API (ports and adapters). The 29 REST controllers drive use-case services through input ports; output ports are realized by infrastructure adapters for persistence (JPA with the Hibernate tenant filter), authentication channels, and cross-cutting concerns. Legacy packages coexist with the hexagonal tree; an ArchUnit rule freezes the entity-usage boundary.](../Thesis/build/figures/system_components_a.png)
 
 **Figure 3.11.** Component structure of the Identity Core API (ports and adapters). The 29 REST controllers drive use-case services through input ports; output ports are realized by infrastructure adapters for persistence (JPA with the Hibernate tenant filter), authentication channels, and cross-cutting concerns. Legacy packages coexist with the hexagonal tree; an ArchUnit rule freezes the entity-usage boundary.
 
 
-![Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (84 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.](../Thesis/build/figures/system_components_b.png)
+![Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (roughly 80 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.](../Thesis/build/figures/system_components_b.png)
 
-**Figure 3.12.** Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (84 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.
+**Figure 3.12.** Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (roughly 80 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.
 
 
-Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (a Redis fixed-window `RateLimitFilter` and a Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
+Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (the Traefik edge middleware and an in-process Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
 
 ### 3.3.3 Data Architecture
 
 The data tier is a single shared **PostgreSQL 17 instance with the pgvector extension** [7,8] and a single shared **Redis 7.4** instance, both running on the VPS. Postgres hosts two logical databases: `identity_core` for the IAM schema and `biometric_db` for the pgvector embedding store. The multi-tenancy strategy is shared-database, shared-schema with a `tenant_id` discriminator, isolated at the application layer by the Hibernate `@Filter` mechanism described earlier. (PostgreSQL row-level-security policies authored in early migrations were found inert in production; the operative isolation is the Hibernate filter plus the JWT-rebound tenant context, examined in detail in §4.8.)
 
-Schema evolution is managed by Flyway across V0–V86 [9]. The Flyway/Alembic baseline creates an IVFFlat index (`lists = 100`) on `face_embeddings` using `vector_cosine_ops`; the production instance runs an HNSW index (`m = 16`, `ef_construction = 64`) applied as a one-time operational migration outside the catalog. Voice enrollments follow the same pattern over 256-dimensional embeddings, and the log-only client-geometry observation table was defined without any ANN index, consistent with the decision that the browser-side embedding was reserved for offline analysis and never used to make an authentication decision. This log-only telemetry channel kept the earlier 128-dimensional landmark-geometry format and was never wired into an authentication decision. A separate client-side path was subsequently added behind a feature flag: with the flag enabled, as in the current production deployment, the browser computes the 512-dimensional Facenet512 embedding and uploads only that vector, while the server retains the cosine-distance comparison, the threshold, and the accept-or-reject verdict, so decision D2's untrusted-browser principle still holds. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
+Schema evolution is managed by Flyway across V0–V86 [9]. The Alembic baseline creates an HNSW index (`m = 16`, `ef_construction = 64`) on `face_embeddings` using `vector_cosine_ops`, with a secondary IVFFlat index (`lists = 100`) added in a later migration. Voice enrollments follow the same pattern over 256-dimensional embeddings, and the log-only client-geometry observation table was defined without any ANN index, consistent with the decision that the browser-side embedding was reserved for offline analysis and never used to make an authentication decision. This log-only telemetry channel kept the earlier 128-dimensional landmark-geometry format and was never wired into an authentication decision. A separate client-side path was subsequently added behind a feature flag: with the flag enabled, as in the current production deployment, the browser computes the 512-dimensional Facenet512 embedding and uploads only that vector, while the server retains the cosine-distance comparison, the threshold, and the accept-or-reject verdict, so decision D2's untrusted-browser principle still holds. Embeddings are stored twice: as a searchable plaintext `vector` and as a Fernet-encrypted ciphertext store-of-record with a `key_version` column for rotation.
 
 Redis is far more than a read cache; it is the platform's distributed-coordination backbone. It holds single-use OAuth2 authorization codes (10-minute TTL), email/SMS OTPs (5 minutes) with per-OTP attempt counters, TOTP used-code replay markers (`SET … EX 120 NX`), QR and approve-login cross-device sessions, step-up challenges, anti-replay nonces, and rate-limit counters. Production Redis runs with AOF persistence and an LRU eviction policy. Table 3.6 summarizes the caching strategy.
 
@@ -546,16 +546,16 @@ Redis is far more than a read cache; it is the platform's distributed-coordinati
 
 The production system runs on a single **Hetzner CX43 VPS** (8 vCPU, 16 GB RAM, 150 GB disk, Ubuntu 24.04, Docker 29.3 / Compose v5.1), a deliberately CPU-only host. That constraint drove the choice of CPU-safe models (MTCNN, Facenet512, UniFace MiniFASNet) and a boot-time `ALLOW_HEAVY_ML=false` gate that refuses GPU-only backends. The deployment topology is shown in Figure 3.13.
 
-![Production container topology on the Hetzner CX43 host. Traefik is the only edge: containers on the proxy network are publicly routable, while the backend network is internal with no published ports; the Biometric Processor lives only there and is callable solely by the Identity Core API with an X-API-Key. PostgreSQL 17 (pgvector) and Redis 7.4 are shared infrastructure also serving the host's other projects, 23 containers in all. Static sites are served from Hostinger, outside the Docker estate.](../Thesis/build/figures/diagram_05_docker_deployment.png)
+![Production container topology on the Hetzner CX43 host. Traefik is the only edge: containers on the proxy network are publicly routable, while the backend network is internal with no published ports; the Biometric Processor lives only there and is callable solely by the Identity Core API with an X-API-Key. PostgreSQL 17 (pgvector) and Redis 7.4 are shared infrastructure on the host. Static sites are served from Hostinger, outside the Docker estate.](../Thesis/build/figures/diagram_05_docker_deployment.png)
 
-**Figure 3.13.** Production container topology on the Hetzner CX43 host. Traefik is the only edge: containers on the proxy network are publicly routable, while the backend network is internal with no published ports; the Biometric Processor lives only there and is callable solely by the Identity Core API with an X-API-Key. PostgreSQL 17 (pgvector) and Redis 7.4 are shared infrastructure also serving the host's other projects, 23 containers in all. Static sites are served from Hostinger, outside the Docker estate.
+**Figure 3.13.** Production container topology on the Hetzner CX43 host. Traefik is the only edge: containers on the proxy network are publicly routable, while the backend network is internal with no published ports; the Biometric Processor lives only there and is callable solely by the Identity Core API with an X-API-Key. PostgreSQL 17 (pgvector) and Redis 7.4 are shared infrastructure on the host. Static sites are served from Hostinger, outside the Docker estate.
 
 
-At the edge, **Traefik v3.6.12** terminates TLS (Let's Encrypt) and routes by host via Docker labels, reading the Docker socket only through a hardened, read-scoped `docker-socket-proxy` [19,21]. This was a deliberate deviation from the original design document, which anticipated an NGINX gateway: the running edge is Traefik v3, and the only NGINX on the host serves branded error pages and the static verify-widget SPA. Traefik enforces global secure-headers and rate-limit middleware, gates the administrative surfaces (`/swagger-ui`, `/v3/api-docs`, `/actuator`) behind an IP allowlist, and overwrites `X-Forwarded-For` with the real peer IP to close a rate-limit-bypass surface.
+At the edge, **Traefik v3.6.12** terminates TLS (Let's Encrypt) and routes by host via Docker labels, reading the Docker socket only through a hardened, read-scoped `docker-socket-proxy` [19,21]. The only NGINX on the host serves branded error pages and the static verify-widget SPA. Traefik enforces global secure-headers and rate-limit middleware, gates the administrative surfaces (`/swagger-ui`, `/v3/api-docs`, `/actuator`) behind an IP allowlist, and overwrites `X-Forwarded-For` with the real peer IP to close a rate-limit-bypass surface.
 
 Containers are deployed via per-service production Compose files [20] wired onto shared external `backend` and `proxy` networks, with the shared PostgreSQL and Redis as singletons. Every application container runs hardened: read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, and resource limits (the identity API at 2 CPU / 2 GB, the biometric processor at 4 CPU / 4 GB). The biometric image is digest-pinned to a specific `python:3.12-slim` SHA with a frozen known-good constraints lock, because a floating-dependency rebuild once segfaulted the UniFace ONNX preload under that hardened runtime. The React and other static surfaces are deliberately *not* dockerized; they are deployed to Hostinger shared hosting by rsync, a standing rule that keeps the VPS focused on the stateful, security-sensitive services.
 
-Continuous integration and delivery run through GitHub Actions, with most jobs on GitHub-hosted runners and a self-hosted runner on the CX43 reserved for the deploy jobs, which SSH in, pull, rebuild the affected service, and poll its `/actuator/health` until it is live. Observability that is actually running consists of Grafana, Loki, and Promtail for logs and Uptime Kuma for availability; a Prometheus/Alertmanager stack is configured but not yet deployed, a gap we revisit in Chapter 7. The complete CI/CD, monitoring, and load/security testing apparatus is detailed in Chapter 5, and Appendix C records the production deployment in reference form: Table C.2 lists the containerized service inventory and Table C.3 the public subdomains.
+Continuous integration and delivery run through GitHub Actions, with most jobs on GitHub-hosted runners and a self-hosted runner on the CX43 reserved for the deploy jobs, which SSH in, pull, rebuild the affected service, and poll its `/actuator/health` until it is live. Observability that is actually running consists of Grafana, Loki, and Promtail for logs and Uptime Kuma for availability; a Prometheus/Alertmanager stack is configured but not yet deployed, a gap we revisit in Chapter 7. The complete CI/CD, monitoring, and load/security testing apparatus is detailed in Chapter 5, and Appendix C records the production deployment in reference form: Table C.1 lists the containerized service inventory and Table C.2 the public subdomains.
 
 
 ---
@@ -600,25 +600,20 @@ place. Table 4.1 summarizes the principal tools.
 | Identity service | **Spring Boot 3.4.7 / Java 21** [3] | Mature security ecosystem (Spring Security 6.4), first-class JPA, records and virtual-thread-capable runtime; the natural home for transactional IAM logic |
 | Biometric service | **FastAPI / Python 3.12** [4] | Direct access to the Python ML ecosystem (DeepFace, MediaPipe, OpenCV, ONNX Runtime); async I/O and automatic OpenAPI generation |
 | Web dashboard & hosted login | **React 18.3 + TypeScript 5.5** [5] | Component model, strong typing, large ecosystem (MUI, React Router, react-hook-form, i18next) for an admin SPA and a hosted OIDC login page |
-| Mobile & desktop clients | **Kotlin Multiplatform + Compose** [6] | One shared business-logic module compiled to Android, JVM desktop, and (planned) iOS; native NFC and biometric APIs where they matter |
+| Mobile & desktop clients | **Kotlin Multiplatform + Compose** [6] | One shared business-logic module targeting Android, JVM desktop, and iOS (the iOS target is scaffolded, not yet shipped); native NFC and biometric APIs where they matter |
 | Relational + vector store | **PostgreSQL 17 + pgvector** [7,8] | One engine for both ACID identity data and high-dimensional embedding similarity search; no separate vector database to operate |
-| Coordination / cache | **Redis 7.4** [22] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
+| Coordination / cache | **Redis 7.4** [22] | Sub-millisecond store for OTPs, OAuth codes, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [21] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [19] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
 | DB migrations | **Flyway** [9] | Versioned, repeatable schema evolution (V0–V86) checked into source control |
 
 
-Three of these choices departed from the original planning documents and are worth
-clarifying. First, the production **edge is Traefik v3, not NGINX**. The "API gateway"
-described in the original analysis document was a development-era plan, and the only NGINX on
-the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are **Kotlin Multiplatform**, not
-Flutter as the specification originally proposed; Compose Multiplatform let us share a
+Three of these choices deserve a brief note. First, the production **edge is Traefik v3**, which provides automatic TLS, Docker-label service discovery, and security-header and IP-allowlist middleware; the only NGINX on
+the host serves branded error pages and the static login SPA. Second, the mobile and desktop clients are built on **Kotlin Multiplatform** with Compose Multiplatform, which lets us share a
 single domain layer across Android and desktop and reuse native security primitives such as
-Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, on the
-modeling side, the face recognizer in production is **Facenet512** producing
-512-dimensional embeddings, not the 2,622-dimensional VGG-Face embedding sketched in the
-specification. We found Facenet512 to be both lighter on CPU and more than adequate at the
-verification thresholds we operate at.
+Android Credential Manager for FIDO2 and the OS keystore for token storage. Third, the production face recognizer is **Facenet512**, producing
+512-dimensional embeddings that are light on CPU and accurate at the
+verification thresholds the system operates at.
 
 Developer tooling and standards round out the picture: IntelliJ IDEA and PyCharm for the
 backends, VS Code for the front ends, Git/GitHub for version control with branch protection
@@ -637,7 +632,7 @@ ones that carry the most weight.
 of 32-bit floats. A face embedding is a `vector(512)` produced by Facenet512; a voice
 embedding is a 256-dimensional Resemblyzer speaker vector; the client-side geometry
 "embedding" is a 128-dimensional landmark-distance vector that is recorded for offline
-analysis but, by the D2 design decision, never used to make an authentication decision. All
+analysis but, as a log-only telemetry channel, never used to make an authentication decision. All
 of these are stored in PostgreSQL columns of pgvector's native `vector` type, which is what
 makes approximate-nearest-neighbor search possible inside the relational database itself.
 A small but important refinement is that the face store is **dual-column**: the plaintext
@@ -709,8 +704,8 @@ MediaPipe Face Landmarker [14].
 The server code lives in `app/application/use_cases/generate_puzzle.py`,
 `active_liveness_manager.py`, and `verify_puzzle.py`, exposed through
 `/liveness/generate-puzzle`, `/liveness/verify`, and `/liveness/verify-challenge`. Face
-geometry is scored against MediaPipe's **478-point** landmark mesh (and, when available, its
-blendshape coefficients).
+geometry is scored against the MediaPipe Face Landmarker mesh (468 base points plus iris refinement, 478 in total) and, when available, its
+blendshape coefficients.
 
 **Randomized challenge sequence.** `GeneratePuzzleUseCase` builds each puzzle freshly with
 `random.randint` and `random.choice`. A difficulty configuration controls both the number of
@@ -773,7 +768,7 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 robust and cheaper than re-deriving geometry.
 
 **A 23-challenge library across two body channels.** The biometric engine's canonical
-challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
+challenge enumeration (`ChallengeType`, with a parallel `BiometricPuzzleId` in the web client)
 defines twenty-three commanded challenges. Fourteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
@@ -784,7 +779,7 @@ Nine are hand gestures: finger counting,
 tracing a shape against a stored template catalog, waving, a palm flip, a finger tap,
 a pinch, a hand-covers-face "peek-a-boo," finger arithmetic, and holding the hand steady in
 place (a low-variance hold check). The hand channel
-is real, not simulated: a lazily loaded MediaPipe `HandLandmarker` runs in the client (its
+runs a lazily loaded MediaPipe `HandLandmarker` in the client (its
 ~5 MB WASM cost is paid only on the puzzle surface) and streams 21-point hand-landmark
 sequences to the server, where `active_gesture_liveness_manager.py` re-scores each gesture
 from the raw geometry (finger-extension ratios for counting, a sign change on the palm-normal
@@ -853,11 +848,13 @@ always-on and fail-closed; anti-spoof fusion is additive and fail-soft.
 ### 4.3.3 Face Embedding and Similarity Matching
 
 Face verification is one-shot metric learning [11]. Rather than
-training a classifier per user, we map every face into a 512-dimensional vector with
-**Facenet512** via the DeepFace library [12], after detecting and aligning the
-face server-side with **MTCNN** [10,50]. Two faces belong
-to the same person when their embeddings are close in this space; recognition reduces to a
-distance comparison.
+training a classifier per user, the system maps every face into a 512-dimensional **Facenet512**
+embedding; two faces belong to the same person when their embeddings are close in this space,
+so recognition reduces to a distance comparison. In the current production configuration this
+embedding is computed in the browser, on the client-side path detailed below. A legacy
+server-side path, in which the **DeepFace** library [12] detects and aligns the
+face with **MTCNN** [10,50] before extracting the same
+Facenet512 embedding, remains available behind a feature flag.
 
 We measure closeness with **cosine distance** on L2-normalized embeddings. Cosine similarity
 is the dot product of the unit vectors, and we work in the complementary distance so that
@@ -889,8 +886,7 @@ modalities but with the correct polarity in each: face verify uses cosine *dista
 `<` test, while voice verify uses cosine *similarity* with a `>= 0.65` test, and the two must
 not be confused.
 
-When the client-side-embedding flag is active (the current production configuration,
-`app.auth.client-side-embedding=true`), the embedding computation shifts to the browser.
+On this production client-side path (`app.auth.client-side-embedding=true`), the embedding computation runs in the browser.
 The browser loads `facenet512-1ad91552.fp16.onnx` via onnxruntime-web (WASM backend) and
 produces the same L2-normalized 512-dimensional vector that the server-side path would
 produce. Only this vector is transmitted over TLS; the raw image never leaves the device.
@@ -910,15 +906,13 @@ and approximate-nearest-neighbor (ANN) index to PostgreSQL. The 1:N face search 
 (`/search`) issues a query using pgvector's cosine-distance operator `<=>`, and the database
 returns the closest matches without a full scan.
 
-The migration-defined index is an **IVFFlat** index built with `vector_cosine_ops` and `lists = 100`
-(`CREATE INDEX … USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`). IVFFlat
-partitions the vector space into clusters at build time and probes only the nearest clusters
-at query time, trading a controllable amount of recall for a large speed-up. This is the same
-inverted-file idea that underlies GPU ANN systems such as FAISS [49], here available
-inside the relational store we already operate. (On the deployed instance, the operators later
-replaced this baseline with an HNSW index of the same cosine-operator family, m = 16 and
-ef_construction = 64, a graph-based alternative that trades index build time for better query
-recall; a fresh install still creates the IVFFlat baseline.) Every search is
+The baseline index is an **HNSW** index built with `vector_cosine_ops`, `m = 16`, and
+`ef_construction = 64` (`CREATE INDEX … USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)`).
+HNSW is a graph-based approximate-nearest-neighbor structure that trades a longer build time
+for high query recall. A later migration also defines an **IVFFlat** alternative (`lists = 100`),
+which partitions the vector space into clusters at build time and probes only the nearest
+clusters at query time; this is the same inverted-file idea that underlies GPU ANN systems
+such as FAISS [49], here available inside the relational store we already operate. Every search is
 **tenant-scoped**: the query is constrained to the caller's tenant and a server-side cap bounds
 the maximum acceptable distance, so identification can never reach across a tenant boundary.
 This is where databases and machine learning meet in the platform (classical index theory
@@ -955,9 +949,9 @@ This section documents the cryptographic and protocol-level algorithms that make
 authentication platform rather than a face-matching demo. The corresponding security
 architecture is shown in Figure 4.1.
 
-![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
+![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j token buckets, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
 
-**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
+**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j token buckets, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
 
 
 ### 4.4.1 JWT, RBAC and Password Security
@@ -1059,7 +1053,7 @@ marks a verified `(userId, timeStep)` pair as consumed in Redis with an atomic
 `SET key 1 EX 120 NX`, so the same code cannot be replayed within its validity window, and the
 secret is encrypted at rest with AES-GCM-256. **OTP** codes store an attempt counter alongside the
 code and delete the code once the counter reaches five wrong guesses, capping the brute-force budget. **WebAuthn/passkeys**
-[29] are validated with the Yubico library against an explicit origin allowlist, with
+[29] are validated server-side against an explicit origin allowlist, with
 manual `rpIdHash` (SHA-256) comparison and `signCount` monotonicity to detect cloned authenticators.
 **Approve-login** uses Redis-backed number matching where the match number is a zero-padded string
 and an unknown email returns a decoy session, so the endpoint reveals nothing about which accounts
@@ -1921,8 +1915,8 @@ a hosted login page or embeds a widget and consumes a standards-compliant OpenID
 identity token in return [26,27]. The implication is economic as
 well as technical: the provider lowers its operational cost (no specialist security team
 for the auth surface), reduces its breach exposure (credentials and biometric templates
-never live in the tenant's database), and gains a competitive feature that would otherwise
-be the preserve of large institutions. That feature is strong, liveness-protected identity verification. The multi-tenant design makes this realistic at small scale, because the
+never live in the tenant's database), and gains a competitive feature, strong liveness-protected identity verification, that would otherwise
+be the preserve of large institutions. The multi-tenant design makes this realistic at small scale, because the
 platform's fixed cost is amortized across every tenant rather than rebuilt by each.
 
 There is a third, quieter beneficiary that the original specification did not name but the
@@ -2179,7 +2173,7 @@ On the current production path (client-side embedding), the browser computes the
 Facenet512 embedding via onnxruntime-web and uploads only the 512-dimensional L2-normalized
 vector; the Biometric Processor then performs the pgvector cosine match and issues the
 accept/reject verdict, skipping MTCNN detection and the DeepFace forward pass entirely. The
-128-dimensional landmark-geometry vector produced by the Biometric Puzzle is recorded for offline
+landmark-geometry vector produced during the Biometric Puzzle capture is recorded for offline
 analysis under architectural decision D2 (log-only, server-authoritative verdict) and is
 distinct from the 512-dimensional production embedding. The two services communicate over an internal REST contract guarded by an API key, and the
 Biometric Processor has **no public route** and is reachable only on the internal Docker network,
@@ -2226,8 +2220,7 @@ client was built and CI-packaged** as a hosted-first OAuth loopback application 
 token storage; its `.deb`/`.msi` installers were produced on Linux and Windows runners but had not
 yet been published for end-user download, pending release signing. **iOS was not delivered**: the shared module compiles for iOS targets, but
 the platform implementations are stubs, and the app remains future work blocked on Apple Developer
-enrollment. The PSD-era plan to build the clients in Flutter was abandoned in favor of Kotlin
-Multiplatform, and we report that as the reality.
+enrollment.
 
 Security was treated as a first-class, tested property rather than a coat of paint. BCrypt at work
 factor 12 protected passwords [25]; production access tokens were RS256-signed JWTs with

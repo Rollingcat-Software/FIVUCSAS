@@ -43,8 +43,8 @@ a hosted login page or embeds a widget and consumes a standards-compliant OpenID
 identity token in return [CITE:oauth2-rfc6749,oidc-core]. The implication is economic as
 well as technical: the provider lowers its operational cost (no specialist security team
 for the auth surface), reduces its breach exposure (credentials and biometric templates
-never live in the tenant's database), and gains a competitive feature that would otherwise
-be the preserve of large institutions. That feature is strong, liveness-protected identity verification. The multi-tenant design makes this realistic at small scale, because the
+never live in the tenant's database), and gains a competitive feature, strong liveness-protected identity verification, that would otherwise
+be the preserve of large institutions. The multi-tenant design makes this realistic at small scale, because the
 platform's fixed cost is amortized across every tenant rather than rebuilt by each.
 
 There is a third, quieter beneficiary that the original specification did not name but the
