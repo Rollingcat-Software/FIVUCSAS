@@ -248,14 +248,15 @@ expensive and the runtime is hardened (`read_only` rootfs, dropped capabilities)
 shares **one process-wide ONNX session** (`_get_shared_minifasnet()`) across requests rather
 than reloading per call.
 
-Alongside the neural detector, a classical computer-vision detector
-(`TextureLivenessDetector`) computes interpretable cues with no network at all
-[CITE:opencv]: **texture** energy as the variance of the Laplacian (a printed photo is
-flatter than live skin), **color** distribution naturalness, a **frequency-domain** analysis,
-and a **moiré-pattern** score that catches the interference fringes a camera produces when it
-photographs a screen. These are fused linearly,
+A mutually exclusive alternative backend (`TextureLivenessDetector`,
+selected by `LIVENESS_BACKEND=texture`) takes a classical computer-vision approach with no
+neural network at all [CITE:opencv]: **texture** energy as the variance of the Laplacian (a
+printed photo is flatter than live skin), **color** distribution naturalness, a
+**frequency-domain** analysis, and a **moiré-pattern** score that catches the interference
+fringes a camera produces when it photographs a screen. These are fused linearly,
 `score = 0.35·texture + 0.25·color + 0.25·frequency + 0.15·moiré`, and the frame is judged
-live when the combined score clears the threshold.
+live when the combined score clears the threshold. The two backends are not concurrent: only
+one is active per deployment, governed by the `LIVENESS_BACKEND` environment variable.
 
 The full research stack lives in the standalone **spoof-detector** library (deployed for
 in-browser experimentation at amispoof.fivucsas.com), where thirteen Python analyzers (twenty-six
@@ -264,18 +265,21 @@ MiniFASNet against flash-reflection, moiré, and device-replay signals with a de
 threshold of 0.45, and a multi-class fuser that classifies an attack into a taxonomy
 (`STATIC_IMAGE`, `VIDEO_REPLAY`, `MASK_3D`, `HEAVY_MAKEUP`, `AR_FILTER`, `DEEPFAKE_INJECT`).
 The library also implements the ISO/IEC 30107-3 presentation-attack metrics (APCER, BPCER,
-and ACER [CITE:iso30107-3]) that Chapter 5 uses to report evaluation results. An important
-design property is that the anti-spoofing pipeline is **fail-soft**: every layer is wrapped
-in exception handling so a bug in a detector can never hard-block a legitimate user by
-crashing; it can only decline to add evidence.
+and ACER [CITE:iso30107-3]) that Chapter 5 uses to report evaluation results.
 
-The way this wires into authentication is precise. On `/verify` (and, since the 2026-05
-hardening, on `/enroll`) the server runs a **mandatory passive-liveness gate** first: if the
-frame is judged not-live, or its liveness score is below `0.4`, the request is
-rejected with HTTP 400 `LIVENESS_FAILED` before any matching happens. A single-frame EAR veto
-(both eyes closed at threshold 0.18 is a photo signal) and the optional anti-spoofing pipeline
-layers can additionally escalate to HTTP 403 `ANTISPOOF_BLOCKED` when block enforcement is on.
-Multi-image enrollment is **fail-closed**: a single non-live frame rejects the whole batch.
+The pipeline distinguishes two layers with different failure modes. The first layer consists
+of always-on, **fail-closed** gates: on `/verify` (and, since the 2026-05 hardening, on
+`/enroll`) the server runs a **mandatory passive-liveness gate** first; if the frame is judged
+not-live, or its liveness score is below `0.4`, the request is rejected with HTTP 400
+`LIVENESS_FAILED` before any matching happens. A single-frame EAR veto (both eyes closed at
+threshold 0.18 is a photo signal) is also always-on and hard-rejects. Multi-image enrollment
+is **fail-closed** at this layer too: a single non-live frame rejects the whole batch. The
+second layer is the optional anti-spoofing fusion pipeline: this layer is **fail-soft** in
+the sense that every analyzer is wrapped in exception handling so a bug in one detector cannot
+hard-block a legitimate user by crashing; it can only decline to add evidence. When block
+enforcement is on, this layer can escalate to HTTP 403 `ANTISPOOF_BLOCKED`, but an internal
+exception causes the layer to abstain rather than to reject. In short, liveness gates are
+always-on and fail-closed; anti-spoof fusion is additive and fail-soft.
 
 ### 4.3.3 Face Embedding and Similarity Matching
 
@@ -313,6 +317,17 @@ added after an earlier inversion bug. Second, the comparator is deliberately con
 modalities but with the correct polarity in each: face verify uses cosine *distance* with a
 `<` test, while voice verify uses cosine *similarity* with a `>= 0.65` test, and the two must
 not be confused.
+
+When the client-side-embedding flag is active (the current production configuration,
+`app.auth.client-side-embedding=true`), the embedding computation shifts to the browser.
+The browser loads `facenet512-1ad91552.fp16.onnx` via onnxruntime-web (WASM backend) and
+produces the same L2-normalized 512-dimensional vector that the server-side path would
+produce. Only this vector is transmitted over TLS; the raw image never leaves the device.
+The server receives the pre-computed vector at `/verify-embedding` and runs the same pgvector
+cosine match and threshold check (`VERIFICATION_THRESHOLD = 0.4`, or 0.55 for templates older
+than two years), skipping the MTCNN detection step and the DeepFace forward pass entirely.
+The accept or reject verdict remains server-authoritative; the browser is trusted only to
+extract the feature vector, not to make the authentication decision.
 
 ### 4.3.4 1:N Identification with pgvector
 
@@ -503,10 +518,10 @@ authorization code and deletes it in the **same database transaction**, so a cra
 poisoned rather than replayable. Redis authorization codes are deleted on first exchange. The TOTP
 `SET … NX` is the atomic single-use primitive. Refresh-token rotation implements RFC 6749 §10.4
 reuse detection: tokens rotate within a `family_id`, and presenting a stolen sibling triggers a
-family-wide revocation that runs in `Propagation.REQUIRES_NEW` so the revocation **commits even when
-the offending outer transaction rolls back**. This is a subtle but essential transactional-isolation detail
-that a naive implementation gets wrong, and one that only became visible to us under deliberate
-adversarial review.
+family-wide revocation. The revocation runs in `Propagation.REQUIRES_NEW` because it must
+**commit even when the offending outer transaction rolls back**: without a separate transaction
+boundary, a rolled-back outer operation would silently undo the revocation and leave the
+compromised token family reusable.
 
 **Idempotent inserts and replay defense.** `RefreshToken implements Persistable<UUID>` so that
 manually assigned primary keys insert rather than silently no-op as merges, and an `AntiReplayFilter`
@@ -543,7 +558,7 @@ the Python service), making the contract machine-readable and testable.
 
 **The OIDC redirect protocol.** As detailed in Section 4.4.2, third-party login is a browser-mediated
 redirect protocol: authorize request → hosted login → MFA → authorization-code redirect → back-channel
-token exchange. The data-flow of the verification pipeline that this protocol guards is shown in [[FIG:dataflow_verification | Verification data path (read the left column top to bottom, then the right). In the browser, MediaPipe landmarks drive an advisory active-liveness challenge before a 224×224 crop is uploaded over TLS with an anti-replay nonce. The identity service applies session, lockout, and rate-limit gates, then calls the internal biometric service, which enforces the passive-liveness floor (0.4) and the quality floor (50), computes the Facenet512 embedding, compares it against the Fernet-protected template from pgvector (cosine distance below 0.4, or 0.55 for templates older than two years), and can still veto a match through the anti-spoof assembler. Both outcomes are written to the audit log.]].
+token exchange. The data-flow of the verification pipeline that this protocol guards is shown in [[FIG:dataflow_verification | Verification data path (read the left column top to bottom, then the right). In the browser, the Facenet512 model (onnxruntime-web) computes the 512-dimensional L2-normalized embedding from the captured frame; only the embedding vector is transmitted over TLS with an anti-replay nonce, and no image leaves the device. The identity service applies session, lockout, and rate-limit gates, then forwards the vector to the internal biometric service at /verify-embedding, which compares it against the Fernet-protected pgvector template (cosine distance below 0.4, or 0.55 for templates older than two years) and can still veto a match through the anti-spoof assembler. Liveness is provided by the advisory client-side MiniFASNet PAD and, when enabled, the server-verified Biometric Puzzle. Both outcomes are written to the audit log.]].
 
 **WebSocket proctoring.** Real-time session monitoring is not request/response but a persistent
 bidirectional stream: the biometric service exposes a WebSocket endpoint (`/ws/live-analysis`) for
