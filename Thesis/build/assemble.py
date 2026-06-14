@@ -779,6 +779,9 @@ def render_appendices(doc, md, citation_numbering):
         if t[0] == "h" and t[1] == 1:
             cur_letter[0] = next(letters); first_tbl[0] = True
             add_heading(doc, t[2], 0, numbered=False, page_break=True)  # APPENDIX X — Title (new page)
+            # Guide: "a cover page must precede each appendix" — title stands alone, body on the next page
+            _cp = doc.add_paragraph(); _cr = _cp.add_run()
+            _cbr = OxmlElement("w:br"); _cbr.set(qn("w:type"), "page"); _cr._r.append(_cbr)
         elif t[0] == "h":
             add_heading(doc, t[2], t[1] - 1, numbered=False)
         elif t[0] == "p":
