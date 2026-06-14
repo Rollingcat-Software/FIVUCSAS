@@ -3,6 +3,16 @@
 Generated 2026-06-05. Software-Oriented track. ~32,000 words, 7 chapters + 3 appendices,
 24 figures, 24 tables, 5 equations, 52 references.
 
+> **Latest: 2026-06-14 accuracy sweep (PRs #225, #226, merged to master).** Full per-chapter
+> read against live code in all four repos: §4.3.3 rewritten client-first (server MTCNN+DeepFace
+> = legacy), pgvector HNSW-is-baseline (was stated as IVFFlat), deployment figure de-named (no
+> sibling projects), bio endpoints ~80, rate-limiting = in-process Bucket4j (not Redis), WebAuthn
+> not "Yubico library", landmark 468+iris=478, plus editorial cleanup (cut the "we planned X but
+> shipped Y" paragraph, "(planned) iOS" -> "scaffolded"). **Test count locked at ≈4,863** (the
+> per-module breakdown sums to exactly 4,863; cross-method variation 4,842/4,868 is sub-0.2%
+> noise on a living repo). Verified-correct (no change): Redis TTLs, RLS-inert, BCrypt 12, k6 = 8
+> scenarios, EAR 0.18/blink 0.21, Appendix A = V0-V86. Build: abstract 300 words, 0 em-dashes.
+
 ## Files
 
 | File | What it is |
