@@ -517,7 +517,7 @@ The platform's components are layered from client to data. **Clients** (the Reac
 **Figure 3.12.** Component structure of the Biometric Processor (clean architecture). The 26 FastAPI route modules (roughly 80 endpoints, X-API-Key guarded) call use cases and liveness services; domain ports are implemented by ML, persistence, and storage adapters. All models run CPU-only; embeddings persist to pgvector (HNSW) and uploads to a dedicated Docker volume.
 
 
-Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (a Redis fixed-window `RateLimitFilter` and a Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
+Within the identity service, the security subsystem is dense and layered: a filter chain (`RequestIdFilter`, `JwtAuthenticationFilter`, `TenantContextFilter`, `TenantBindFromAuthFilter`, `AntiReplayFilter`) precedes method-level RBAC, and two rate-limiting layers (the Traefik edge middleware and an in-process Bucket4j token-bucket `RateLimitService` [23]) protect the API. Within the biometric service, a `LivenessDetectorFactory` selects among texture, enhanced, and UniFace backends, an `AntispoofPipelineAssembler` orchestrates the three-layer anti-spoofing pipeline (usability gate, device-risk evaluator, hybrid fusion) in fail-soft mode, and the spoof-detection algorithms themselves live in a separate `spoof-detector` library that the processor merely imports and wires. The full REST surface is cataloged in Appendix B: Table B.1 lists the identity service's principal controllers and Table B.2 the biometric route categories.
 
 ### 3.3.3 Data Architecture
 
@@ -602,7 +602,7 @@ place. Table 4.1 summarizes the principal tools.
 | Web dashboard & hosted login | **React 18.3 + TypeScript 5.5** [5] | Component model, strong typing, large ecosystem (MUI, React Router, react-hook-form, i18next) for an admin SPA and a hosted OIDC login page |
 | Mobile & desktop clients | **Kotlin Multiplatform + Compose** [6] | One shared business-logic module targeting Android, JVM desktop, and iOS (the iOS target is scaffolded, not yet shipped); native NFC and biometric APIs where they matter |
 | Relational + vector store | **PostgreSQL 17 + pgvector** [7,8] | One engine for both ACID identity data and high-dimensional embedding similarity search; no separate vector database to operate |
-| Coordination / cache | **Redis 7.4** [22] | Sub-millisecond store for OTPs, OAuth codes, rate-limit counters, cross-device session state, and a pub/sub event bus |
+| Coordination / cache | **Redis 7.4** [22] | Sub-millisecond store for OTPs, OAuth codes, cross-device session state, and a pub/sub event bus |
 | Edge / reverse proxy | **Traefik v3.6.12** [21] | Automatic TLS via Let's Encrypt, Docker-label service discovery, file-provider middleware for security headers and IP allowlisting |
 | Containerization | **Docker + Docker Compose** [19] | Reproducible, hardened (`read_only` rootfs, `cap_drop: ALL`) deployments, with the biometric image digest-pinned |
 | DB migrations | **Flyway** [9] | Versioned, repeatable schema evolution (V0–V86) checked into source control |
@@ -632,7 +632,7 @@ ones that carry the most weight.
 of 32-bit floats. A face embedding is a `vector(512)` produced by Facenet512; a voice
 embedding is a 256-dimensional Resemblyzer speaker vector; the client-side geometry
 "embedding" is a 128-dimensional landmark-distance vector that is recorded for offline
-analysis but, by the D2 design decision, never used to make an authentication decision. All
+analysis but, as a log-only telemetry channel, never used to make an authentication decision. All
 of these are stored in PostgreSQL columns of pgvector's native `vector` type, which is what
 makes approximate-nearest-neighbor search possible inside the relational database itself.
 A small but important refinement is that the face store is **dual-column**: the plaintext
@@ -704,8 +704,8 @@ MediaPipe Face Landmarker [14].
 The server code lives in `app/application/use_cases/generate_puzzle.py`,
 `active_liveness_manager.py`, and `verify_puzzle.py`, exposed through
 `/liveness/generate-puzzle`, `/liveness/verify`, and `/liveness/verify-challenge`. Face
-geometry is scored against MediaPipe's **478-point** landmark mesh (and, when available, its
-blendshape coefficients).
+geometry is scored against the MediaPipe Face Landmarker mesh (468 base points plus iris refinement, 478 in total) and, when available, its
+blendshape coefficients.
 
 **Randomized challenge sequence.** `GeneratePuzzleUseCase` builds each puzzle freshly with
 `random.randint` and `random.choice`. A difficulty configuration controls both the number of
@@ -768,7 +768,7 @@ MediaPipe blendshapes are present we prefer them directly (`eyeBlinkLeft/Right >
 robust and cheaper than re-deriving geometry.
 
 **A 23-challenge library across two body channels.** The biometric engine's canonical
-challenge enumeration (`ChallengeType`, mirrored by `BiometricPuzzleId` in the web client)
+challenge enumeration (`ChallengeType`, with a parallel `BiometricPuzzleId` in the web client)
 defines twenty-three commanded challenges. Fourteen belong to the facial channel: blink, closing
 only the left or only the right eye, smile, open mouth, turn left, turn right, look up, look
 down, raising both brows, raising the left or the right brow alone, a nod, and a head shake.
@@ -906,15 +906,13 @@ and approximate-nearest-neighbor (ANN) index to PostgreSQL. The 1:N face search 
 (`/search`) issues a query using pgvector's cosine-distance operator `<=>`, and the database
 returns the closest matches without a full scan.
 
-The migration-defined index is an **IVFFlat** index built with `vector_cosine_ops` and `lists = 100`
-(`CREATE INDEX … USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`). IVFFlat
-partitions the vector space into clusters at build time and probes only the nearest clusters
-at query time, trading a controllable amount of recall for a large speed-up. This is the same
-inverted-file idea that underlies GPU ANN systems such as FAISS [49], here available
-inside the relational store we already operate. (On the deployed instance, the operators later
-replaced this baseline with an HNSW index of the same cosine-operator family, m = 16 and
-ef_construction = 64, a graph-based alternative that trades index build time for better query
-recall; a fresh install still creates the IVFFlat baseline.) Every search is
+The baseline index is an **HNSW** index built with `vector_cosine_ops`, `m = 16`, and
+`ef_construction = 64` (`CREATE INDEX … USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)`).
+HNSW is a graph-based approximate-nearest-neighbor structure that trades a longer build time
+for high query recall. A later migration also defines an **IVFFlat** alternative (`lists = 100`),
+which partitions the vector space into clusters at build time and probes only the nearest
+clusters at query time; this is the same inverted-file idea that underlies GPU ANN systems
+such as FAISS [49], here available inside the relational store we already operate. Every search is
 **tenant-scoped**: the query is constrained to the caller's tenant and a server-side cap bounds
 the maximum acceptable distance, so identification can never reach across a tenant boundary.
 This is where databases and machine learning meet in the platform (classical index theory
@@ -951,9 +949,9 @@ This section documents the cryptographic and protocol-level algorithms that make
 authentication platform rather than a face-matching demo. The corresponding security
 architecture is shown in Figure 4.1.
 
-![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
+![Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j token buckets, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.](../Thesis/build/figures/security_architecture.png)
 
-**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j buckets plus a Redis fixed-window limiter, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
+**Figure 4.1.** Layered security architecture of the deployed platform: the Traefik edge (TLS, header policy, IP-allowlisted admin surfaces), the stateless filter chain (RS256-pinned JWT validation, in-process Bucket4j token buckets, anti-replay nonces), authentication hardening (BCrypt cost 12, five-strike lockout with HTTP 423, twelve login methods, PKCE S256, refresh rotation with family revocation), two-tier authorization with Hibernate-filter tenant isolation, data protection with Fernet-encrypted templates and audited soft deletion, and container isolation that leaves the biometric service with no public route.
 
 
 ### 4.4.1 JWT, RBAC and Password Security
@@ -1055,7 +1053,7 @@ marks a verified `(userId, timeStep)` pair as consumed in Redis with an atomic
 `SET key 1 EX 120 NX`, so the same code cannot be replayed within its validity window, and the
 secret is encrypted at rest with AES-GCM-256. **OTP** codes store an attempt counter alongside the
 code and delete the code once the counter reaches five wrong guesses, capping the brute-force budget. **WebAuthn/passkeys**
-[29] are validated with the Yubico library against an explicit origin allowlist, with
+[29] are validated server-side against an explicit origin allowlist, with
 manual `rpIdHash` (SHA-256) comparison and `signCount` monotonicity to detect cloned authenticators.
 **Approve-login** uses Redis-backed number matching where the match number is a zero-padded string
 and an unknown email returns a decoy session, so the endpoint reveals nothing about which accounts
