@@ -605,8 +605,8 @@ The **enrollment finite-state machine** is method-generic: it models one enrollm
 and authentication method, with the asynchronous biometric methods (face and voice among them)
 passing through capture, quality assessment, and liveness gating to the `ENROLLED` state that the
 login engine accepts, or to a failure that re-prompts capture. The fail-closed multi-image
-enrollment of Section 4.3.2 is one of
-this machine's transition rules; [[FIG:fsm_enrollment | Enrollment state machine (one row per user and authentication method). Asynchronous methods such as face and voice pass through PENDING until the backing enrollment completes with quality and liveness scores; methods whose data is verified at start and passkey registrations complete immediately. Only ENROLLED satisfies the login engine's enrollment check, and re-enrollment restarts any non-pending row. EXPIRED is defined on the entity but currently has no scheduled trigger.]] depicts the complete machine.
+enrollment rule introduced in Section 4.3.2 (a single non-live frame rejects the whole batch)
+is realized as one of this machine's transitions; [[FIG:fsm_enrollment | Enrollment state machine (one row per user and authentication method). Asynchronous methods such as face and voice pass through PENDING until the backing enrollment completes with quality and liveness scores; methods whose data is verified at start and passkey registrations complete immediately. Only ENROLLED satisfies the login engine's enrollment check, and re-enrollment restarts any non-pending row. EXPIRED is defined on the entity but currently has no scheduled trigger.]] depicts the complete machine.
 
 The **user-account finite-state machine** tracks the account lifecycle (creation as active, a
 pending-enrollment state reserved for self-service onboarding, administrative suspension and
