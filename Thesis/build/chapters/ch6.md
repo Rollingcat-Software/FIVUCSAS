@@ -152,7 +152,7 @@ harm, contributing in a modest way to reducing cybercrime [CITE:verizon2024-dbir
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
 e-government portals, banking, healthcare, education, and transport (precisely the
 public-facing services named in the problem statement), and its bilingual Turkish/English
-interface lower the barrier for the populations those services must reach. Third, and inseparable from the first two, **data dignity**: the platform encrypts stored
+interface lowers the barrier for the populations those services must reach. Third, and inseparable from the first two, **data dignity**: the platform encrypts stored
 templates, requires explicit per-tenant biometric consent, isolates tenants strictly, and
 gives every user export and deletion controls. These choices advance the norm that strong
 authentication and strong privacy are not opposites but requirements of the same system,
@@ -167,7 +167,7 @@ structure makes that more than aspiration. The platform is an end-to-end, workin
 reference for a stack that student and research teams frequently want but rarely see
 assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI
 machine-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
-Kotlin Multiplatform clients sharing logic across Android, iOS, and desktop, and a
+Kotlin Multiplatform clients sharing logic across Android and desktop (the shared module also targets iOS, which is scaffolded but not yet shipped), and a
 React dashboard, all wired through OAuth 2.0/OIDC with PKCE
 [CITE:springboot,fastapi,kmp,react,traefik,postgresql,redis,pgvector,pkce-rfc7636]. A new
 project does not have to rediscover how these pieces fit; it can study a system where they
