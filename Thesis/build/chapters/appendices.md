@@ -97,7 +97,7 @@ The biometric processor's vector store (face and voice embeddings, liveness logs
 
 # Appendix B: REST API Surface Reference
 
-This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and 84 endpoints.
+This appendix summarizes the public REST surface of the platform as implemented. The Identity Core API exposes 29 `@RestController` classes; all routes are namespaced under `/api/v1/**` except the OpenID Connect discovery and JWKS documents, which live at the standard `/.well-known/**` paths. The Biometric Processor is an internal service (no public route; reachable only on the Docker network and protected by an API key) exposing 26 route modules and approximately 84 endpoints.
 
 ## B.1 Identity Core API: Principal Controllers
 
@@ -121,7 +121,7 @@ This appendix summarizes the public REST surface of the platform as implemented.
 | IdentityLinkController | `/api/v1/identity` | `POST /link/initiate`, `POST /link/confirm`, `POST /unlink` |
 | Tenant / RBAC / admin | `/api/v1/**` | `TenantController`, `RoleController`, `UserController` (incl. guest invitations), `AuditLogController`, `UserDataExportController` (KVKK/GDPR export), `AuthFlowController`, `PurgeAdminController` |
 
-A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent JSON error envelopes across every controller.
+A single `GlobalExceptionHandler` (`@RestControllerAdvice`) renders consistent JSON error envelopes across every controller. Several rows in the table above group multiple controllers under a shared heading; in total the codebase contains 29 active `@RestController` classes. A thirtieth class, `StatisticsController`, is present in the source tree but carries no `@RestController` annotation and exposes no routes; it functions as an unannotated stub.
 
 ## B.2 Biometric Processor: Route Categories
 

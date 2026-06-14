@@ -5,25 +5,16 @@ sequenceDiagram
     participant API as Identity Core API<br/>(api.fivucsas.com)
     participant BIO as Biometric Service<br/>(internal-only)
 
-    note over U,W: FACE step inside a multi-step login<br/>(hosted login / embedded widget)
+    note over U,W: FACE step inside a multi-step login (hosted login / embedded widget)<br/>CLIENT-SIDE-EMBEDDING path -- production default (app.auth.client-side-embedding=true)
 
     U->>W: look at the camera
     W->>W: getUserMedia capture --<br/>MediaPipe FaceLandmarker (478 pts)
-    note right of W: client pre-gate (advisory only --<br/>server re-decides): face present,<br/>passive-liveness 0.45,<br/>crop to 224 x 224 JPEG
+    W->>W: quality pre-gate + ADVISORY passive PAD<br/>(MiniFASNet, onnxruntime-web -- client live-confidence)
+    W->>W: compute Facenet512 embedding IN-BROWSER<br/>(onnxruntime-web, L2-normalized 512-d vector)
+    note right of W: RAW IMAGE NEVER LEAVES THE DEVICE.<br/>Data minimization: only the irreversible 512-float<br/>vector is sent. Liveness is assured by the<br/>server-verified active Puzzle step + advisory PAD.
 
-    W->>API: POST /api/v1/auth/mfa/step<br/>{sessionToken, method: FACE,<br/>image (base64)}
+    W->>API: POST /api/v1/auth/mfa/step<br/>{sessionToken, method: FACE,<br/>embedding (512 floats), padScore (advisory)}
     API->>API: gates: MFA session valid + not consumed,<br/>account lockout guard (HTTP 423<br/>after 5 failures), rate limit
 
-    API->>BIO: POST /api/v1/verify<br/>multipart image, X-API-Key,<br/>Docker network only
-    BIO->>BIO: image validation:<br/>content type + magic bytes
-
-    BIO->>BIO: passive liveness -- MiniFASNet<br/>(LIVENESS_MODE=passive,<br/>BACKEND=uniface)
-
-    alt not live, or score below 0.4 floor
-        BIO-->>API: 400 LIVENESS_FAILED {score}
-        API->>API: MFA step FAILED (audited,<br/>counts toward lockout)
-        API-->>W: step failed
-        W-->>U: try again -- live camera required
-    else liveness passed
-        note over BIO: continues in part (b):<br/>detect, quality, embed, match, veto
-    end
+    API->>BIO: POST /api/v1/verify-embedding<br/>{512-vector}, X-API-Key,<br/>Docker network only
+    note over BIO: continues in part (b):<br/>validate dimension, pgvector match, threshold, verdict

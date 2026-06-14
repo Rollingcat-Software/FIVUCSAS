@@ -9,7 +9,7 @@ small organizations cannot reach. This chapter steps back from the architecture 
 code to ask harder questions. Who benefits, and how? What did the work contribute to
 the scientific record? What is its economic, commercial, and social weight? Could it seed
 future projects? And, given that the platform reads electronic travel documents over
-NFC and matches the holder's live face against the chip, what is its bearing on national
+Near Field Communication (NFC) and interacts with the chip, what is its bearing on national
 security? We answer each in turn, taking care to distinguish what was actually
 delivered and measured from what remains a reasonable expectation or a target for future
 evaluation.
@@ -31,14 +31,14 @@ person manages their own data through a self-service profile: they can list thei
 biometric enrollments, review recent activity, see and revoke sessions on other
 devices, and export or request deletion of their personal data. The benefit to the
 user goes beyond "fewer passwords": a verifiable, controllable
-identity that the user as well as the provider can inspect and act on. This matters
-because biometric data is uniquely sensitive (it cannot be reset like a password), and a
-platform that asks for a face owes its users transparency in return.
+identity that the user as well as the provider can inspect and act on. Because biometric
+data is irreplaceable, a platform that handles it owes its users transparency, and the
+self-service controls are how that obligation is discharged.
 
 For **service providers**, FIVUCSAS lowered the barrier to deploying modern, multi-factor,
 anti-spoofing authentication from a multi-month engineering program to a single
 integration. A tenant does not implement face matching, liveness detection, OAuth 2.0,
-token issuance, rate limiting, or KVKK-compliant data handling; it redirects its users to
+token issuance, rate limiting, or Kişisel Verilerin Korunması Kanunu (KVKK)-compliant data handling; it redirects its users to
 a hosted login page or embeds a widget and consumes a standards-compliant OpenID Connect
 identity token in return [CITE:oauth2-rfc6749,oidc-core]. The implication is economic as
 well as technical: the provider lowers its operational cost (no specialist security team
@@ -48,9 +48,9 @@ be the preserve of large institutions. That feature is strong, liveness-protecte
 platform's fixed cost is amortized across every tenant rather than rebuilt by each.
 
 There is a third, quieter beneficiary that the original specification did not name but the
-project served all the same: the **integrating developer**. Because the platform exposes
-its capabilities as a clean, documented OIDC contract with a publicly served JavaScript SDK rather than a
-bespoke API per feature, a developer can wire identity verification into an existing
+project served all the same: the **integrating developer**. The platform exposes
+its capabilities as a clean, documented OIDC contract with a publicly served JavaScript Software Development Kit (SDK) rather than a
+bespoke API per feature. A developer can therefore wire identity verification into an existing
 application without becoming a biometrics expert. The hosted-first integration model (the
 same pattern used by Auth0 Universal Login, Okta, Microsoft Entra, and Türkiye's own
 e-Devlet) means the hardest and most security-critical parts of the flow happen on
@@ -68,8 +68,7 @@ they are the conditions under which the benefits above are legitimate rather tha
 ## 6.2 Scientific Impact
 
 If the project has a single scientific centerpiece, it is the **Biometric Puzzle**, an
-active, challenge–response liveness-detection scheme that the platform implemented end to
-end rather than merely proposing. Conventional active liveness asks a user to blink or turn
+active, challenge-response liveness-detection scheme that the platform implemented end-to-end rather than merely proposing. Conventional active liveness asks a user to blink or turn
 their head, a fixed routine that a sufficiently prepared attacker can pre-record and replay.
 The Biometric Puzzle instead issues a *randomized* sequence of facial and gestural
 challenges from a defined challenge set, then scores the response server-side against the
@@ -103,7 +102,7 @@ declined to publish the unverified "100% accuracy" fuser figure pending a reprod
 review (see Section 5.8).
 
 Beyond liveness, the project is a worked, public demonstration of how to assemble mature
-research components (MTCNN face detection, a FaceNet-style 512-dimensional embedding with
+research components (Multi-task Cascaded Convolutional Network (MTCNN) face detection, a FaceNet-style 512-dimensional embedding with
 cosine-similarity matching, MediaPipe's 478-point face landmarker on the client, and
 approximate nearest-neighbor search over those embeddings in PostgreSQL via pgvector)
 into a coherent, multi-tenant production pipeline rather than an isolated notebook
@@ -153,15 +152,13 @@ harm, contributing in a modest way to reducing cybercrime [CITE:verizon2024-dbir
 Second, **digital transformation and inclusion**: the same hosted identity layer can serve
 e-government portals, banking, healthcare, education, and transport (precisely the
 public-facing services named in the problem statement), and its bilingual Turkish/English
-interface and accessibility-minded design lower the barrier for the populations those
-services must reach. Third, and inseparable from the first two, **data dignity**: because
-the platform treats biometric data as the uniquely sensitive category it is (encrypting
-stored templates, requiring explicit per-tenant biometric consent, isolating tenants, and
-giving every user export and deletion controls), it advances the social norm that strong
+interface lower the barrier for the populations those services must reach. Third, and inseparable from the first two, **data dignity**: the platform encrypts stored
+templates, requires explicit per-tenant biometric consent, isolates tenants strictly, and
+gives every user export and deletion controls. These choices advance the norm that strong
 authentication and strong privacy are not opposites but requirements of the same system,
-in line with KVKK Law No. 6698 and the GDPR [CITE:kvkk6698,gdpr]. A platform that
-collected faces without those guarantees would have a *negative* social impact; the
-project's deliberate design choices are what make its social impact a benefit.
+in line with KVKK Law No. 6698 and the General Data Protection Regulation (GDPR) [CITE:kvkk6698,gdpr]. A platform without
+those guarantees would have a negative social impact; the project's deliberate design
+choices are what make its social impact a benefit.
 
 ## 6.4 Potential Impact on New Projects
 
@@ -170,15 +167,16 @@ structure makes that more than aspiration. The platform is an end-to-end, workin
 reference for a stack that student and research teams frequently want but rarely see
 assembled correctly: a hexagonal-architecture Spring Boot service and a FastAPI
 machine-learning service behind a Traefik edge, PostgreSQL with pgvector and Redis for state,
-Kotlin Multiplatform clients sharing logic across Android, desktop, and the web, and a
+Kotlin Multiplatform clients sharing logic across Android, iOS, and desktop, and a
 React dashboard, all wired through OAuth 2.0/OIDC with PKCE
 [CITE:springboot,fastapi,kmp,react,traefik,postgresql,redis,pgvector,pkce-rfc7636]. A new
 project does not have to rediscover how these pieces fit; it can study a system where they
 already do.
 
 The most reusable contributions are the patterns rather than any one feature. The decision
-to make the authentication verdict server-authoritative and to treat untrusted client
-signals as log-only is a directly transferable security stance for any biometric system. The
+to compute the face embedding in the browser (so no raw image leaves the device) while
+keeping the verification verdict server-authoritative, and to treat untrusted client
+signals as log-only, is a directly transferable security stance for any biometric system. The
 explicit finite-state-machine modeling of authentication, verification, session, and
 enrollment lifecycles is a software-engineering template that makes correctness testable.
 The multi-tenant isolation strategy is a pattern any SaaS project can adopt:
@@ -197,8 +195,8 @@ browser tester are a ready substrate for further presentation-attack-detection r
 And the documented but not-yet-realized roadmap items (Kubernetes orchestration, formal
 presentation-attack-detection certification, and model retraining pipelines) are
 well-defined entry points for a successor team. The platform is, in short, less a finished
-artifact than a starting line, which is the most useful thing an undergraduate project can
-be for the projects that come after it.
+artifact than a foundation with clear seams for extension, which is a useful quality in
+an undergraduate project intended to be built upon.
 
 ## 6.5 Impact on National Security
 
@@ -209,22 +207,28 @@ case is worth making plainly because it rests on shipped code rather than ambiti
 The most direct connection is **border and travel-document security**. The platform's
 mobile client reads electronic Machine-Readable Travel Documents (electronic passports and
 Türkiye's electronic national identity card) over NFC, using the chip-access protocols
-defined by ICAO Doc 9303: it authenticates to the chip with Basic Access Control derived
-from the machine-readable zone, reads the
-document data groups and the security object, and the *server* verifies the document's
-authenticity through passive authentication rather than trusting the phone
+defined by International Civil Aviation Organization (ICAO) Doc 9303. The client authenticates to the chip with Basic Access Control derived
+from the machine-readable zone, then reads the
+document data groups and the security object. The server validates the document's
+cryptographic integrity through passive authentication: it verifies the Document Security
+Object's hash coverage of each Data Group and checks the CMS signature against the
+Document Signer certificate up to the Country Signing Certification Authority chain
 [CITE:icao9303]. (A Password Authenticated Connection Establishment (PACE) implementation
 was scaffolded, with the EF.CardAccess parser and key derivation written and unit-tested,
 but its cryptographic core was deliberately left unimplemented until a PACE-capable test
-document was available, so the readers fall back to Basic Access Control.) The biometric service exposes the matching endpoints,
+document was available, so the readers fall back to Basic Access Control.) The biometric service exposes
 `POST /nfc/mrz` and a server-authoritative `POST /nfc/verify-authenticity` that fails
-closed, and the asn1crypto library parses the eMRTD ASN.1 and CMS structures that passive
-authentication depends on. The security significance is precise: this combination lets a
-checkpoint confirm that a presented travel document is a genuine, unaltered,
-government-issued chip, *and* that the live person presenting it is the person bound to that chip, by
-matching the holder's liveness-protected face against the chip's stored portrait. That is
-the core trust operation of automated border control, and the project implemented its
-constituent parts.
+closed, and the asn1crypto library parses the electronic Machine-Readable Travel Document (eMRTD) ASN.1 and CMS structures that passive
+authentication depends on. Two important limitations of the current deployment must be
+stated honestly. First, the CSCA trust store is unprovisioned: no Country Signing
+Certification Authority root certificates have been loaded, so the passive authentication
+endpoint returns NOT_AUTHENTIC for every document in production. Second, matching the live
+face of the document holder against the portrait stored in Data Group 2 is planned future
+work; the face-match integration point exists in the server code but is not yet wired to
+the biometric pipeline. What the project delivered is therefore the cryptographic chain and
+the chip-read client, not an integrated face-portrait match. Completing the CSCA trust
+store and the DG2 face match are well-defined next steps that the existing architecture
+accommodates without structural change.
 
 The second connection is **identity-fraud and impersonation resistance** in the broader
 sense that underpins both civil and national security. Document fraud, synthetic identities,
@@ -254,10 +258,7 @@ border-security relevance is the *building blocks* of automated document and ide
 a deployed, accredited border-control installation. Formal certification (for both the
 presentation-attack detection under ISO/IEC 30107-3 and the document-reading chain under
 the ICAO regime) is explicitly future work, and we do not present the prototype as a
-certified system. Nor do we claim any operational deployment by a security authority. The statement we can
-stand behind is narrower and more concrete: the project produced, tested, and ran the
+certified system. Nor do we claim any operational deployment by a security authority. The statement that can be
+supported is narrower and more concrete: the project produced, tested, and ran the
 technical components that identity, border, and cyber security depend upon, to a standard
-appropriate for an undergraduate engineering project. In doing so it demonstrated, in code,
-how a cloud-native SaaS platform can serve national-security-relevant ends without
-abandoning the privacy and transparency that a democratic society requires of any system
-that asks to read its citizens' faces and documents [CITE:kvkk6698,gdpr,icao9303].
+appropriate for an undergraduate engineering project.

@@ -5,33 +5,19 @@ sequenceDiagram
     participant BIO as Biometric Service<br/>(internal-only)
     participant PGB as PostgreSQL<br/>biometric_db (pgvector)
 
-    note over BIO: continued from part (a):<br/>frame passed the passive-liveness floor
+    note over BIO: continued from part (a): received the client-computed<br/>512-float Facenet512 embedding (NO image)
 
-    BIO->>BIO: face detection -- MTCNN<br/>(400 if none or multiple)
-    BIO->>BIO: quality gate, verify floor 50<br/>(stricter than enrollment's 40)
+    BIO->>BIO: validate embedding<br/>(512-dim, finite, L2-normalized)
+    BIO->>PGB: fetch enrolled template<br/>(Fernet-decrypt ciphertext store-of-record,<br/>404 if user not enrolled)
+    BIO->>BIO: cosine distance vs threshold:<br/>verified = distance below 0.4 (prod) --<br/>0.55 when enrollment older than 2 years
 
-    alt quality below 50
-        BIO-->>API: 200 verified=false<br/>"image quality too low"
-        API-->>W: step failed -- retry capture
-    else quality passed
-        BIO->>BIO: Facenet512 embedding<br/>(DeepFace, 512-dim)
-        BIO->>PGB: fetch enrolled embedding<br/>(Fernet-decrypt ciphertext,<br/>404 if user not enrolled)
-        BIO->>BIO: cosine distance vs threshold:<br/>verified = distance below 0.4 (prod) --<br/>0.55 when enrollment older than 2 years
-        BIO->>BIO: anti-spoof assembler (13 analyzers)<br/>+ EAR veto (avg EAR below 0.18)
+    BIO-->>API: 200 {verified, distance,<br/>threshold, confidence}
+    note right of API: SERVER-AUTHORITATIVE (decision D2): the handler<br/>trusts ONLY the server "verified" flag -- the browser<br/>does feature extraction, never the accept/reject call.<br/>Liveness/anti-spoof is enforced by the server-verified<br/>active Puzzle step (no image reaches the server here).
 
-        alt spoof veto fires (even on a matching face)
-            BIO-->>API: 403 ANTISPOOF_BLOCKED {reason}
-            API->>API: MFA step FAILED + audit
-            API-->>W: blocked: spoof suspected
-        else clean
-            BIO-->>API: 200 {verified, distance,<br/>threshold, confidence}
-            note right of API: handler trusts ONLY the<br/>server "verified" flag --<br/>no client-side fallback
-            alt verified = true
-                API->>API: MFA step COMPLETED + audit --<br/>amr += "face"
-                API-->>W: next step -- or, after the last step,<br/>JWT access (RS256) + rotating refresh token
-            else verified = false
-                API->>API: MFA step FAILED + audit<br/>(counts toward 5-strike lockout)
-                API-->>W: face does not match
-            end
-        end
+    alt verified = true
+        API->>API: MFA step COMPLETED + audit --<br/>amr += "face"
+        API-->>W: next step -- or, after the last step,<br/>JWT access (RS256) + rotating refresh token
+    else verified = false
+        API->>API: MFA step FAILED + audit<br/>(counts toward 5-strike lockout)
+        API-->>W: face does not match
     end

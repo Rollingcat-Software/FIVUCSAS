@@ -6,7 +6,7 @@ FIVUCSAS was built; this chapter reports how we convinced ourselves that it work
 a graduation committee, an auditor, or a future maintainer can convince themselves of the
 same.
 Testing a system like this is unusually demanding. It spans five programming languages and
-five test technologies, and it must exercise cryptographic protocols (OAuth 2.0, OIDC, JWT),
+five test technologies, and it must exercise cryptographic protocols (OAuth 2.0, OpenID Connect (OIDC), JSON Web Token (JWT)),
 relational and vector data stores, asynchronous machine-learning pipelines, real-time
 WebSocket proctoring, and a security property, multi-tenant data isolation, whose failure
 would be both catastrophic and silent. We therefore treated testing not as an afterthought
@@ -74,7 +74,7 @@ in Table 5.2.
 | Module | Primary test tool | Role | Where it runs |
 |---|---|---|---|
 | Identity Core API (Java 21) | **JUnit 5** + Spring Boot Test + **Testcontainers** + ArchUnit | Unit, integration, isolation, boundary | GitHub-hosted `ubuntu-latest`; Postgres+Redis via Testcontainers |
-| Biometric Processor (Python 3.12) | **pytest** + httpx test client | Unit, integration, e2e, benchmark | `ubuntu-latest`; real `redis:7-alpine` + `pgvector/pgvector:pg16` services |
+| Biometric Processor (Python 3.12) | **pytest** + httpx test client | Unit, integration, E2E, benchmark | `ubuntu-latest`; real `redis:7-alpine` + `pgvector/pgvector:pg16` services |
 | Web dashboard / hosted login (React) | **Vitest** + React Testing Library | Unit & component | `ubuntu-latest`, Node 22 |
 | Web E2E | **Playwright** [CITE:playwright] | Full-browser user flows | `ubuntu-latest` headless Chromium |
 | Mobile / desktop clients (Kotlin) | **JUnit** (commonTest / androidTest / desktopTest) | Shared & platform logic | `ubuntu-latest` (+ `macos-latest`, `windows-latest` for platform builds) |
@@ -88,15 +88,15 @@ integration job (`RUN_INTEGRATION=true`, `mvn -Dtest='*IntegrationTest,*IT' veri
 brings up a real `redis:7-alpine` and a Testcontainers PostgreSQL. The latter retags
 `pgvector/pgvector:pg16` as `postgres:16-alpine` so that Flyway's very first migration, which
 installs the `vector` extension, succeeds against a database that actually has pgvector.
-The biometric processor runs five jobs: Ruff lint plus format check (with mypy installed), a
+The Biometric Processor runs five jobs: Ruff lint plus format check (with mypy installed), a
 unit-test job with coverage to Codecov, an integration-test job backed by real Redis and
-pgvector services, a security job (Bandit static analysis plus a pip-audit CVE scan), and a
+pgvector services, a security job (Bandit static analysis plus a pip-audit Common Vulnerabilities and Exposures (CVE) scan), and a
 front-end build. The web app runs ESLint, a `tsc --noEmit` type check, the Vitest suite, a
 production Vite build (with `SKIP_MODEL_FETCH=1` so CI does not download the ~12 MB card-detection model),
 a separate code-quality job, and the Playwright E2E suite in its own workflow.
 
 Two caveats about the test environment need stating. First, the heaviest integration
-tests are **environment-gated by design**. The biometric processor's full machine-learning
+tests are **environment-gated by design**. The Biometric Processor's full machine-learning
 lifespan tests are guarded behind `RUN_FULL_STACK_INTEGRATION=true` and
 `RUN_PROCTORING_INTEGRATION=true`. On a lightweight CI runner that lacks the pinned,
 digest-locked ONNX stack, they skip rather than segfault, and they run only inside the
@@ -127,19 +127,19 @@ logic, Spring-context tests, Testcontainers integration tests, and ArchUnit boun
 The unit-level work concentrates on the security-sensitive logic that is hardest to get right
 and most dangerous to get wrong: password hashing with bcrypt
 [CITE:bcrypt], JWT issuance and validation including issuer/audience checks [CITE:jwt-rfc7519],
-the multi-method MFA dispatcher, TOTP used-code replay prevention, the OAuth 2.0 / PKCE
+the multi-method MFA dispatcher, Time-based One-Time Password (TOTP) used-code replay prevention, the OAuth 2.0 / Proof Key for Code Exchange (PKCE)
 authorization-code machinery [CITE:oauth2-rfc6749,pkce-rfc7636], and the Bucket4j rate-limiter.
 A full execution of this suite shortly before submission (JDK 21, `mvn -o test`, 2026-06-07)
 finished green: **1,670 tests run, 0 failures, 0 errors, 67 skipped**. The skipped cases are
 the Docker-gated Testcontainers integration tests, and the executed count exceeds the authored
 method count because parameterized tests expand at runtime.
 
-In the **biometric processor**, we authored **980 `def test_` functions across 68 test
-files**, dominated by unit tests with smaller integration, e2e, benchmark, and manual suites.
+In the **Biometric Processor**, we authored **980 `def test_` functions across 68 test
+files**, dominated by unit tests with smaller integration, E2E, benchmark, and manual suites.
 The unit suite covers the algorithm-level building blocks:
 the eye-aspect-ratio and mouth-aspect-ratio computations that drive the Biometric Puzzle
 [CITE:soukupova2016-ear], cosine-similarity comparison over L2-normalized embeddings, the
-texture/moiré/frequency/color liveness scoring, the MRZ TD1/TD3 parser, and the eMRTD
+texture/moiré/frequency/color liveness scoring, the Machine Readable Zone (MRZ) TD1/TD3 parser, and the electronic Machine Readable Travel Document (eMRTD)
 passive-authentication crypto. A representative bare-host CI baseline recorded **647 passed,
 1 skipped, and 1 xfailed** in `tests/unit/`, and **50 passed with 111 skipped** in
 `tests/integration/`; the skipped integration tests are the ML-lifespan and full-stack cases
@@ -188,7 +188,7 @@ increments; and the `SET key 1 EX NX` marker that prevents TOTP code replay with
 step. Each of these was exercised end-to-end in an integration test so that a regression
 surfaces in CI rather than in production.
 
-The biometric processor's integration suite (167 authored tests) verifies the FastAPI route
+The Biometric Processor's integration suite (167 authored tests) verifies the FastAPI route
 handlers against a real pgvector database and Redis, including the enroll → store → verify
 round-trip on the `face_embeddings` table with the migration-created IVFFlat cosine index, the
 embedding-cipher store-of-record path (Fernet-encrypted `embedding_ciphertext` alongside the
@@ -224,19 +224,12 @@ administrator-override history).
 
 End-to-end tests close the loop by driving a real headless browser through complete user
 flows, exercising the React front end, the hosted OIDC login page, the Identity API, the
-biometric processor, PostgreSQL, and Redis as one integrated system. We used Playwright
+Biometric Processor, PostgreSQL, and Redis as one integrated system. We used Playwright
 [CITE:playwright] for this layer because of its reliable auto-waiting, multi-browser support,
 and tight integration with the React/TypeScript toolchain. The suite comprises **336
 `test(...)` cases across 28 spec files** in `web-app/e2e/`.
 
-The E2E coverage is broad and maps directly onto the platform's critical paths: login
-(including the extended and MFA variants), forgot/reset password, the full CRUD lifecycles for
-users, tenants, and roles, biometric enrollment and per-user enrollment, NFC enrollment, face
-and voice search, the verification flows together with session and dashboard state, the
-authentication-flow builder, multi-step authentication, device and session management, audit-log
-browsing, analytics, settings, navigation, card detection, and dedicated visual-audit and smoke
-suites. The test cases named in Table 5.5 are representative of the authentication and verification
-flows that the committee will recognize as the product's spine.
+The E2E coverage is broad and maps directly onto the platform's critical paths. Authentication flows cover login (including extended and MFA variants), forgot/reset password, and the full CRUD lifecycles for users, tenants, and roles. Biometric flows cover enrollment and per-user enrollment, NFC enrollment, and face and voice search. Verification flows cover session and dashboard state, the authentication-flow builder, multi-step authentication, device and session management, audit-log browsing, analytics, settings, navigation, card detection, and dedicated visual-audit and smoke suites. The test cases named in Table 5.5 are representative of the authentication and verification flows that the committee will recognize as the product's spine.
 
 [[TABLE: Representative end-to-end (Playwright) test cases]]
 
@@ -267,9 +260,10 @@ product, which is why the E2E layer exists.
 
 Performance testing was conducted with **Grafana k6** [CITE:k6], the project's maintained
 load-testing tool.[^locust] The `load-tests/` suite consists of a global configuration of
-thresholds, shared authentication and biometric helper modules, and **six scenarios**:
+thresholds, shared authentication and biometric helper modules, and **eight scenarios**:
 `auth-load-test.js`, `enrollment-load-test.js`, `verification-load-test.js`,
-`multi-tenant-load-test.js`, `stress-test.js`, and `spike-test.js`. The load patterns ramp to
+`multi-tenant-load-test.js`, `stress-test.js`, `spike-test.js`, `public-read-load-test.js`,
+and `verify-embedding-load-test.js`. The load patterns ramp to
 200 virtual users in the authentication and verification scenarios, climb as high as 1,500 in
 the stress scenario, and use a 20×-baseline burst in the spike scenario.
 
@@ -289,7 +283,7 @@ refresh under 200 ms, verification under 500 ms) at the percentiles that matter;
 [^locust]: Locust was evaluated early in the project and superseded by k6; we cite k6 as the
 maintained load-testing tool.
 
-[[TABLE: k6 load-test thresholds (NFR targets, not measured production results)]]
+[[TABLE: k6 load-test thresholds (non-functional requirement (NFR) targets, not measured production results)]]
 
 | Scenario / operation | Threshold (target) | Nature |
 |---|---|---|
@@ -323,8 +317,8 @@ we are careful to separate what is *implemented and enforced* from what is *docu
 The implemented, CI-enforced security testing comprises four automated tools plus the
 isolation integration tests:
 
-- **Bandit** runs as a static application security testing (SAST) pass over the Python
-  codebase (`bandit -r app/ -ll`) in the biometric processor's CI security job, flagging unsafe
+- **Bandit** runs as a Static Application Security Testing (SAST) pass over the Python
+  codebase (`bandit -r app/ -ll`) in the Biometric Processor's CI security job, flagging unsafe
   patterns such as insecure deserialization, shell injection, and weak cryptographic usage.
 - **pip-audit** scans the Python dependency tree for known CVEs in the same job.
 - **gitleaks** v8.21.2 runs on every push and pull request for both the Identity API and the
@@ -332,12 +326,7 @@ isolation integration tests:
   gate, and the team treats a gitleaks finding as the real blocker even when other scanners
   produce false positives on cryptographic pseudocode.
 - **Dependabot** runs weekly, grouped, to keep dependencies patched.
-- The **cross-tenant isolation Testcontainers ITs** function as security-invariant gates:
-  they are required by branch protection on Identity API pull requests and
-  asserted-to-have-executed whenever the integration lane runs (documented administrator
-  overrides occurred while the lane was being repaired, §5.2), making multi-tenant data
-  isolation a continuously re-verified guarantee backed by a
-  defense-in-depth Hibernate `@Filter(tenantFilter)` on the tenant-scoped entities.
+- The **cross-tenant isolation Testcontainers ITs** function as security-invariant gates. They are required by branch protection on Identity API pull requests and asserted-to-have-executed whenever the integration lane runs (documented administrator overrides occurred while the lane was being repaired, §5.2). Multi-tenant data isolation is thus a continuously re-verified guarantee, backed by a defense-in-depth Hibernate `@Filter(tenantFilter)` on the tenant-scoped entities.
 
 The reference framework for the threat model is the **OWASP Top 10** and the OWASP API
 Security Top 10 [CITE:owasp-top10]; the security architecture document maps the platform's
@@ -369,7 +358,7 @@ browser is treated as untrusted, so the client-side geometry embedding is record
 never used for an auth decision. JWTs carry validated issuer and audience claims; refresh tokens
 are revocable via a Redis blacklist; the admin surfaces (Swagger, actuator) are IP-allowlisted
 at the edge; and rate limiting plus per-IP `X-Forwarded-For` hardening close a
-credential-stuffing and rate-limit-bypass surface.
+credential-stuffing and rate-limit-bypass surface. In aggregate, the security test program covers static analysis, secret scanning, dependency hygiene, and tenant-isolation invariants through CI-enforced gates, with dynamic and container scanning identified as the primary gap for future work.
 
 ## 5.8 Biometric and Liveness Experimental Evaluation
 
@@ -409,11 +398,11 @@ built from the TypeScript port of the `spoof-detector` library (onnxruntime-web 
 and Web Worker pool). The pipeline is a layered, multi-signal design. The Python library ships
 **13 analyzers** (among them `MiniFASNetAnalyzer`, `TextureAnalyzer`, `MoireAnalyzer`,
 `ScreenReplayAnalyzer`, `ScreenFlickerAnalyzer`, `TemporalAnalyzer`, `RPPGAnalyzer`,
-`BlinkAnalyzer`, `MicroTremorAnalyzer`, and a `DeviceBoundaryAnalyzer`); the browser port
+`BlinkAnalyzer`, `MicroTremorAnalyzer`, and a `DeviceBoundaryAnalyzer`). The browser port
 extends this to **26 analyzers** with browser-only signals such as flash-reflection, gaze,
 expression-dynamics, and 3-D pose-consistency detectors. A `HybridFusionEvaluator`
-fuses the strongest signals (a weighted combination of the pretrained MiniFASNet model
-[CITE:minifasnet], a flash-response cue, a moiré-pattern cue, and a device-replay cue) and
+fuses the strongest signals: a weighted combination of the pretrained MiniFASNet model
+[CITE:minifasnet], a flash-response cue, a moiré-pattern cue, and a device-replay cue. It
 declares a presentation a spoof when the fused score exceeds a decision threshold of **0.45**.
 A multi-class fuser maps signals onto a spoof taxonomy (`REAL`, `STATIC_IMAGE`, `VIDEO_REPLAY`,
 `MASK_3D`, `HEAVY_MAKEUP`, `AR_FILTER`, `DEEPFAKE_INJECT`). A distinctive design choice is the
@@ -477,38 +466,35 @@ distance falls below the configured threshold: production `VERIFICATION_THRESHOL
 relaxed to `0.55` for embeddings older than two years via an adaptive-threshold rule whose
 validator enforces that the aged threshold is never stricter than the standard one (a guard
 added after an earlier inversion bug). The 1:N search path uses the same cosine operator over a
-pgvector ANN index (the migration-defined IVFFlat baseline, `vector_cosine_ops` with
-`lists = 100`, upgraded operationally to HNSW on the deployed instance) [CITE:pgvector], with
+pgvector ANN index (the migration-defined Inverted File Index with Flat quantization (IVFFlat) baseline, `vector_cosine_ops` with
+`lists = 100`, upgraded operationally to Hierarchical Navigable Small World (HNSW) on the deployed instance) [CITE:pgvector], with
 cross-tenant search forbidden. These are the operating parameters of the deployed verifier.
 
 The recognition model itself, as opposed to the fused anti-spoofing system, was measured in a
-controlled benchmark conducted by Ayşe Gülsüm Eren, whose committed evaluation harness
-(`practice-and-test/fivucsas-test`) enrolled the public gallery for each dataset and scored
-verification pairs across three standard benchmarks. On LFW the Facenet512 pipeline was scored
-over 5,600 pairs (772 genuine and 4,828 imposter), reaching an AUC of 0.9943 with an
-equal-error rate of 1.93%; at the library-default 0.45 distance threshold (the benchmark
-operating point, distinct from the production threshold of 0.4) the false-accept rate was 0.27%
-and the false-reject rate 4.4%, a genuine-accept rate of 95.6%. On CFP-FP (1,378
-frontal-to-profile pairs) the AUC was 0.9845, and on AgeDB-30, which pairs faces across a
-30-year age gap (5,084 pairs), the AUC was 0.9475.
+controlled benchmark designed and executed collaboratively, with the evaluation harness
+committed to the shared repository (`practice-and-test/fivucsas-test`). The benchmark enrolled
+the public gallery for each dataset and scored verification pairs across three standard
+benchmarks. The hard numbers come first: on the age-gap AgeDB-30 set (5,084 pairs across a
+30-year age gap) the equal-error rate reaches roughly 34% and the false-reject rate roughly
+68% at the library-default 0.45 distance threshold, and on the frontal-to-profile CFP-FP set
+(1,378 pairs) the equal-error rate rises to roughly 27% (false-reject roughly 55%). These
+figures make clear that the model degrades markedly when the pose is a hard profile or the
+enrollment is years stale. On the easier frontal, same-age Labeled Faces in the Wild (LFW)
+benchmark the Facenet512 pipeline was scored over 5,600 pairs (772 genuine and 4,828 imposter),
+reaching an AUC of 0.9943 with an equal-error rate of 1.93%; at the same 0.45 distance
+threshold the false-accept rate was 0.27% and the false-reject rate 4.4%, a genuine-accept
+rate of 95.6%. On CFP-FP the AUC was 0.9845, and on AgeDB-30 the AUC was 0.9475.
 
-These AUC figures alone would paint too rosy a picture, and the committed evaluation summaries
-say so directly. The same model that excels on frontal, same-age faces degrades markedly off
-that operating point. At that same 0.45 benchmark threshold the LFW false-reject rate
-is an excellent 4.4%, but on the frontal-to-profile CFP-FP set the equal-error rate rises to
-roughly 27% (false-reject roughly 55% at that threshold), and on the age-gap AgeDB-30 set the
-equal-error rate reaches roughly 34% (false-reject roughly 68%). In plain terms, the embedding
-model is strong when the probe is a well-lit frontal capture taken close in time to enrollment
-and weak when the pose is a hard profile or the enrollment is years stale. The evaluation's own
-recommendation follows from this: standardize capture (prompt the user to look straight at the
-camera) and re-enroll every one to two years to keep the stored template fresh. We report this
-honestly rather than headline the AUCs, consistent with the same conservative posture that led
-us to disavow the unverified "100% accuracy" poster figure above. These are controlled
-measurements on public datasets under our own preprocessing: they characterize the
-discriminative power of the embedding model, not the end-to-end production service with its
-liveness and quality gates, and we label them accordingly. Because the client-side embedding
-path (Section 3.3.3) computes the same Facenet512 representation in the browser, it inherits the
-same profile and age-gap sensitivity, so the re-enrollment guidance applies there too.
+In plain terms, the embedding model is strong when the probe is a well-lit frontal capture
+taken close in time to enrollment and weak when the pose is a hard profile or the enrollment
+is years stale. The evaluation's own recommendation follows from this: standardize capture
+(prompt the user to look straight at the camera) and re-enroll every one to two years to
+keep the stored template fresh. These are controlled measurements on public datasets under
+our own preprocessing: they characterize the discriminative power of the embedding model,
+not the end-to-end production service with its liveness and quality gates, and we label them
+accordingly. Because the client-side embedding path (Section 3.3.3) computes the same
+Facenet512 representation in the browser, it inherits the same profile and age-gap
+sensitivity, so the re-enrollment guidance applies there too.
 
 ## 5.9 Multi-Tenant Isolation Testing
 
@@ -531,7 +517,7 @@ The defining feature of this testing is the **meta-assertion in CI**: after runn
 integration suite, the pipeline parses the surefire XML and asserts that those isolation tests
 actually executed, failing the build if any was silently skipped. This guards against the most
 insidious failure mode of all: a security test that is present in the repository, appears to
-pass, but in fact never ran. The biometric processor's `/search` (1:N face search) and
+pass, but in fact never ran. The Biometric Processor's `/search` (1:N face search) and
 `/voice/search` endpoints enforce the same tenant scoping at the data layer, and the k6
 multi-tenant load scenario independently asserts zero isolation violations under concurrent
 load. The property is thus verified statically, in isolation, in integration, and under load:
@@ -554,7 +540,7 @@ the submission date (13 June 2026), the verified inventory is **4,863 authored a
 cases across 444 test files in five technologies**: 1,743 JUnit 5 methods (plus 23
 parameterized) in the Identity Core API, 1,208 Vitest cases in the web dashboard, 336
 Playwright E2E cases, 573 Kotlin methods in the clients, and 980 pytest functions in the
-biometric processor. A large subset of
+Biometric Processor. A large subset of
 these runs on every continuous-integration pipeline; the heaviest machine-learning and
 Testcontainers-dependent integration tests run inside the Docker ML and integration stacks
 rather than on the lightweight CI runners, by deliberate design. The pipelines enforce coverage

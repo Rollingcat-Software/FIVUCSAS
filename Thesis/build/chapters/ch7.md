@@ -17,13 +17,23 @@ hexagonal, ports-and-adapters codebase [CITE:cockburn-hexagonal]) owns authentic
 authorization, tenant administration, OAuth 2.0 / OpenID Connect, and every security-policy
 decision; it is the system of record and the sole authority over the auth verdict
 [CITE:oauth2-rfc6749,oidc-core]. The **Biometric Processor** (FastAPI on Python, laid out in
-the same clean layers) carries the compute-intensive work: face detection with MTCNN
-[CITE:zhang2016-mtcnn], 512-dimensional embedding with Facenet512 [CITE:schroff2015-facenet] via
-the DeepFace framework [CITE:serengil2020-lightface,deepface-lib], passive liveness with the
-UniFace MiniFASNet ONNX model [CITE:minifasnet], voice speaker embeddings, document and eMRTD
-reading [CITE:icao9303], and the anti-spoofing pipeline drawn from a dedicated `spoof-detector`
-library. The two services communicate over an internal REST contract guarded by an API key. The
-biometric processor has **no public route** and is reachable only on the internal Docker network,
+the same clean layers) carries the compute-intensive work:
+
+- face detection with MTCNN [CITE:zhang2016-mtcnn],
+- 512-dimensional embedding with Facenet512 [CITE:schroff2015-facenet] via the DeepFace framework [CITE:serengil2020-lightface,deepface-lib],
+- passive liveness with the UniFace MiniFASNet ONNX model [CITE:minifasnet],
+- voice speaker embeddings,
+- document and eMRTD reading [CITE:icao9303], and
+- the anti-spoofing pipeline drawn from a dedicated `spoof-detector` library.
+
+On the current production path (client-side embedding), the browser computes the
+Facenet512 embedding via onnxruntime-web and uploads only the 512-dimensional L2-normalized
+vector; the Biometric Processor then performs the pgvector cosine match and issues the
+accept/reject verdict, skipping MTCNN detection and the DeepFace forward pass entirely. The
+128-dimensional landmark-geometry vector produced by the Biometric Puzzle is recorded for offline
+analysis under architectural decision D2 (log-only, server-authoritative verdict) and is
+distinct from the 512-dimensional production embedding. The two services communicate over an internal REST contract guarded by an API key, and the
+Biometric Processor has **no public route** and is reachable only on the internal Docker network,
 which keeps the most sensitive surface off the open internet entirely.
 
 Around this backend we built the parts that make a capability into a product. Faces are stored as
@@ -39,13 +49,13 @@ and hardened forwarded-header handling. The whole deployment ran on a single Het
 under Docker Compose [CITE:docker,dockercompose], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
 evolved through 86 Flyway migrations [CITE:flyway] (the V0–V86 range, with V13 unused), an auditable record of the
-platform's growth from a core IAM schema to identity linking, account-level biometric consent,
+platform's growth from a core Identity and Access Management (IAM) schema to identity linking, account-level biometric consent,
 partition-ready audit logs, and discoverable passkeys.
 
 The project's signature contribution is its approach to **liveness**. Rather than trust a single
 still frame, FIVUCSAS combined a server-authoritative passive check (UniFace MiniFASNet, backed by
 a classical texture, moiré, frequency, and color detector and a single-frame Eye-Aspect-Ratio veto
-as defense in depth [CITE:soukupova2016-ear,opencv]) with an **active challenge–response mechanism,
+as defense in depth [CITE:soukupova2016-ear,opencv]) with an **active challenge-response mechanism,
 the Biometric Puzzle**. The puzzle asks the user to complete a randomly generated sequence of facial
 actions (blink, smile, turn, open mouth, raise eyebrows, and more), each scored against MediaPipe
 FaceLandmarker geometry [CITE:mediapipe] using Eye- and Mouth-Aspect-Ratio and landmark-derived
@@ -83,7 +93,7 @@ pull-request gate** of Testcontainers integration tests that the CI pipeline ass
 [CITE:testcontainers] (§5.2 records the gate's repair history).
 
 The engineering process itself is part of the result. The platform was backed by approximately
-**4,860 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
+**4,863 authored automated test cases across five technologies** (JUnit 5, Vitest, Playwright, the
 Kotlin/JUnit suite, and pytest [CITE:playwright]), exercised by per-repository CI pipelines, with
 load scenarios in k6 [CITE:k6] and static security scanning via Bandit, pip-audit, gitleaks, and
 Dependabot. We are equally clear about what those numbers do *not* mean: a large green test suite is
@@ -149,7 +159,7 @@ runtime and the 86-step auditable migration history extend the same discipline t
 single shared PostgreSQL and Redis instances and a single Traefik edge. The parent compose file
 describes a two-replica, read-replica, multi-region layout, but that is a plan, not the running
 deployment. There is no horizontal auto-scaling and no automated failover; this is adequate for a
-graduation prototype and a controlled demo, but not for a production SLA.
+graduation prototype and a controlled demo, but not for a production Service Level Agreement (SLA).
 
 **CPU-only hardware constrained the model choices.** Because the CX43 has no GPU, the platform
 deliberately blocks GPU-hungry backends (RetinaFace, ArcFace [CITE:deng2019-arcface], heavier YOLO
@@ -167,8 +177,7 @@ quality gates. The ISO/IEC 30107-3 metric harness exists in code
 [CITE:iso30107-3], and a CASIA-FASD micro-benchmark exists in the test suite, but a rigorous,
 independently reproduced evaluation on standard datasets was not completed. The performance targets in
 the k6 configuration (login p95 < 300 ms, verification p95 < 500 ms) are **design targets**, not
-benchmarked production numbers, and the early poster's "100% accuracy" claim is explicitly not cited
-as a result (see §5.8).
+benchmarked production numbers. For the anti-spoofing accuracy discussion see §5.8.
 
 **The anti-spoofing pipeline ships several layers opt-in.** Several of the richer spoof-detection
 layers (device risk, usability gate, full fusion, cut-out detection) default to off in production; the
@@ -265,5 +274,5 @@ scanning (OWASP ZAP), dependency and container scanning (Snyk, Trivy), and a sch
 and the disaster-recovery runbooks exercised in regular drills rather than kept on paper.
 
 Pursued in this order, these steps would carry FIVUCSAS from a deployed, architecturally complete
-graduation prototype to a certified, horizontally scalable, commercially operable biometric
+graduation prototype to an iBeta-tested or ISO/IEC 30107-3 accredited, horizontally scalable, commercially operable biometric
 identity-verification service, the production-grade destination this thesis set out toward.
