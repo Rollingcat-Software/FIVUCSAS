@@ -48,7 +48,7 @@ at the edge and routed by Docker labels, with an admin-IP-gated surface for Swag
 and hardened forwarded-header handling. The whole deployment ran on a single Hetzner CX43 VPS
 under Docker Compose [CITE:docker,dockercompose], every application container hardened with a
 read-only root filesystem, dropped Linux capabilities, and `no-new-privileges`. The schema itself
-evolved through 86 Flyway migrations [CITE:flyway] (the V0–V86 range, with V13 unused), an auditable record of the
+evolved through 86 Flyway migrations [CITE:flyway] (the V0–V86 range), an auditable record of the
 platform's growth from a core Identity and Access Management (IAM) schema to identity linking, account-level biometric consent,
 partition-ready audit logs, and discoverable passkeys.
 

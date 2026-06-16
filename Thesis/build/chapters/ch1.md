@@ -38,7 +38,7 @@ To realize this goal, we pursued the following concrete, measurable objectives:
 
 - **Design a multi-tenant, fully isolated data model.** We designed the relational and vector data model so that the platform operates as a genuine SaaS offering, with each tenant's users, configuration, and biometric embeddings isolated in the shared **PostgreSQL** schema by a tenant-keyed data model, enforced in the application layer on every query and continuously checked by cross-tenant isolation tests.
 
-The complete platform was publicly released under the MIT license and deployed in production, available for replication, audit, and extension at the URLs listed in Chapter 3. In delivering these objectives, this thesis makes three concrete research contributions:
+The complete platform was publicly released under the MIT license and deployed in production, available for replication, audit, and extension at the URLs listed in Appendix C. In delivering these objectives, this thesis makes three concrete research contributions:
 
 1. **The Biometric Puzzle**: a randomized, server-verified active liveness scheme drawing on a 23-challenge library across two body channels (fourteen facial challenges and nine hand gestures), with per-step confidence and duration floors, anti-replay timestamp checks, and server-side geometric re-scoring (Section 4.3.1).
 2. **A hybrid presentation-attack-detection pipeline** fusing this active channel with a passive layer (MiniFASNet plus classical texture, frequency-domain, moiré, and color analyzers), released as a standalone open-source library with a public in-browser tester so its behavior can be inspected rather than taken on faith (Sections 4.3.2 and 5.8).

@@ -238,10 +238,10 @@ def add_heading(doc, title, ilvl, citation_numbering=None, page_break=False, num
         _set(pPr, "w:ind", **{"w:left": "425", "w:hanging": "425"})      # number at margin
     elif ilvl == 1:
         _set(pPr, "w:spacing", **{"w:after": "0", "w:line": "360", "w:lineRule": "auto"})
-        _set(pPr, "w:ind", **{"w:left": "765", "w:hanging": "425"})      # number at 0.6 cm
+        _set(pPr, "w:ind", **{"w:left": "907", "w:hanging": "567"})      # number at 0.6 cm; wider gap so two-digit (5.10) clears the tab stop
     else:
         _set(pPr, "w:spacing", **{"w:after": "0", "w:line": "360", "w:lineRule": "auto"})
-        _set(pPr, "w:ind", **{"w:left": "1105", "w:hanging": "425"})     # number at 1.2 cm
+        _set(pPr, "w:ind", **{"w:left": "1247", "w:hanging": "567"})     # number at 1.2 cm; wider gap for 5.8.3-style numbers
     _set(pPr, "w:jc", **{"w:val": "left"})
     _set(pPr, "w:outlineLvl", **{"w:val": str(ilvl)})
     _para_mark_rpr(pPr, size_pt=(14 if ilvl == 0 else 12),
@@ -254,6 +254,7 @@ def add_heading(doc, title, ilvl, citation_numbering=None, page_break=False, num
 def add_body(doc, text, citation_numbering, first_indent=True):
     text = sub_citations(text, citation_numbering)
     p = doc.add_paragraph()
+    p.paragraph_format.widow_control = True   # avoid a lone first/last line stranded on a page
     pPr = p._p.get_or_add_pPr()
     _set(pPr, "w:jc", **{"w:val": "both"})
     _set(pPr, "w:spacing", **{"w:after": "120", "w:line": "360", "w:lineRule": "auto"})
@@ -262,13 +263,27 @@ def add_body(doc, text, citation_numbering, first_indent=True):
     add_inline_runs(p, text)
     return p
 
+ZWSP = chr(0x200b)  # zero-width space (U+200B), invisible line-break opportunity
+def _breakable(s):
+    """Insert zero-width break opportunities into inline-code tokens so long identifiers,
+    dotted names, and file paths can wrap in justified text instead of forcing the previous
+    line to stretch into inter-word 'rivers'. The character is invisible and is used only
+    when Word actually needs to break the line; no hyphen is ever introduced."""
+    s = re.sub(r"/(?=[A-Za-z0-9])", "/" + ZWSP, s)          # after path '/', but not before a glob like /**
+    s = re.sub(r"_(?=[A-Za-z0-9])", "_" + ZWSP, s)          # after snake_case '_'
+    s = re.sub(r"\.(?=[A-Za-z])", "." + ZWSP, s)            # after a dot in dotted names (not decimals)
+    s = re.sub(r":(?=[A-Za-z0-9])", ":" + ZWSP, s)          # after ':' in keys like totp:used:, oauth2:code:
+    s = re.sub(r"(?<=[A-Za-z0-9])(?=<)", ZWSP, s)           # before a generic, e.g. Persistable<UUID>
+    s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", ZWSP, s)          # at camelCase humps
+    return s
+
 def add_inline_runs(p, text):
     # handle **bold**, *italic*, `code` — incl. `code` nested inside **bold**/*italic*
     def emit_with_code(seg_text, **fmt):
         for seg in re.split(r"(`[^`]+?`)", seg_text):
             if not seg: continue
             if seg.startswith("`") and seg.endswith("`"):
-                r = p.add_run(seg[1:-1])
+                r = p.add_run(_breakable(seg[1:-1]))
                 style_run_font(r, font="Consolas", size_pt=10.5,
                                bold=fmt.get("bold", False), italic=fmt.get("italic", False))
             else:
@@ -279,7 +294,7 @@ def add_inline_runs(p, text):
         if part.startswith("**") and part.endswith("**"):
             emit_with_code(part[2:-2], bold=True)
         elif part.startswith("`") and part.endswith("`"):
-            r = p.add_run(part[1:-1]); style_run_font(r, font="Consolas", size_pt=10.5)
+            r = p.add_run(_breakable(part[1:-1])); style_run_font(r, font="Consolas", size_pt=10.5)
         elif part.startswith("*") and part.endswith("*") and len(part) > 2:
             emit_with_code(part[1:-1], italic=True)
         else:
@@ -601,7 +616,7 @@ def replace_frontmatter(doc, abstract, acknowledgements):
                 r._r.getparent().remove(r._r)
             r = p.add_run(newtext); style_run_font(r, **fmt)
         if "Copyright" in txt:
-            setp("Copyright © " + ", ".join(AUTHORS) + ", " + YEAR + ". All rights reserved.")
+            setp("Copyright © Group members listed above, " + YEAR + ". All rights reserved.")
         elif "InsERT TITLE OF YOUR PROJECT" in txt:
             setp(TITLE, bold=True, size_pt=14)
         elif "Insert second line of title" in txt:

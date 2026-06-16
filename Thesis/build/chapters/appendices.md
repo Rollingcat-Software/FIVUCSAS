@@ -177,3 +177,7 @@ The platform ran on a single Hetzner CX43 virtual server (8 vCPU, 16 GB RAM, 150
 ## C.4 Configuration Discipline
 
 All environment-specific parameters (database and Redis credentials, the JWT signing key and access/refresh token lifetimes, the default face model and verification thresholds, and the biometric service API key) were externalized as environment variables and supplied at deployment through an `.env.prod` file, keeping secrets out of source control and allowing the same images to run unchanged across environments.
+
+## C.5 Source Code Availability
+
+The complete source code was released under the MIT license and is publicly available for replication, audit, and extension. The platform is organized as a parent repository coordinating per-service repositories (Identity Core API, Biometric Processor, web app, client apps, spoof-detector, and documentation), all hosted in the project's GitHub organization at `https://github.com/orgs/Rollingcat-Software/repositories`.
