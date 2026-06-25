@@ -1,0 +1,39 @@
+name: Deploy Links to Hetzner
+
+# links.fivucsas.com — static link page, now an nginx container on the Hetzner
+# box behind Traefik (auto Let's Encrypt TLS). Replaces Hostinger hosting (plan
+# cancelled 2026-06). No build step (pure static). VPS_* secrets already exist.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'links-website/**'
+      - '.github/workflows/deploy-links-hetzner.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fivucsas-links
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy links.fivucsas.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        timeout-minutes: 8
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 6m
+          script: |
+            set -e
+            cd /opt/projects/fivucsas
+            git pull origin master
+            cd links-website
+            docker compose -f docker-compose.prod.yml up -d --build
+            curl -skf -o /dev/null --resolve links.fivucsas.com:443:127.0.0.1 \
+              https://links.fivucsas.com/ && echo "links.fivucsas.com healthy"
