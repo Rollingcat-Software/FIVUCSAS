@@ -35,5 +35,9 @@ jobs:
             git pull origin master
             cd links-website
             docker compose -f docker-compose.prod.yml up -d --build
-            curl -skf -o /dev/null --resolve links.fivucsas.com:443:127.0.0.1 \
-              https://links.fivucsas.com/ && echo "links.fivucsas.com healthy"
+            for n in $(seq 1 8); do
+              curl -skf -o /dev/null --resolve links.fivucsas.com:443:127.0.0.1 https://links.fivucsas.com/ \
+                && { echo "links.fivucsas.com healthy"; break; }
+              echo "Traefik router not ready yet, retry $n/8..."; sleep 5
+              [ "$n" = 8 ] && { echo "health check FAILED"; exit 1; }
+            done

@@ -36,5 +36,9 @@ jobs:
             cd bys-demo
             docker compose -f docker-compose.prod.yml up -d --build
             docker compose -f docker-compose.prod.yml ps
-            curl -skf -o /dev/null --resolve demo.fivucsas.com:443:127.0.0.1 \
-              https://demo.fivucsas.com/ && echo "demo.fivucsas.com healthy"
+            for n in $(seq 1 8); do
+              curl -skf -o /dev/null --resolve demo.fivucsas.com:443:127.0.0.1 https://demo.fivucsas.com/ \
+                && { echo "demo.fivucsas.com healthy"; break; }
+              echo "Traefik router not ready yet, retry $n/8..."; sleep 5
+              [ "$n" = 8 ] && { echo "health check FAILED"; exit 1; }
+            done
