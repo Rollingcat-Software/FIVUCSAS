@@ -1,0 +1,43 @@
+name: Deploy Landing to Hetzner
+
+# Replaces deploy-landing.yml (Hostinger rsync; hosting plan cancelled 2026-06).
+# fivucsas.com now runs as an nginx container on the Hetzner box behind Traefik
+# (auto Let's Encrypt TLS). www.fivucsas.com keeps redirecting to the apex via
+# the fivucsas-www-redirect Traefik router. VPS_* secrets already exist in this repo.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'landing-website/**'
+      - '.github/workflows/deploy-landing-hetzner.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fivucsas-landing
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy fivucsas.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        timeout-minutes: 10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 8m
+          script: |
+            set -e
+            cd /opt/projects/fivucsas
+            git pull origin master
+            cd landing-website
+            npm ci
+            npm run build
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml ps
+            curl -skf -o /dev/null --resolve fivucsas.com:443:127.0.0.1 \
+              https://fivucsas.com/ && echo "fivucsas.com healthy"

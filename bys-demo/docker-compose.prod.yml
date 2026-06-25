@@ -1,0 +1,31 @@
+# demo.fivucsas.com — static BYS demo on the Hetzner box behind Traefik.
+# Replaces Hostinger hosting (plan cancelled 2026-06). Point demo.fivucsas.com's
+# A record to 116.203.222.213 at turkticaret; Traefik issues the Let's Encrypt
+# cert automatically on the first request.
+services:
+  fivucsas-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fivucsas-demo
+    container_name: fivucsas-demo
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fivucsas-demo.rule=Host(`demo.fivucsas.com`)"
+      - "traefik.http.routers.fivucsas-demo.entrypoints=websecure"
+      - "traefik.http.routers.fivucsas-demo.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fivucsas-demo.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.fivucsas-demo.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          pids: 128
+
+networks:
+  proxy:
+    name: proxy
+    external: true

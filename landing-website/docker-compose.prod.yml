@@ -1,0 +1,32 @@
+# fivucsas.com — Vite landing on the Hetzner box behind Traefik.
+# Replaces Hostinger hosting (plan cancelled 2026-06). Point fivucsas.com's apex
+# A record to 116.203.222.213 at turkticaret; www.fivucsas.com keeps redirecting
+# to the apex via the existing fivucsas-www-redirect router. Traefik issues the
+# Let's Encrypt cert automatically on the first request.
+services:
+  fivucsas-landing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fivucsas-landing
+    container_name: fivucsas-landing
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fivucsas-landing.rule=Host(`fivucsas.com`)"
+      - "traefik.http.routers.fivucsas-landing.entrypoints=websecure"
+      - "traefik.http.routers.fivucsas-landing.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fivucsas-landing.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.fivucsas-landing.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          pids: 128
+
+networks:
+  proxy:
+    name: proxy
+    external: true

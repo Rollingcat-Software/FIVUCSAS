@@ -1,0 +1,10 @@
+.git
+node_modules
+src
+public
+*.md
+package*.json
+tsconfig*.json
+vite.config.*
+postcss.config.js
+tailwind.config.js
