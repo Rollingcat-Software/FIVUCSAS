@@ -47,9 +47,9 @@ users |o..o{ finger : user_id as string
 note bottom of face
   ANN index on every embedding column:
   HNSW (m=16, ef_construction=64),
-  vector_cosine_ops — production state.
-  Alembic baseline creates IVFFlat
-  (lists=100) on fresh installs.
+  vector_cosine_ops, created in the
+  Alembic baseline; an IVFFlat alternative
+  (lists=100) is added in a later migration.
 end note
 
 @enduml
