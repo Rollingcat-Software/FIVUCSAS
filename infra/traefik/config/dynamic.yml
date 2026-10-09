@@ -105,6 +105,66 @@ http:
     #   tls:
     #     certResolver: letsencrypt
 
+    # FIVUCSAS device permissions (2026-10-09). secure-headers is applied on the
+    # websecure entrypoint to every site on this host, so it carries no
+    # Permissions-Policy. These four FIVUCSAS hosts need camera, microphone and
+    # WebAuthn, delegated to the verify.fivucsas.com iframe where they embed it.
+    # Each router shadows the docker-label router of the same host (same rule,
+    # higher priority, same @docker service) and adds fivucsas-device-permissions,
+    # so the grant stays out of the app compose files and reloads without a
+    # container restart. If a FIVUCSAS service is renamed, update it here too.
+    fivucsas-verify-permissions:
+      rule: "Host(`verify.fivucsas.com`)"
+      priority: 1000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - fivucsas-device-permissions
+        - rate-limit@file
+      service: verify-widget@docker
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-app-permissions:
+      rule: "Host(`app.fivucsas.com`)"
+      priority: 1000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - fivucsas-device-permissions
+        - rate-limit@file
+      service: fivucsas-app@docker
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-demo-permissions:
+      rule: "Host(`demo.fivucsas.com`)"
+      priority: 1000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - fivucsas-device-permissions
+        - rate-limit@file
+      service: fivucsas-demo@docker
+      tls:
+        certResolver: letsencrypt
+
+    fivucsas-amispoof-permissions:
+      rule: "Host(`amispoof.fivucsas.com`)"
+      priority: 1000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - fivucsas-device-permissions
+        - rate-limit@file
+      service: fivucsas-amispoof@docker
+      tls:
+        certResolver: letsencrypt
+
     # Mandalean media CDN (2026-06-22): public read + presigned PUT/GET surface
     # for the mandalean-media MinIO bucket. The backend mints presigned URLs
     # against STORAGE_ENDPOINT=https://cdn-mandalean.rollingcatsoftware.com, so
@@ -262,6 +322,11 @@ http:
         replacement: "https://demo.fivucsas.com${1}"
         permanent: true
 
+    # Host-wide baseline: the websecure entrypoint applies it to every site, and
+    # entrypoint middlewares wrap router middlewares, so whatever it sets cannot
+    # be overridden per site. It therefore sets no Permissions-Policy: each app
+    # serves its own, and FIVUCSAS gets its grants from
+    # fivucsas-device-permissions.
     secure-headers:
       headers:
         browserXssFilter: true
@@ -272,6 +337,12 @@ http:
         stsSeconds: 31536000
         customFrameOptionsValue: "DENY"
         referrerPolicy: "strict-origin-when-cross-origin"
+
+    # Camera, microphone and WebAuthn for the FIVUCSAS biometric surfaces, also
+    # delegated to the verify.fivucsas.com iframe. Attached only by the
+    # fivucsas-*-permissions routers above.
+    fivucsas-device-permissions:
+      headers:
         permissionsPolicy: "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), geolocation=(), payment=(), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
 
     # Variant of secure-headers WITHOUT X-Frame-Options: DENY, for the
@@ -288,7 +359,6 @@ http:
         stsPreload: true
         stsSeconds: 31536000
         referrerPolicy: "strict-origin-when-cross-origin"
-        permissionsPolicy: "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), geolocation=(), payment=(), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
 
     # SEO indexability gate (2026-05-11): the noindex header is split out of
     # secure-headers so that secure-headers stays neutral on crawler signals.
