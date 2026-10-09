@@ -40,36 +40,10 @@ http:
       tls:
         certResolver: letsencrypt
 
-    rollingcat-apex-redirect:
-      rule: "Host(`rollingcatsoftware.com`) || Host(`www.rollingcatsoftware.com`)"
-      entryPoints:
-        - websecure
-      middlewares:
-        - redirect-to-fivucsas
-      service: noop@internal
-      tls:
-        certResolver: letsencrypt
-
-    rollingcat-ica-redirect:
-      rule: "Host(`ica-fivucsas.rollingcatsoftware.com`)"
-      entryPoints:
-        - websecure
-      middlewares:
-        - redirect-to-fivucsas-api
-      service: noop@internal
-      tls:
-        certResolver: letsencrypt
-
-    rollingcat-bys-redirect:
-      rule: "Host(`bys-demo.rollingcatsoftware.com`)"
-      entryPoints:
-        - websecure
-      middlewares:
-        - redirect-to-fivucsas-demo
-      service: noop@internal
-      tls:
-        certResolver: letsencrypt
-
+    # rollingcat-apex-redirect REMOVED 2026-06-25: rollingcatsoftware.com now
+    # serves its own static site from the rollingcat-web container (docker-label
+    # router) after the Hostinger plan was cancelled. www is served by the same
+    # router (see rollingcat-website/docker-compose.prod.yml).
     # IN-H2 (2026-04-19): admin surface on api.fivucsas.com.
     # Swagger UI, OpenAPI JSON, and Spring actuator endpoints are gated by
     # admin-whitelist (IP allowlist). The docker-label router `identity-api@docker`
@@ -83,7 +57,27 @@ http:
       entryPoints:
         - websecure
       middlewares:
+        - api-error-pages@file
         - admin-whitelist@file
+        - secure-headers@file
+        - noindex@file
+        - rate-limit@file
+      service: identity-api@docker
+      tls:
+        certResolver: letsencrypt
+
+    # Human-facing root of the API host. api.fivucsas.com/ returns 401 from Spring
+    # (it is an API origin, not a page). This router matches Path(`/`) ONLY — higher
+    # specificity than the bare docker-label Host rule — and wraps the response with
+    # the api-error-pages errors middleware so a browser visitor gets a branded page
+    # instead of a raw JSON 401. Real API clients on /api/v1/** stay on the
+    # docker-label router and keep getting JSON errors. Body-only swap; status kept.
+    fivucsas-api-root:
+      rule: "Host(`api.fivucsas.com`) && Path(`/`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - api-error-pages@file
         - secure-headers@file
         - noindex@file
         - rate-limit@file
@@ -111,7 +105,139 @@ http:
     #   tls:
     #     certResolver: letsencrypt
 
+    # Mandalean media CDN (2026-06-22): public read + presigned PUT/GET surface
+    # for the mandalean-media MinIO bucket. The backend mints presigned URLs
+    # against STORAGE_ENDPOINT=https://cdn-mandalean.rollingcatsoftware.com, so
+    # Traefik must forward the original Host (passHostHeader default = true) for
+    # MinIO to validate the SigV4 signature. Routed to the file-provider service
+    # cdn-mandalean (explicit URL → shared-minio:9000 over the proxy network).
+    cdn-mandalean:
+      rule: "Host(`cdn-mandalean.rollingcatsoftware.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+      service: cdn-mandalean
+      tls:
+        certResolver: letsencrypt
+
+    # Muhabbet media. Unlike cdn-mandalean, Muhabbet signs presigned URLs with the
+    # INTERNAL endpoint and rewrites the host afterwards, so MinIO must receive the
+    # host it signed for: passHostHeader is false on the service below. Forwarding
+    # the public host here would fail SigV4 validation.
+    cdn-muhabbet:
+      rule: "Host(`cdn-muhabbet.rollingcatsoftware.com`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+      service: cdn-muhabbet
+      tls:
+        certResolver: letsencrypt
+
+    # Guard for the public S3 surface (2026-09-19). The cdn-* hosts expose the S3
+    # API of the object store to the internet for presigned URLs and public reads.
+    # MinIO community builds are archived and unpatched for CVE-2026-41145
+    # (object write with query-string credentials and an unsigned trailer, no
+    # Authorization header) and CVE-2026-40344 (Snowball auto-extract skips the
+    # signature check). Both need only an access key, not the secret. This router
+    # outranks cdn-mandalean and cdn-muhabbet and answers 403 for exactly those
+    # request shapes plus the /minio/ admin and health paths. Legitimate SDK uploads
+    # carry an Authorization header; presigned browser uploads send no
+    # content-sha256 header, so neither matches. Harmless in front of Garage too.
+    cdn-s3-guard:
+      rule: "(Host(`cdn-mandalean.rollingcatsoftware.com`) || Host(`cdn-muhabbet.rollingcatsoftware.com`)) && (PathPrefix(`/minio/`) || HeaderRegexp(`X-Amz-Meta-Snowball-Auto-Extract`, `.*`) || (HeaderRegexp(`X-Amz-Content-Sha256`, `(?i)^STREAMING-UNSIGNED-PAYLOAD-TRAILER$`) && !HeaderRegexp(`Authorization`, `.+`)))"
+      priority: 10000
+      entryPoints:
+        - websecure
+      middlewares:
+        - deny-all
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+
+    # Garage cutover test routes (2026-09-19). They match only requests that carry
+    # the header `X-Storage-Backend: garage`, so they never see normal traffic.
+    # Remove them once both apps run on Garage (RUNBOOK_GARAGE.md, step 6).
+    cdn-mandalean-garage-test-public:
+      rule: "Host(`cdn-mandalean.rollingcatsoftware.com`) && Header(`X-Storage-Backend`, `garage`) && (Method(`GET`) || Method(`HEAD`)) && PathPrefix(`/mandalean-media/`) && !QueryRegexp(`X-Amz-Signature`, `.*`) && !HeaderRegexp(`Authorization`, `.+`)"
+      priority: 9500
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - strip-bucket-mandalean
+      service: garage-web
+      tls:
+        certResolver: letsencrypt
+
+    cdn-mandalean-garage-test:
+      rule: "Host(`cdn-mandalean.rollingcatsoftware.com`) && Header(`X-Storage-Backend`, `garage`)"
+      priority: 9000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+      service: garage-s3
+      tls:
+        certResolver: letsencrypt
+
+    cdn-muhabbet-garage-test-public:
+      rule: "Host(`cdn-muhabbet.rollingcatsoftware.com`) && Header(`X-Storage-Backend`, `garage`) && (Method(`GET`) || Method(`HEAD`)) && PathPrefix(`/muhabbet-media/thumbnails`) && !QueryRegexp(`X-Amz-Signature`, `.*`) && !HeaderRegexp(`Authorization`, `.+`)"
+      priority: 9500
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+        - strip-bucket-muhabbet
+      service: garage-web
+      tls:
+        certResolver: letsencrypt
+
+    cdn-muhabbet-garage-test:
+      rule: "Host(`cdn-muhabbet.rollingcatsoftware.com`) && Header(`X-Storage-Backend`, `garage`)"
+      priority: 9000
+      entryPoints:
+        - websecure
+      middlewares:
+        - secure-headers@file
+      service: garage-s3-internal-host
+      tls:
+        certResolver: letsencrypt
+
   middlewares:
+    # Refuses every request with 403 (no client can come from 0.0.0.0/32).
+    # Used by cdn-s3-guard.
+    deny-all:
+      ipAllowList:
+        sourceRange:
+          - "0.0.0.0/32"
+
+    # Garage's website endpoint serves /<key> for the bucket named by the Host
+    # header (global alias = public cdn host), so the path-style bucket prefix
+    # of public URLs is stripped first.
+    strip-bucket-mandalean:
+      stripPrefix:
+        prefixes:
+          - "/mandalean-media"
+
+    strip-bucket-muhabbet:
+      stripPrefix:
+        prefixes:
+          - "/muhabbet-media"
+
+    # Branded 401/403/404 pages for api.fivucsas.com.
+    # Intercepts the listed upstream/ACL statuses and serves /{status}.html from
+    # the error-pages service. Body-only swap — the original status code is kept.
+    api-error-pages:
+      errors:
+        status:
+          - "401"
+          - "403"
+          - "404"
+        service: error-pages
+        query: "/{status}.html"
+
     redirect-to-fivucsas:
       redirectRegex:
         regex: "^https?://[^/]+(.*)"
@@ -148,6 +274,22 @@ http:
         referrerPolicy: "strict-origin-when-cross-origin"
         permissionsPolicy: "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), geolocation=(), payment=(), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
 
+    # Variant of secure-headers WITHOUT X-Frame-Options: DENY, for the
+    # embeddable auth widget (verify.fivucsas.com), which must be framable by
+    # FIVUCSAS-owned demo pages (demo-only "museum" capability, 2026-05-28).
+    # Framing is restricted via CSP frame-ancestors (allowlist) in
+    # verify-widget/nginx.conf, NOT by XFO. All other headers match secure-headers.
+    secure-headers-framable:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(self \"https://verify.fivucsas.com\"), microphone=(self \"https://verify.fivucsas.com\"), geolocation=(), payment=(), publickey-credentials-get=(self \"https://verify.fivucsas.com\"), publickey-credentials-create=(self \"https://verify.fivucsas.com\")"
+
     # SEO indexability gate (2026-05-11): the noindex header is split out of
     # secure-headers so that secure-headers stays neutral on crawler signals.
     # Attach `noindex@file` ONLY to surfaces that must not appear in SERPs
@@ -173,3 +315,51 @@ http:
           - "10.8.0.0/24"
           - "193.140.73.0/24"
           - "46.104.0.0/16"
+
+  services:
+    # Backend for the api-error-pages errors middleware (tiny nginx on proxy net).
+    # File provider resolves this explicit URL via Docker DNS (both on `proxy`).
+    error-pages:
+      loadBalancer:
+        servers:
+          - url: "http://error-pages:80"
+
+    # Mandalean media CDN backend. File provider resolves this explicit URL via
+    # Docker DNS — Traefik and shared-minio both sit on the `proxy` network.
+    # Port 9000 is the MinIO S3 API (console is 9001, not exposed here).
+    cdn-mandalean:
+      loadBalancer:
+        servers:
+          - url: "http://shared-minio:9000"
+
+    # Muhabbet media backend. Same shared-minio target as cdn-mandalean, but with
+    # passHostHeader disabled so MinIO sees `shared-minio:9000` — the host the
+    # presigned signature was computed against.
+    cdn-muhabbet:
+      loadBalancer:
+        passHostHeader: false
+        servers:
+          - url: "http://shared-minio:9000"
+
+    # Garage (infra/garage). Reached over the private storage-edge network that
+    # only Traefik and Garage join. 3900 = S3 API, 3902 = website endpoint.
+    # garage-s3 forwards the public Host (apps that sign against the cdn host,
+    # like Mandalean); garage-s3-internal-host sends Host garage:3900 (apps that
+    # sign against the internal endpoint and rewrite the host, like Muhabbet).
+    garage-s3:
+      loadBalancer:
+        servers:
+          - url: "http://garage:3900"
+
+    garage-s3-internal-host:
+      loadBalancer:
+        passHostHeader: false
+        servers:
+          - url: "http://garage:3900"
+
+    garage-web:
+      loadBalancer:
+        servers:
+          - url: "http://garage:3902"
+
+# cert-reload-nudge 1789659884
