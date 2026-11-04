@@ -52,6 +52,11 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
   and rolls back on failure. No GitHub runner, secret or SSH key is involved; the old
   `Deploy to Hetzner` workflows were removed. Pause with
   `docker exec fivucsas-deployer touch /state/PAUSED`; details in `infra/deployer/README.md`.
+  Trust model: a commit on `main` of those three repos (merge or admin push) runs as root
+  on mordecai through the Docker socket, so treat `main` access, `Dockerfile*`,
+  `docker-compose.prod.yml` and `ci.yml` changes accordingly. A deploy killed midway is
+  reconciled on the next start from `/state/INFLIGHT.<repo>`; a rollback restores the
+  image, not the schema, so migrations must be expand/contract.
 
 ## Key Commands
 
