@@ -41,12 +41,22 @@ Storage: PostgreSQL 17 + pgvector | Redis 7.4
 | fivucsas.com.tr | 301 → fivucsas.com |
 | www.fivucsas.com | 301 → fivucsas.com |
 
-## Server (Hetzner CX43)
+## Server
 
-- 8 CPU / 16GB RAM / 150GB disk / Ubuntu 24.04
-- Docker 29.3.0, Compose v5.1.0
-- SSH: `deploy` user, key-based auth
-- All projects at `/opt/projects/`
+- Production runs on **mordecai**; checkouts at `/opt/projects/fivucsas/<repo>`, owned by
+  `deploy` (uid 1001, docker group gid 983). The Hetzner CX43 box is no longer a
+  production host (spare capacity only).
+- **identity-core-api, biometric-processor and web-app are deployed by the pull deployer**
+  (`infra/deployer/`, container `fivucsas-deployer`): every 5 min it fast-forwards a prod
+  checkout to the newest `main` commit with a green CI push run, rebuilds, health-checks
+  and rolls back on failure. No GitHub runner, secret or SSH key is involved; the old
+  `Deploy to Hetzner` workflows were removed. Pause with
+  `docker exec fivucsas-deployer touch /state/PAUSED`; details in `infra/deployer/README.md`.
+  Trust model: a commit on `main` of those three repos (merge or admin push) runs as root
+  on mordecai through the Docker socket, so treat `main` access, `Dockerfile*`,
+  `docker-compose.prod.yml` and `ci.yml` changes accordingly. A deploy killed midway is
+  reconciled on the next start from `/state/INFLIGHT.<repo>`; a rollback restores the
+  image, not the schema, so migrations must be expand/contract.
 
 ## Key Commands
 
@@ -249,6 +259,9 @@ Server-side legacy yolda `/enroll` + `/verify` passive liveness'i (UniFace MiniF
 > Authored test cases, matching the graduation thesis (locked at ≈4,863; the per-module breakdown sums to exactly 4,863). `~` = counting-method tolerance; a fresh origin/main grep yields ≈4,868 (sub-0.2% noise on a living repo). See `Thesis/README_THESIS.md`. (Earlier "≈4,405", "633 Java / ~1,800", and "568 Kotlin / 1,591 Java" were stale.)
 
 ## CI/CD
+
+- Production deploys are pulled, not pushed: see `infra/deployer/README.md`. CI on
+  `main` is the gate; a red or missing CI run never deploys.
 
 - **web-app** CI runs on `ubuntu-latest` (both public-repo jobs). Self-hosted
   `hetzner-cx43` runner reserved for the `Deploy to Hostinger` workflow only.

@@ -2,6 +2,46 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-11-04] CI-gated pull deployer for production
+
+- **`infra/deployer/`**: a restart-always container on mordecai (runs as uid 1001:983,
+  no inbound port, no GitHub secret) that deploys `identity-core-api`,
+  `biometric-processor` and `web-app`. Every 5 minutes it finds the newest `main` commit
+  whose CI push run succeeded (unauthenticated GitHub API, gated by `git ls-remote` so a
+  quiet repository costs no API calls), and if the prod checkout is strictly behind and
+  fast-forwardable it tags a rollback image, fast-forwards (keeping local overrides),
+  rebuilds, restarts and health-checks; on failure it rolls back image and checkout and
+  holds that repository until a newer green commit. Dry-run mode, pause flags, unit tests
+  (`.github/workflows/deployer-tests.yml`). Replaces the GitHub `Deploy to Hetzner`
+  workflows, which targeted the decommissioned Hetzner box or waited for a self-hosted
+  runner that public repositories must not have. Not yet installed on mordecai.
+- **Security review fixes (same PR):** the compose file now also mounts the submodule git
+  directories (`/opt/projects/fivucsas/.git/modules/<repo>`), without which git failed in
+  the container; an fsync'd `/state/INFLIGHT.<repo>` marker written before the checkout
+  moves lets the next start finish or roll back a deploy that a kill or reboot
+  interrupted (a commit interrupted twice is held); commands run in their own process
+  group and a timeout kills the whole group (SIGINT, then SIGKILL), a failed build points
+  `:latest` back at the running image, the node build container is named and removed,
+  `init: true`, and `stop_grace_period` is 155 min, checked by a test against the summed
+  timeouts; CI runs must come from the canonical repository and SHAs from the API and
+  state files are validated and passed after `--end-of-options`; the canonical GitHub URL
+  is fetched into `refs/remotes/origin/main` instead of trusting `origin`; the target is
+  the newest green commit by git ancestry from the tip, not by commit time; logged command
+  output is redacted; the image makes its files world-readable (mordecai's umask 0007
+  broke imports for uid 1001). README: trust model (a merge to `main` is root on
+  mordecai, with recommended branch protection), interrupted deploys, timeouts, and
+  expand/contract migrations (a rollback restores the image, not the schema). Dry run on
+  mordecai with the compose mounts and user: git works, all three repositories skip
+  (nothing newer and green to deploy).
+- **Recovery review fixes (same PR):** reconcile recreates the old service when its
+  container is not running (one left `exited`/`created` by a kill during compose's
+  stop-then-recreate still reports the old image) and health-checks the old image in
+  both branches, recreating it if that check fails; when `:latest` cannot be pointed back
+  at the old image after a failed build or rollback, the in-flight marker is kept, no
+  `up` runs and the repository stays held until reconcile repins it; the interruption
+  count is saved to `state.json` before the marker is removed (and a re-reconciled
+  marker is not counted twice), so a second kill cannot reset it.
+
 ## [2026-05-30] Identifier-first login — SHIPPED + DEPLOYED (Marmara canary)
 
 The config-driven login engine now drives an **identifier-first** hosted/dashboard login: screen 1 collects identity only (email), and every factor — password included — is presented afterward. Live on the Marmara canary; the global engine switch stays OFF, so all other tenants are byte-identical to the legacy single-screen email+password form and the redesign reverts with the env flag (no web redeploy).

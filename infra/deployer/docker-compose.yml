@@ -1,0 +1,62 @@
+# FIVUCSAS pull deployer (see README.md). Runs on the production host only.
+# No ports, no GitHub secrets: it polls the public GitHub API and pulls.
+name: fivucsas-deployer
+
+services:
+  deployer:
+    build:
+      context: .
+    image: fivucsas-deployer:local
+    container_name: fivucsas-deployer
+    restart: always
+    # Owner of /opt/projects/fivucsas/* (deploy) and the docker socket group.
+    user: "${DEPLOYER_UID:-1001}:${DEPLOYER_GID:-983}"
+    # Host networking so the web health check can reach Traefik on 127.0.0.1:443.
+    # Nothing listens in this container.
+    network_mode: host
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # tini as PID 1: forwards SIGTERM to the deployer and reaps the git/docker
+    # children it starts (each in its own process group, see shell.Runner).
+    init: true
+    # Let an in-flight deploy finish (or roll back) on `docker compose stop`. Must be
+    # at least the worst case of docker_ops.max_deploy_seconds (152 min for
+    # web-app); tests/test_docker_ops.py fails if a timeout grows past it. A harder
+    # kill (docker kill, daemon shutdown, reboot) is recovered on the next start
+    # from /state/INFLIGHT.<repo>.
+    stop_grace_period: 155m
+    environment:
+      DEPLOYER_INTERVAL_SECONDS: "${DEPLOYER_INTERVAL_SECONDS:-300}"
+      DEPLOYER_DRY_RUN: "${DEPLOYER_DRY_RUN:-false}"
+      DEPLOYER_REPOS: "${DEPLOYER_REPOS:-identity-core-api,biometric-processor,web-app}"
+      DEPLOYER_BUILD_NO_CACHE: "${DEPLOYER_BUILD_NO_CACHE:-true}"
+      DEPLOYER_KEEP_ROLLBACK_TAGS: "${DEPLOYER_KEEP_ROLLBACK_TAGS:-3}"
+    volumes:
+      # Docker socket: required to build and restart the services. This is
+      # root-equivalent on the host; the container itself has no other privilege.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Same absolute paths as on the host, so compose build contexts, the
+      # env_file labels and the node build bind-mount all resolve identically.
+      - /opt/projects/fivucsas/identity-core-api:/opt/projects/fivucsas/identity-core-api
+      - /opt/projects/fivucsas/biometric-processor:/opt/projects/fivucsas/biometric-processor
+      - /opt/projects/fivucsas/web-app:/opt/projects/fivucsas/web-app
+      # The checkouts are submodules: each one's .git is a file pointing at
+      # ../.git/modules/<repo>, so git needs these too (read-write: fetch, merge,
+      # stash). The parent's own .git stays unmounted.
+      - /opt/projects/fivucsas/.git/modules/identity-core-api:/opt/projects/fivucsas/.git/modules/identity-core-api
+      - /opt/projects/fivucsas/.git/modules/biometric-processor:/opt/projects/fivucsas/.git/modules/biometric-processor
+      - /opt/projects/fivucsas/.git/modules/web-app:/opt/projects/fivucsas/.git/modules/web-app
+      - state:/state
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  state:
