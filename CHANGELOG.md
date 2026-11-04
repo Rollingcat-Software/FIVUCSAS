@@ -2,6 +2,20 @@
 
 All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See each submodule's own `CHANGELOG.md` for granular per-repo changes.
 
+## [2026-11-04] CI-gated pull deployer for production
+
+- **`infra/deployer/`**: a restart-always container on mordecai (runs as uid 1001:983,
+  no inbound port, no GitHub secret) that deploys `identity-core-api`,
+  `biometric-processor` and `web-app`. Every 5 minutes it finds the newest `main` commit
+  whose CI push run succeeded (unauthenticated GitHub API, gated by `git ls-remote` so a
+  quiet repository costs no API calls), and if the prod checkout is strictly behind and
+  fast-forwardable it tags a rollback image, fast-forwards (keeping local overrides),
+  rebuilds, restarts and health-checks; on failure it rolls back image and checkout and
+  holds that repository until a newer green commit. Dry-run mode, pause flags, unit tests
+  (`.github/workflows/deployer-tests.yml`). Replaces the GitHub `Deploy to Hetzner`
+  workflows, which targeted the decommissioned Hetzner box or waited for a self-hosted
+  runner that public repositories must not have. Not yet installed on mordecai.
+
 ## [2026-05-30] Identifier-first login — SHIPPED + DEPLOYED (Marmara canary)
 
 The config-driven login engine now drives an **identifier-first** hosted/dashboard login: screen 1 collects identity only (email), and every factor — password included — is presented afterward. Live on the Marmara canary; the global engine switch stays OFF, so all other tenants are byte-identical to the legacy single-screen email+password form and the redesign reverts with the env flag (no web redeploy).
