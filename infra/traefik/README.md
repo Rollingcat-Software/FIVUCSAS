@@ -1,7 +1,7 @@
 # Traefik Config (Vendored Reference)
 
 The **live** Traefik configuration runs from `/opt/projects/infra/traefik/`
-on the Hetzner host. That directory belongs to the `/opt/projects/` local
+on the mordecai host (moved from Hetzner on 2026-09-17). That directory belongs to the `/opt/projects/` local
 git repo (no remote) and is the source-of-truth Traefik mounts at runtime
 (see `docker-compose.yml`, volumes `./config/traefik.yml` and
 `./config/dynamic.yml`).
@@ -49,6 +49,27 @@ docker compose -f /opt/projects/infra/traefik/docker-compose.yml \
 #    Read the access log from the file instead:
 docker exec traefik tail -20 /var/log/traefik/access.log
 #    (Traefik's startup/error log is still on stdout: `docker logs traefik`.)
+```
+
+## Permissions-Policy ownership (2026-10-09)
+
+The `websecure` entrypoint applies `secure-headers@file` and `rate-limit@file`
+to every router on the host, including non-FIVUCSAS sites. Entrypoint
+middlewares wrap router middlewares, so a header they set overwrites whatever a
+site's router or upstream sends. `secure-headers` therefore sets no
+`Permissions-Policy`: each app serves its own.
+
+FIVUCSAS camera, microphone and WebAuthn grants (delegated to the
+`verify.fivucsas.com` iframe) live in `fivucsas-device-permissions`, attached by
+the `fivucsas-*-permissions` file routers. Those shadow the docker-label routers
+of `verify`, `app`, `demo` and `amispoof` (same `Host` rule, priority 1000, same
+`@docker` service), so the change is a hot reload and no app compose file
+changes. A new FIVUCSAS host that needs the camera gets a router of the same
+shape. Check with:
+
+```bash
+curl -sI https://verify.fivucsas.com/ | grep -i permissions-policy   # FIVUCSAS grants
+curl -sI https://fahrieren.com/      | grep -i permissions-policy   # the site's own policy
 ```
 
 ## XFF / Rate-Limit Hardening (2026-05-12)
