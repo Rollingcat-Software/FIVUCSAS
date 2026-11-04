@@ -75,5 +75,30 @@ class NodeBuildTest(unittest.TestCase):
         self.assertFalse(any("compose" in c for c in cmds))
 
 
+class InspectRunner(ScriptedRunner):
+    def __init__(self, out, ok=True):
+        super().__init__()
+        self.out, self.ok = out, ok
+
+    def run(self, cmd, cwd=None, timeout=600):
+        self.calls.append((list(cmd), timeout))
+        return Result(0 if self.ok else 1, self.out)
+
+
+class ContainerRunningTest(unittest.TestCase):
+    def running(self, out, ok=True):
+        return Docker(InspectRunner(out, ok), REPOS["identity-core-api"], "node:x",
+                      no_cache=True).container_running()
+
+    def test_containerRunning_WhenStateIsRunning_ShouldBeTrue(self):
+        self.assertTrue(self.running("sha256:" + "a" * 64 + "|running|healthy\n"))
+
+    def test_containerRunning_WhenExitedOrCreatedOrMissing_ShouldBeFalse(self):
+        for state in ("exited", "created", "restarting"):
+            with self.subTest(state=state):
+                self.assertFalse(self.running("sha256:" + "a" * 64 + f"|{state}|\n"))
+        self.assertFalse(self.running("", ok=False))
+
+
 if __name__ == "__main__":
     unittest.main()

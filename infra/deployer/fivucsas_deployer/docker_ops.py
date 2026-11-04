@@ -117,6 +117,10 @@ class Docker:
                               timeout=DOCKER_CMD_TIMEOUT_S)
         return res.out.strip() if res.ok and res.out.strip() else None
 
+    def container_running(self) -> bool:
+        """True only while the container is in state ``running`` (not created/exited)."""
+        return self._container_state()[1] == "running"
+
     def image_id(self, ref: str) -> Optional[str]:
         res = self.runner.run(["docker", "image", "inspect", "-f", "{{.Id}}", ref],
                               timeout=DOCKER_CMD_TIMEOUT_S)

@@ -219,8 +219,11 @@ class RepoDeployer:
             self._say(logging.INFO, "build ok:\n%s", tail(build.out, 5))
         except CommandFailed as exc:
             # A cancelled build must not leave a new :latest behind for a later `up`.
-            self._pin_latest(old_image)
-            self._settle(self._restore_git(old))
+            # Unless both :latest and the checkout are back, the marker stays so the
+            # next cycle's reconcile retries them.
+            pinned = self._pin_latest(old_image)
+            git_ok = self._restore_git(old)
+            self._settle(pinned and git_ok)
             return self._fail(decision, new, "build failed", exc, rollback=False)
 
         new_image = self.docker.image_id(f"{self.spec.image}:latest") or ""
@@ -278,12 +281,15 @@ class RepoDeployer:
                   short(sha), what, " (rolled back)" if rollback else "")
         return Outcome(decision, failed=True, detail=what)
 
-    def _pin_latest(self, image: str) -> None:
+    def _pin_latest(self, image: str) -> bool:
+        """Point ``:latest`` at ``image``; False (logged) when docker refused."""
         try:
             self.docker.tag(image, "latest")
+            return True
         except CommandFailed as exc:
             self._say(logging.CRITICAL, "could not point %s:latest back at %s: %s",
                       self.spec.image, image[:19], tail(exc.result.out, 5))
+            return False
 
     def _restore_git(self, old: str) -> bool:
         try:
@@ -296,16 +302,31 @@ class RepoDeployer:
 
     def _rollback(self, old: str, rollback_tag: str, old_image: str,
                   recreate: bool = True) -> bool:
-        """Image back to ``old_image``, checkout back to ``old``; True when both are done."""
+        """Image back to ``old_image``, checkout back to ``old``; True when both are done.
+
+        ``recreate=False`` trusts a container that already runs ``old_image``: it is
+        only health-checked, and recreated after all if that check fails.
+        """
         self._say(logging.WARNING, "rolling back to %s (%s:%s)", short(old), self.spec.image,
                   rollback_tag)
         try:
             self.docker.tag(f"{self.spec.image}:{rollback_tag}", "latest")
+            pinned = True
         except CommandFailed:
-            self._pin_latest(old_image)  # rollback tag gone: the image ID still names it
+            # Rollback tag gone: the image ID still names it.
+            pinned = self._pin_latest(old_image)
         git_ok = self._restore_git(old)
+        if not pinned:
+            # :latest may still be the unvetted image; an `up` now would start it.
+            self._say(logging.CRITICAL, "rollback incomplete: %s:latest is not the old image",
+                      self.spec.image)
+            return False
         if not recreate:
-            return git_ok
+            healthy, why = self.docker.wait_healthy(old_image)
+            if healthy:
+                self._say(logging.WARNING, "old container still healthy (%s)", why)
+                return git_ok
+            self._say(logging.WARNING, "old container not healthy (%s); recreating it", why)
         try:
             self.docker.up(force_recreate=True)
         except CommandFailed as exc:
@@ -339,20 +360,33 @@ class RepoDeployer:
                 return Outcome(Decision(Action.DEPLOY, "completed an interrupted deploy"),
                                deployed=True)
 
-        recovered = self._rollback(old, m["rollback_tag"], old_image,
-                                   recreate=running != old_image)
+        # `docker inspect` names the image of a stopped container too: one left
+        # exited or created (killed between compose's stop and recreate) is not
+        # serving even though it holds the old image.
+        recreate = running != old_image or not self.docker.container_running()
+        recovered = self._rollback(old, m["rollback_tag"], old_image, recreate=recreate)
         if not recovered:
             self._say(logging.CRITICAL, "could not recover the interrupted deploy; retrying "
                       "next cycle")
             return Outcome(Decision(Action.SKIP, "recovery of an interrupted deploy failed"),
                            failed=True, detail="recovery failed")
-        self.state.clear_inflight(self.spec.name)
         rs = self.state.repo(self.spec.name)
         prev = rs.get("interrupted") or {}
-        count = (int(prev.get("count", 0)) + 1) if prev.get("sha") == new else 1
-        rs["interrupted"] = {"sha": new, "count": count}
+        started = m.get("started")
+        if prev.get("sha") == new and started is not None and prev.get("started") == started:
+            count = int(prev.get("count", 1))  # this same marker was counted already
+        elif prev.get("sha") == new:
+            count = int(prev.get("count", 0)) + 1
+        else:
+            count = 1
+        rs["interrupted"] = {"sha": new, "count": count, "started": started}
+        # Count (and hold) before the marker goes: a kill between the two must not
+        # lose the count, or a deploy that always gets killed would loop forever.
+        self.state.save()
         if count >= MAX_INTERRUPTIONS:
             self.state.set_failed(self.spec.name, new)
+        self.state.clear_inflight(self.spec.name)
+        if count >= MAX_INTERRUPTIONS:
             self._say(logging.ERROR, "FAILED %s: interrupted %d times; holding this repo until a "
                       "newer green commit", short(new), count)
             return Outcome(Decision(Action.SKIP, "rolled back an interrupted deploy"),

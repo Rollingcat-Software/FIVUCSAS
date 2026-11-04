@@ -33,6 +33,14 @@ All notable changes to the FIVUCSAS platform. Dates are in ISO 8601 format. See 
   expand/contract migrations (a rollback restores the image, not the schema). Dry run on
   mordecai with the compose mounts and user: git works, all three repositories skip
   (nothing newer and green to deploy).
+- **Recovery review fixes (same PR):** reconcile recreates the old service when its
+  container is not running (one left `exited`/`created` by a kill during compose's
+  stop-then-recreate still reports the old image) and health-checks the old image in
+  both branches, recreating it if that check fails; when `:latest` cannot be pointed back
+  at the old image after a failed build or rollback, the in-flight marker is kept, no
+  `up` runs and the repository stays held until reconcile repins it; the interruption
+  count is saved to `state.json` before the marker is removed (and a re-reconciled
+  marker is not counted twice), so a second kill cannot reset it.
 
 ## [2026-05-30] Identifier-first login — SHIPPED + DEPLOYED (Marmara canary)
 

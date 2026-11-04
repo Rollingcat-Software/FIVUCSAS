@@ -96,10 +96,13 @@ class FakeGit:
 
 
 class FakeDocker:
-    def __init__(self, build_ok=True, healthy=(True,), running=OLD_IMG):
+    def __init__(self, build_ok=True, healthy=(True,), running=OLD_IMG, stopped=False,
+                 tag_fails=()):
         self.build_ok = build_ok
         self.healthy = list(healthy)
         self.running = running
+        self.stopped = stopped
+        self.tag_fails = set(tag_fails)
         self.tags, self.ups, self.waits = [], [], []
         self.built = 0
 
@@ -109,11 +112,16 @@ class FakeDocker:
     def running_image_id(self):
         return self.running
 
+    def container_running(self):
+        return self.running is not None and not self.stopped
+
     def image_id(self, ref):
         return NEW_IMG
 
     def tag(self, source, tag):
         self.tags.append((source, tag))
+        if tag in self.tag_fails:
+            raise failed("docker tag")
 
     def build(self):
         self.built += 1
@@ -312,13 +320,87 @@ class RepoDeployerTest(unittest.TestCase):
         self.assertFalse(os.path.exists(self.marker_path()))
 
     def test_cycle_WhenSameCommitInterruptedTwice_ShouldHoldIt(self):
-        self.write_marker()
+        self.write_marker(started=1)
         self.deployer(git=FakeGit(head=NEW)).cycle()
         self.assertIsNone(self.state.failed_sha(self.spec.name))
-        self.write_marker()
+        self.write_marker(started=2)
         out = self.deployer(git=FakeGit(head=NEW)).cycle()
         self.assertTrue(out.failed)
         self.assertEqual(self.state.failed_sha(self.spec.name), NEW)
+
+    def test_cycle_WhenInterruptedWithOldContainerStopped_ShouldRecreateAndHealthCheck(self):
+        # Killed between compose's stop and recreate: inspect still names the old
+        # image, but nothing serves.
+        self.write_marker(new_image=NEW_IMG)
+        docker = FakeDocker(running=OLD_IMG, stopped=True)
+        out = self.deployer(git=FakeGit(head=NEW), docker=docker).cycle()
+        self.assertFalse(out.failed)
+        self.assertEqual(docker.ups, [True])
+        self.assertEqual(docker.waits, [OLD_IMG])
+        self.assertEqual(self.git.moves, [(OLD, False)])
+        self.assertFalse(os.path.exists(self.marker_path()))
+
+    def test_cycle_WhenInterruptedWithOldContainerRunning_ShouldHealthCheckWithoutRecreate(self):
+        self.write_marker()
+        docker = FakeDocker(running=OLD_IMG)
+        self.deployer(git=FakeGit(head=NEW), docker=docker).cycle()
+        self.assertEqual(docker.ups, [])
+        self.assertEqual(docker.waits, [OLD_IMG])
+
+    def test_cycle_WhenInterruptedAndOldContainerUnhealthy_ShouldRecreateIt(self):
+        self.write_marker()
+        docker = FakeDocker(running=OLD_IMG, healthy=(False, True))
+        self.deployer(git=FakeGit(head=NEW), docker=docker).cycle()
+        self.assertEqual(docker.ups, [True])
+        self.assertEqual(docker.waits, [OLD_IMG, OLD_IMG])
+        self.assertFalse(os.path.exists(self.marker_path()))
+
+    def test_cycle_WhenInterruptCountSaved_ShouldPersistItBeforeRemovingMarker(self):
+        self.write_marker()
+        deployer = self.deployer(git=FakeGit(head=NEW))
+        seen = []
+        clear = self.state.clear_inflight
+
+        def spy(repo):
+            # What a kill right now would leave behind: state.json on disk.
+            seen.append(StateStore(self.tmp).repo(repo).get("interrupted"))
+            clear(repo)
+
+        self.state.clear_inflight = spy
+        deployer.cycle()
+        self.assertEqual(seen[0]["sha"], NEW)
+        self.assertEqual(seen[0]["count"], 1)
+
+    def test_cycle_WhenSameMarkerReconciledAgainAfterKill_ShouldNotCountItTwice(self):
+        self.write_marker(started=7)
+        self.state.repo(self.spec.name)["interrupted"] = {"sha": NEW, "count": 1, "started": 7}
+        out = self.deployer(git=FakeGit(head=NEW)).cycle()
+        self.assertFalse(out.failed)
+        self.assertEqual(self.state.repo(self.spec.name)["interrupted"]["count"], 1)
+        self.assertIsNone(self.state.failed_sha(self.spec.name))
+
+    def test_cycle_WhenBuildFailsAndLatestCannotBePinned_ShouldKeepMarkerAndHold(self):
+        out = self.deployer(docker=FakeDocker(build_ok=False, tag_fails={"latest"})).cycle()
+        self.assertTrue(out.failed)
+        self.assertEqual(self.git.moves, [(NEW, True), (OLD, False)])
+        self.assertEqual(self.docker.ups, [])
+        self.assertEqual(self.state.failed_sha(self.spec.name), NEW)
+        self.assertTrue(os.path.exists(self.marker_path()))
+
+    def test_cycle_WhenRollbackCannotPinLatest_ShouldNotUpAndKeepMarker(self):
+        docker = FakeDocker(healthy=(False,), tag_fails={"latest"})
+        out = self.deployer(docker=docker).cycle()
+        self.assertTrue(out.failed)
+        self.assertEqual(docker.ups, [False])  # the deploy's own up; no rollback up
+        self.assertEqual(self.git.moves, [(NEW, True), (OLD, False)])
+        self.assertTrue(os.path.exists(self.marker_path()))
+
+    def test_cycle_WhenLatestPinFailedEarlier_ShouldRetryItOnTheNextCycle(self):
+        self.deployer(docker=FakeDocker(build_ok=False, tag_fails={"latest"})).cycle()
+        docker = FakeDocker(running=OLD_IMG)
+        self.deployer(git=FakeGit(head=OLD), docker=docker).cycle()
+        self.assertIn((f"{self.spec.image}:rollback-{OLD[:12]}", "latest"), docker.tags)
+        self.assertFalse(os.path.exists(self.marker_path()))
 
     def test_cycle_WhenInterruptedAndThenDeployedNormally_ShouldResetInterruptionCount(self):
         self.write_marker()

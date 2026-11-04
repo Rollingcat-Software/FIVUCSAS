@@ -91,7 +91,7 @@ then SIGKILL 30 s later.
 
 `docker_ops.max_deploy_seconds` adds these up for a deploy that fails at the last
 moment and rolls back: 139 min for `identity-core-api`, 145 for `biometric-processor`,
-153 for `web-app`. `stop_grace_period` is 155 min, and `tests/test_docker_ops.py` fails
+152 for `web-app`. `stop_grace_period` is 155 min, and `tests/test_docker_ops.py` fails
 if a timeout grows past it.
 
 ### Interrupted deploys
@@ -106,12 +106,19 @@ that repository's cycle reconciles it:
   health check passes: the deploy is recorded as done (nothing is rebuilt);
 * otherwise it is rolled back: checkout reset to the old SHA (local overrides kept,
   including overrides left in the stash by a kill between `stash push` and `stash pop`),
-  `:latest` pointed back at the rollback image, and the service recreated only if it is
-  not already running the old image. The marker is removed and the commit is tried
-  again on the next cycle; a commit interrupted twice in a row is held in
-  `FAILED.<repo>` like any failed deploy.
+  `:latest` pointed back at the rollback image, and the old image health-checked. The
+  service is recreated unless its container is already running the old image and
+  passes that check (one left `exited` or `created` by a kill between compose's stop
+  and recreate is recreated). The interruption count is saved, then the marker is
+  removed and the commit is tried again on the next cycle; a commit interrupted twice
+  in a row is held in `FAILED.<repo>` like any failed deploy.
 
-If recovery itself fails the marker stays and the next cycle retries it. A pause flag
+Reconcile resets the checkout to the old SHA from the marker even if an operator moved
+`HEAD` by hand in the meantime; pause the repository first to keep a manual checkout.
+
+If recovery itself fails the marker stays and the next cycle retries it. That includes a
+failed build or rollback whose `:latest` could not be pointed back at the old image:
+the marker is kept (and no `up` runs) until `:latest` and the checkout are both back. A pause flag
 also pauses recovery. A dry run only reports it. A malformed `INFLIGHT.<repo>` or
 `FAILED.<repo>` holds the repository with an error until an operator fixes or removes
 the file.
