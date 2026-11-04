@@ -1,15 +1,16 @@
 import unittest
 
-from fivucsas_deployer.decision import (Action, Relation, RepoSnapshot, decide, pick_target,
-                                        relation_from_compare_status, rollback_tags_to_prune,
-                                        should_query)
+from fivucsas_deployer.decision import (Action, Relation, RepoSnapshot, decide, green_shas,
+                                        is_sha, newest_in_order, relation_from_compare_status,
+                                        rollback_tags_to_prune, should_query)
 
 A, B, C = "a" * 40, "b" * 40, "c" * 40
+REPO = "Rollingcat-Software/identity-core-api"
 
 
 def run(sha, ts, **over):
     r = {"head_sha": sha, "head_branch": "main", "event": "push", "status": "completed",
-         "conclusion": "success", "created_at": ts, "head_commit": {"timestamp": ts}}
+         "conclusion": "success", "created_at": ts, "head_repository": {"full_name": REPO}}
     r.update(over)
     return r
 
@@ -21,24 +22,51 @@ def snap(**over):
     return RepoSnapshot(**base)
 
 
-class PickTargetTest(unittest.TestCase):
-    def test_pickTarget_WhenSeveralGreenRuns_ShouldReturnNewestCommit(self):
-        runs = [run(A, "2026-11-01T10:00:00Z"), run(B, "2026-11-02T10:00:00Z")]
-        self.assertEqual(pick_target(runs), B)
+class GreenShasTest(unittest.TestCase):
+    def test_greenShas_WhenSeveralGreenRuns_ShouldOrderNewestRunFirstWithoutDuplicates(self):
+        runs = [run(A, "2026-11-01T10:00:00Z"), run(B, "2026-11-02T10:00:00Z"),
+                run(A, "2026-11-01T09:00:00Z")]
+        self.assertEqual(green_shas(runs, REPO), [B, A])
 
-    def test_pickTarget_WhenOldCommitWasRerunLater_ShouldStillPreferNewerCommit(self):
-        rerun = run(A, "2026-11-01T10:00:00Z", created_at="2026-11-03T00:00:00Z")
-        self.assertEqual(pick_target([rerun, run(B, "2026-11-02T10:00:00Z")]), B)
-
-    def test_pickTarget_WhenRunsAreNotGreenPushesOnMain_ShouldIgnoreThem(self):
+    def test_greenShas_WhenRunsAreNotGreenPushesOnMain_ShouldIgnoreThem(self):
         runs = [run(A, "2026-11-05T00:00:00Z", event="pull_request"),
                 run(B, "2026-11-05T00:00:00Z", head_branch="feature/x"),
                 run(C, "2026-11-05T00:00:00Z", conclusion="failure"),
                 run(A, "2026-11-05T00:00:00Z", status="in_progress", conclusion=None)]
-        self.assertIsNone(pick_target(runs))
+        self.assertEqual(green_shas(runs, REPO), [])
 
-    def test_pickTarget_WhenNoRuns_ShouldReturnNone(self):
-        self.assertIsNone(pick_target([]))
+    def test_greenShas_WhenHeadRepositoryIsAFork_ShouldIgnoreIt(self):
+        runs = [run(A, "t", head_repository={"full_name": "attacker/identity-core-api"}),
+                run(B, "t", head_repository=None)]
+        self.assertEqual(green_shas(runs, REPO), [])
+
+    def test_greenShas_WhenHeadShaIsNotFullHex_ShouldIgnoreIt(self):
+        for bad in ("--upload-pack=x", "a" * 39, "A" * 40, "a" * 40 + chr(10), None, 42):
+            with self.subTest(bad=bad):
+                self.assertEqual(green_shas([run(bad, "t")], REPO), [])
+
+    def test_greenShas_WhenNoRuns_ShouldReturnEmpty(self):
+        self.assertEqual(green_shas([], REPO), [])
+
+
+class NewestInOrderTest(unittest.TestCase):
+    def test_newestInOrder_WhenOlderCommitRanLater_ShouldStillPreferNewerCommitByGitOrder(self):
+        # green_shas would put A first (its run is newer); the branch order wins.
+        self.assertEqual(newest_in_order([C, B, A], [A, B]), B)
+
+    def test_newestInOrder_WhenGreenCommitNotOnBranch_ShouldIgnoreIt(self):
+        self.assertIsNone(newest_in_order([C, B], [A]))
+
+    def test_newestInOrder_WhenTipIsGreen_ShouldReturnTip(self):
+        self.assertEqual(newest_in_order([C, B, A], [A, C]), C)
+
+
+class IsShaTest(unittest.TestCase):
+    def test_isSha_WhenFullLowercaseHex_ShouldAcceptOnlyThat(self):
+        self.assertTrue(is_sha(A))
+        for bad in ("", "-" + "a" * 39, "a" * 41, "g" * 40, None):
+            with self.subTest(bad=bad):
+                self.assertFalse(is_sha(bad))
 
 
 class DecideTest(unittest.TestCase):

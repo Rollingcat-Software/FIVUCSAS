@@ -34,7 +34,7 @@ def run_cycle(settings: Settings, state: StateStore, runner: Runner, github: Git
         if stop.is_set():
             return
         try:
-            RepoDeployer(REPOS[name], settings, runner, github, state).cycle()
+            RepoDeployer(REPOS[name], settings, runner, github, state, stop=stop).cycle()
         except Exception:  # one repo must never take the loop down; log it loudly
             log.exception("[%s] cycle crashed", name)
         finally:

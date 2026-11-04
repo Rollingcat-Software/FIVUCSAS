@@ -7,6 +7,7 @@ RUNS = {"workflow_runs": [{"head_sha": "a" * 40, "head_branch": "main", "event":
                            "status": "completed", "conclusion": "success",
                            "created_at": "2026-11-02T11:00:00Z",
                            "head_commit": {"timestamp": "2026-11-02T10:59:00Z", "message": "x"},
+                           "head_repository": {"full_name": "org/repo", "id": 1},
                            "html_url": "ignored"}]}
 
 
@@ -37,6 +38,8 @@ class GitHubClientTest(unittest.TestCase):
         self.assertFalse(cached)
         self.assertEqual(runs[0]["head_sha"], "a" * 40)
         self.assertNotIn("html_url", runs[0])
+        # Kept so decision.green_shas can reject runs whose head is a fork.
+        self.assertEqual(runs[0]["head_repository"], {"full_name": "org/repo"})
 
     def test_successfulPushRuns_WhenEtagCached_ShouldSendConditionalRequestAndReuseBodyOn304(self):
         fetch = FakeFetch([ok(RUNS), (304, {"x-ratelimit-remaining": "50"}, b"")])

@@ -108,7 +108,8 @@ class GitHubClient:
                 "status": r.get("status"),
                 "conclusion": r.get("conclusion"),
                 "created_at": r.get("created_at"),
-                "head_commit": {"timestamp": (r.get("head_commit") or {}).get("timestamp")},
+                "head_repository": {
+                    "full_name": (r.get("head_repository") or {}).get("full_name")},
             }
             for r in body.get("workflow_runs", [])
         ]

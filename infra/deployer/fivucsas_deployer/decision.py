@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Mapping, Optional
+from typing import Iterable, List, Mapping, Optional, Sequence
+
+
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+def is_sha(value: object) -> bool:
+    """A full lowercase hex commit SHA, the only form passed on to git."""
+    return isinstance(value, str) and SHA_RE.fullmatch(value) is not None
 
 
 class Relation(Enum):
@@ -45,29 +54,49 @@ class RepoSnapshot:
     paused: bool
 
 
-def pick_target(runs: Iterable[Mapping], branch: str = "main") -> Optional[str]:
-    """Return the head SHA of the newest commit whose CI push run succeeded.
+def green_shas(runs: Iterable[Mapping], full_name: str, branch: str = "main") -> List[str]:
+    """Head SHAs of successful CI push runs on ``branch`` of ``full_name`` itself.
 
-    Runs are ordered by the commit timestamp of their head commit, not by run
-    creation time, so a re-run of an old commit never wins over a newer commit.
-    Anything that is not a successful push run on ``branch`` is ignored even if
-    the API filter let it through.
+    Anything else is ignored even if the API filter let it through: other events,
+    other branches, unfinished or failed runs, runs whose head repository is not
+    ``owner/repo`` (a fork's branch can share the name ``main``), and head SHAs
+    that are not 40 lowercase hex characters. Ordered newest run first by run
+    creation time (a re-run keeps its ``created_at``), without duplicates.
     """
-    best_sha: Optional[str] = None
-    best_ts = ""
+    keep = []
     for run in runs:
         if run.get("event") != "push" or run.get("head_branch") != branch:
             continue
         if run.get("status") != "completed" or run.get("conclusion") != "success":
             continue
-        sha = run.get("head_sha")
-        if not sha:
+        if (run.get("head_repository") or {}).get("full_name") != full_name:
             continue
-        ts = (run.get("head_commit") or {}).get("timestamp") or run.get("created_at") or ""
-        # ISO-8601 UTC strings from the API compare correctly as text.
-        if best_sha is None or ts > best_ts:
-            best_sha, best_ts = sha, ts
-    return best_sha
+        sha = run.get("head_sha")
+        if not is_sha(sha):
+            continue
+        keep.append((run.get("created_at") or "", sha))
+    # ISO-8601 UTC strings from the API compare correctly as text.
+    keep.sort(key=lambda r: r[0], reverse=True)
+    seen, ordered = set(), []
+    for _, sha in keep:
+        if sha not in seen:
+            seen.add(sha)
+            ordered.append(sha)
+    return ordered
+
+
+def newest_in_order(branch_order: Sequence[str], green: Iterable[str]) -> Optional[str]:
+    """The first green SHA in ``branch_order`` (``git rev-list --topo-order <tip>``).
+
+    That is the newest green commit that is an ancestor of (or equal to) the
+    branch tip, by git order: never a commit from a force-pushed-away history and
+    never an older commit whose CI happened to finish or re-run later.
+    """
+    wanted = set(green)
+    for sha in branch_order:
+        if sha in wanted:
+            return sha
+    return None
 
 
 def decide(snap: RepoSnapshot) -> Decision:
@@ -75,11 +104,12 @@ def decide(snap: RepoSnapshot) -> Decision:
     if snap.paused:
         return Decision(Action.SKIP, "paused")
     if snap.target_sha is None:
-        return Decision(Action.SKIP, "no successful CI push run found on the branch")
+        return Decision(Action.SKIP, "no green CI push run on the branch tip's history")
     if snap.prod_branch != snap.expected_branch:
         return Decision(
             Action.SKIP,
-            f"checkout is on '{snap.prod_branch or 'detached HEAD'}', expected '{snap.expected_branch}'",
+            f"checkout is on '{snap.prod_branch or 'detached HEAD'}', "
+            f"expected '{snap.expected_branch}'",
         )
     if snap.failed_sha and snap.target_sha == snap.failed_sha:
         return Decision(

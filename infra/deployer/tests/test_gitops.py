@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-from fivucsas_deployer.decision import Relation
+from fivucsas_deployer.decision import Relation, newest_in_order
 from fivucsas_deployer.gitops import Git
 from fivucsas_deployer.shell import CommandFailed, Runner
 
@@ -29,7 +29,7 @@ class GitTest(unittest.TestCase):
         self.c1 = sh(self.origin, "rev-parse", "HEAD")
         self.prod = os.path.join(self.tmp, "prod")
         sh(self.tmp, "clone", "-q", self.origin, self.prod)
-        self.git = Git(Runner(), self.prod)
+        self.git = Git(Runner(), self.prod, self.origin)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -89,6 +89,81 @@ class GitTest(unittest.TestCase):
         self.git.fetch("main")
         self.git.move_to(c2, ff_only=True)
         self.assertEqual(sh(self.prod, "stash", "list"), "")
+
+    def _override_compose(self):
+        with open(os.path.join(self.prod, "compose.yml"), "w", newline="\n") as fh:
+            fh.write("FLAG: \"false\"\nOTHER: 1\n")
+
+    def test_fetchAndRemoteTip_WhenOriginRemotePointsElsewhere_ShouldUseCanonicalUrl(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        evil = os.path.join(self.tmp, "evil")
+        sh(self.tmp, "clone", "-q", self.origin, evil)
+        with open(os.path.join(evil, "app.txt"), "w", newline="\n") as fh:
+            fh.write("evil\n")
+        sh(evil, "add", "app.txt")
+        sh(evil, "commit", "-q", "-m", "evil")
+        sh(self.prod, "remote", "set-url", "origin", evil)
+        self.assertEqual(self.git.remote_tip("main"), c2)
+        self.git.fetch("main")
+        self.assertEqual(sh(self.prod, "rev-parse", "refs/remotes/origin/main"), c2)
+        self.assertTrue(self.git.on_remote_branch(c2, "main"))
+
+    def test_fetch_WhenCanonicalBranchWasForcePushed_ShouldOverwriteTrackingRef(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        self.git.fetch("main")
+        sh(self.origin, "reset", "-q", "--hard", self.c1)
+        c2b = self._commit("app.txt", "v2b\n", "c2b")
+        self.git.fetch("main")
+        self.assertEqual(sh(self.prod, "rev-parse", "refs/remotes/origin/main"), c2b)
+        self.assertFalse(self.git.on_remote_branch(c2, "main"))
+
+    def test_revList_WhenGreenCommitsKnown_ShouldPickNewestByAncestry(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        c3 = self._commit("app.txt", "v3\n", "c3")
+        self.git.fetch("main")
+        order = self.git.rev_list(Git.tracking_ref("main"))
+        self.assertEqual(order[:3], [c3, c2, self.c1])
+        self.assertEqual(newest_in_order(order, [self.c1, c2]), c2)
+
+    def test_recoverTo_WhenKilledBetweenStashPushAndPop_ShouldRestoreOldShaWithOverride(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        self.git.fetch("main")
+        self._override_compose()
+        # What move_to had done when the container was killed: stash pushed, merged, no pop.
+        sh(self.prod, "stash", "push", "-q", "-m", f"deployer-overrides-{self.c1[:12]}")
+        sh(self.prod, "merge", "--ff-only", "-q", c2)
+        self.git.recover_to(self.c1)
+        self.assertEqual(self.git.head(), self.c1)
+        self.assertIn('FLAG: "false"', self._read("compose.yml"))
+        self.assertEqual(sh(self.prod, "stash", "list"), "")
+
+    def test_recoverTo_WhenMovedForwardWithOverride_ShouldResetKeepingOverride(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        self.git.fetch("main")
+        self._override_compose()
+        self.git.move_to(c2, ff_only=True)
+        self.git.recover_to(self.c1)
+        self.assertEqual(self.git.head(), self.c1)
+        self.assertIn('FLAG: "false"', self._read("compose.yml"))
+
+    def test_recoverTo_WhenAlreadyOnSha_ShouldLeaveCheckoutAlone(self):
+        self._override_compose()
+        self.git.recover_to(self.c1)
+        self.assertEqual(self.git.head(), self.c1)
+        self.assertIn('FLAG: "false"', self._read("compose.yml"))
+
+    def test_commands_WhenArgumentIsNotASha_ShouldRefuseBeforeRunningGit(self):
+        for bad in ("--upload-pack=touch /tmp/x", "HEAD", "a" * 39):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    self.git.move_to(bad, ff_only=True)
+                self.assertFalse(self.git.has_commit(bad))
+        self.assertEqual(self.git.head(), self.c1)
+
+    def test_shortLog_WhenRangeGiven_ShouldListCommits(self):
+        c2 = self._commit("app.txt", "v2\n", "c2")
+        self.git.fetch("main")
+        self.assertIn("c2", self.git.short_log(self.c1, c2))
 
 
 if __name__ == "__main__":

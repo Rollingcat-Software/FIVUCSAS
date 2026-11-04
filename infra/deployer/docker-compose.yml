@@ -21,8 +21,15 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    # Let an in-flight deploy finish (or roll back) on `docker compose stop`.
-    stop_grace_period: 30m
+    # tini as PID 1: forwards SIGTERM to the deployer and reaps the git/docker
+    # children it starts (each in its own process group, see shell.Runner).
+    init: true
+    # Let an in-flight deploy finish (or roll back) on `docker compose stop`. Must be
+    # at least the worst case of docker_ops.max_deploy_seconds (152 min for
+    # web-app); tests/test_docker_ops.py fails if a timeout grows past it. A harder
+    # kill (docker kill, daemon shutdown, reboot) is recovered on the next start
+    # from /state/INFLIGHT.<repo>.
+    stop_grace_period: 155m
     environment:
       DEPLOYER_INTERVAL_SECONDS: "${DEPLOYER_INTERVAL_SECONDS:-300}"
       DEPLOYER_DRY_RUN: "${DEPLOYER_DRY_RUN:-false}"
@@ -38,6 +45,12 @@ services:
       - /opt/projects/fivucsas/identity-core-api:/opt/projects/fivucsas/identity-core-api
       - /opt/projects/fivucsas/biometric-processor:/opt/projects/fivucsas/biometric-processor
       - /opt/projects/fivucsas/web-app:/opt/projects/fivucsas/web-app
+      # The checkouts are submodules: each one's .git is a file pointing at
+      # ../.git/modules/<repo>, so git needs these too (read-write: fetch, merge,
+      # stash). The parent's own .git stays unmounted.
+      - /opt/projects/fivucsas/.git/modules/identity-core-api:/opt/projects/fivucsas/.git/modules/identity-core-api
+      - /opt/projects/fivucsas/.git/modules/biometric-processor:/opt/projects/fivucsas/.git/modules/biometric-processor
+      - /opt/projects/fivucsas/.git/modules/web-app:/opt/projects/fivucsas/.git/modules/web-app
       - state:/state
     logging:
       driver: json-file

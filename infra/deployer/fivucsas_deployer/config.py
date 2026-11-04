@@ -34,6 +34,16 @@ class RepoSpec:
     node_build: bool = False
     health_timeout_s: int = 420
 
+    @property
+    def full_name(self) -> str:
+        """``owner/repo``; CI runs whose head repository differs are ignored."""
+        return f"{GITHUB_OWNER}/{self.name}"
+
+    @property
+    def remote_url(self) -> str:
+        """Canonical source, fetched explicitly: the checkout's ``origin`` URL is never trusted."""
+        return f"https://github.com/{GITHUB_OWNER}/{self.name}.git"
+
 
 REPOS: Mapping[str, RepoSpec] = {
     "identity-core-api": RepoSpec(
